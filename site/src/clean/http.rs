@@ -1,17 +1,11 @@
 //! `/clean` HTTP.
 
-use std::sync::Arc;
-
-use axum::extract::State;
-
-use url_cleaner_engine::prelude::*;
-
-use crate::prelude::*;
+use crate::*;
 
 /// `/clean` HTTP.
-pub async fn clean_http(State(state): State<&'static crate::State>, job: Job<'static>, body: Body) -> Response {
-    let (iss,     irs) = (0..state.workers).map(|_| tokio::sync::mpsc::channel::<Bytes >(512)).collect::<(Vec<_>, Vec<_>)>();
-    let (oss, mut ors) = (0..state.workers).map(|_| tokio::sync::mpsc::channel::<String>(512)).collect::<(Vec<_>, Vec<_>)>();
+pub async fn clean_http(state: &'static crate::State, job: Job<'static>, brief_unchanged: bool, brief_error: bool, body: Body) -> Response {
+    let (iss,     irs) = (0..state.threads_per_job).map(|_| tokio::sync::mpsc::channel::<Bytes            >(512)).collect::<(Vec<_>, Vec<_>)>();
+    let (oss, mut ors) = (0..state.threads_per_job).map(|_| tokio::sync::mpsc::channel::<Cow<'static, str>>(512)).collect::<(Vec<_>, Vec<_>)>();
 
     let job = Arc::new(job);
 
@@ -63,8 +57,11 @@ pub async fn clean_http(State(state): State<&'static crate::State>, job: Job<'st
         std::thread::spawn(move || {
             while let Some(task) = ir.blocking_recv() {
                 os.blocking_send(match job.r#do(&*task) {
-                    Ok (x) => x.into(),
-                    Err(e) => format!("-{e:?}")
+                    Ok((false, _  )) if brief_unchanged => "=".into(),
+                    Ok((_    , url))                    => url.into(),
+
+                    Err(_) if brief_error => "-".into(),
+                    Err(e)                => format!("-{e:?}").into(),
                 }).expect("The out receiver to still exist.");
             }
         });

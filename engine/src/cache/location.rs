@@ -3,9 +3,6 @@
 use std::path::{Path, PathBuf};
 use std::ffi::{OsStr, OsString};
 
-use serde::{Serialize, Deserialize};
-
-#[expect(unused_imports, reason = "Used in a doc comment.")]
 use crate::prelude::*;
 
 /// The location of a [`Cache`].

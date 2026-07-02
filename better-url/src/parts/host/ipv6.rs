@@ -52,10 +52,8 @@ impl<'a> TryFrom<Cow<'a, str>> for Ipv6Host<'a> {
     type Error = InvalidIpv6Host;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        Ok(Self {
-            details: value.parse()?,
-            host: value,
-        })
+        // TODO: Fix.
+        Ok(value.parse::<Ipv6Details>()?.parsed.into())
     }
 }
 

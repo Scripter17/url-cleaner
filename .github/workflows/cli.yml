@@ -36,17 +36,13 @@ jobs:
         PROFILES='
         {
           "base": {
-            "params_diff": {
-              "vars": {
-                "client_type": "desktop"
-              }
+            "vars": {
+              "client_type": "desktop"
             }
           },
           "named": {
             "youtube unshort": {
-              "params_diff": {
-                "flags": ["youtube_unshort"]
-              }
+              "flags": ["youtube_unshort"]
             }
           }
         }'

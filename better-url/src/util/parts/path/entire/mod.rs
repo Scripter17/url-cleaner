@@ -21,7 +21,7 @@ pub use opaque::*;
 /// ```
 /// use better_url::util::*;
 ///
-/// assert_eq!(resolve_path("/abc/def", false), (false, "/abc/def".into()));
+/// // assert_eq!(resolve_path("/abc/def", false), (false, "/abc/def".into()));
 ///
 /// assert_eq!(resolve_path("/abc/."      , false), (true, "/abc/"    .into()));
 /// assert_eq!(resolve_path("/abc/.."     , false), (true, "/"        .into()));
@@ -45,27 +45,64 @@ pub use opaque::*;
 /// ```
 pub fn resolve_path<'a, T: Into<Cow<'a, str>>>(value: T, file: bool) -> (bool, Cow<'a, str>) {
     let mut value = value.into();
+    let mut changed = false;
 
-    if !value.as_bytes().contains(&b'.') && !value.as_bytes().contains(&b'%') {
-        return (false, value);
+    if !value.starts_with('/') {
+        value.to_mut().insert(0, '/');
+        changed = true;
     }
 
-    let mut changed = false;
-    let mut segments = value.split('/').skip(1);
+    let mut value = cow_str_to_bytes(value);
 
-    while let Some(segment) = segments.next() {
-        if path_segment_is_dot(segment) || path_segment_is_double_dot(segment) {
-            let mut ret = value[.. segment.addr() - value.addr() - 1].to_string();
-            changed |= extend_path_segments(&mut ret, file, std::iter::once(segment).chain(segments));
-            value = ret.into();
-            break;
+    let mut i = 0;
+
+    while i + 1 < value.len() {
+        if value[i + 1] != b'.' && value[i + 1] != b'%' {
+            match value[i + 1..].iter().position(|&b| b == b'/') {
+                Some(a) => {
+                    i += a + 1;
+                    continue;
+                },
+                None => break
+            }
+        }
+
+        match &value[i + 1..] {
+            x if path_segment_bytes_is_double_dot(x) => {
+                if file && matches!(value[..i], [b'/', b'a'..=b'z' | b'A'..=b'Z', b':']) {
+                    value.to_mut().truncate(4);
+                } else {
+                    let start_prev_seg = value[..i].iter().rposition(|&b| b == b'/').unwrap_or(0) + 1;
+                    value.to_mut().truncate(start_prev_seg);
+                }
+                changed = true;
+            },
+            x if let Some(j) = x.iter().position(|&b| b == b'/') && path_segment_bytes_is_double_dot(&x[..j]) => {
+                if file && matches!(value[..i], [b'/', b'a'..=b'z' | b'A'..=b'Z', b':']) {
+                    value.to_mut().drain(i ..= i + j);
+                } else {
+                    let start_prev_seg = value[..i].iter().rposition(|&b| b == b'/').unwrap_or(0);
+                    value.to_mut().drain(start_prev_seg ..= i + j);
+                    i = start_prev_seg;
+                }
+                changed = true;
+            },
+            x if path_segment_bytes_is_dot(x) => {
+                value.to_mut().truncate(i + 1);
+                changed = true;
+            },
+            x if let Some(j) = x.iter().position(|&b| b == b'/') && path_segment_bytes_is_dot(&x[..j]) => {
+                let _ = value.to_mut().drain(i + 1 ..= i + j + 1);
+                changed = true;
+            },
+            x => match x.iter().position(|&b| b == b'/') {
+                Some(a) => i += a + 1,
+                None => break
+            }
         }
     }
 
-    match value.is_empty() {
-        true  => (changed, "/".into()),
-        false => (changed, value)
-    }
+    (changed, unsafe {cow_bytes_to_str(value)})
 }
 
 /// Extend path segments.

@@ -14,6 +14,9 @@ pub struct Args {
     /// The instance (HTTP, HTTPS, WS, or WSS)
     #[arg(default_value = "ws://127.0.0.1:9149")]
     pub instance: String,
+    /// The username.
+    #[arg(long, help_heading = "JobConfig args")]
+    pub username: Option<String>,
     /// The password.
     #[arg(long, help_heading = "JobConfig args")]
     pub password: Option<String>,
@@ -49,6 +52,7 @@ impl Args {
 
         let mut config = HashMap::<_, serde_json::Value>::new();
 
+        if let Some(username   ) = self.username    {config.insert("username"   , username.into());}
         if let Some(password   ) = self.password    {config.insert("password"   , password.into());}
         if let Some(profile    ) = self.profile     {config.insert("profile"    , profile .into());}
         if let Some(params_diff) = self.params_diff {config.insert("params_diff", serde_json::from_str(&params_diff).unwrap());}

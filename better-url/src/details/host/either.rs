@@ -5,21 +5,47 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use crate::prelude::*;
 
 /// Details for a [`Host`].
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum HostDetails {
-    /// [`DomainDetails`].
-    Domain(DomainDetails),
-    /// [`Ipv4Details`].
-    Ipv4(Ipv4Details),
-    /// [`Ipv6Details`].
-    Ipv6(Ipv6Details),
-    /// [`OpaqueHostDetails`].
-    Opaque(OpaqueHostDetails),
-    /// [`EmptyHostDetails`].
-    Empty(EmptyHostDetails),
+    /** [`DomainDetails`].     **/ Domain(DomainDetails    ),
+    /** [`Ipv4Details`].       **/ Ipv4  (Ipv4Details      ),
+    /** [`Ipv6Details`].       **/ Ipv6  (Ipv6Details      ),
+    /** [`OpaqueHostDetails`]. **/ Opaque(OpaqueHostDetails),
+    /** [`EmptyHostDetails`].  **/ Empty (EmptyHostDetails ),
 }
 
 impl HostDetails {
+    /// Parse an encoded host with `isOpaque` set to [`false`].
+    ///
+    /// Please note that this assumes the input is already put through [`domain_to_ascii`].
+    /// # Errors
+    /// If `value` starts with `[` and the call to [`Ipv6Details::parse`] returns an error, that error is returned.
+    ///
+    /// If `value` [`ends_in_a_number`] and the call to [`Ipv4Details::parse`] returns an error, that error is returned.
+    ///
+    /// Otherwise, if the call to [`DomainDetails::parse_not_eian`] returns an error, that error is returned.
+    pub fn parse(value: &str) -> Result<Self, InvalidHost> {
+        Ok(if value.starts_with('[') {
+            Ipv6Details::parse(value)?.into()
+        } else if ends_in_a_number(value) {
+            Ipv4Details::parse(value)?.into()
+        } else {
+            DomainDetails::parse_not_eian(value)?.into()
+        })
+    }
+
+    /// Make a [`Self`] from a [`url::Url`]'s [`url::Host`].
+    pub fn from_url(url: &url::Url) -> Option<Self> {
+        Some(match url.host()? {
+            url::Host::Domain(x) => match url.is_special() {
+                true  => DomainDetails::parse_unchecked(x).into(),
+                false => OpaqueHostDetails.into(),
+            },
+            url::Host::Ipv4(x) => x.into(),
+            url::Host::Ipv6(x) => x.into(),
+        })
+    }
+
     /// If it's [`Self::Domain`].
     pub fn is_domain(self) -> bool {
         matches!(self, Self::Domain(_))
@@ -52,63 +78,34 @@ impl HostDetails {
 
 
 
-    /// Borrow the [`DomainDetails`].
-    pub fn as_domain(&self) -> Option<&DomainDetails> {
-        match self {
-            Self::Domain(x) => Some(x),
-            _ => None
-        }
-    }
-
-    /// Turn into the [`DomainDetails`].
+    /// The [`DomainDetails`].
     pub fn domain(self) -> Option<DomainDetails> {
-        match self {
-            Self::Domain(x) => Some(x),
-            _ => None
-        }
+        self.try_into().ok()
     }
-
-
 
     /// The [`Ipv4Details`].
-    pub fn ipv4(&self) -> Option<Ipv4Details> {
-        match self {
-            &Self::Ipv4(x) => Some(x),
-            _ => None,
-        }
+    pub fn ipv4(self) -> Option<Ipv4Details> {
+        self.try_into().ok()
     }
 
     /// The [`Ipv6Details`].
-    pub fn ipv6(&self) -> Option<Ipv6Details> {
-        match self {
-            &Self::Ipv6(x) => Some(x),
-            _ => None,
-        }
+    pub fn ipv6(self) -> Option<Ipv6Details> {
+        self.try_into().ok()
     }
 
     /// The [`IpDetails`].
-    pub fn ip(&self) -> Option<IpDetails> {
-        match *self {
-            Self::Ipv4(x) => Some(x.into()),
-            Self::Ipv6(x) => Some(x.into()),
-            _ => None,
-        }
+    pub fn ip(self) -> Option<IpDetails> {
+        self.try_into().ok()
     }
 
     /// The [`OpaqueHostDetails`].
-    pub fn opaque(&self) -> Option<OpaqueHostDetails> {
-        match self {
-            &Self::Opaque(x) => Some(x),
-            _ => None,
-        }
+    pub fn opaque(self) -> Option<OpaqueHostDetails> {
+        self.try_into().ok()
     }
 
     /// The [`EmptyHostDetails`].
-    pub fn empty(&self) -> Option<EmptyHostDetails> {
-        match self {
-            &Self::Empty(x) => Some(x),
-            _ => None,
-        }
+    pub fn empty(self) -> Option<EmptyHostDetails> {
+        self.try_into().ok()
     }
 }
 

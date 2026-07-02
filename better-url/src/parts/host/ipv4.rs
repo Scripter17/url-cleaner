@@ -14,26 +14,23 @@ pub struct Ipv4Host<'a> {
 }
 
 impl<'a> Ipv4Host<'a> {
-    /// Make a new [`Self`] from an already percent decoded input.
+    /// Make a new [`Self`] from a percent decoded value.
     /// # Errors
-    /// If the call to [`Ipv4Details::parse`] returns an error, that error is returned.
+    /// If the call to [`Self::new_normalized`] returns an error, that error is returned.
     pub fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
-        let value = value.into();
-        let details = value.parse()?;
-        Ok(Self {
-            details,
-            host: details.parsed.to_string().into(),
-        })
+        let (_, value) = uts46_map_normalize(value);
+        Self::new_normalized(value)
     }
 
-    /// Make a new [`Self`] from a raw/literal input.
+    /// Make a new [`Self`] from a percent decoded and UTS46 normalized value.
     /// # Errors
-    /// If the call to [`Ipv4Addr::from_str`] returns an error, returns the error [`InvalidIpv4Host`].
-    pub fn new_raw<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
-        let value = value.into();
+    /// If the call to [`parse_ipv4_host`] returns an error, that error is returned.
+    pub fn new_normalized<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
+        let addr = parse_ipv4_host(&value.into()).ok_or(InvalidIpv4Host)?;
+
         Ok(Self {
-            details: Ipv4Addr::from_str(&value).map_err(|_| InvalidIpv4Host)?.into(),
-            host: value
+            details: addr.into(),
+            host: addr.to_string().into(),
         })
     }
 

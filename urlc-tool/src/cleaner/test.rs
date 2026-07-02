@@ -61,12 +61,10 @@ pub struct Test {
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        let cleaner = Box::leak(Box::new(Cleaner::load_or_get_bundled(self.cleaner).unwrap())).borrowed();
+        let (_, cleaner ) = Cleaner       ::load_or_get_bundled(self.cleaner ).unwrap();
+        let (_, profiles) = ProfilesConfig::load_or_default    (self.profiles).unwrap();
 
-        let profiled_cleaner = ProfiledCleanerConfig {
-            cleaner,
-            profiles_config: self.profiles.map(ProfilesConfig::load_from_file).transpose().unwrap().unwrap_or_default()
-        }.make();
+        let profiled_cleaner = profiles.make(&cleaner);
 
         if self.assert_suitability {
             println!("Asserting suitability:");
@@ -75,8 +73,6 @@ impl Args {
 
             println!();
         }
-
-        let cleaner = profiled_cleaner.into_base();
 
         let test_suite: TestSuite = match self.test_suite {
             Some(path) => serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap(),
@@ -114,17 +110,18 @@ impl Args {
                 context: test_job.job_context,
                 cleaner,
                 unthreader: &Unthreader::Off,
+                secrets: &Default::default(),
                 cache,
-                http_client
+                http_client,
             };
 
             for test in test_job.tests {
                 println!("    {}", test.task);
 
-                let cleaned = job.r#do(test.task).unwrap();
+                let (_, cleaned) = job.r#do(test.task).unwrap();
                 assert_eq!(cleaned.to_string(), test.expect.to_string(), "Expectation failed.");
 
-                let recleaned = job.r#do(cleaned.clone()).unwrap();
+                let (_, recleaned) = job.r#do(cleaned.clone()).unwrap();
                 assert_eq!(recleaned.to_string(), cleaned.to_string(), "Idempotence failed.");
             }
 

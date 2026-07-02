@@ -2,8 +2,6 @@
 
 use std::io::Read;
 
-use reqwest::StatusCode;
-
 use crate::prelude::*;
 
 /// How to turn an HTTP response into a string to use.
@@ -69,7 +67,7 @@ pub enum HttpResponseHandler {
     ///
     /// If the suffix is found within [`Self::ExtractFromBody::limit`], returns the error [`HttpResponseHandlerError::SuffixNotFoundWithinLimit`].
     ExtractFromBody {
-        /// The [`BodyExtractors`].
+        /// The [`BodyExtractor`]s.
         extractors: Vec<BodyExtractor>,
         /// The max amount of bytes to read.
         ///
@@ -91,90 +89,25 @@ pub struct BodyExtractor {
     pub prefix      : StringSource,
     /// The suffix to look for.
     ///
-    /// Defaults to [`StringSource::None`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub suffix      : StringSource,
     /// If the prefix should be removed.
     ///
-    /// Defaults to [`FlagSource::False`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub strip_prefix: FlagSource,
     /// If the suffix should be removed.
     ///
-    /// Defaults to [`FlagSource::False`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub strip_suffix: FlagSource,
     /// The [`StringModification`] to apply to the extracted value.
     ///
-    /// Defaults to [`StringModification::None`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub parser      : StringModification,
 }
-
-/// The enum of errors [`HttpResponseHandler::handle`] can return.
-#[derive(Debug, Error)]
-pub enum HttpResponseHandlerError {
-    /// [`TryElseError`].
-    #[error(transparent)]
-    TryElseError(#[from] Box<TryElseError<Self>>),
-
-    /// [`std::string::FromUtf8Error`].
-    #[error(transparent)]
-    FromUtf8Error(#[from] std::string::FromUtf8Error),
-    /// [`std::str::Utf8Error`].
-    #[error(transparent)]
-    Utf8Error(#[from] std::str::Utf8Error),
-    /// [`std::io::Error`].
-    #[error(transparent)]
-    IoError(#[from] std::io::Error),
-
-    /// [`reqwest::Error`].
-    #[error(transparent)]
-    ReqwestError(#[from] reqwest::Error),
-
-    /// [`StringSourceError`].
-    #[error(transparent)]
-    StringSourceError(#[from] Box<StringSourceError>),
-    /// [`StringNotFound`].
-    #[error(transparent)]
-    StringNotFound(#[from] StringNotFound),
-    /// [`FlagSourceError`].
-    #[error(transparent)]
-    FlagSourceError(#[from] FlagSourceError),
-    /// [`StringModificationError`].
-    #[error(transparent)]
-    StringModificationError(#[from] Box<StringModificationError>),
-
-    /// Returned when no [`BodyExtractor::prefix`] is found within [`HttpResponseHandler::ExtractFromBody::limit`] bytes.
-    #[error("No BodyExtractor::prefix was found within HttpResponseHandler::ExtractFromBody::limit bytes.")]
-    PrefixNotFoundWithinLimit,
-    /// Returned when the [`BodyExtractor::suffix`] is found within [`HttpResponseHandler::ExtractFromBody::limit`] bytes.
-    #[error("The BodyExtractor::suffix wasn't found within HttpResponseHandler::ExtractFromBody::limit bytes.")]
-    SuffixNotFoundWithinLimit,
-    /// Returned when [`HttpResponseHandler::ExtractFromBody`] is used with zero extractors.
-    #[error("ExtractFromBody was used with zero extractors.")]
-    NoExtractors,
-
-    /// Returned when a 1xx status code is required but got [`Self::Required1xx::0`].
-    #[error("A 1xx status code was required but got {0}.")]
-    Required1xx(StatusCode),
-    /// Returned when a 2xx status code is required but got [`Self::Required2xx::0`].
-    #[error("A 2xx status code was required but got {0}.")]
-    Required2xx(StatusCode),
-    /// Returned when a 3xx status code is required but got [`Self::Required3xx::0`].
-    #[error("A 3xx status code was required but got {0}.")]
-    Required3xx(StatusCode),
-    /// Returned when a 4xx status code is required but got [`Self::Required4xx::0`].
-    #[error("A 4xx status code was required but got {0}.")]
-    Required4xx(StatusCode),
-    /// Returned when a 5xx status code is required but got [`Self::Required5xx::0`].
-    #[error("A 5xx status code was required but got {0}.")]
-    Required5xx(StatusCode)
-}
-
-impl From<StringModificationError> for HttpResponseHandlerError {fn from(value: StringModificationError) -> Self {Box::new(value).into()}}
-impl From<StringSourceError      > for HttpResponseHandlerError {fn from(value: StringSourceError      ) -> Self {Box::new(value).into()}}
-impl From<TryElseError<Self>     > for HttpResponseHandlerError {fn from(value: TryElseError<Self>     ) -> Self {Box::new(value).into()}}
 
 impl HttpResponseHandler {
     /// Handle the response.

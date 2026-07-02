@@ -1,48 +1,47 @@
 //! [`clean_url`].
 
-use poise::reply::CreateReply;
+use crate::*;
 
-use url_cleaner_engine::prelude::*;
+impl Bot {
+    /// The `clean_url` slash command.
+    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
+    pub async fn clean_url(&self, context: &Context, command: &CommandInteraction) {
+        let options = command.data.options();
 
-use crate::prelude::*;
+        let url = options.iter().find_map(|x| {
+            match x {
+                ResolvedOption {name: "url", value: ResolvedValue::String(url), ..} => Some(*url),
+                _ => None
+            }
+        }).expect("A URL");
 
-/// Autocomplete for [`clean_url`]'s `profile` field.
-async fn profile_autocomplete<'a>(ctx: Context<'a>, partial: &str) -> serenity::CreateAutocompleteResponse {
-    serenity::CreateAutocompleteResponse::new()
-        .set_choices(ctx.data().profiled_cleaner.names().filter(|name| name.to_lowercase().replace(" ", "").contains(&partial.to_lowercase().replace(" ", ""))).map(Into::into).collect())
-}
+        let profile = options.iter().find_map(|x| {
+            match x {
+                ResolvedOption {name: "profile", value: ResolvedValue::String(profile), ..} => Some(*profile),
+                _ => None
+            }
+        });
 
-/// Clean a single URL.
-#[poise::command(slash_command, install_context = "Guild|User")]
-pub async fn clean_url(
-    ctx: Context<'_>,
-    #[description = "The URL to clean."]
-    url: String,
-    #[description = "The name of a profile to use, if any are available."]
-    #[autocomplete = "profile_autocomplete"]
-    profile: Option<String>
-) -> Result<(), Error> {
-    match ctx.data().profiled_cleaner.get(profile.as_deref()) {
-        Some(cleaner) => {
-            let job = &Job {
-                context: Default::default(),
-                cleaner,
-                unthreader: &Unthreader::default(),
-                #[cfg(feature = "cache")]
-                cache: ctx.data().cache,
-                #[cfg(feature = "http")]
-                http_client: &ctx.data().http_client
-            };
+        let cleaner = self.profiled_cleaner.get(profile).expect("Only valid profiles to be accepted");
 
-            let ret = match job.r#do(&*url) {
-                Ok (x) => String::from(x),
-                Err(e) => format!("-{e:?}")
-            };
+        let response = CreateInteractionResponseMessage::new().ephemeral(true);
 
-            ctx.send(CreateReply::default().ephemeral(true).content(ret)).await?;
-        },
-        None => {ctx.send(CreateReply::default().ephemeral(true).content(format!("Unknown profile: {profile:?}"))).await?;}
+        let job = Job {
+            cleaner,
+            context    : Default::default(),
+            unthreader : &Default::default(),
+            secrets    : &self.secrets,
+            #[cfg(feature = "cache")]
+            cache      : self.cache,
+            #[cfg(feature = "http")]
+            http_client: &self.http_client
+        };
+
+        let response = match job.r#do(url) {
+            Ok ((_, url)) => response.content(String::from(url)),
+            Err(e       ) => response.content(format!("-{e:?}")),
+        };
+
+        command.create_response(&context.http, CreateInteractionResponse::Message(response)).await.expect("Sending the response to work.");
     }
-
-    Ok(())
 }

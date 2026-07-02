@@ -2,6 +2,8 @@
 
 use serde::{Serialize, Deserialize};
 
+use crate::prelude::*;
+
 /// Info about a URL Cleaner Site server.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Info {
@@ -9,6 +11,6 @@ pub struct Info {
     pub source_code: String,
     /// The version.
     pub version: String,
-    /// Whether or not you need a password to clean URLs.
-    pub password_required: bool
+    /// The [`AuthMode`].
+    pub auth_mode: AuthMode,
 }

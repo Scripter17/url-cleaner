@@ -1,4 +1,4 @@
-//! [`DomainSegments`].
+//! [`crate::prelude::DomainSegments`].
 
 mod encode;
 mod decode;

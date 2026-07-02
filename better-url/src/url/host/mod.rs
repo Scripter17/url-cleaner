@@ -20,11 +20,11 @@ impl BetterUrl {
         let host = self.host_str()?.into();
 
         Some(match self.host_details()? {
-             HostDetails::Domain(details) => DomainHost {host, details: details.clone()}.into(),
-            &HostDetails::Ipv4  (details) => Ipv4Host   {host, details                 }.into(),
-            &HostDetails::Ipv6  (details) => Ipv6Host   {host, details                 }.into(),
-            &HostDetails::Opaque(details) => OpaqueHost {host, details                 }.into(),
-            &HostDetails::Empty (_      ) => EmptyHost::default()                       .into(),
+            HostDetails::Domain(details) => DomainHost {host, details}.into(),
+            HostDetails::Ipv4  (details) => Ipv4Host   {host, details}.into(),
+            HostDetails::Ipv6  (details) => Ipv6Host   {host, details}.into(),
+            HostDetails::Opaque(details) => OpaqueHost {host, details}.into(),
+            HostDetails::Empty (_      ) => EmptyHost::default()      .into(),
         })
     }
 
@@ -101,23 +101,13 @@ impl BetterUrl {
 
 
     /// The [`HostDetails`].
-    pub fn host_details(&self) -> Option<&HostDetails> {
-        self.details.host.as_ref()
+    pub fn host_details(&self) -> Option<HostDetails> {
+        self.details.host
     }
 
     /// The [`DomainDetails`].
-    pub fn domain_details(&self) -> Option<&DomainDetails> {
-        self.host_details()?.as_domain()
-    }
-
-    /// The [`DomainPartsDetails`].
-    pub fn domain_parts_details(&self) -> Option<DomainPartsDetails> {
-        Some(self.domain_details()?.parts)
-    }
-
-    /// The domain's [`BidiDetails`].
-    pub fn domain_bidi_details(&self) -> Option<&BidiDetails> {
-        Some(&self.domain_details()?.bidi)
+    pub fn domain_details(&self) -> Option<DomainDetails> {
+        self.host_details()?.domain()
     }
 
     /// The [`Ipv4Details`].

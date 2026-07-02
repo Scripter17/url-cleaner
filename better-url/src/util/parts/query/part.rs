@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// [`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) encoding.
 pub fn encode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode(cow_str_to_bytes(value.into()), true, false, false, QUERY_PART)
+    percent_encode::<'_, _, true, false, false>(cow_str_to_bytes(value.into()), QUERY_PART)
 }
 
 /// Try to decode a [`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) encoded string.
@@ -43,7 +43,9 @@ pub fn decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, 
 pub fn decode_query_part_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, [u8]>) {
     let mut value = value.into();
 
-    if !value.contains(&b'%') && !value.contains(&b'+') {
+    // Technically `%XY` does nothing since X and Y aren't valid nibbles.
+    // Though that's rare and checking if each % is succeeded by 2 valid nibbles is expensive.
+    if !value.iter().any(|&b| b == b'%' || b == b'+') {
         return (false, value);
     }
 
@@ -65,7 +67,9 @@ pub fn decode_query_part_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, C
         j += 1;
     }
 
+    let changed = i != x.len();
+
     x.truncate(i);
 
-    (true, value)
+    (changed, value)
 }

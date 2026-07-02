@@ -35,8 +35,7 @@ from_infallible!(
     InvalidScheme, SetSchemeError,
     InvalidEmptyPath,
     InvalidHost, SetHostError,
-    InvalidDomainSegment, InvalidDomainSegments, SetDomainError,
-    SetBidiDetailsError
+    InvalidDomainSegment, InvalidDomainSegments, SetDomainError
 );
 
 #[cfg(test)]

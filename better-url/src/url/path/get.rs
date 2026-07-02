@@ -48,7 +48,7 @@ impl BetterUrl {
     pub fn segmented_path_str(&self) -> Option<&str> {
         let ret = self.path_str();
 
-        match ret.starts_with("/") {
+        match ret.starts_with('/') {
             true  => Some(ret),
             false => None,
         }
@@ -65,7 +65,7 @@ impl BetterUrl {
     pub fn opaque_path_str(&self) -> Option<&str> {
         let ret = self.path_str();
 
-        match ret.starts_with("/") {
+        match ret.starts_with('/') {
             true  => None,
             false => Some(ret),
         }
@@ -79,31 +79,31 @@ impl BetterUrl {
 
 
     /// The path segments as [`str`]s.
-    pub fn path_segment_strs(&self) -> impl DoubleEndedIterator<Item = &str> {
-        self.segmented_path_str().into_iter().flat_map(|x| x[1..].split('/'))
+    pub fn path_segment_strs(&self) -> Option<SplitSlashes<'_>> {
+        Some(SplitSlashes(Some(&self.segmented_path_str()?[1..])))
     }
 
     /// The path segments as [`PathSegment`]s.
-    pub fn path_segments(&self) -> impl DoubleEndedIterator<Item = PathSegment<'_>> {
+    pub fn path_segments(&self) -> Option<impl DoubleEndedIterator<Item = PathSegment<'_>>> {
         let r#type = self.scheme_type();
 
-        self.path_segment_strs().map(move |x| match r#type {
+        Some(self.path_segment_strs()?.map(move |x| match r#type {
             SchemeType::SpecialNotFile => SpecialNotFilePathSegment(x.into()).into(),
             SchemeType::File           => FilePathSegment          (x.into()).into(),
             SchemeType::NonSpecial     => NonSpecialPathSegment    (x.into()).into(),
-        })
+        }))
     }
 
 
 
     /// The `index`th path segment as a [`str`].
     pub fn path_segment_str(&self, index: isize) -> Option<&str> {
-        self.path_segment_strs().neg_nth(index)
+        self.path_segment_strs()?.neg_nth(index)
     }
 
     /// The `index`th [`PathSegment`].
     pub fn path_segment(&self, index: isize) -> Option<PathSegment<'_>> {
-        self.path_segments().neg_nth(index)
+        self.path_segments()?.neg_nth(index)
     }
 
 

@@ -3,14 +3,19 @@
 use crate::prelude::*;
 
 impl NonSpecialQuery<'_> {
+    /// [`SplitAmpersands`].
+    pub fn iter_strs(&self) -> SplitAmpersands<'_> {
+        SplitAmpersands(Some(&self.0))
+    }
+
     /// A [`DoubleEndedIterator`] of [`NonSpecialQuerySegment`]s.
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = NonSpecialQuerySegment<'_>> {
-        self.as_str().split('&').map(NonSpecialQuerySegment::new_unchecked)
+        self.iter_strs().map(NonSpecialQuerySegment::new_unchecked)
     }
 
     /// A [`DoubleEndedIterator`] of [`NonSpecialQuerySegment`]s whose [`NonSpecialQuerySegment::name`]s are `name`.
     pub fn find_iter<'b>(&'b self, name: &str) -> impl DoubleEndedIterator<Item = NonSpecialQuerySegment<'b>> {
-        self.iter().filter(move |x| x.name() == name)
+        self.iter().filter(move |segment| segment.name() == name)
     }
 
     /// Gets the `index`th [`NonSpecialQuerySegment`].

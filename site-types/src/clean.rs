@@ -10,6 +10,11 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct JobConfig {
+    /// The username to use.
+    ///
+    /// Defaults to [`None`].
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub username: Option<String>,
     /// The password to use.
     ///
     /// Defaults to [`None`].
@@ -20,7 +25,7 @@ pub struct JobConfig {
     /// Defaults to [`JobContext::default`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub context: JobContext,
-    /// The [`Profile`] to use.
+    /// The profile to use.
     ///
     /// Applied before [`Self::params_diff`].
     ///
@@ -65,5 +70,15 @@ pub struct JobConfig {
     ///
     /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub unthread: bool
+    pub unthread: bool,
+    /// If [`true`], enable brief unchanged mode.
+    ///
+    /// Defaults to false.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub brief_unchanged: bool,
+    /// If [`true`], enable brief unchanged mode.
+    ///
+    /// Defaults to false.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub brief_error: bool,
 }

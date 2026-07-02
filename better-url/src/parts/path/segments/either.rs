@@ -38,7 +38,7 @@ impl<'a> PathSegments<'a> {
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = PathSegment<'_>> {
         let r#type = self.r#type();
 
-        self.as_str().split('/').map(move |x| match r#type {
+        SplitSlashes(Some(self.as_str())).map(move |x| match r#type {
             SchemeType::SpecialNotFile => SpecialNotFilePathSegment(x.into()).into(),
             SchemeType::File           => FilePathSegment          (x.into()).into(),
             SchemeType::NonSpecial     => NonSpecialPathSegment    (x.into()).into(),

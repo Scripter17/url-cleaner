@@ -74,7 +74,7 @@ mod fragment;
 pub struct BetterUrl {
     /// The [`url::Url`].
     url: url::Url,
-    /// The [`Details`].
+    /// The [`UrlDetails`].
     details: UrlDetails,
 }
 
@@ -161,8 +161,9 @@ impl From<url::Url> for BetterUrl {
 
 
 
-impl From<BetterUrl> for url::Url {fn from(value: BetterUrl) -> Self {value.url}}
-impl From<BetterUrl> for String   {fn from(value: BetterUrl) -> Self {value.url.into()}}
+impl From<BetterUrl> for url::Url          {fn from(value: BetterUrl) -> Self {value.url}}
+impl From<BetterUrl> for String            {fn from(value: BetterUrl) -> Self {value.url.into()}}
+impl From<BetterUrl> for Cow<'static, str> {fn from(value: BetterUrl) -> Self {Self::Owned(value.into())}}
 
 impl PartialEq<str         > for BetterUrl {fn eq(&self, other: &str         ) -> bool {self.as_str() ==  other}}
 impl PartialEq<&str        > for BetterUrl {fn eq(&self, other: &&str        ) -> bool {self.as_str() == *other}}

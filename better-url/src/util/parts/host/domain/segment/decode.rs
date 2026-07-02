@@ -10,115 +10,161 @@ static NFC: ComposingNormalizerBorrowed = ComposingNormalizerBorrowed::new_nfc()
 /// the general category getter.
 static GC: CodePointMapDataBorrowed<GeneralCategory> = CodePointMapDataBorrowed::new();
 
-/// If `c` is [`GeneralCategoryGroup::Mark`].
-fn mark(c: char) -> bool {GeneralCategoryGroup::Mark.contains(GC.get(c))}
-
-/// [`uts46_normalize`] + [`decode_normalized_domain_segment`].
+/// Percent decode, UTS46 normalize, and decode a domain segment.
+///
+/// If you know the input is already percent decoded, see [`percent_decoded_domain_segment_to_unicode`].
 /// # Errors
-/// If the call to [`decode_normalized_domain_segment`] returns an error, that error is returned.
-pub fn decode_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, BidiDetail), InvalidDomainSegment> {
-    let (a, value             ) = uts46_normalize(value);
-    let (b, value, bidi_detail) = decode_normalized_domain_segment(value)?;
-    Ok((a || b, value, bidi_detail))
+/// If the call to [`try_percent_decode`], returns the error [`InvalidDomainSegment`].
+///
+/// If the call to [`normalized_domain_segment_to_unicode`] returns an error, that error is returned.
+pub fn domain_segment_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
+    let (a, value) = try_percent_decode(value).map_err(|_| InvalidDomainSegment)?;
+    let (b, value) = percent_decoded_domain_segment_to_unicode(value)?;
+    Ok((a || b, value))
 }
 
-/// [UTS46 processing](https://www.unicode.org/reports/tr46/#Processing) step 4.
+/// UTS46 normalize and decode a percent decoded domain segment.
 ///
-/// Steps 1 and 2 are done by [`uts46_normalize`] and step 3 is irrelevant because this handles only one segment.
+/// If you know the input is already UTS46 normalized, see [`normalized_domain_segment_to_unicode`].
 /// # Errors
-/// If `value` starts with `xn--`:
-///
-/// - If the call to [`decode_punycode`] returns an error, returns the error [`InvalidDomainSegment`].
-///
-/// - If the decoded value is either empty or all ASCII, returns the error [`InvalidDomainSegment`].
-///
-/// - If the decoded value contains a U+FFFD, returns the error [`InvalidDomainSegment`].
-///
-/// - If the decoded value is changed by UTS46 normalization, returns the error [`InvalidDomainSegment`].
-///
-/// If the decoded value starts with a [`GeneralCategoryGroup::Mark`], returns the error [`InvalidDomainSegment`].
-///
-/// If the call to [`validate_domain_segment_joiners`] returns [`false`], reutrns the error [`InvalidDomainSegment`].
-///
-/// If the call to [`BidiDetail::parse`] returns an error, that error is returend.
-pub fn decode_normalized_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, BidiDetail), InvalidDomainSegment> {
-    let mut value = value.into();
-    let mut changed = false;
+/// If the call to [`normalized_domain_segment_to_unicode`] returns an error, that error is returned.
+pub fn percent_decoded_domain_segment_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
+    let (a, value) = uts46_map_normalize(value);
+    let (b, value) = normalized_domain_segment_to_unicode(value)?;
+    Ok((a || b, value))
+}
 
-    // All segments matching the regex `|[a-z][a-z0-9]*` are valid and LTR.
-    // Domains consisting entirely of these segments are very common.
+/// Decode a percent decoded and UTS46 normalized domain segment.
+///
+/// Specifically, [UTS46 processing](https://www.unicode.org/reports/tr46/#Processing) step 4.
+/// # Errors
+/// If the call to [`has_forbidden_domain_segment_byte`] returns [`true`], returns the error [`InvalidDomainSegment`].
+///
+/// If `value` starts with `xn--` and the call to [`domain_segment_decode_punycode`] returns an error *and* `value` is not ASCII, that error is returned.
+///
+/// If `value` does not start with `xn--`, is not ASCII, and [`mostly_validate_domain_segment_unicode`] returns [`false`], returns the error [`InvalidDomainSegment`].
+pub fn normalized_domain_segment_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
+    let value = value.into();
 
-    let mut bytes = value.bytes();
-
-    if matches!(bytes.next(), None | Some(b'a'..=b'z')) && bytes.all(|b| matches!(b, b'a'..=b'z' | b'0'..=b'9')) {
-        return Ok((false, value, BidiDetail::Ltr));
-    }
-
-    if !validate_domain_segment_bytes(&value) {
+    if !has_forbidden_domain_segment_byte(&value) {
         Err(InvalidDomainSegment)?;
     }
 
     if let Some(punycode) = value.strip_prefix("xn--") {
-        // If `punycode` is non-ASCII, violating 4.1, [`decode_punycode`] will return an error.
-        // If `punycode` is empty, its decoding will be empty, violating 4.3.
-        // If `punycode` is non-ASCII and ends in a `-`, it violates 4.1 anyway, so a false positive for violating 4.3 is fine.
-        // If `punycode` is ASCII and ends in a `-`, its output will be ASCII, violating 4.3.
-
-        if punycode.ends_with('-') || punycode.is_empty() {
-            Err(InvalidDomainSegment)?;
+        match domain_segment_decode_punycode(punycode) {
+            Ok (x)                     => Ok((true , x.into())),
+            Err(_) if value.is_ascii() => Ok((false, value   )),
+            Err(e)                     => Err(e)
         }
-
-        value = decode_punycode(punycode).map_err(|InvalidPunycode| InvalidDomainSegment)?.into();
-
-        // TODO: Does every codepoint being [`idna_valid`] imply it's normalized?
-        // If so, this can be removed.
-        if !NFC.is_normalized(&value) {
-            Err(InvalidDomainSegment)?;
-        }
-
-        if value.starts_with("xn--") {
-            Err(InvalidDomainSegment)?;
-        }
-
-        changed = true;
+    } else if value.is_ascii() || mostly_validate_domain_segment_unicode(&value) {
+        Ok((false, value))
+    } else {
+        Err(InvalidDomainSegment)
     }
-
-    // `changed` being [`true`] means punycode was decoded and thus `value` can't be ASCII.
-    // `value` being ASCII means none of these can happen.
-    if changed || !value.is_ascii() {
-        if value.starts_with(mark) {
-            Err(InvalidDomainSegment)?;
-        }
-
-        if value.contains(|c| !idna_valid(c)) {
-            Err(InvalidDomainSegment)?;
-        }
-
-        if !validate_domain_segment_joiners(&value) {
-            Err(InvalidDomainSegment)?;
-        }
-    }
-
-    let bidi_detail = value.parse()?;
-
-    Ok((changed, value, bidi_detail))
 }
 
-/// If every ASCII byte in `value` is not in [`FORBIDDEN_DOMAIN_HOST`].
-fn validate_domain_segment_bytes(value: &str) -> bool {
-    !value.bytes().any(|b| b.is_ascii() && FORBIDDEN_DOMAIN_SEGMENT.contains(b))
-}
 
-/// [`decode_normalized_domain_segment`] without doing any validity checks.
+
+/// Strictly decode a percent decoded and UTS46 normalized domain segment.
 ///
-/// Notably also skips making a [`BidiDetail`].
+/// Specifically, [UTS46 processing](https://www.unicode.org/reports/tr46/#Processing) step 4.
+///
+/// Note that because [`BidiDetail::parse`] returning an error makes a segment invalid, this also returns any non-error result of [`BidiDetail::parse`].
+/// # Errors
+/// If the call to [`has_forbidden_domain_segment_byte`] returns [`true`], returns the error [`InvalidDomainSegment`].
+///
+/// If `value` starts with `xn--` and  the call to [`domain_segment_decode_punycode`] returns an error, that error is returned.
+///
+/// If `value` does not start with `xn--`, is not ASCII, and the call to [`mostly_validate_domain_segment_unicode`] returns false, returns the error [`InvalidDomainSegment`].
+///
+/// If the call to [`BidiDetail::parse`] returns an error, that error is returned.
+pub fn strict_normalized_domain_segment_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, BidiDetail), InvalidDomainSegment> {
+    let mut value = value.into();
+
+    if has_forbidden_domain_segment_byte(&value) {
+        Err(InvalidDomainSegment)?;
+    }
+
+    if let Some(punycode) = value.strip_prefix("xn--") {
+        value = domain_segment_decode_punycode(punycode)?.into();
+        let bidi_detail = value.parse()?;
+
+        Ok((true, value, bidi_detail))
+    } else if value.is_ascii() || mostly_validate_domain_segment_unicode(&value) {
+        let bidi_detail = value.parse()?;
+
+        Ok((false, value, bidi_detail))
+    } else {
+        Err(InvalidDomainSegment)
+    }
+}
+
+
+
+/// Uncheckedly decode a percent decoded and normalized domain segment.
 /// # Panics
-/// Currently panics if [`decode_punycode`] returns an error. TODO: Fix that.
-pub fn decode_normalized_domain_segment_unchecked<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+/// If [`decode_punycode`] returns an error, panics.
+pub fn unchecked_normalized_domain_segment_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let value = value.into();
 
     match value.strip_prefix("xn--") {
-        Some(punycode) => (true , decode_punycode(punycode).expect("To be given valid punycode").into()),
-        None           => (false, value)
+        Some(punycode) => match decode_punycode(punycode) {
+            Ok(decoded) => (true, decoded.into()),
+            Err(_) if value.is_ascii() => (false, value),
+            Err(_) => panic!("normalized_domain_segment_unchecked_to_unicode was given invalid punycode: {punycode:?}.")
+        },
+        None => (false, value)
     }
 }
+
+
+
+/// If every ASCII byte in `value` is not in [`FORBIDDEN_DOMAIN_SEGMENT`].
+pub fn has_forbidden_domain_segment_byte(value: &str) -> bool {
+    value.bytes().any(|b| b.is_ascii() && FORBIDDEN_DOMAIN_SEGMENT.contains(b))
+}
+
+/// [`decode_punycode`] with extra checks to ensure it's valid in a domain segment.
+/// # Errors
+/// If `value` ends in `-` or is empty, returns the error [`InvalidDomainSegment`].
+///
+/// If the call to [`decode_punycode`] returns an error, returns the error [`InvalidDomainSegment`].
+///
+/// If the call to [`mostly_validate_domain_segment_unicode`] returns an error, returns the error [`InvalidDomainSegment`].
+pub fn domain_segment_decode_punycode(value: &str) -> Result<String, InvalidDomainSegment> {
+    // If `value` is non-ASCII, violating 4.1, [`decode_punycode`] will return an error.
+    // If `value` is empty, its decoding will be empty, violating 4.3.
+    // If `value` is non-ASCII and ends in a `-`, it violates 4.1 anyway, so a false positive for violating 4.3 is fine.
+    // If `value` is ASCII and ends in a `-`, its output will be ASCII, violating 4.3.
+
+    if value.ends_with('-') || value.is_empty() {
+        Err(InvalidDomainSegment)?;
+    }
+
+    let decoded = decode_punycode(value).map_err(|InvalidPunycode| InvalidDomainSegment)?;
+
+    if !mostly_validate_domain_segment_unicode(&decoded) {
+        Err(InvalidDomainSegment)?;
+    }
+
+    Ok(decoded)
+}
+
+/// If `value` is a valid unicode decoded domain segment.
+///
+/// Specifically, [validity criteria](https://www.unicode.org/reports/tr46/#Validity_Criteria) 1, 4, 5, 6, 7.2, and 8.
+///
+/// 9 is done by [`BidiDetail`] as needed.
+///
+/// See [`idna_invalid`] for details on 7.2 and [`validate_domain_segment_joiners`] for details on 8.
+pub fn mostly_validate_domain_segment_unicode(value: &str) -> bool {
+    NFC.is_normalized(value)
+        && !value.starts_with("xn--")
+        && !value.contains('.')
+        && !value.starts_with(mark)
+        && !value.contains(idna_invalid)
+        && validate_domain_segment_joiners(value)
+}
+
+/// If `c` is [`GeneralCategoryGroup::Mark`].
+fn mark(c: char) -> bool {GeneralCategoryGroup::Mark.contains(GC.get(c))}

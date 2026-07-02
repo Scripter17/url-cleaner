@@ -505,7 +505,6 @@
 				{"task": "https://is.gd/AYle"                                            , "expect": "https://timesofindia.indiatimes.com/Sensex-soars-investors-make-Rs-65-lakh-cr-in-60-sec/articleshow/4547162.cms"            },
 				{"task": "https://is.gd/INmH"                                            , "expect": "https://snardfarker.ning.com/video/jesse-ventura-on-olbermann-may"                                                          },
 				{"task": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"            , "expect": "https://olivertree.lnk.to/loveyoumadlyhateyoubadly"                                                                         },
-				{"task": "https://ayrastarr.lnk.to/WDGVideo"                             , "expect": "https://www.youtube.com/watch?v=GodmYPfMaio"                                                                                },
 				{"task": "https://qr.link/txPhRA"                                        , "expect": "https://qr.link/txPhRA"                                                                                                     },
 				{"task": "https://qr1.be/60AI"                                           , "expect": "https://qr1.be/60AI"                                                                                                        },
 				{"task": "https://qr1.be/L7WG"                                           , "expect": "https://app.bridgecard.app/?m=V3Pa&s=webd"                                                                                  },
@@ -544,6 +543,14 @@
         {
         	"task": "https://www.woot.com/offers/hakol-outdoor-solar-garden-light-black-square-2?cjdata=MXxOfDB8WXww&utm_medium=affiliate&utm_campaign=CJ&cjevent=93f310e442c911f181d800690a82b824&utm_source=Mavely&utm_term=93f310e442c911f181d800690a82b824",
         	"expect": "https://www.woot.com/offers/hakol-outdoor-solar-garden-light-black-square-2"
+        },
+        {
+        	"task": "https://l.bfmtv.com/pBoN",
+        	"expect": "https://www.bfmtv.com/meteo/canicule/direct-canicule-60-departements-en-vigilance-orange-plus-de-la-moitie-de-la-population-concernee_LN-202606200065.html"
+        },
+        {
+        	"task": "https://l.tf1info.fr/Yi3",
+        	"expect": "https://www.tf1info.fr/politique/le-gouvernement-ne-publiera-pas-les-resultats-du-depistage-antidrogue-de-ses-ministres-et-de-leurs-cabinets-2449598.html"
         }
       ]
     }

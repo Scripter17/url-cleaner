@@ -31,12 +31,12 @@ impl<'a> QuerySegment<'a> {
         value.into().into()
     }
 
-    /// [`Self::NonSpec`].
+    /// [`Self::NonSpecial`].
     pub fn new_non_special<T: Into<NonSpecialQuerySegment<'a>>>(value: T) -> Self {
         value.into().into()
     }
 
-    /// [`Self::Fragmen`].
+    /// [`Self::Fragment`].
     pub fn new_fragment<T: Into<FragmentQuerySegment<'a>>>(value: T) -> Self {
         value.into().into()
     }

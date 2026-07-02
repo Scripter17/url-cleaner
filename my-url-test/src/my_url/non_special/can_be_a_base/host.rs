@@ -1,49 +1,28 @@
+//! Host.
+
 use crate::prelude::*;
 
 impl MyUrl {
+    /// Make a new non-special [`Self`] that can be a base and has a host. 
     pub(super) fn new_can_be_a_base_host(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
-        let (auth, rest) = match rest.bytes().position(|b| b == b'/' || b == b'?' || b == b'#') {
+        let (auth, pqf) = match rest.bytes().position(|b| b == b'/' || b == b'?' || b == b'#') {
             Some(i) => (&rest[..i], &rest[i..]),
             None    => (rest, ""),
         };
 
-        let (userinfo, hostport) = match auth.split_once('@') {
-            Some((userinfo, hostport)) => (userinfo, hostport),
-            None                       => (""      , auth    ),
-        };
+        let (userinfo, host, port) = split_auth(auth);
+        let (path, query, fragment) = split_pqf(pqf);
 
-        let (host, port) = match hostport.split_once(':') {
-            Some((host, port)) => (host    , Some(port)),
-            None               => (hostport, None      ),
-        };
+        if host.is_empty() && (userinfo.is_some() || port.is_some()) {
+            Err(InvalidUrl::Other)?;
+        }
 
-        let (path, rest) = match rest.bytes().position(|b| b == b'?' || b == b'#') {
-            Some(i) => (&rest[..i], &rest[i..]),
-            None    => (rest, ""),
-        };
-
-        let (query, fragment) = match rest.strip_prefix('?') {
-            Some(rest) => match rest.split_once('#') {
-                Some((query, fragment)) => (Some(query), Some(fragment)),
-                None                    => (Some(rest ), None          ),
-            },
-            None => (None, rest.strip_prefix('#'))
-        };
-
-
-
-        let userinfo = Userinfo ::new       (userinfo) ;
-        let host     = Host     ::new_opaque(host    ).map_err(InvalidHost::from)?;
-        let port     = MaybePort::new       (port    )?;
-
-        let path = Path::new_non_special(path);
-
-        let query = match scheme.r#type() {
-            SchemeType::File | SchemeType::SpecialNotFile => MaybeQuery::new_special    (query),
-            SchemeType::NonSpecial                        => MaybeQuery::new_non_special(query),
-        };
-
-        let fragment = MaybeFragment::new(fragment);
+        let host     = NonSpecialHost      ::new(host                        )?;
+        let userinfo = Userinfo            ::new(userinfo.unwrap_or_default()) ;
+        let port     = MaybePort           ::new(port                        )?;
+        let path     = NonSpecialPath      ::new(path                        ) ;
+        let query    = MaybeNonSpecialQuery::new(query                       ) ;
+        let fragment = MaybeFragment       ::new(fragment                    ) ;
 
 
         let scheme_end   = scheme.len();

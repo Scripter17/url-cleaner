@@ -19,52 +19,68 @@ use crate::prelude::*;
 /// ```
 #[derive(Debug, Clone)]
 pub enum Host<'a> {
-    /// [`DomainHost`].
-    Domain(DomainHost<'a>),
-    /// [`Ipv4Host`].
-    Ipv4(Ipv4Host<'a>),
-    /// [`Ipv6Host`].
-    Ipv6(Ipv6Host<'a>),
-    /// [`OpaqueHost`].
-    Opaque(OpaqueHost<'a>),
-    /// [`EmptyHost`].
-    Empty(EmptyHost<'a>),
+    /** [`DomainHost`]. **/ Domain(DomainHost<'a>),
+    /** [`Ipv4Host`].   **/ Ipv4  (Ipv4Host  <'a>),
+    /** [`Ipv6Host`].   **/ Ipv6  (Ipv6Host  <'a>),
+    /** [`OpaqueHost`]. **/ Opaque(OpaqueHost<'a>),
+    /** [`EmptyHost`].  **/ Empty (EmptyHost <'a>),
 }
 
 impl<'a> Host<'a> {
     /// Make a new [`Self::Domain`].
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
-    pub fn new_domain<T: TryInto<DomainHost<'a>>>(host: T) -> Result<Self, T::Error> {
-        host.try_into().map(Into::into)
+    pub fn new_file<T: TryInto<FileHost<'a>>>(value: T) -> Result<Self, T::Error> {
+        Ok(value.try_into()?.into())
+    }
+
+    /// Make a new [`Self::Domain`].
+    /// # Errors
+    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    pub fn new_special_not_file<T: TryInto<SpecialNotFileHost<'a>>>(value: T) -> Result<Self, T::Error> {
+        Ok(value.try_into()?.into())
+    }
+
+    /// Make a new [`Self::Domain`].
+    /// # Errors
+    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    pub fn new_non_special<T: TryInto<NonSpecialHost<'a>>>(value: T) -> Result<Self, T::Error> {
+        Ok(value.try_into()?.into())
+    }
+
+    /// Make a new [`Self::Domain`].
+    /// # Errors
+    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    pub fn new_domain<T: TryInto<DomainHost<'a>>>(value: T) -> Result<Self, T::Error> {
+        value.try_into().map(Into::into)
     }
 
     /// Make a new [`Self::Ipv4`].
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
-    pub fn new_ipv4<T: TryInto<DomainHost<'a>>>(host: T) -> Result<Self, T::Error> {
-        host.try_into().map(Into::into)
+    pub fn new_ipv4<T: TryInto<DomainHost<'a>>>(value: T) -> Result<Self, T::Error> {
+        value.try_into().map(Into::into)
     }
 
     /// Make a new [`Self::Ipv6`].
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
-    pub fn new_ipv6<T: TryInto<Ipv6Host<'a>>>(host: T) -> Result<Self, T::Error> {
-        host.try_into().map(Into::into)
+    pub fn new_ipv6<T: TryInto<Ipv6Host<'a>>>(value: T) -> Result<Self, T::Error> {
+        value.try_into().map(Into::into)
     }
 
     /// Make a new [`Self::Opaque`].
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
-    pub fn new_opaque<T: TryInto<OpaqueHost<'a>>>(host: T) -> Result<Self, T::Error> {
-        host.try_into().map(Into::into)
+    pub fn new_opaque<T: TryInto<OpaqueHost<'a>>>(value: T) -> Result<Self, T::Error> {
+        value.try_into().map(Into::into)
     }
 
     /// Make a new [`Self::Empty`].
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
-    pub fn new_empty<T: TryInto<EmptyHost<'a>>>(host: T) -> Result<Self, T::Error> {
-        host.try_into().map(Into::into)
+    pub fn new_empty<T: TryInto<EmptyHost<'a>>>(value: T) -> Result<Self, T::Error> {
+        value.try_into().map(Into::into)
     }
 
     /// The host.
@@ -81,7 +97,7 @@ impl<'a> Host<'a> {
     /// The [`HostDetails`].
     pub fn details(&self) -> HostDetails {
         match self {
-            Self::Domain(x) => x.details().clone().into(),
+            Self::Domain(x) => x.details().into(),
             Self::Ipv4  (x) => x.details().into(),
             Self::Ipv6  (x) => x.details().into(),
             Self::Opaque(x) => x.details().into(),
@@ -126,163 +142,42 @@ impl<'a> Host<'a> {
 
 
 
-    /// If it's [`Self::Domain`].
-    pub fn is_domain(&self) -> bool {
-        matches!(self, Self::Domain(_))
-    }
-
-    /// If it's [`Self::Ipv4`].
-    pub fn is_ipv4(&self) -> bool {
-        matches!(self, Self::Ipv4(_))
-    }
-
-    /// If it's [`Self::Ipv6`].
-    pub fn is_ipv6(&self) -> bool {
-        matches!(self, Self::Ipv6(_))
-    }
-
-    /// If it's [`Self::Opaque`].
-    pub fn is_opaque(&self) -> bool {
-        matches!(self, Self::Opaque(_))
-    }
+    /** If it's [`Self::Domain`]. **/ pub fn is_domain(&self) -> bool {matches!(self, Self::Domain(_))}
+    /** If it's [`Self::Ipv4`].   **/ pub fn is_ipv4  (&self) -> bool {matches!(self, Self::Ipv4  (_))}
+    /** If it's [`Self::Ipv6`].   **/ pub fn is_ipv6  (&self) -> bool {matches!(self, Self::Ipv6  (_))}
+    /** If it's [`Self::Opaque`]. **/ pub fn is_opaque(&self) -> bool {matches!(self, Self::Opaque(_))}
 
     // [`Self::is_empty`] is added by [`as_str_impls`].
 
 
 
-    /// Borrow the [`DomainHost`].
-    pub fn as_domain(&self) -> Option<DomainHost<'_>> {
-        self.borrowed().domain()
-    }
-
-    /// Borrow the [`Ipv4Host`].
-    pub fn as_ipv4(&self) -> Option<Ipv4Host<'_>> {
-        self.borrowed().ipv4()
-    }
-
-    /// Borrow the [`Ipv6Host`].
-    pub fn as_ipv6(&self) -> Option<Ipv6Host<'_>> {
-        self.borrowed().ipv6()
-    }
-
-    /// Borrow the [`OpaqueHost`].
-    pub fn as_opaque(&self) -> Option<OpaqueHost<'_>> {
-        self.borrowed().opaque()
-    }
-
-    /// Borrow the [`EmptyHost`].
-    pub fn as_empty(&self) -> Option<EmptyHost<'_>> {
-        self.borrowed().empty()
-    }
+    /** Borrow the [`DomainHost`]. **/ pub fn as_domain(&self) -> Option<DomainHost<'_>> {self.borrowed().domain()}
+    /** Borrow the [`Ipv4Host`].   **/ pub fn as_ipv4  (&self) -> Option<Ipv4Host  <'_>> {self.borrowed().ipv4  ()}
+    /** Borrow the [`Ipv6Host`].   **/ pub fn as_ipv6  (&self) -> Option<Ipv6Host  <'_>> {self.borrowed().ipv6  ()}
+    /** Borrow the [`OpaqueHost`]. **/ pub fn as_opaque(&self) -> Option<OpaqueHost<'_>> {self.borrowed().opaque()}
+    /** Borrow the [`EmptyHost`].  **/ pub fn as_empty (&self) -> Option<EmptyHost <'_>> {self.borrowed().empty ()}
 
 
-
-    /// The [`DomainHost`].
-    pub fn domain(self) -> Option<DomainHost<'a>> {
-        self.try_into().ok()
-    }
-
-    /// The [`Ipv4Host`].
-    pub fn ipv4(self) -> Option<Ipv4Host<'a>> {
-        self.try_into().ok()
-    }
-
-    /// The [`Ipv6Host`].
-    pub fn ipv6(self) -> Option<Ipv6Host<'a>> {
-        self.try_into().ok()
-    }
-
-    /// The [`OpaqueHost`].
-    pub fn opaque(self) -> Option<OpaqueHost<'a>> {
-        self.try_into().ok()
-    }
-
-    /// The [`EmptyHost`].
-    pub fn empty(self) -> Option<EmptyHost<'a>> {
-        self.try_into().ok()
-    }
+    /** The [`DomainHost`]. **/ pub fn domain(self) -> Option<DomainHost<'a>> {self.try_into().ok()}
+    /** The [`Ipv4Host`].   **/ pub fn ipv4  (self) -> Option<Ipv4Host  <'a>> {self.try_into().ok()}
+    /** The [`Ipv6Host`].   **/ pub fn ipv6  (self) -> Option<Ipv6Host  <'a>> {self.try_into().ok()}
+    /** The [`OpaqueHost`]. **/ pub fn opaque(self) -> Option<OpaqueHost<'a>> {self.try_into().ok()}
+    /** The [`EmptyHost`].  **/ pub fn empty (self) -> Option<EmptyHost <'a>> {self.try_into().ok()}
 
 
+    /** The [`DomainHost::prefix_str`]. **/ pub fn domain_prefix_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().prefix_range()?])}
+    /** The [`DomainHost::middle_str`]. **/ pub fn domain_middle_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().middle_range()?])}
+    /** The [`DomainHost::suffix_str`]. **/ pub fn domain_suffix_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().suffix_range() ])}
+    /** The [`DomainHost::labels_str`]. **/ pub fn domain_labels_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().labels_range() ])}
+    /** The [`DomainHost::origin_str`]. **/ pub fn domain_origin_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().origin_range()?])}
+    /** The [`DomainHost::normal_str`]. **/ pub fn domain_normal_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().normal_range() ])}
 
-    /// The [`DomainHost::prefix_str`].
-    pub fn domain_prefix_str(&self) -> Option<&str> {
-        Some(&self.as_str()[self.as_domain()?.parts_details().prefix_range()?])
-    }
-
-    /// The [`DomainHost::middle_str`].
-    pub fn domain_middle_str(&self) -> Option<&str> {
-        Some(&self.as_str()[self.as_domain()?.parts_details().middle_range()?])
-    }
-
-    /// The [`DomainHost::suffix_str`].
-    pub fn domain_suffix_str(&self) -> Option<&str> {
-        Some(&self.as_str()[self.as_domain()?.parts_details().suffix_range() ])
-    }
-
-    /// The [`DomainHost::labels_str`].
-    pub fn domain_labels_str(&self) -> Option<&str> {
-        Some(&self.as_str()[self.as_domain()?.parts_details().labels_range() ])
-    }
-
-    /// The [`DomainHost::origin_str`].
-    pub fn domain_origin_str(&self) -> Option<&str> {
-        Some(&self.as_str()[self.as_domain()?.parts_details().origin_range()?])
-    }
-
-    /// The [`DomainHost::normal_str`].
-    pub fn domain_normal_str(&self) -> Option<&str> {
-        Some(&self.as_str()[self.as_domain()?.parts_details().normal_range() ])
-    }
-
-
-
-    /// The [`DomainHost::prefix`].
-    pub fn domain_prefix(&self) -> Option<DomainSegments<'_>> {
-        Some(DomainSegments {
-            segments    : self.domain_prefix_str()?.into(),
-            bidi_details: self.as_domain()?.prefix_bidi_details()?.into()
-        })
-    }
-
-    /// The [`DomainHost::middle`].
-    pub fn domain_middle(&self) -> Option<DomainSegment<'_>> {
-        Some(DomainSegment {
-            segment    : self.domain_middle_str()?.into(),
-            bidi_detail: self.as_domain()?.middle_bidi_detail()?
-        })
-    }
-
-    /// The [`DomainHost::suffix`].
-    pub fn domain_suffix(&self) -> Option<DomainSegments<'_>> {
-        Some(DomainSegments {
-            segments    : self.domain_suffix_str()?.into(),
-            bidi_details: self.as_domain()?.suffix_bidi_details().into()
-        })
-    }
-
-    /// The [`DomainHost::labels`].
-    pub fn domain_labels(&self) -> Option<DomainSegments<'_>> {
-        Some(DomainSegments {
-            segments    : self.domain_labels_str()?.into(),
-            bidi_details: self.as_domain()?.labels_bidi_details().into()
-        })
-    }
-
-    /// The [`DomainHost::origin`].
-    pub fn domain_origin(&self) -> Option<DomainSegments<'_>> {
-        Some(DomainSegments {
-            segments    : self.domain_origin_str()?.into(),
-            bidi_details: self.as_domain()?.origin_bidi_details()?.into()
-        })
-    }
-
-    /// The [`DomainHost::normal`].
-    pub fn domain_normal(&self) -> Option<DomainSegments<'_>> {
-        Some(DomainSegments {
-            segments    : self.domain_normal_str()?.into(),
-            bidi_details: self.as_domain()?.normal_bidi_details().into()
-        })
-    }
+    /** The [`DomainHost::prefix`]. **/ pub fn domain_prefix(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_prefix_str()?.into()))}
+    /** The [`DomainHost::middle`]. **/ pub fn domain_middle(&self) -> Option<DomainSegment <'_>> {Some(DomainSegment (self.domain_middle_str()?.into()))}
+    /** The [`DomainHost::suffix`]. **/ pub fn domain_suffix(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_suffix_str()?.into()))}
+    /** The [`DomainHost::labels`]. **/ pub fn domain_labels(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_labels_str()?.into()))}
+    /** The [`DomainHost::origin`]. **/ pub fn domain_origin(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_origin_str()?.into()))}
+    /** The [`DomainHost::normal`]. **/ pub fn domain_normal(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_normal_str()?.into()))}
 }
 
 impl<'a> TryFrom<Cow<'a, str>> for Host<'a> {
@@ -312,6 +207,37 @@ impl<'a> From<IpHost<'a>> for Host<'a> {
         match value {
             IpHost::V4(x) => x.into(),
             IpHost::V6(x) => x.into(),
+        }
+    }
+}
+
+impl<'a> From<FileHost<'a>> for Host<'a> {
+    fn from(value: FileHost<'a>) -> Self {
+        match value {
+            FileHost::Domain(x) => x.into(),
+            FileHost::Ipv4  (x) => x.into(),
+            FileHost::Ipv6  (x) => x.into(),
+            FileHost::Empty (x) => x.into(),
+        }
+    }
+}
+
+impl<'a> From<SpecialNotFileHost<'a>> for Host<'a> {
+    fn from(value: SpecialNotFileHost<'a>) -> Self {
+        match value {
+            SpecialNotFileHost::Domain(x) => x.into(),
+            SpecialNotFileHost::Ipv4  (x) => x.into(),
+            SpecialNotFileHost::Ipv6  (x) => x.into(),
+        }
+    }
+}
+
+impl<'a> From<NonSpecialHost<'a>> for Host<'a> {
+    fn from(value: NonSpecialHost<'a>) -> Self {
+        match value {
+            NonSpecialHost::Ipv6  (x) => x.into(),
+            NonSpecialHost::Opaque(x) => x.into(),
+            NonSpecialHost::Empty (x) => x.into(),
         }
     }
 }

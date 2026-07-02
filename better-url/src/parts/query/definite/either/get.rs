@@ -14,6 +14,11 @@ enum QueryType {
 }
 
 impl Query<'_> {
+    /// [`SplitAmpersands`].
+    pub fn iter_strs(&self) -> SplitAmpersands<'_> {
+        SplitAmpersands(Some(self.as_str()))
+    }
+
     /// The [`QueryType`].
     fn r#type(&self) -> QueryType {
         match self {
@@ -27,7 +32,7 @@ impl Query<'_> {
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = QuerySegment<'_>> {
         let r#type = self.r#type();
 
-        self.as_str().split('&').map(move |x| match r#type {
+        self.iter_strs().map(move |x| match r#type {
             QueryType::Special    => SpecialQuerySegment   ::new_unchecked(x).into(),
             QueryType::NonSpecial => NonSpecialQuerySegment::new_unchecked(x).into(),
             QueryType::Fragment   => FragmentQuerySegment  ::new_unchecked(x).into(),

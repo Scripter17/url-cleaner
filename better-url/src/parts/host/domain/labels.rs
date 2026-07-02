@@ -3,44 +3,33 @@
 use crate::prelude::*;
 
 impl DomainHost<'_> {
-    /// [`DomainPartsDetails::has_labels`].
+    /// [`DomainDetails::has_labels`].
     pub fn has_labels(&self) -> bool {
-        self.details.parts.has_labels()
+        self.details.has_labels()
     }
 
 
 
     /// The labels as a [`str`].
     pub fn labels_str(&self) -> &str {
-        &self.host[self.details.parts.labels_range()]
-    }
-
-    /// The [`BidiDetailsIter`] of the labels.
-    pub fn labels_bidi_details(&self) -> BidiDetailsIter<'_> {
-        self.details.labels_bidi_details()
+        &self.host[self.details.labels_range()]
     }
 
     /// The labels as a [`DomainSegments`].
     pub fn labels(&self) -> DomainSegments<'_> {
-        DomainSegments {
-            segments    : self.labels_str         ().into(),
-            bidi_details: self.labels_bidi_details().into(),
-        }
+        DomainSegments(self.labels_str().into())
     }
 
 
 
     /// The labels segments as [`str`]s.
-    pub fn labels_segment_strs(&self) -> std::str::Split<'_, char> {
-        self.labels_str().split('.')
+    pub fn labels_segment_strs(&self) -> SplitDots<'_> {
+        SplitDots(Some(self.labels_str()))
     }
 
     /// The labels segments as [`DomainSegment`]s.
     pub fn labels_segments(&self) -> DomainSegmentsIter<'_> {
-        DomainSegmentsIter {
-            segments    : self.labels_segment_strs(),
-            bidi_details: self.labels_bidi_details(),
-        }
+        DomainSegmentsIter(self.labels_segment_strs())
     }
 
 
@@ -48,11 +37,6 @@ impl DomainHost<'_> {
     /// The `index`th labels segment as a [`str`].
     pub fn labels_segment_str(&self, index: isize) -> Option<&str> {
         self.labels_segment_strs().neg_nth(index)
-    }
-
-    /// The `index`th [`BidiDetail`] of the labels.
-    pub fn labels_segment_bidi_detail(&self, index: isize) -> Option<BidiDetail> {
-        self.labels_bidi_details().neg_nth(index)
     }
 
     /// The `index`th labels segment as a [`DomainSegment`].
@@ -64,22 +48,14 @@ impl DomainHost<'_> {
 
     /// The range of labels segments as a [`str`].
     pub fn labels_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
-        segments_range_thing(self.labels_str(), '.', range)
-    }
-
-    /// The [`BidiDetailsIter::subrange`] of the labels.
-    pub fn labels_range_bidi_details<B: RangeBounds<isize>>(&self, range: B) -> Option<BidiDetailsIter<'_>> {
-        self.labels_bidi_details().subrange(range)
+        domain_range_thing(self.labels_str(), range)
     }
 
     /// The range of labels segments as a [`DomainSegments`].
     pub fn labels_range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'_>> {
         let range = (range.start_bound().cloned(), range.end_bound().cloned());
 
-        Some(DomainSegments {
-            segments    : self.labels_range_str         (range)?.into(),
-            bidi_details: self.labels_range_bidi_details(range)?.into(),
-        })
+        Some(DomainSegments(self.labels_range_str(range)?.into()))
     }
 
 
@@ -101,7 +77,7 @@ impl DomainHost<'_> {
             (old, new) => self.host.replace_substr(old.as_str(), new.as_str()),
         }
 
-        self.details.parts = DomainPartsDetails::from_raw_unchecked(&self.host);
+        self.details = DomainDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -161,12 +137,12 @@ impl DomainHost<'_> {
             (Err(0), Some(new)) => match index {
                 0.. if (!self.is_fqdn() || !new.last_is_empty()) && new.ends_in_a_number() => Err(CantEndInANumber)?,
 
-                0.. => self.host.to_mut().insert_with(self.details.parts.suffix_after(), &[".", new.as_str()]),
+                0.. => self.host.to_mut().insert_with(self.details.suffix_after(), &[".", new.as_str()]),
                 ..0 => self.host.to_mut().insert_with(0                          , &[new.as_str(), "."]),
             },
         }
 
-        self.details.parts = DomainPartsDetails::from_raw_unchecked(&self.host);
+        self.details = DomainDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -216,7 +192,7 @@ impl DomainHost<'_> {
             }
         }
 
-        self.details.parts = DomainPartsDetails::from_raw_unchecked(&self.host);
+        self.details = DomainDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -259,11 +235,11 @@ impl DomainHost<'_> {
             (Ok(Range {start, ..}), 0..) => self.host.to_mut().insert_with(start, &[new.as_str(), "."]),
             (Ok(Range {end  , ..}), ..0) => self.host.to_mut().insert_with(end  , &[".", new.as_str()]),
 
-            (Err(0), 0..) => self.host.to_mut().insert_with(self.details.parts.suffix_after(), &[".", new.as_str()]),
+            (Err(0), 0..) => self.host.to_mut().insert_with(self.details.suffix_after(), &[".", new.as_str()]),
             (Err(0), ..0) => self.host.to_mut().insert_with(0                          , &[new.as_str(), "."]),
         }
 
-        self.details.parts = DomainPartsDetails::from_raw_unchecked(&self.host);
+        self.details = DomainDetails::parse_unchecked(&self.host);
 
         Ok(())
     }

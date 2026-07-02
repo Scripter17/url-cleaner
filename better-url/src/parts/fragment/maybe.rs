@@ -50,6 +50,12 @@ impl<'a> From<Option<Cow<'a, str>>> for MaybeFragment<'a> {
     }
 }
 
+impl<'a> From<Fragment<'a>> for MaybeFragment<'a> {
+    fn from(value: Fragment<'a>) -> Self {
+        Self(Some(value))
+    }
+}
+
 impl<'a> From<Query          <'a>> for MaybeFragment<'a> {fn from(value: Query          <'a>) -> Self {Self(Some(value.into()))}}
 impl<'a> From<SpecialQuery   <'a>> for MaybeFragment<'a> {fn from(value: SpecialQuery   <'a>) -> Self {Self(Some(value.into()))}}
 impl<'a> From<NonSpecialQuery<'a>> for MaybeFragment<'a> {fn from(value: NonSpecialQuery<'a>) -> Self {Self(Some(value.into()))}}

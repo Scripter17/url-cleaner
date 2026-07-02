@@ -35,6 +35,8 @@ macro_rules! always_suitable {
 always_suitable!(char, str, String, u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64, bool, url::Url, BetterUrl, serde_json::Value, serde_json::Number, Path, PathBuf, std::time::Duration);
 #[cfg(feature = "http")] always_suitable!(reqwest::header::HeaderMap, reqwest::header::HeaderValue, reqwest::Method);
 
+impl Suitability for NonZero<u8> {fn assert_suitability(&self, _: &Cleaner) {}}
+
 /// Macro for generating Suitability impls for tuples.
 macro_rules! suitable_tuple {
     ($($t:ident),+) => {
@@ -59,11 +61,34 @@ macro_rules! suitable_tuples {
 
 suitable_tuples! {A, B, C, D, E, F, G, H, I, J, K, L}
 
-/// Suitability helper function to check that a set is documented.
-pub(crate) fn set_is_documented(name: &StringSource, cleaner: &Cleaner) {
+/// Suitability for [`FlagSource::Params`].
+pub(crate) fn flag_source_params(name: &StringSource, cleaner: &Cleaner) {
     if let StringSource::String(name) = name {
-        assert!(cleaner.params.sets.contains_key(name), "Unset Set: {name}");
-        assert!(cleaner.docs.params.sets.contains_key(name), "Undocumented Set: {name}");
+        assert!(cleaner.docs.params.flags.contains_key(name), "Undocumented Params Flag: {name}");
+    }
+}
+
+/// Suitability for [`ListSource::Params`].
+pub(crate) fn list_source_params(name: &StringSource, cleaner: &Cleaner) {
+    if let StringSource::String(name) = name {
+        assert!(cleaner.     params.lists.contains_key(name), "Unset Params List: {name}");
+        assert!(cleaner.docs.params.lists.contains_key(name), "Undocumented Params List: {name}");
+    }
+}
+
+/// Suitability for [`SetSource::Params`].
+pub(crate) fn set_source_params(name: &StringSource, cleaner: &Cleaner) {
+    if let StringSource::String(name) = name {
+        assert!(cleaner.     params.sets.contains_key(name), "Unset Params Set: {name}");
+        assert!(cleaner.docs.params.sets.contains_key(name), "Undocumented Params Set: {name}");
+    }
+}
+
+/// Suitability for [`MapSource::Params`].
+pub(crate) fn map_source_params(name: &StringSource, cleaner: &Cleaner) {
+    if let StringSource::String(name) = name {
+        assert!(cleaner.     params.maps.contains_key(name), "Unset Params Map: {name}");
+        assert!(cleaner.docs.params.maps.contains_key(name), "Undocumented Params Map: {name}");
     }
 }
 

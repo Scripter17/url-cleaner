@@ -3,44 +3,33 @@
 use crate::prelude::*;
 
 impl BetterUrl {
-    /// [`DomainPartsDetails::has_origin`].
+    /// [`DomainDetails::has_origin`].
     pub fn has_domain_origin(&self) -> bool {
-        self.domain_parts_details().is_some_and(DomainPartsDetails::has_origin)
+        self.domain_details().is_some_and(DomainDetails::has_origin)
     }
 
 
 
     /// The domain origin as a [`str`].
     pub fn domain_origin_str(&self) -> Option<&str> {
-        Some(&self.host_str()?[self.domain_parts_details()?.origin_range()?])
-    }
-
-    /// The domain origin's [`BidiDetailsIter`].
-    pub fn domain_origin_bidi_details(&self) -> Option<BidiDetailsIter<'_>> {
-        self.domain_details()?.origin_bidi_details()
+        Some(&self.host_str()?[self.domain_details()?.origin_range()?])
     }
 
     /// The domain origin as a [`DomainSegments`].
     pub fn domain_origin(&self) -> Option<DomainSegments<'_>> {
-        Some(DomainSegments {
-            segments    : self.domain_origin_str         ()?.into(),
-            bidi_details: self.domain_origin_bidi_details()?.into(),
-        })
+        Some(DomainSegments(self.domain_origin_str()?.into()))
     }
 
 
 
     /// The domain origin segments as [`str`]s.
-    pub fn domain_origin_segment_strs(&self) -> Option<std::str::Split<'_, char>> {
-        Some(self.domain_origin_str()?.split('.'))
+    pub fn domain_origin_segment_strs(&self) -> Option<SplitDots<'_>> {
+        Some(SplitDots(Some(self.domain_origin_str()?)))
     }
 
     /// The domain origin segments as [`DomainSegment`]s.
     pub fn domain_origin_segments(&self) -> Option<DomainSegmentsIter<'_>> {
-        Some(DomainSegmentsIter {
-            segments    : self.domain_origin_segment_strs()?,
-            bidi_details: self.domain_origin_bidi_details()?,
-        })
+        self.domain_origin_segment_strs().map(DomainSegmentsIter)
     }
 
 
@@ -48,11 +37,6 @@ impl BetterUrl {
     /// The `index`th domain origin segment as a [`str`].
     pub fn domain_origin_segment_str(&self, index: isize) -> Option<&str> {
         self.domain_origin_segment_strs()?.neg_nth(index)
-    }
-
-    /// The `index`th domain origin segment's [`BidiDetail`].
-    pub fn domain_origin_segment_bidi_detail(&self, index: isize) -> Option<BidiDetail> {
-        self.domain_origin_bidi_details()?.neg_nth(index)
     }
 
     /// The `index`th domain origin segment as a [`DomainSegment`].
@@ -64,22 +48,14 @@ impl BetterUrl {
 
     /// The range of the domain origin segments as a [`str`].
     pub fn domain_origin_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
-        segments_range_thing(self.domain_origin_str()?, '.', range)
-    }
-
-    /// The range of the domain origin's [`BidiDetailsIter`].
-    pub fn domain_origin_range_bidi_details<B: RangeBounds<isize>>(&self, range: B) -> Option<BidiDetailsIter<'_>> {
-        self.domain_origin_bidi_details()?.subrange(range)
+        domain_range_thing(self.domain_origin_str()?, range)
     }
 
     /// The range of the domain origin segments as a [`DomainSegments`].
     pub fn domain_origin_range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'_>> {
         let range = (range.start_bound().cloned(), range.end_bound().cloned());
 
-        Some(DomainSegments {
-            segments    : self.domain_origin_range_str         (range)?.into(),
-            bidi_details: self.domain_origin_range_bidi_details(range)?.into(),
-        })
+        Some(DomainSegments(self.domain_origin_range_str(range)?.into()))
     }
 
 

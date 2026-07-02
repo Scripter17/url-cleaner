@@ -1,6 +1,9 @@
+//! Cannot-be-a-base.
+
 use crate::prelude::*;
 
 impl MyUrl {
+    /// Make a new non-special [`Self`] that cannot be a base.
     pub(super) fn new_cannot_be_a_base(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
         let (path, rest) = match rest.bytes().position(|b| b == b'?' || b == b'#') {
             Some(i) => (&rest[..i], &rest[i..]),
@@ -26,7 +29,7 @@ impl MyUrl {
 
 
         let scheme_end  = scheme.len();
-        let path_start  = scheme_end  ;
+        let path_start  = scheme_end  + 1;
         let path_end    = path_start + path.len();
         let query_start = query.as_str().map(|_| path_end);
 

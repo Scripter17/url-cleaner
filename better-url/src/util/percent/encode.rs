@@ -6,7 +6,7 @@ use crate::prelude::*;
 pub(crate) const NIBBLES: &[u8; 16] = b"0123456789ABCDEF";
 
 /// Percent encode.
-pub fn percent_encode<'a, T: Into<Cow<'a, [u8]>>>(value: T, space_to_plus: bool, backslash_to_slash: bool, ignore_first_colon: bool, set: AsciiSet) -> (bool, Cow<'a, str>) {
+pub fn percent_encode<'a, T: Into<Cow<'a, [u8]>>, const S2P: bool, const BS2FS: bool, const IFC: bool>(value: T, set: AsciiSet) -> (bool, Cow<'a, str>) {
     let mut value = value.into();
 
     let mut has_spaces_to_plus = false;
@@ -14,12 +14,12 @@ pub fn percent_encode<'a, T: Into<Cow<'a, [u8]>>>(value: T, space_to_plus: bool,
     let mut colon_to_ignore = None;
     let mut to_reserve = 0;
 
-    for (i, &b) in value.iter().enumerate() {
-        match b {
-            b' '  if space_to_plus                                   => has_spaces_to_plus = true,
-            b'\\' if backslash_to_slash                              => has_backslashes_to_forward = true,
-            b':'  if ignore_first_colon && colon_to_ignore.is_none() => colon_to_ignore = Some(i),
-            b     if set.contains(b)                                 => to_reserve += 2,
+    for i in 0..value.len() {
+        match value[i] {
+            b' '  if S2P                                => has_spaces_to_plus = true,
+            b'\\' if BS2FS                              => has_backslashes_to_forward = true,
+            b':'  if IFC   && colon_to_ignore.is_none() => colon_to_ignore = Some(i),
+            b     if set.contains(b)                    => to_reserve += 2,
             _ => {},
         }
     }
@@ -46,9 +46,9 @@ pub fn percent_encode<'a, T: Into<Cow<'a, [u8]>>>(value: T, space_to_plus: bool,
         j -= 1;
 
         match x[i] {
-            b' '  if space_to_plus              => {x[j] = b'+';},
-            b'\\' if backslash_to_slash         => {x[j] = b'/';},
-            b':'  if Some(i) == colon_to_ignore => {x[j] = b':';},
+            b' '  if S2P                                 => {x[j] = b'+';},
+            b'\\' if BS2FS                               => {x[j] = b'/';},
+            b':'  if IFC   && Some(i) == colon_to_ignore => {x[j] = b':';},
             b     if set.contains(b) => {
                 x[j - 2] = b'%';
                 x[j - 1] = NIBBLES[b as usize >> 4];

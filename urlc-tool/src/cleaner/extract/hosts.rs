@@ -7,12 +7,12 @@ use super::prelude::*;
 /// Hosts.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// The Cleaner to use.
+    /// The [`Cleaner`] to use.
     #[arg(long)]
     pub cleaner: Option<PathBuf>,
-    /// The part of the host to print.
-    #[arg(long, default_value = "Host")]
-    pub part: HostPart
+    /// The [`HostPart`] to get.
+    #[arg(long)]
+    pub host_part: HostPart,
 }
 
 impl Args {
@@ -27,7 +27,7 @@ impl Args {
 
         get_parts(&cleaner, &mut hosts);
 
-        let parts = hosts.iter().filter_map(|host| self.part.get(host)).collect::<BTreeSet<_>>();
+        let parts = hosts.iter().flat_map(|host| self.host_part.get(host)).collect::<BTreeSet<_>>();
 
         for part in parts {
             println!("{part}");

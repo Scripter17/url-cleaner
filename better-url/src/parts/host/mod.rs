@@ -1,6 +1,9 @@
 //! Hosts.
 
 mod either;
+mod file;
+mod special_not_file;
+mod non_special;
 mod domain;
 mod ip;
 mod ipv4;
@@ -9,6 +12,9 @@ mod opaque;
 mod empty;
 
 pub use either::*;
+pub use file::*;
+pub use special_not_file::*;
+pub use non_special::*;
 pub use domain::*;
 pub use ip::*;
 pub use ipv4::*;

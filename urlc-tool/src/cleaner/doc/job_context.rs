@@ -24,8 +24,17 @@ impl Print for JobContextDocs {
         if !self.vars .is_empty() {
             println!("### Vars" );
             println!();
-            for (name, desc) in &self.vars  {
+            for (name, VarDoc {desc, required, unset, variants}) in &self.vars {
                 println!("- `{name}`: {desc}");
+                println!("  - Required: {required}.");
+                if let Some(desc) = unset {
+                    println!("  - Unset: {desc}");
+                }
+                if let Some(variants) = variants {
+                    for (name, desc) in variants {
+                        println!("  - `{name}`: {desc}");
+                    }
+                }
             }
             println!();
         }

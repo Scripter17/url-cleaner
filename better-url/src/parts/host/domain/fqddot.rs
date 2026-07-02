@@ -3,21 +3,21 @@
 use crate::prelude::*;
 
 impl DomainHost<'_> {
-    /// [`DomainPartsDetails::has_fqddot`].
+    /// [`DomainDetails::has_fqddot`].
     pub fn has_fqddot(&self) -> bool {
-        self.details.parts.has_fqddot()
+        self.details.has_fqddot()
     }
 
-    /// [`DomainPartsDetails::is_fqdn`].
+    /// [`DomainDetails::is_fqdn`].
     pub fn is_fqdn(&self) -> bool {
-        self.details.parts.is_fqdn()
+        self.details.is_fqdn()
     }
 
 
 
     /// The FQDN dot as a [`str`].
     pub fn fqddot_str(&self) -> Option<&str> {
-        self.details.parts.fqddot_range().map(|r| &self.host[r])
+        self.details.fqddot_range().map(|r| &self.host[r])
     }
 
 
@@ -28,14 +28,16 @@ impl DomainHost<'_> {
     pub fn set_fqdn(&mut self, value: bool) -> Result<bool, SetDomainError> {
         match (self.is_fqdn(), value) {
             (false, true ) if self.len() + 1 > u32::MAX as usize => Err(TooLong)?,
+            // Assumes a trailing empty label is always the entire suffix.
+            (true , false) if self.details.ss == self.details.sa => Err(NonFqdnCantEndInEmpty)?,
 
             (false, false) => return Ok(false),
             (false, true ) => self.host.to_mut().push('.'),
-            (true , false) => self.host.retain_range(..self.details.parts.suffix_after()),
+            (true , false) => self.host.retain_range(..self.details.suffix_after()),
             (true , true ) => return Ok(false),
         }
 
-        self.details.parts.fq = value;
+        self.details.fq = value;
 
         Ok(true)
     }

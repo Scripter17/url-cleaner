@@ -1,20 +1,11 @@
 //! `/clean` WebSocket.
 
-use std::sync::Arc;
-
-use axum::{
-    extract::ws::{WebSocketUpgrade, Message},
-    extract::State
-};
-
-use url_cleaner_engine::prelude::*;
-
-use crate::prelude::*;
+use crate::*;
 
 /// `/clean` WebSocket.
-pub async fn clean_ws(State(state): State<&'static crate::State>, job: Job<'static>, ws: WebSocketUpgrade) -> Response {
-    let (iss,     irs) = (0..state.workers).map(|_| tokio::sync::mpsc::unbounded_channel::<Bytes >()).collect::<(Vec<_>, Vec<_>)>();
-    let (oss, mut ors) = (0..state.workers).map(|_| tokio::sync::mpsc::unbounded_channel::<String>()).collect::<(Vec<_>, Vec<_>)>();
+pub async fn clean_ws(state: &'static crate::State, job: Job<'static>, brief_unchanged: bool, brief_error: bool, ws: WebSocketUpgrade) -> Response {
+    let (iss,     irs) = (0..state.threads_per_job).map(|_| tokio::sync::mpsc::unbounded_channel::<Bytes            >()).collect::<(Vec<_>, Vec<_>)>();
+    let (oss, mut ors) = (0..state.threads_per_job).map(|_| tokio::sync::mpsc::unbounded_channel::<Cow<'static, str>>()).collect::<(Vec<_>, Vec<_>)>();
 
     let job = Arc::new(job);
 
@@ -23,8 +14,11 @@ pub async fn clean_ws(State(state): State<&'static crate::State>, job: Job<'stat
         std::thread::spawn(move || {
             while let Some(task) = ir.blocking_recv() {
                 os.send(match job.r#do(&*task) {
-                    Ok (x) => x.into(),
-                    Err(e) => format!("-{e:?}")
+                    Ok((false, _  )) if brief_unchanged => "=".into(),
+                    Ok((_    , url))                    => url.into(),
+
+                    Err(_) if brief_error => "-".into(),
+                    Err(e)                => format!("-{e:?}").into(),
                 }).expect("The out receiver to still exist.");
             }
         });
@@ -65,7 +59,7 @@ pub async fn clean_ws(State(state): State<&'static crate::State>, job: Job<'stat
                         if !buf.is_empty() {
                             socket.send(buf.into()).await.expect("Sending messages to work.");
                         }
-                        buf = or.recv().await.expect("???");
+                        buf = or.recv().await.expect("???").into_owned();
                     }
                 }
 

@@ -11,7 +11,7 @@ pub fn encode_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (boo
 pub fn encode_special_not_file_segmented_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let value = value.into();
 
-    let (mut changed, mut value) = percent_encode(cow_str_to_bytes(value), false, true, false, PATH);
+    let (mut changed, mut value) = percent_encode::<'_, _, false, true, false>(cow_str_to_bytes(value), PATH);
 
     if !value.starts_with("/") {
         value.to_mut().insert(0, '/');

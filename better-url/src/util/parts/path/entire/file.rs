@@ -9,14 +9,14 @@ pub fn encode_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, s
 
 /// Encode a [`FileSegmentedPath`].
 pub fn encode_file_segmented_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (mut changed, mut value) = percent_encode(cow_str_to_bytes(value.into()), false, true, false, PATH);
+    let (mut changed, mut value) = percent_encode::<'_, _, false, true, false>(cow_str_to_bytes(value.into()), PATH);
 
     if !value.starts_with("/") {
         value.to_mut().insert(0, '/');
         changed = true;
     }
 
-    if let [b'/', x, b'|'] | [b'/', x, b'|', b'/', ..] = value.as_bytes() && x.is_ascii_alphabetic() {
+    if matches!(value.as_bytes(), [b'/', b'a'..=b'z' | b'A'..=b'Z', b'|'] | [b'/', b'a'..=b'z' | b'A'..=b'Z', b'|', b'/', ..]) {
         // SAFETY: Replacing ASCII with ASCII is always valid.
         unsafe {
             value.to_mut().as_mut_vec()[2] = b':';

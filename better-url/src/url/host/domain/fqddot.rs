@@ -3,21 +3,21 @@
 use crate::prelude::*;
 
 impl BetterUrl {
-    /// [`DomainPartsDetails::has_fqddot`].
+    /// [`DomainDetails::has_fqddot`].
     pub fn has_fqddot(&self) -> bool {
-        self.domain_parts_details().is_some_and(DomainPartsDetails::has_fqddot)
+        self.domain_details().is_some_and(DomainDetails::has_fqddot)
     }
 
-    /// [`DomainPartsDetails::is_fqdn`].
+    /// [`DomainDetails::is_fqdn`].
     pub fn is_fqdn(&self) -> bool {
-        self.domain_parts_details().is_some_and(DomainPartsDetails::is_fqdn)
+        self.domain_details().is_some_and(DomainDetails::is_fqdn)
     }
 
 
 
     /// The FQDDot as a [`str`].
     pub fn fqddot_str(&self) -> Option<&str> {
-        Some(&self.host_str()?[self.domain_parts_details()?.fqddot_range()?])
+        Some(&self.host_str()?[self.domain_details()?.fqddot_range()?])
     }
 
 
@@ -30,7 +30,7 @@ impl BetterUrl {
     ///
     /// If the call to [`Self::set_host`] reutrns an error, that error is returned.
     pub fn set_fqdn(&mut self, value: bool) -> Result<bool, SetHostError> {
-        if self.domain_parts_details().ok_or(NoDomain)?.is_fqdn() != value {
+        if self.domain_details().ok_or(NoDomain)?.is_fqdn() != value {
             let mut domain = self.domain().ok_or(NoDomain)?;
             domain.set_fqdn(value)?;
             self.set_host(Some(domain.into_owned()))?;

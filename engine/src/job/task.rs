@@ -68,29 +68,3 @@ impl std::fmt::Display for Task {
         }
     }
 }
-
-/// The enum of errors that can happen when making a [`Task`].
-#[derive(Debug, Error)]
-pub enum MakeTaskError {
-    /// [`url::ParseError`].
-    #[error(transparent)]
-    UrlParseError(#[from] url::ParseError),
-    /// [`std::str::Utf8Error`].
-    #[error(transparent)]
-    Utf8Error(#[from] std::str::Utf8Error),
-    /// [`serde_json::Error`].
-    #[error(transparent)]
-    SerdeJsonError(#[from] serde_json::Error),
-    /// Returned when a line that was meant to be ignored is't.
-    #[error("A line that was meant to be ignored wasn't.")]
-    IgnoreLineNotIgnored,
-    /// Returned when a line is otherwise invalid.
-    #[error("A line was otherwise invalid.")]
-    OtherwiseInvalid,
-}
-
-impl From<std::convert::Infallible> for MakeTaskError {
-    fn from(value: std::convert::Infallible) -> Self {
-        match value {}
-    }
-}

@@ -68,16 +68,7 @@ impl<'a> SegmentedPath<'a> {
 
 
 
-    /// The [`SpecialNotFileSegmentedPath`].
-    pub fn special_not_file(self) -> Option<SpecialNotFileSegmentedPath<'a>> {
-        match self {
-            Self::SpecialNotFile(x) => Some(x),
-            Self::File          (_) => None,
-            Self::NonSpecial    (_) => None,
-        }
-    }
-
-    /// If it's [`Self::File`].
+    /// [`Self::File`].
     pub fn file(self) -> Option<FileSegmentedPath<'a>> {
         match self {
             Self::SpecialNotFile(_) => None,
@@ -86,7 +77,16 @@ impl<'a> SegmentedPath<'a> {
         }
     }
 
-    /// The [`NonSpecialSegmentedPath`].
+    /// [`Self::SpecialNotFile`].
+    pub fn special_not_file(self) -> Option<SpecialNotFileSegmentedPath<'a>> {
+        match self {
+            Self::SpecialNotFile(x) => Some(x),
+            Self::File          (_) => None,
+            Self::NonSpecial    (_) => None,
+        }
+    }
+
+    /// [`Self::NonSpecial`].
     pub fn non_special(self) -> Option<NonSpecialSegmentedPath<'a>> {
         match self {
             Self::SpecialNotFile(_) => None,
@@ -139,14 +139,6 @@ impl<'a> SegmentedPath<'a> {
             Self::File          (x) => x.borrowed().into(),
             Self::NonSpecial    (x) => x.borrowed().into(),
         }
-    }
-}
-
-
-
-impl<'a> From<Cow<'a, str>> for SegmentedPath<'a> {
-    fn from(value: Cow<'a, str>) -> Self {
-        Self::new_special_not_file(value)
     }
 }
 

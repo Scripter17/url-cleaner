@@ -123,11 +123,6 @@ mod normal;
 /// let mut domain = DomainHost::new("example.com").unwrap();
 /// domain.set_suffix(Some("xn--jxalpdlp")).unwrap();
 /// assert_eq!(domain, "example.xn--jxalpdlp");
-///
-/// // But invalid ones are not.
-/// DomainHost::new("example.com").unwrap()
-///     .set_suffix(Some("xn--a-2"))
-///     .unwrap_err();
 /// ```
 ///
 /// Additionally, attempting to set the suffix of a non-FQDN domain to end in an empty segment returns an error.
@@ -156,19 +151,22 @@ pub struct DomainHost<'a> {
 }
 
 impl<'a> DomainHost<'a> {
-    /// Make a new [`Self`] from an already percent decoded input.
+    /// Make a new [`Self`] from a percent decoded value.
     /// # Errors
-    /// If the call to [`encode_domain`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::new_raw`] returns an error, that error is returned.
+    /// If the call to [`Self::new_normalized`] returns an error, that error is returned.
     pub fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
-        let (_, value, bidi_details) = encode_percent_decoded_domain(value)?;
+        let (_, value) = uts46_map_normalize(value);
+        Self::new_normalized(value)
+    }
+
+    /// Make a new [`Self`] from a percent decoded and UTS46 normalized value.
+    /// # Errors
+    /// If the call to [`normalized_domain_to_ascii`] returns an error, that error is returned.
+    pub fn new_normalized<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
+        let (_, value) = normalized_domain_to_ascii(value)?;
 
         Ok(Self {
-            details: DomainDetails {
-                parts: DomainPartsDetails::from_raw_unchecked(&value),
-                bidi: bidi_details
-            },
+            details: DomainDetails::parse_unchecked(&value),
             host: value
         })
     }
@@ -179,18 +177,8 @@ impl<'a> DomainHost<'a> {
     }
 
     /// The [`DomainDetails`].
-    pub fn details(&self) -> &DomainDetails {
-        &self.details
-    }
-
-    /// The [`DomainPartsDetails`].
-    pub fn parts_details(&self) -> DomainPartsDetails {
-        self.details.parts
-    }
-
-    /// The [`BidiDetails`].
-    pub fn bidi_details(&self) -> &BidiDetails {
-        &self.details.bidi
+    pub fn details(&self) -> DomainDetails {
+        self.details
     }
 
     /// Unwrap into the host and details.
@@ -198,9 +186,9 @@ impl<'a> DomainHost<'a> {
         (self.host, self.details)
     }
 
-    /// [`decode_normalized_domain_unchecked`].
+    /// [`unchecked_normalized_domain_to_unicode`].
     pub fn decode(self) -> (Cow<'a, str>, DomainDetails) {
-        let (_, value) = decode_normalized_domain_unchecked(self.host);
+        let (_, value) = unchecked_normalized_domain_to_unicode(self.host);
         (value, self.details)
     }
 
@@ -216,7 +204,7 @@ impl<'a> DomainHost<'a> {
     pub fn borrowed(&self) -> DomainHost<'_> {
         DomainHost {
             host   : Cow::Borrowed(&self.host),
-            details: self.details.clone()
+            details: self.details,
         }
     }
 
@@ -265,13 +253,10 @@ impl<'a> TryFrom<Cow<'a, str>> for DomainHost<'a> {
     type Error = InvalidDomainHost;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, value, bidi_details) = encode_domain(value)?;
+        let (_, value) = domain_to_ascii(value)?;
 
         Ok(Self {
-            details: DomainDetails {
-                parts: DomainPartsDetails::from_raw_unchecked(&value),
-                bidi: bidi_details,
-            },
+            details: DomainDetails::parse_unchecked(&value),
             host: value,
         })
     }
@@ -285,17 +270,13 @@ impl<'a> TryFrom<DomainSegment<'a>> for DomainHost<'a> {
             true  => Err(value),
             false => Ok(Self {
                 details: DomainDetails {
-                    parts: DomainPartsDetails {
-                        ms: 0,
-                        ss: 0,
-                        sa: value.len() as u32,
-                        fq: false,
-                        wp: false,
-                        mi: None,
-                    },
-                    bidi: value.bidi_detail.into(),
+                    ms: 0,
+                    ss: 0,
+                    sa: value.len() as u32,
+                    fq: false,
+                    wp: false,
                 },
-                host: value.segment
+                host: value.0
             })
         }
     }

@@ -55,7 +55,9 @@ impl BetterUrl {
     ///
     /// If the scheme is `file`, returns the error [`SetPortError::SchemeIsFile`].
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn set_port(&mut self, port: Option<u16>) -> Result<bool, SetPortError> {
+    pub fn set_port<'a, T: TryInto<MaybePort<'a>>>(&mut self, port: T) -> Result<bool, SetPortError> where SetPortError: From<T::Error> {
+        let port = port.try_into()?;
+
         if self.host().ok_or(NoHost)?.is_empty() {
             Err(SetPortError::EmptyHost)?;
         }
@@ -64,8 +66,8 @@ impl BetterUrl {
             Err(SetPortError::SchemeIsFile)?;
         }
 
-        if port != self.port_or_known_default() {
-            self.url.set_port(port).expect("To always work.");
+        if port.as_u16() != self.port_or_known_default() {
+            self.url.set_port(port.as_u16()).expect("To always work.");
             Ok(true)
         } else {
             Ok(false)

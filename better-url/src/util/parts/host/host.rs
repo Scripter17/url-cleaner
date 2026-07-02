@@ -34,12 +34,18 @@ pub fn ends_in_a_number(value: &str) -> bool {
 
 /// If the last segment [`is_a_number`].
 pub fn last_is_a_number(value: &str) -> bool {
-    value.split('.').next_back().is_some_and(is_a_number)
+    let i = value.bytes().rposition(|b| b == b'.').map_or(0, |i| i + 1);
+    bytes_is_a_number(&value.as_bytes()[i..])
+}
+
+/// [`bytes_is_a_number`].
+pub fn is_a_number(value: &str) -> bool {
+    bytes_is_a_number(value.as_bytes())
 }
 
 /// If `value` would trigger [`ends_in_a_number`].
-pub fn is_a_number(value: &str) -> bool {
-    match value.as_bytes() {
+pub fn bytes_is_a_number(value: &[u8]) -> bool {
+    match value {
         [] => false,
         [b'0', b'x' | b'X', x @ ..] => x.iter().all(u8::is_ascii_hexdigit),
         x => x.iter().all(u8::is_ascii_digit)

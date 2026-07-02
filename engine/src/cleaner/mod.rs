@@ -2,46 +2,45 @@
 
 use std::fs::read_to_string;
 use std::path::Path;
-use std::io;
 #[cfg(feature = "bundled-cleaner")]
 use std::sync::OnceLock;
 
 use crate::prelude::*;
 
+mod profiled;
+mod profiles_config;
 mod params;
 mod params_diff;
 mod docs;
 
+pub use profiled::*;
+pub use profiles_config::*;
 pub use params::*;
 pub use params_diff::*;
 pub use docs::*;
 
 /// The main unit describing how to clean URLs.
-///
-/// See the documentation for [`Params`] and [`ProfiledCleaner`] for why everything's a [`Cow`].
-///
-/// I promise it's not just me liking the funny name.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Serialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub struct Cleaner<'a> {
     /// The [`Docs`].
     ///
-    /// Defaults to an empty [`Docs`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub docs: Cow<'a, Docs>,
     /// The [`Params`].
     ///
-    /// Defaults to an empty [`Params`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub params: Params<'a>,
     /// The [`Functions`].
     ///
-    /// Defaults to an empty [`Functions`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub functions: Cow<'a, Functions>,
-    /// The [`Action`]s.
+    /// The [`Action`].
     ///
-    /// Defaults to an empty [`Vec`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub action: Cow<'a, Action>
 }
@@ -51,127 +50,108 @@ pub struct Cleaner<'a> {
 /// Please see [`Cleaner::get_bundled`] and co.
 #[cfg(all(feature = "bundled-cleaner", not(test)))]
 pub const BUNDLED_CLEANER_STR: &str = include_str!(concat!(env!("OUT_DIR"), "/bundled-cleaner.json.minified"));
+
 /// The JSON text of the bundled cleaner.
 ///
 /// Please see [`Cleaner::get_bundled`] and co.
 #[cfg(all(feature = "bundled-cleaner", test))]
 pub const BUNDLED_CLEANER_STR: &str = include_str!("bundled-cleaner.json");
+
 /// The cached deserialization of the bundled cleaner.
 #[cfg(feature = "bundled-cleaner")]
 static BUNDLED_CLEANER: OnceLock<Cleaner<'static>> = OnceLock::new();
 
 impl<'a> Cleaner<'a> {
-    /// Create a new [`Self`] that [`Cow::Borrowed`]s all fields (and [`Params::borrowed`]s [`Self::params`]).
-    ///
-    /// Used to enable both [`ProfiledCleaner`] and [`ParamsDiff`] to be much more memory efficient tha otherwise possible.
-    pub fn borrowed(&'a self) -> Cleaner<'a> {
-        Self {
-            docs     : Cow::Borrowed(&*self.docs),
-            params   : self.params.borrowed(),
-            functions: Cow::Borrowed(&*self.functions),
-            action   : Cow::Borrowed(&*self.action)
-        }
-    }
-
-    /// Become an owned [`Self`], cloning only what's needed.
-    pub fn into_owned(self) -> Cleaner<'static> {
-        Cleaner {
-            docs     : Cow::Owned(self.docs.into_owned()),
-            params   : self.params.into_owned(),
-            functions: Cow::Owned(self.functions.into_owned()),
-            action   : Cow::Owned(self.action.into_owned())
-        }
-    }
-
     /// Load [`Self`] from a JSON file.
     /// # Errors
-    #[doc = edoc!(callerr(std::fs::read_to_string), callerr(serde_json::from_str))]
-    pub fn load_from_file<T: AsRef<Path>>(path: T) -> Result<Cleaner<'static>, GetCleanerError> {
-        serde_json::from_str(&read_to_string(path)?).map_err(Into::into)
+    /// If the call to [`read_to_string`] returns an error, that error is returned.
+    ///
+    /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
+    pub fn load<T: AsRef<Path>>(path: T) -> Result<(String, Cleaner<'static>), LoadCleanerError> {
+        let string = read_to_string(path)?;
+        let cleaner = serde_json::from_str(&string)?;
+        Ok((string, cleaner))
+    }
+
+
+
+    /// Make a new instance of the bundled cleaner.
+    /// # Errors
+    /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
+    #[cfg(feature = "bundled-cleaner")]
+    pub fn new_bundled() -> Result<Cleaner<'static>, LoadCleanerError> {
+        Ok(serde_json::from_str(BUNDLED_CLEANER_STR)?)
     }
 
     /// Gets the cached bundled cleaner, parsing it if not already cached.
     /// # Errors
-    #[doc = edoc!(callerr(Self::get_bundled_no_cache))]
-    /// If the call to [`Self::get_bundled_no_cache`] returns an error, that error is returned.
+    /// If the call to [`Self::new_bundled`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::prelude::*;
     ///
-    /// Cleaner::get_bundled().unwrap();
+    /// let (_, cleaner) = Cleaner::get_bundled().unwrap();
+    ///
+    /// cleaner.assert_suitability();
     /// ```
     #[cfg(feature = "bundled-cleaner")]
-    pub fn get_bundled() -> Result<&'static Cleaner<'static>, GetCleanerError> {
+    pub fn get_bundled() -> Result<(&'static str, &'static Cleaner<'static>), LoadCleanerError> {
         if let Some(cleaner) = BUNDLED_CLEANER.get() {
-            Ok(cleaner)
+            Ok((BUNDLED_CLEANER_STR, cleaner))
         } else {
-            let cleaner = Self::get_bundled_no_cache()?;
-            Ok(BUNDLED_CLEANER.get_or_init(|| cleaner))
+            let cleaner = Self::new_bundled()?;
+            Ok((BUNDLED_CLEANER_STR, BUNDLED_CLEANER.get_or_init(|| cleaner)))
         }
     }
 
-    /// Parses a new copy the bundled cleaner.
+
+
+    /// Either [`Self::load`] or [`Self::new_bundled`].
     /// # Errors
-    #[doc = edoc!(callerr(serde_json::from_str))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// If the call to [`Self::load`] returns an error, that error is returned.
     ///
-    /// Cleaner::get_bundled_no_cache().unwrap();
-    /// ```
+    /// If the call to [`Self::new_bundled`] returns an error, that error is returned.
     #[cfg(feature = "bundled-cleaner")]
-    pub fn get_bundled_no_cache() -> Result<Cleaner<'static>, GetCleanerError> {
-        serde_json::from_str(BUNDLED_CLEANER_STR).map_err(Into::into)
+    pub fn load_or_new_bundled<T: AsRef<Path>>(path: Option<T>) -> Result<(Cow<'static, str>, Cleaner<'static>), LoadCleanerError> {
+        match path {
+            Some(path) => Self::load(path).map(|(s, c)| (s.into(), c)),
+            None       => Ok((BUNDLED_CLEANER_STR.into(), Self::new_bundled()?)),
+        }
     }
 
-    /// Either [`Self::load_from_file`] or [`Self::get_bundled`].
+    /// Either [`Self::load`] or [`Self::get_bundled`].
     /// # Errors
-    #[doc = edoc!(callerr(Self::load_from_file), callerr(Self::get_bundled))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
+    /// If the call to [`Self::load`] returns an error, that error is returned.
     ///
-    /// assert_eq!(
-    ///     Cleaner::get_bundled().unwrap(),
-    ///     &*Cleaner::load_or_get_bundled(None::<&str>).unwrap()
-    /// );
-    ///
-    /// assert_eq!(
-    ///     Cleaner::get_bundled().unwrap(),
-    ///     &*Cleaner::load_or_get_bundled(Some("src/cleaner/bundled-cleaner.json")).unwrap()
-    /// );
-    /// ```
+    /// If the call to [`Self::get_bundled`] returns an error, that error is returned.
     #[cfg(feature = "bundled-cleaner")]
-    pub fn load_or_get_bundled<T: AsRef<Path>>(path: Option<T>) -> Result<Cow<'static, Cleaner<'static>>, GetCleanerError> {
+    pub fn load_or_get_bundled<T: AsRef<Path>>(path: Option<T>) -> Result<(Cow<'static, str>, Cow<'static, Cleaner<'static>>), LoadCleanerError> {
         Ok(match path {
-            Some(path) => Cow::Owned(Self::load_from_file(path)?),
-            None => Cow::Borrowed(Self::get_bundled()?)
+            Some(path) => {let (x, y) = Self::load       (path)?; (Cow::Owned   (x), Cow::Owned   (y))},
+            None       => {let (x, y) = Self::get_bundled(    )?; (Cow::Borrowed(x), Cow::Borrowed(y))},
         })
     }
 
-    /// Either [`Self::load_from_file`] or [`Self::get_bundled_no_cache`].
-    /// # Errors
-    #[doc = edoc!(callerr(Self::load_from_file), callerr(Self::get_bundled_no_cache))]
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    ///
-    /// assert_eq!(
-    ///     Cleaner::get_bundled_no_cache().unwrap(),
-    ///     Cleaner::load_or_get_bundled_no_cache(None::<&str>).unwrap()
-    /// );
-    ///
-    /// assert_eq!(
-    ///     Cleaner::get_bundled_no_cache().unwrap(),
-    ///     Cleaner::load_or_get_bundled_no_cache(Some("src/cleaner/bundled-cleaner.json")).unwrap()
-    /// );
-    /// ```
-    #[cfg(feature = "bundled-cleaner")]
-    pub fn load_or_get_bundled_no_cache<T: AsRef<Path>>(path: Option<T>) -> Result<Cleaner<'static>, GetCleanerError> {
-        Ok(match path {
-            Some(path) => Self::load_from_file(path)?,
-            None => Self::get_bundled_no_cache()?
-        })
+
+
+    /// Make a borrowing [`Self`].
+    pub fn borrowed(&self) -> Cleaner<'_> {
+        Cleaner {
+            docs     : Cow::Borrowed(&*self.docs             ),
+            params   :                 self.params.borrowed() ,
+            functions: Cow::Borrowed(&*self.functions        ),
+            action   : Cow::Borrowed(&*self.action           ),
+        }
+    }
+
+    /// Turn into an owned [`Self`].
+    pub fn into_owned(self) -> Cleaner<'static> {
+        Cleaner {
+            docs     : Cow::Owned(self.docs     .into_owned()),
+            params   :            self.params   .into_owned() ,
+            functions: Cow::Owned(self.functions.into_owned()),
+            action   : Cow::Owned(self.action   .into_owned()),
+        }
     }
 
     /// Asserts the suitability of `self` to be URL Cleaner's bundled cleaner.
@@ -179,44 +159,18 @@ impl<'a> Cleaner<'a> {
     /// Exact behavior is unspecified and changes are not considered breaking.
     /// # Panics
     /// If `self` is deemed unsuitable to be URL Cleaner's bundled cleaner, panics.
-    #[cfg_attr(feature = "bundled-cleaner", doc = "# Examples")]
-    #[cfg_attr(feature = "bundled-cleaner", doc = "```")]
-    #[cfg_attr(feature = "bundled-cleaner", doc = "use url_cleaner_engine::prelude::*;")]
-    #[cfg_attr(feature = "bundled-cleaner", doc = "")]
-    #[cfg_attr(feature = "bundled-cleaner", doc = "Cleaner::get_bundled().unwrap().assert_suitability();")]
-    #[cfg_attr(feature = "bundled-cleaner", doc = "```")]
     pub fn assert_suitability(&self) {
         Suitability::assert_suitability(self, self)
     }
 }
 
 impl<'j> Cleaner<'j> {
-    /// [`Action::apply`]s [`Self::action`].
+    /// [`Action::apply`].
     /// # Errors
-    #[doc = edoc!(applyerr(Action, 3))]
-    pub fn apply(&'j self, task_state: &mut TaskState<'j>) -> Result<(), ApplyCleanerError> {
-        self.action.apply(task_state, None)?;
-        Ok(())
+    /// If the call to [`Action::apply`] returns an error, that error is returned.
+    pub fn apply(&'j self, task_state: &mut TaskState<'j>) -> Result<bool, ApplyCleanerError> {
+        Ok(self.action.apply(task_state, None)?)
     }
-}
-
-/// The enum of errors that can happen when loading a [`Cleaner`].
-#[derive(Debug, Error)]
-pub enum GetCleanerError {
-    /// Returned when loading a [`Cleaner`] fails.
-    #[error(transparent)]
-    CantLoadCleaner(#[from] io::Error),
-    /// Returned when deserializing a [`Cleaner`] fails.
-    #[error(transparent)]
-    CantParseCleaner(#[from] serde_json::Error),
-}
-
-/// The enum of errors [`Cleaner::apply`] can return.
-#[derive(Debug, Error)]
-pub enum ApplyCleanerError {
-    /// Returned when a [`ActionError`] is encountered.
-    #[error(transparent)]
-    ActionError(#[from] ActionError)
 }
 
 #[cfg(test)]

@@ -12,7 +12,7 @@ use crate::prelude::*;
 /// The error from failing to get a [`JobConfig`].
 #[derive(Debug, Error)]
 pub enum GetJobConfigError {
-    /// Returned when a [`serde_json::Error`] is encountered.
+    /// [`serde_json::Error`].
     #[error(transparent)]
     SerdeJsonError(#[from] serde_json::Error),
     /// Returned when a request has a `config` query param with no value.
@@ -33,7 +33,7 @@ impl<S: Sync> FromRequestParts<S> for JobConfig {
     type Rejection = GetJobConfigError;
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        Ok(match (MaybeQuery::from(parts.uri.query()).find("config", 0), parts.headers.get("x-config")) {
+        Ok(match (MaybeSpecialQuery::from(parts.uri.query()).find("config", 0), parts.headers.get("x-config")) {
             (None        , None        ) => Default::default(),
             (None        , Some(config)) => serde_json::from_slice(config.as_bytes())?,
             (Some(config), None        ) => serde_json::from_str(&config.into_value().ok_or(GetJobConfigError::EmptyConfigParam)?)?,

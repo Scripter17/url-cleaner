@@ -22,10 +22,9 @@ from_cow_impls!(
     Userinfo, Username, Password,
 
     OpaquePath,
-    SegmentedPath              , PathSegment,
     FileSegmentedPath          , FilePathSegment,
-    SpecialNotFileSegmentedPath, NonSpecialPathSegment,
-    NonSpecialSegmentedPath    , SpecialNotFilePathSegment,
+    SpecialNotFileSegmentedPath, SpecialNotFilePathSegment,
+    NonSpecialSegmentedPath    , NonSpecialPathSegment,
     NonSpecialPath,
 
     SpecialQuery   , SpecialQuerySegment,
@@ -37,7 +36,7 @@ from_cow_impls!(
 
 try_from_cow_impls!(
     Scheme,
-    Host,
+    Host, FileHost, SpecialNotFileHost, NonSpecialHost,
     DomainHost, DomainSegment, DomainSegments,
     IpHost, Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost,
     Port,
@@ -55,7 +54,7 @@ as_str_impls!(Userinfo);
 as_str_impls!(Username, Password);
 
 as_str_impls!(
-    Host,
+    Host, FileHost, SpecialNotFileHost, NonSpecialHost,
     DomainHost, DomainSegment, DomainSegments,
     IpHost, Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost
 );

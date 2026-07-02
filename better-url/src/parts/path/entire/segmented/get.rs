@@ -16,7 +16,7 @@ impl SegmentedPath<'_> {
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = PathSegment<'_>> {
         let scheme_type = self.scheme_type();
 
-        self.as_str()[1..].split('/').map(move |x| {
+        SplitSlashes(Some(&self.as_str()[1..])).map(move |x| {
             match scheme_type {
                 SchemeType::SpecialNotFile => SpecialNotFilePathSegment(x.into()).into(),
                 SchemeType::File           => FilePathSegment          (x.into()).into(),

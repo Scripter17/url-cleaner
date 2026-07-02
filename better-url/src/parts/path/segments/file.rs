@@ -7,6 +7,11 @@ use crate::prelude::*;
 pub struct FilePathSegments<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> FilePathSegments<'a> {
+    /// Make a new [`Self`] without checking for validity.
+    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+        Self(value.into())
+    }
+
     /// Borrow as a [`str`].
     pub fn as_str(&self) -> &str {
         &self.0
@@ -16,7 +21,7 @@ impl<'a> FilePathSegments<'a> {
 
     /// The [`FilePathSegment`]s.
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = FilePathSegment<'_>> {
-        self.0.split('/').map(|x| FilePathSegment(x.into()))
+        SplitSlashes(Some(self.as_str())).map(|x| FilePathSegment(x.into()))
     }
 
     /// The `index`th [`FilePathSegment`].

@@ -34,6 +34,12 @@ For each line:
 
 - If it is empty, it is ignored.
 
+- If "brief unchanged" is enabled and it begins with an `=`, it is a success result whose input was already clean.
+
 - If it begins with an ASCII letter, it is a success result containing its task's cleaned URL.
 
-- If it begins with `-`, it is an error result and the rest of the line is a (possibly empty) error message of unspecified format.
+- If it begins with `-`, it is an error result.
+
+  - If "brief error" is disabled, the rest of the line is a possibly empty string detailing the error.
+
+  - If "brief error" is enabeld, the rest of the line is empty.

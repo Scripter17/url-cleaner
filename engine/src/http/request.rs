@@ -10,33 +10,31 @@ use crate::prelude::*;
 pub struct HttpRequestSource {
     /// The URL to send the request to.
     ///
-    /// Defaults to [`StringSource::Part`]`(`[`UrlPart::Whole`]`)`.
-    #[serde(default = "get_string_source_part_whole", skip_serializing_if = "is_string_source_part_whole")]
+    /// Defaults to [`UrlPart::Whole`].
+    #[serde(default = "get_default_url", skip_serializing_if = "is_default_url")]
     pub url: StringSource,
     /// The method to use.
     ///
-    /// Defaults to `"GET"`.
-    #[serde(default = "get_string_source_get", skip_serializing_if = "is_string_source_get")]
+    /// Defaults to `GET`.
+    #[serde(default = "get_default_method", skip_serializing_if = "is_default_method")]
     pub method: StringSource,
     /// The headers to send that never change.
     ///
-    /// If [`None`], does nothing.
+    /// [`Map::if_none`] is ignored.
     ///
-    /// [`Map::if_none`] and [`Map::else`] are ignored.
-    ///
-    /// Defaults to [`MapSource::None`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub const_headers: MapSource,
     /// The headers to send that may change.
     ///
-    /// If a call to [`StringSource::get`] returns [`None`], the header it came from isn't sent.
+    /// Headers set to [`None`] are not sent.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub dynamic_headers: HashMap<String, StringSource>,
     /// The body to send.
     ///
-    /// Defaults to [`None`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub body: Option<HttpBodyConfig>
 }
@@ -44,8 +42,8 @@ pub struct HttpRequestSource {
 impl Default for HttpRequestSource {
     fn default() -> Self {
         Self {
-            url            : UrlPart::Whole.into(),
-            method         : "GET".into(),
+            url            : get_default_url(),
+            method         : get_default_method(),
             const_headers  : Default::default(),
             dynamic_headers: Default::default(),
             body           : None
@@ -53,31 +51,21 @@ impl Default for HttpRequestSource {
     }
 }
 
-/// The enum of errors [`HttpRequestSource::get`] can return.
-#[derive(Debug, Error)]
-pub enum HttpRequestSourceError {
-    /// [`reqwest::Error`].
-    #[error(transparent)]
-    RequestError(#[from] reqwest::Error),
-    /// [`StringSourceError`].
-    #[error(transparent)]
-    StringSourceError(#[from] StringSourceError),
-    /// [`StringNotFound`].
-    #[error(transparent)]
-    StringNotFound(#[from] StringNotFound),
-    /// [`MapSourceError`].
-    #[error(transparent)]
-    MapSourceError(#[from] MapSourceError),
-    /// [`http::method::InvalidMethod`].
-    #[error(transparent)]
-    HttpInvalidMethod(#[from] http::method::InvalidMethod),
-    /// [`HttpBodyConfigError`].
-    #[error(transparent)]
-    HttpBodyConfigError(#[from] HttpBodyConfigError),
-}
+/** Serde helper. **/ fn get_default_url   (                    ) -> StringSource {UrlPart::Whole.into()         }
+/** Serde helper. **/ fn get_default_method(                    ) -> StringSource {"GET".into()                  }
+/** Serde helper. **/ fn is_default_url    (value: &StringSource) -> bool         {value == &get_default_url()   }
+/** Serde helper. **/ fn is_default_method (value: &StringSource) -> bool         {value == &get_default_method()}
 
 impl HttpRequestSource {
     /// Get a [`reqwest::blocking::RequestBuilder`].
+    /// # Errors
+    /// If the call to [`HttpClient::get`] returns an error, that error is returned.
+    ///
+    /// If any call to [`StringSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`MapSource::get`] returns an error, that error is returned.
+    ///
+    /// If the call to [`HttpBodyConfig::apply`] returns an error, that error is returned.
     pub fn get(&self, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::blocking::RequestBuilder, HttpRequestSourceError> {
         debug!(HttpRequestSource::get, self; self._get(task_state, args))
     }
@@ -105,13 +93,3 @@ impl HttpRequestSource {
         Ok(ret)
     }
 }
-
-/// Serde helper function for [`HttpRequestSource::url`].
-fn get_string_source_part_whole() -> StringSource {StringSource::Part(UrlPart::Whole)}
-/// Serde helper function for [`HttpRequestSource::url`].
-fn is_string_source_part_whole(value: &StringSource) -> bool {value == &get_string_source_part_whole()}
-
-/// Serde helper function for [`HttpRequestSource::method`].
-fn get_string_source_get() -> StringSource {"GET".into()}
-/// Serde helper function for [`HttpRequestSource::method`].
-fn is_string_source_get(value: &StringSource) -> bool {value == &get_string_source_get()}

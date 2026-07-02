@@ -1,9 +1,7 @@
-
+//! [`HttpClient`].
 
 use std::sync::OnceLock;
 
-use url::Url;
-use thiserror::Error;
 use reqwest::header::{HeaderName, HeaderValue};
 
 use crate::prelude::*;
@@ -24,6 +22,11 @@ pub struct HttpClient {
 }
 
 impl HttpClient {
+    /// Make a new [`Self`] with the default config.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Gets [`Self::client`] or, if it's uninitialized, creates the default client.
     /// # Errors
     #[doc = edoc!(callerr(reqwest::blocking::ClientBuilder::build))]

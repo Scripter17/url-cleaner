@@ -21,7 +21,13 @@ pub(crate) fn decode_hex_nibble(x: u8) -> Option<u8> {
 /// # Errors
 /// If the call to [`try_cow_bytes_to_str`] returns an error, that error is returned.
 pub fn try_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), std::str::Utf8Error> {
-    Ok(match percent_decode(value) {
+    let value = value.into();
+
+    if !value.as_bytes().contains(&b'%') {
+        return Ok((false, value));
+    }
+
+    Ok(match _percent_decode(value) {
         (true , value) => (true , try_cow_bytes_to_str(value)?),
         (false, value) => (false, unsafe {cow_bytes_to_str(value)}),
     })
@@ -29,7 +35,13 @@ pub fn try_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, 
 
 /// Lossily percent decode.
 pub fn lossy_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    match percent_decode(value) {
+    let value = value.into();
+
+    if !value.as_bytes().contains(&b'%') {
+        return (false, value);
+    }
+
+    match _percent_decode(value) {
         (true , value) => (true , decode_utf8_cow_lossy(value)),
         (false, value) => (false, unsafe {cow_bytes_to_str(value)}),
     }
@@ -37,7 +49,13 @@ pub fn lossy_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'
 
 /// [`percent_decode_bytes`] but accepting a string.
 pub fn percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, [u8]>) {
-    percent_decode_bytes(cow_str_to_bytes(value.into()))
+    let value = value.into();
+
+    if !value.as_bytes().contains(&b'%') {
+        return (false, cow_str_to_bytes(value));
+    }
+
+    _percent_decode(value)
 }
 
 /// Percent decode bytes.
@@ -51,11 +69,23 @@ pub fn percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, [u8
 /// assert_eq!(percent_decode_bytes(b"%41=%61+"), (true , b"A=a+".into()));
 /// ```
 pub fn percent_decode_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, [u8]>) {
-    let mut value = value.into();
+    let value = value.into();
 
     if !value.contains(&b'%') {
         return (false, value);
     }
+
+    _percent_decode_bytes(value)
+}
+
+/// [`percent_decode`] without a fast path for not containing a `%`.
+fn _percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, [u8]>) {
+    _percent_decode_bytes(cow_str_to_bytes(value.into()))
+}
+
+/// [`percent_decode_bytes`] without a fast path for not containing a `%`.
+fn _percent_decode_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, [u8]>) {
+    let mut value = value.into();
 
     let x = value.to_mut();
 

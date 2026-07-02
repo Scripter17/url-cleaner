@@ -1,6 +1,9 @@
+//! No host.
+
 use crate::prelude::*;
 
 impl MyUrl {
+    /// Make a new non-special [`Self`] that can be a base but has no host.
     pub(super) fn new_can_be_a_base_no_host(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
         let (path, rest) = match rest.bytes().position(|b| b == b'?' || b == b'#') {
             Some(i) => (&rest[..i], &rest[i..]),
@@ -15,19 +18,14 @@ impl MyUrl {
             None => (None, rest.strip_prefix('#'))
         };
 
-        let path = Path::new_non_special(path);
+        let path     = NonSpecialPath      ::new(path    );
+        let query    = MaybeNonSpecialQuery::new(query   );
+        let fragment = MaybeFragment       ::new(fragment);
 
         let fake_host = match path.as_str().starts_with("//") {
-            true  => "",
+            true  => "/.",
             false => "",
         };
-
-        let query = match scheme.r#type() {
-            SchemeType::File | SchemeType::SpecialNotFile => MaybeQuery::new_special    (query),
-            SchemeType::NonSpecial                        => MaybeQuery::new_non_special(query),
-        };
-
-        let fragment = MaybeFragment::new(fragment);
 
 
         let scheme_end   = scheme.len();
@@ -69,10 +67,9 @@ impl MyUrl {
             query_start   : query_start   .and_then(|x| NonZero::new(x as u32)),
             fragment_start: fragment_start.and_then(|x| NonZero::new(x as u32)),
             details: UrlDetails {
-                host  : Some(EmptyHostDetails::default().into()),
+                host  : None,
                 scheme: scheme.details()
             }
         })
     }
 }
-

@@ -22,6 +22,8 @@ ${GM.info.script.namespace}`);
 	let config = {
 		instance: "ws://localhost:9149",
 		job_config: {
+			brief_unchanged: true,
+			brief_error    : false,
 			context: {
 				source_host: window.location.hostname // Used for per-site processing.
 			},
@@ -45,7 +47,7 @@ ${GM.info.script.namespace}`);
 	// Used to avoid unnecessary recleans.
 	let cache = new WeakMap();
 
-	// Vec<(WeakRef<Element>, String)>.
+	// Vec<WeakRef<Element>>.
 	let queue = [];
 	// A buffer used to send tasks in batches.
 	let tasks = "";
@@ -106,7 +108,7 @@ ${GM.info.script.namespace}`);
 	// Handle response messages.
 	function urlc_socket_message(message) {
 		for (line of message.data.split("\n")) {
-			var [element, old_href] = queue.shift();
+			var element = queue.shift();
 
 			element = element.deref();
 
@@ -116,8 +118,8 @@ ${GM.info.script.namespace}`);
 			}
 
 			if (line.startsWith("-")) {
-				console.error("[URLC] Got error", line.replace("-", ""), "for element", element);
-			} else if (line !== old_href) {
+				console.error("[URLC] Got error", line, "for element", element);
+			} else if (line !== "=") {
 				cache.set(element, line);
 				element.href = line;
 			}
@@ -188,7 +190,7 @@ ${GM.info.script.namespace}`);
 			task = element.closest("li").querySelector("a p").textContent.replaceAll(/\s\u203a\s/g, "/");
 		}
 
-		queue.push([new WeakRef(element), href]);
+		queue.push(new WeakRef(element));
 
 		if (tasks.length === 0) {
 			send_timeout = setTimeout(urlc_send_tasks, 10);
@@ -209,7 +211,7 @@ ${GM.info.script.namespace}`);
 
 	// If the user clicks on an element in the queue, cancel the click and reclick the element once cleaned.
 	function urlc_onclick(e) {
-		for (let [queued_element, _] of queue) {
+		for (let queued_element of queue) {
 			if (queued_element.deref() == e.target) {
 				e.preventDefault();
 				reclick_once_clean = new WeakRef(e.target);

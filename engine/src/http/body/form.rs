@@ -6,14 +6,6 @@ use crate::prelude::*;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct HttpFormBodySource(pub HashMap<String, StringSource>);
 
-/// The enum of errors [`HttpFormBodySource::get`] can return.
-#[derive(Debug, Error)]
-pub enum HttpFormBodySourceError {
-    /// [`StringSourceError`].
-    #[error(transparent)]
-    StringSourceError(#[from] StringSourceError),
-}
-
 impl HttpFormBodySource {
     /// Get a HTTP form body.
     /// # Errors

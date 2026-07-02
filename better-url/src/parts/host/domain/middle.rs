@@ -3,29 +3,21 @@
 use crate::prelude::*;
 
 impl DomainHost<'_> {
-    /// [`DomainPartsDetails::has_middle`].
+    /// [`DomainDetails::has_middle`].
     pub fn has_middle(&self) -> bool {
-        self.details.parts.has_middle()
+        self.details.has_middle()
     }
 
 
 
     /// The middle as a [`str`].
     pub fn middle_str(&self) -> Option<&str> {
-        self.details.parts.middle_range().map(|r| &self.host[r])
-    }
-
-    /// The [`BidiDetail`] for the middle.
-    pub fn middle_bidi_detail(&self) -> Option<BidiDetail> {
-        self.bidi_details().uget(self.details.middle_segment_uindex()?)
+        self.details.middle_range().map(|r| &self.host[r])
     }
 
     /// The middle as a [`DomainSegment`].
     pub fn middle(&self) -> Option<DomainSegment<'_>> {
-        Some(DomainSegment {
-            segment    : self.middle_str()?.into(),
-            bidi_detail: self.middle_bidi_detail()?,
-        })
+        Some(DomainSegment(self.middle_str()?.into()))
     }
 
 
@@ -52,7 +44,7 @@ impl DomainHost<'_> {
             (None, Some(new)) => self.host.to_mut().insert_with(0, &[new.as_str(), "."]),
         }
 
-        self.details.parts = DomainPartsDetails::from_raw_unchecked(&self.host);
+        self.details = DomainDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }

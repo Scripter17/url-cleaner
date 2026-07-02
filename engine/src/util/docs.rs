@@ -1,4 +1,7 @@
-//! [`doc_test`](crate::doc_test).
+//! [`crate::task_state`].
+
+#[expect(unused_imports, reason = "Used in doc comments.")]
+use crate::prelude::*;
 
 /// Generates a [`TaskState`] for doctests.
 ///
@@ -18,6 +21,7 @@ macro_rules! task_state {
                     context: Default::default(),
                     cleaner: Default::default(),
                     unthreader: Box::leak(Box::new(Default::default())),
+                    secrets: Box::leak(Box::new(Default::default())),
                     #[cfg(feature = "cache")]
                     cache: $crate::prelude::Cache {
                         inner: Box::leak(Box::new(Default::default())),

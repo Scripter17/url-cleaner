@@ -1,80 +1,49 @@
+//! Special-not-file URLs.
+
 use super::*;
 
 impl MyUrl {
+    /// Make a new-special-not-file [`Self`].
     pub(super) fn new_special_not_file(scheme: Scheme<'_>, mut rest: &str) -> Result<Self, InvalidUrl> {
         if let Some(trim) = rest.bytes().position(|b| b != b'/' && b != b'\\') {
-            rest = &rest[trim..];
+            rest = unsafe {rest.get_unchecked(trim..)};
         }
 
-        let (auth, rest) = match rest.bytes().position(|b| b == b'/' || b == b'\\' || b == b'?' || b == b'#') {
-            Some(i) => (&rest[..i], &rest[i..]),
-            None    => (rest, ""),
-        };
-
-        let (userinfo, hostport) = match auth.split_once('@') {
-            Some((userinfo, hostport)) => (userinfo, hostport),
-            None                       => (""      , auth    ),
-        };
-
-        let (host, port) = match hostport.split_once(':') {
-            Some((host, port)) => (host    , Some(port)),
-            None               => (hostport, None      ),
-        };
-
-        let (path, rest) = match rest.bytes().position(|b| b == b'?' || b == b'#') {
-            Some(i) => (&rest[..i], &rest[i..]),
-            None    => (rest, ""),
-        };
-
-        let (query, fragment) = match rest.strip_prefix('?') {
-            Some(rest) => match rest.split_once('#') {
-                Some((query, fragment)) => (Some(query), Some(fragment)),
-                None                    => (Some(rest ), None          ),
-            },
-            None => (None, rest.strip_prefix('#'))
+        let ((userinfo, host, port), (path, query, fragment)) = match rest.bytes().position(|b| b == b'/' || b == b'\\' || b == b'?' || b == b'#') {
+            Some(i) => unsafe {(split_auth(rest.get_unchecked(..i)), split_pqf(rest.get_unchecked(i..)))},
+            None    =>         (split_auth(rest                   ), ("/", None, None                 )) ,
         };
 
 
 
-        let userinfo = Userinfo ::new(userinfo) ;
-        let host     = Host     ::new(host    )?;
-        let mut port = MaybePort::new(port    )?;
+        let userinfo = Userinfo          ::new(userinfo.unwrap_or_default());
+        let host     = SpecialNotFileHost::new(host)?;
+        let mut port = MaybePort         ::new(port.filter(|x| !x.is_empty()))?;
 
         if port.as_u16() == scheme.default_port() {
             port = MaybePort(None);
         }
 
-        let path = match scheme.r#type() {
-            SchemeType::File           => Path::new_file            (path),
-            SchemeType::SpecialNotFile => Path::new_special_not_file(path),
-            SchemeType::NonSpecial     => Path::new_non_special     (path),
-        };
-
-        let query = match scheme.r#type() {
-            SchemeType::File | SchemeType::SpecialNotFile => MaybeQuery::new_special    (query),
-            SchemeType::NonSpecial                        => MaybeQuery::new_non_special(query),
-        };
-
-        let fragment = MaybeFragment::new(fragment);
+        let path     = SpecialNotFilePath::new(path    );
+        let query    = MaybeSpecialQuery ::new(query   );
+        let fragment = MaybeFragment     ::new(fragment);
 
 
         let scheme_end   = scheme.len();
-        let username_end = scheme_end + 3 + userinfo.as_str().find(":").unwrap_or(userinfo.len());
+        let username_end = scheme_end + 3 + userinfo.as_str().bytes().position(|b| b == b':').unwrap_or(userinfo.len());
         let host_start   = scheme_end + 3 + userinfo.len() + (!userinfo.is_empty()) as usize;
         let host_end     = host_start + host.len();
         let path_start   = host_end   + port.as_str().map_or(0, |x| x.len() + 1);
         let path_end     = path_start + path.len();
         let query_start  = query.as_str().map(|_| path_end);
 
-        let fragment_start = match fragment.as_str() {
-            Some(_) => match query.as_str() {
-                Some(query) => Some(path_end + 1 + query.len()),
-                None        => Some(path_end),
-            },
-            None => None
+        let fragment_start = match (query.as_str(), fragment.as_str()) {
+            (_      , None   ) => None,
+            (None   , Some(_)) => Some(path_end),
+            (Some(x), Some(_)) => Some(path_end + 1 + x.len())
         };
 
-        let len = path_end + query.as_str().map_or(0, |x| x.len() + 1) + fragment.as_str().map_or(0, |x| x.len() + 1);
+        let len = path_end + query.len().map_or(0, |x| x + 1) + fragment.len().map_or(0, |x| x + 1);
 
         if len > u32::MAX as usize {
             Err(TooLong)?;
@@ -114,4 +83,3 @@ impl MyUrl {
         })
     }
 }
-

@@ -6,57 +6,57 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub struct FunctionArgs {
-    /// Flags.
+    /// The flags.
     ///
-    /// Defaults to an empty [`HashSet`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub flags: HashSet<String>,
-    /// Vars.
+    /// The vars.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub vars: HashMap<String, String>,
-    /// [`Set`]s.
+    /// The [`Set`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub sets: HashMap<String, Set<String>>,
-    /// Lists.
+    /// The [`List`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub lists: HashMap<String, Vec<String>>,
-    /// [`Maps`].
+    pub lists: HashMap<String, List<String>>,
+    /// The [`Map`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub maps: HashMap<String, Map<String>>,
 
 
 
-    /// [`Condition`]s.
+    /// The [`Condition`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub conditions: HashMap<String, Condition>,
-    /// [`Action`]s.
+    /// The [`Action`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub actions: HashMap<String, Action>,
-    /// [`StringSource`]s.
+    /// The [`StringSource`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub string_sources: HashMap<String, StringSource>,
-    /// [`StringModification`]s.
+    /// The [`StringModification`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub string_modifications: HashMap<String, StringModification>,
-    /// [`StringMatcher`]s.
+    /// The [`StringMatcher`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub string_matchers: HashMap<String, StringMatcher>
 }

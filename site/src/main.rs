@@ -2,35 +2,31 @@
 //!
 //! See [url_cleaner_engine] to integrate URL Cleaner with your own projects.
 
+use std::borrow::Cow;
 use std::net::IpAddr;
 use std::path::PathBuf;
-use std::collections::HashSet;
-use axum_server::tls_rustls::RustlsConfig;
+use std::sync::{Arc, OnceLock};
 
 use clap::Parser;
 use axum::{
     routing::{get, any},
     Router,
-    Json
+    Json,
+    extract::{Request, FromRequest, FromRequestParts, ws::{WebSocketUpgrade, Message}},
+    body::Body,
+    response::{IntoResponse, Response},
+    http::{StatusCode, request::Parts},
 };
+use futures_util::StreamExt;
+use bytes::Bytes;
+use axum_server::tls_rustls::RustlsConfig;
+use thiserror::Error;
+use async_stream::stream;
 
 use url_cleaner_engine::prelude::*;
 use url_cleaner_site_types::prelude::*;
 
-mod prelude {
-    pub use serde::{Serialize, Deserialize};
-    pub use better_url::prelude::*;
-    pub use bytes::Bytes;
-    pub use async_stream::stream;
-    pub use futures_util::StreamExt;
-    pub use axum::{
-        response::{IntoResponse, Response},
-        body::Body
-    };
-}
-
 mod clean;
-mod userscript_bench;
 
 /// The verson.
 const VERSION   : &str = env!("CARGO_PKG_VERSION");
@@ -60,7 +56,7 @@ GET /profiles to get the ProfilesConfig.
 #[cfg_attr(feature = "bundled-cleaner", doc = "bundled-cleaner")]
 #[cfg_attr(feature = "http"           , doc = "http"           )]
 #[cfg_attr(feature = "cache"          , doc = "cache"          )]
-/// 
+///
 /// Disabled features:
 #[cfg_attr(not(feature = "bundled-cleaner"), doc = "bundled-cleaner")]
 #[cfg_attr(not(feature = "http"           ), doc = "http"           )]
@@ -75,6 +71,9 @@ struct Args {
     #[cfg(not(feature = "bundled-cleaner"))]
     #[arg(long)]
     cleaner: PathBuf,
+    /// The Secrets to use.
+    #[arg(long)]
+    secrets: Option<PathBuf>,
     /// The ProfilesConfig to use.
     #[arg(long)]
     profiles: Option<PathBuf>,
@@ -82,12 +81,9 @@ struct Args {
     #[arg(long, default_value = "url-cleaner-site-cache.sqlite")]
     #[cfg(feature = "cache")]
     cache: PathBuf,
-    /// The number of worker threads to use. 0 = CPU thread count.
+    /// The number of threads to use per job. 0 = CPU thread count.
     #[arg(long, default_value_t = 0)]
-    workers: usize,
-    /// The passwords to use. One line per password.
-    #[arg(long)]
-    passwords: Option<PathBuf>,
+    threads_per_job: usize,
     /// The IP to bind to.
     #[arg(long, default_value = "127.0.0.1")]
     ip: IpAddr,
@@ -105,90 +101,108 @@ struct Args {
 /// The state of the server.
 #[derive(Debug)]
 struct State {
+    /// The number of worker threads to use.
+    threads_per_job: usize,
     /// The [`ProfiledCleaner`].
     profiled_cleaner: ProfiledCleaner<'static>,
     /// The [`Cleaner`] string.
-    cleaner_string: String,
+    cleaner_string: Cow<'static, str>,
     /// The [`ProfilesConfig`] string.
-    profiles_string: String,
+    profiles_string: Cow<'static, str>,
+    /// The [`Unthreader`].
+    unthreader: Unthreader,
+    /// The [`Secrets`].
+    secrets: Secrets,
     /// The [`InnerCache`].
     #[cfg(feature = "cache")]
     inner_cache: InnerCache,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
     http_client: HttpClient,
-    /// The [`Unthreader`].
-    unthreader: Unthreader,
-    /// The number of worker threads to use.
-    workers: usize,
-    /// The passwords.
-    passwords: Option<HashSet<String>>
 }
 
+/// [`main`].
+#[derive(Debug, Error)]
+enum SiteError {
+    /** [`LoadCleanerError`].        **/ #[error(transparent)] LoadCleanerError       (#[from] LoadCleanerError       ),
+    /** [`LoadParamsDiffError`].     **/ #[error(transparent)] LoadParamsDiffError    (#[from] LoadParamsDiffError    ),
+    /** [`LoadProfilesConfigError`]. **/ #[error(transparent)] LoadProfilesConfigError(#[from] LoadProfilesConfigError),
+    /** [`LoadJobContextError`].     **/ #[error(transparent)] LoadJobContextError    (#[from] LoadJobContextError    ),
+    /** [`LoadSecretsError`].        **/ #[error(transparent)] LoadSecretsError       (#[from] LoadSecretsError       ),
+
+    /// [`RustlsConfig::from_pem_file`].
+    #[error(transparent)]
+    LoadTlsError(std::io::Error),
+    /// [`axum_server::bind_rustls`]/[`axum_server::bind`].
+    #[error(transparent)]
+    FatalError(std::io::Error),
+}
+
+/// The [`Cleaner`].
+static CLEANER: OnceLock<Cleaner<'static>> = OnceLock::new();
+/// The [`State`].
+static STATE  : OnceLock<State           > = OnceLock::new();
+
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), SiteError> {
     let args = Args::parse();
-
-    #[cfg(feature = "bundled-cleaner")]
-    let cleaner_string = match args.cleaner {
-        Some(path) => std::fs::read_to_string(path).expect("The Cleaner to be readable."),
-        None       => BUNDLED_CLEANER_STR.into()
-    };
-    #[cfg(not(feature = "bundled-cleaner"))]
-    let cleaner_string = std::fs::read_to_string(args.cleaner).expect("The Cleaner to be readable.");
-
-    let cleaner = Box::leak(Box::new(serde_json::from_str::<Cleaner>(&cleaner_string).expect("The Cleaner to be valid."))).borrowed();
-
-    let profiles_string = match args.profiles {
-        Some(path) => std::fs::read_to_string(path).expect("The ProfilesConfig to be readable."),
-        None       => "{}".into()
-    };
-
-    let profiled_cleaner = ProfiledCleanerConfig {
-        cleaner,
-        profiles_config: serde_json::from_str(&profiles_string).expect("The ProfilesConfig to be valid.")
-    }.make();
-
-    let state: &'static State = Box::leak(Box::new(State {
-        profiled_cleaner,
-        cleaner_string,
-        profiles_string,
-        #[cfg(feature = "cache")]
-        inner_cache: args.cache.into(),
-        #[cfg(feature = "http")]
-        http_client: Default::default(),
-        unthreader: Unthreader::on(),
-        workers: match args.workers {
-            0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").into(),
-            x => x
-        },
-        passwords: args.passwords.map(|path| std::fs::read_to_string(path).expect("The passwords file to be readable.").lines().map(ToString::to_string).collect()),
-    }));
-
-    let app = Router::new()
-        .route("/"        , get(async || WELCOME))
-        .route("/info"    , get(async || Json(Info {
-            source_code: env!("CARGO_PKG_REPOSITORY").into(),
-            version    : env!("CARGO_PKG_VERSION"   ).into(),
-            password_required: state.passwords.is_some()
-        })))
-        .route("/cleaner"         , get(async || &*state.cleaner_string))
-        .route("/profiles"        , get(async || &*state.profiles_string))
-        .route("/clean"           , any(clean::clean))
-        .route("/userscript-bench", get(userscript_bench::userscript_bench))
-        .with_state(state);
 
     let addr = std::net::SocketAddr::new(args.ip, args.port);
 
     println!("{WELCOME}");
-    println!("Bound to {addr:?}");
+    println!();
+    match args.key.is_some() {
+        true  => println!("https://{addr}"),
+        false => println!("http://{addr}" ),
+    }
 
-    let tls_config = match args.key.zip(args.cert) {
-        Some((key, cert)) => Some(RustlsConfig::from_pem_file(cert, key).await.expect("To be able to load the TLS key and cert.")),
-        None              => None
+    let (cleaner_string, cleaner) = cfg_select! {
+        feature = "bundled-cleaner" => Cleaner::load_or_new_bundled(args.cleaner)?,
+        _                           => {{let (x, y) = Cleaner::load(args.cleaner)?; (x.into(), y)}},
     };
-    match tls_config {
-        Some(tls_config) => axum_server::bind_rustls(addr, tls_config).serve(app.into_make_service()).await.expect("The server to exit gracefully"),
-        None             => axum_server::bind       (addr            ).serve(app.into_make_service()).await.expect("The server to exit gracefully")
+
+    let cleaner = CLEANER.get_or_init(|| cleaner);
+
+    let (profiles_string, profiles) = ProfilesConfig::load_or_default(args.profiles)?;
+
+    let profiled_cleaner = profiles.make(cleaner);
+
+    let secrets = Secrets::load_or_default(args.secrets)?;
+
+    let threads_per_job = match args.threads_per_job {
+        0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").into(),
+        x => x,
     };
+
+    let state: &'static State = STATE.get_or_init(|| State {
+        threads_per_job,
+        profiled_cleaner,
+        cleaner_string,
+        profiles_string,
+        unthreader: Unthreader::on(),
+        secrets,
+        #[cfg(feature = "cache")]
+        inner_cache: args.cache.into(),
+        #[cfg(feature = "http")]
+        http_client: Default::default(),
+    });
+
+    let app = Router::new()
+        .route("/"    , get(async || WELCOME))
+        .route("/info", get(async || Json(Info {
+            source_code: env!("CARGO_PKG_REPOSITORY").into(),
+            version    : env!("CARGO_PKG_VERSION"   ).into(),
+            auth_mode  : state.secrets.auth_info.mode(),
+        })))
+        .route("/cleaner" , get(async || &*state.cleaner_string ))
+        .route("/profiles", get(async || &*state.profiles_string))
+        .route("/clean"   , any(clean::clean))
+        .with_state(state).into_make_service();
+
+    match args.key.zip(args.cert) {
+        Some((key, cert)) => axum_server::bind_rustls(addr, RustlsConfig::from_pem_file(cert, key).await.map_err(SiteError::LoadTlsError)?).serve(app).await.map_err(SiteError::FatalError)?,
+        None              => axum_server::bind       (addr                                                                                ).serve(app).await.map_err(SiteError::FatalError)?,
+    }
+
+    Ok(())
 }

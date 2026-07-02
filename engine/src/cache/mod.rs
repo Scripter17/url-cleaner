@@ -2,28 +2,15 @@
 
 use std::time::Duration;
 
-use thiserror::Error;
-use serde::{Serialize, Deserialize};
-
 use crate::prelude::*;
 
-pub mod location;
-pub mod config;
-pub mod inner;
+mod location;
+mod config;
+mod inner;
 
-/// Prelude module for importing everything here better.
-pub mod prelude {
-    pub use super::location::*;
-    pub use super::config::*;
-    pub use super::inner::*;
-
-    pub use super::{
-        Cache,
-        NewCacheEntry, CacheEntryKeys, CacheEntryValues,
-        LockCacheError, ReadFromCacheError, WriteToCacheError
-    };
-}
-use prelude::*;
+pub use location::*;
+pub use config::*;
+pub use inner::*;
 
 /// An [`InnerCache`] and a [`CacheConfig`].
 ///
@@ -154,55 +141,4 @@ pub struct CacheEntryValues {
     pub value: Option<String>,
     /// The time the original computation took.
     pub duration: Duration
-}
-
-/// The enum of errors [`Cache::read`] and [`InnerCache::read`] can return.
-#[derive(Debug, Error)]
-pub enum ReadFromCacheError {
-    /// Returned when a [`rusqlite::Error`] is encountered.
-    #[error(transparent)]
-    RusqliteError(#[from] Box<rusqlite::Error>),
-    /// Returned when a [`LockCacheError`] is encountered.
-    #[error(transparent)]
-    LockCacheError(#[from] LockCacheError)
-}
-
-impl From<rusqlite::Error> for ReadFromCacheError {
-    fn from(value: rusqlite::Error) -> Self {
-        Self::RusqliteError(Box::new(value))
-    }
-}
-
-/// The enum of errors [`Cache::read`] and [`InnerCache::read`] can return.
-#[derive(Debug, Error)]
-pub enum WriteToCacheError {
-    /// Returned when a [`rusqlite::Error`] is encountered.
-    #[error(transparent)]
-    RusqliteError(#[from] Box<rusqlite::Error>),
-    /// Returned when a [`LockCacheError`] is encountered.
-    #[error(transparent)]
-    LockCacheError(#[from] LockCacheError)
-}
-
-impl From<rusqlite::Error> for WriteToCacheError {
-    fn from(value: rusqlite::Error) -> Self {
-        Self::RusqliteError(Box::new(value))
-    }
-}
-
-/// The enum of errors that [`InnerCache::lock`] can return.
-#[derive(Debug, Error)]
-pub enum LockCacheError {
-    /// Returned when a [`rusqlite::Error`] is encountered.
-    #[error(transparent)]
-    RusqliteError(#[from] Box<rusqlite::Error>),
-    /// Returned when a [`std::io::Error`] is encountered.
-    #[error(transparent)]
-    IoError(#[from] std::io::Error),
-}
-
-impl From<rusqlite::Error> for LockCacheError {
-    fn from(value: rusqlite::Error) -> Self {
-        Self::RusqliteError(Box::new(value))
-    }
 }

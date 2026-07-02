@@ -5,6 +5,8 @@
 use std::path::PathBuf;
 use std::io::IsTerminal;
 use std::fmt::Debug;
+use std::sync::OnceLock;
+use std::borrow::Cow;
 
 use clap::Parser;
 use thiserror::Error;
@@ -32,36 +34,46 @@ struct Args {
     /// Unvalidated task lines to do before STDIN.
     #[arg(verbatim_doc_comment)]
     tasks: Vec<String>,
+    /// Enable brief unchanged mode.
+    #[arg(long)]
+    brief_unchanged: bool,
+    /// Enable brief error mode.
+    #[arg(long)]
+    brief_error: bool,
 
-    /// The cleaner file to use.
+    /// The Cleaner file to use.
     /// Omit to use the built in bundled cleaner.
     #[cfg(feature = "bundled-cleaner")]
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: Option<PathBuf>,
-    /// The cleaner file to use.
+    /// The Cleaner file to use.
     #[cfg(not(feature = "bundled-cleaner"))]
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     cleaner: PathBuf,
 
+    /// The Secrets file to use.
+    #[arg(long, value_name = "PATH")]
+    secrets: Option<PathBuf>,
+
     /// The ProfilesConfig file.
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     profiles: Option<PathBuf>,
-    /// The Profile to use.
+    /// The profile to use.
     /// Applied before ParamsDiffs and --flag/--var.
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long, verbatim_doc_comment, value_name = "NAME", requires = "profiles")]
     profile: Option<String>,
 
     /// A standalone ParamsDiff file.
-    /// Applied after Profiles and before --flag/--var.
+    /// Applied after profiles and before --flag/--var.
     #[arg(long, verbatim_doc_comment, value_name = "PATH")]
     params_diff: Option<PathBuf>,
 
     /// Flags to insert into the params.
-    /// Applied after Profiles and ParamsDiff.
+    /// Applied after profiles and ParamsDiff.
     #[arg(short, long, verbatim_doc_comment)]
     flag: Vec<String>,
     /// Vars to insert into the params.
-    /// Applied after Profiles and ParamsDiff.
+    /// Applied after profiles and ParamsDiff.
     #[arg(short, long, verbatim_doc_comment, value_names = ["NAME", "VALUE"], num_args = 2)]
     var: Vec<Vec<String>>,
 
@@ -102,53 +114,67 @@ struct Args {
 /// The enum of errors [`main`] can return.
 #[derive(Debug, Error)]
 pub enum CliError {
-    /// Returned when a [`GetCleanerError`] is encountered.
-    #[error(transparent)] GetCleanerError(#[from] GetCleanerError),
-    /// Returned when a [`GetParamsDiffError`] is encountered.
-    #[error(transparent)] GetParamsDiffError(#[from] GetParamsDiffError),
-    /// Returned when a [`GetProfilesConfigError`] is encountered.
-    #[error(transparent)] GetProfilesConfigError(#[from] GetProfilesConfigError),
-    /// Returned when a [`GetJobContextError`] is encountered.
-    #[error(transparent)] GetJobContextError(#[from] GetJobContextError),
-    /// Returned when the requested [`Profile`] isn't found.
-    #[error("The requested Profile wasn't found.")]
+    /** [`LoadCleanerError`].        **/ #[error(transparent)] LoadCleanerError       (#[from] LoadCleanerError       ),
+    /** [`LoadParamsDiffError`].     **/ #[error(transparent)] LoadParamsDiffError    (#[from] LoadParamsDiffError    ),
+    /** [`LoadProfilesConfigError`]. **/ #[error(transparent)] LoadProfilesConfigError(#[from] LoadProfilesConfigError),
+    /** [`LoadJobContextError`].     **/ #[error(transparent)] LoadJobContextError    (#[from] LoadJobContextError    ),
+    /** [`LoadSecretsError`].        **/ #[error(transparent)] LoadSecretsError       (#[from] LoadSecretsError       ),
+    /// Returned when the requested profile isn't found.
+    #[error("The requested profile wasn't found.")]
     ProfileNotFound
 }
+
+/// The [`Job`].
+static JOB       : OnceLock<Job       > = OnceLock::new();
+/// The [`Unthreader`].
+static UNTHREADER: OnceLock<Unthreader> = OnceLock::new();
+/// The [`Secrets`].
+static SECRETS   : OnceLock<Secrets   > = OnceLock::new();
+/// The [`InnerCache`].
+#[cfg(feature = "cache")]
+static INNER_CACHE: OnceLock<InnerCache> = OnceLock::new();
+/// The [`HttpClient`].
+#[cfg(feature = "http")]
+static HTTP_CLIENT: OnceLock<HttpClient> = OnceLock::new();
 
 #[tokio::main]
 async fn main() -> Result<(), CliError> {
     let args = Args::parse();
 
-    #[cfg(feature = "bundled-cleaner")]
-    let mut cleaner = Cleaner::load_or_get_bundled_no_cache(args.cleaner)?;
-    #[cfg(not(feature = "bundled-cleaner"))]
-    let mut cleaner = Cleaner::load_from_file(args.cleaner)?;
+    let (_, mut cleaner) = cfg_select! {
+        feature = "bundled-cleaner" => Cleaner::load_or_new_bundled(args.cleaner)?,
+        _                           => Cleaner::load               (args.cleaner)?,
+    };
 
-    if let Some(path) = args.profiles {
-        cleaner = ProfiledCleanerConfig {
-            cleaner,
-            profiles_config: ProfilesConfig::load_from_file(path)?
-        }.into_profile(args.profile.as_deref()).ok_or(CliError::ProfileNotFound)?;
+    let secrets = Secrets::load_or_default(args.secrets)?;
+
+    if let Some((path, name)) = args.profiles.zip(args.profile) {
+        let (_, mut profiles) = ProfilesConfig::load(path)?;
+        let diff = profiles.named.remove(&name).ok_or(CliError::ProfileNotFound)?;
+        diff.apply(&mut cleaner.params);
     }
 
     if let Some(path) = args.params_diff {
-        ParamsDiff::load_from_file(path)?.apply(&mut cleaner.params);
+        ParamsDiff::load(path)?.1.apply(&mut cleaner.params);
     }
 
-    for flag in args.flag {
-        cleaner.params.flags.to_mut().insert(flag);
+    if !args.flag.is_empty() {
+        cleaner.params.flags.to_mut().extend(args.flag);
     }
     for mut x in args.var {
         cleaner.params.vars.to_mut().insert(x.remove(0), x.remove(0));
     }
 
-    let job: &_ = Box::leak(Box::new(Job {
-        context: args.job_context.map(JobContext::load_from_file).transpose()?.unwrap_or_default(),
+    let (_, context) = JobContext::load_or_default(args.job_context)?; 
+
+    let job: &_ = JOB.get_or_init(|| Job {
+        context,
         cleaner,
-        unthreader: Box::leak(Box::new(Unthreader::r#if(args.unthread))),
+        unthreader: UNTHREADER.get_or_init(|| Unthreader::r#if(args.unthread)),
+        secrets: SECRETS.get_or_init(|| secrets),
         #[cfg(feature = "cache")]
         cache: Cache {
-            inner: Box::leak(Box::new(args.cache.into())),
+            inner: INNER_CACHE.get_or_init(|| args.cache.into()),
             config: CacheConfig {
                 read : !args.no_read_cache,
                 write: !args.no_write_cache,
@@ -156,8 +182,8 @@ async fn main() -> Result<(), CliError> {
             }
         },
         #[cfg(feature = "http")]
-        http_client: Box::leak(Box::new(HttpClient::new()))
-    }));
+        http_client: HTTP_CLIENT.get_or_init(HttpClient::new),
+    });
 
     // Do the job.
 
@@ -166,8 +192,8 @@ async fn main() -> Result<(), CliError> {
         x => x
     };
 
-    let (iss,     irs) = (0..threads).map(|_| tokio::sync::mpsc::channel::<Bytes >(512)).collect::<(Vec<_>, Vec<_>)>();
-    let (oss, mut ors) = (0..threads).map(|_| tokio::sync::mpsc::channel::<String>(512)).collect::<(Vec<_>, Vec<_>)>();
+    let (iss,     irs) = (0..threads).map(|_| tokio::sync::mpsc::channel::<Bytes            >(512)).collect::<(Vec<_>, Vec<_>)>();
+    let (oss, mut ors) = (0..threads).map(|_| tokio::sync::mpsc::channel::<Cow<'static, str>>(512)).collect::<(Vec<_>, Vec<_>)>();
 
     let input = tokio::spawn(async move {
         let mut isi = (0..iss.len()).cycle();
@@ -209,8 +235,11 @@ async fn main() -> Result<(), CliError> {
         std::thread::spawn(move || {
             while let Some(task) = ir.blocking_recv() {
                 os.blocking_send(match job.r#do(&*task) {
-                    Ok (x) => x.into(),
-                    Err(e) => format!("-{e:?}")
+                    Ok((false, _  )) if args.brief_unchanged => "=".into(),
+                    Ok((_    , url))                         => url.into(),
+
+                    Err(_) if args.brief_error => "-".into(),
+                    Err(e)                     => format!("-{e:?}").into(),
                 }).expect("The out receiver to still exist.");
             }
         });

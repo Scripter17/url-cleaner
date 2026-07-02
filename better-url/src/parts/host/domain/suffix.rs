@@ -3,29 +3,33 @@
 use crate::prelude::*;
 
 impl DomainHost<'_> {
-    /// [`DomainPartsDetails::has_suffix`].
+    /// [`DomainDetails::has_suffix`].
     pub fn has_suffix(&self) -> bool {
-        self.details.parts().has_suffix()
+        self.details().has_suffix()
     }
 
 
 
     /// The suffix as a [`str`].
     pub fn suffix_str(&self) -> &str {
-        &self.host[self.details.parts.suffix_range()]
-    }
-
-    /// A [`BidiDetailsIter`] for the suffix.
-    pub fn suffix_bidi_details(&self) -> BidiDetailsIter<'_> {
-        self.details.suffix_bidi_details()
+        &self.host[self.details.suffix_range()]
     }
 
     /// The suffix as a [`DomainSegments`].
     pub fn suffix(&self) -> DomainSegments<'_> {
-        DomainSegments {
-            segments    : self.suffix_str         ().into(),
-            bidi_details: self.suffix_bidi_details().into(),
-        }
+        DomainSegments(self.suffix_str().into())
+    }
+
+
+
+    /// The suffix segments as [`str`]s.
+    pub fn suffix_segment_strs(&self) -> SplitDots<'_> {
+        SplitDots(Some(self.suffix_str()))
+    }
+
+    /// The suffix segments as [`DomainSegment`]s.
+    pub fn suffix_segments(&self) -> DomainSegmentsIter<'_> {
+        DomainSegmentsIter(self.suffix_segment_strs())
     }
 
 
@@ -35,11 +39,6 @@ impl DomainHost<'_> {
         self.suffix_segment_strs().neg_nth(index)
     }
 
-    /// The `index`th [`BidiDetail`] of the suffix.
-    pub fn suffix_segment_bidi_detail(&self, index: isize) -> Option<BidiDetail> {
-        self.suffix_bidi_details().neg_nth(index)
-    }
-
     /// The `index`th suffix segment as a [`DomainSegment`].
     pub fn suffix_segment(&self, index: isize) -> Option<DomainSegment<'_>> {
         self.suffix_segments().neg_nth(index)
@@ -47,39 +46,16 @@ impl DomainHost<'_> {
 
 
 
-    /// The suffix segments as [`str`]s.
-    pub fn suffix_segment_strs(&self) -> std::str::Split<'_, char> {
-        self.suffix_str().split('.')
-    }
-
-    /// The suffix segments as [`DomainSegment`]s.
-    pub fn suffix_segments(&self) -> DomainSegmentsIter<'_> {
-        DomainSegmentsIter {
-            segments    : self.suffix_segment_strs(),
-            bidi_details: self.suffix_bidi_details(),
-        }
-    }
-
-
-
     /// The range of suffix segments as a [`str`].
     pub fn suffix_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
-        segments_range_thing(self.suffix_str(), '.', range)
-    }
-
-    /// The [`BidiDetailsIter::subrange`] of the suffix.
-    pub fn suffix_range_bidi_details<B: RangeBounds<isize>>(&self, range: B) -> Option<BidiDetailsIter<'_>> {
-        self.suffix_bidi_details().subrange(range)
+        domain_range_thing(self.suffix_str(), range)
     }
 
     /// The range of suffix segments as a [`DomainSegments`].
     pub fn suffix_range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'_>> {
         let range = (range.start_bound().cloned(), range.end_bound().cloned());
 
-        Some(DomainSegments {
-            segments    : self.suffix_range_str         (range)?.into(),
-            bidi_details: self.suffix_range_bidi_details(range)?.into(),
-        })
+        Some(DomainSegments(self.suffix_range_str(range)?.into()))
     }
 
 
@@ -125,7 +101,7 @@ impl DomainHost<'_> {
             }
         }
 
-        self.details.parts = DomainPartsDetails::from_raw_unchecked(&self.host);
+        self.details = DomainDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -182,14 +158,14 @@ impl DomainHost<'_> {
             },
 
             (Err(0), Some(new)) => match index {
-                0.. if !(self.details.parts.is_fqdn() && new.last_is_empty()) && new.ends_in_a_number() => Err(CantEndInANumber)?,
+                0.. if !(self.details.is_fqdn() && new.last_is_empty()) && new.ends_in_a_number() => Err(CantEndInANumber)?,
 
-                0.. => self.host.to_mut().insert_with(self.details.parts.suffix_after(), &[".", new.as_str()]),
-                ..0 => self.host.to_mut().insert_with(self.details.parts.suffix_start(), &[new.as_str(), "."]),
+                0.. => self.host.to_mut().insert_with(self.details.suffix_after(), &[".", new.as_str()]),
+                ..0 => self.host.to_mut().insert_with(self.details.suffix_start(), &[new.as_str(), "."]),
             },
         }
 
-        self.details.parts = DomainPartsDetails::from_raw_unchecked(&self.host);
+        self.details = DomainDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -225,7 +201,7 @@ impl DomainHost<'_> {
             }
         }
 
-        self.details.parts = DomainPartsDetails::from_raw_unchecked(&self.host);
+        self.details = DomainDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -267,11 +243,11 @@ impl DomainHost<'_> {
             (Ok(Range {start, ..}), 0..) => self.host.to_mut().insert_with(start, &[new.as_str(), "."]),
             (Ok(Range {end  , ..}), ..0) => self.host.to_mut().insert_with(end  , &[".", new.as_str()]),
 
-            (Err(0), 0..) => self.host.to_mut().insert_with(self.details.parts.suffix_after(), &[".", new.as_str()]),
-            (Err(0), ..0) => self.host.to_mut().insert_with(self.details.parts.suffix_start(), &[new.as_str(), "."]),
+            (Err(0), 0..) => self.host.to_mut().insert_with(self.details.suffix_after(), &[".", new.as_str()]),
+            (Err(0), ..0) => self.host.to_mut().insert_with(self.details.suffix_start(), &[new.as_str(), "."]),
         }
 
-        self.details.parts = DomainPartsDetails::from_raw_unchecked(&self.host);
+        self.details = DomainDetails::parse_unchecked(&self.host);
 
         Ok(())
     }

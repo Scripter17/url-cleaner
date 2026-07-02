@@ -28,49 +28,69 @@ pub enum Action {
     },
     /// All contained [`Self`]s.
     All(Vec<Self>),
-    /// Index the [`Map`] with the [`UrlPart`].
-    ///
-    /// If [`Map::get`] returns [`None`], returns [`false`].
+    /// Index the [`Map`] with the [`UrlPart`] and use that or [`Self::PartMap::else`].
     PartMap {
         /// The [`UrlPart`].
         part: UrlPart,
         /// The [`Map`].
+        ///
+        /// Flattened.
         #[serde(flatten)]
-        map: Box<Map<Self>>
+        map: Box<Map<Self>>,
+        /// The else.
+        ///
+        /// Defaulted.
+        #[serde(default, skip_serializing_if = "is_default")]
+        r#else: Box<Self>,
     },
-    /// Index the [`Map`] with the [`StringSource`].
-    ///
-    /// If [`Map::get`] returns [`None`], returns [`false`].
+    /// Index the [`Map`] with the [`StringSource`] and use that or [`Self::StringMap::else`].
     StringMap {
         /// The [`StringSource`].
         value: StringSource,
         /// The [`Map`].
+        ///
+        /// Flattened.
         #[serde(flatten)]
-        map: Box<Map<Self>>
+        map: Box<Map<Self>>,
+        /// The else.
+        ///
+        /// Defaulted.
+        #[serde(default, skip_serializing_if = "is_default")]
+        r#else: Box<Self>,
     },
-    /// Index the [`Partitioning`] with the [`UrlPart`] and index the [`Map`] with the position.
-    ///
-    /// If [`Map::get`] returns [`None`], returns [`false`].
+    /// Index the [`Partitioning`] with the [`UrlPart`], index the [`Map`], and use that or [`Self::PartPartitioning::else`].
     PartPartitioning {
         /// The [`PartitioningSource`].
         partitioning: PartitioningSource,
         /// The [`UrlPart`].
         part: UrlPart,
         /// The [`Map`].
+        ///
+        /// Flattened.
         #[serde(flatten)]
-        map: Box<Map<Self>>
+        map: Box<Map<Self>>,
+        /// The else.
+        ///
+        /// Defaulted.
+        #[serde(default, skip_serializing_if = "is_default")]
+        r#else: Box<Self>,
     },
-    /// Index the [`Partitioning`] with the [`StringSource`] and index the [`Map`] with the position.
-    ///
-    /// If [`Map::get`] returns [`None`], returns [`false`].
+    /// Index the [`Partitioning`] with the [`StringSource`], index the [`Map`], and use that or [`Self::StringPartitioning::else`].
     StringPartitioning {
         /// The [`PartitioningSource`].
         partitioning: PartitioningSource,
         /// The [`StringSource`].
         value: StringSource,
         /// The [`Map`].
+        ///
+        /// Flattened.
         #[serde(flatten)]
-        map: Box<Map<Self>>
+        map: Box<Map<Self>>,
+        /// The else.
+        ///
+        /// Defaulted.
+        #[serde(default, skip_serializing_if = "is_default")]
+        r#else: Box<Self>,
     },
     /// Index the [`Map`] with the first contained [`Partitioning`] name of the [`UrlPart`]s.
     ///
@@ -81,6 +101,8 @@ pub enum Action {
         /// The [`UrlPart`]s.
         parts: Vec<UrlPart>,
         /// The [`Map`].
+        ///
+        /// Flattened.
         #[serde(flatten)]
         map: Box<Map<Self>>
     },
@@ -93,6 +115,8 @@ pub enum Action {
         /// The [`StringSource`]s.
         values: Vec<StringSource>,
         /// The [`Map`].
+        ///
+        /// Flattened.
         #[serde(flatten)]
         map: Box<Map<Self>>
     },
@@ -116,6 +140,8 @@ pub enum Action {
     ///
     /// To revert unfinished changes, pair this with [`Self::RevertOnError`].
     IgnoreError(Box<Self>),
+    /// [`Self::IgnoreError`] + [`Self::RevertOnError`].
+    IgnoreAndRevertOnError(Box<Self>),
     /// Reverts the inner [`Self`] if it returns [`Err`], then returns the error.
     ///
     /// To ignore errors, pair this with [`Self::IgnoreError`].
@@ -136,7 +162,7 @@ pub enum Action {
 
     /// Sets the whole URL.
     SetWhole(StringSource),
-    /// [`Url::join`].
+    /// [`url::Url::join`].
     Join(StringSource),
 
     // Scheme
@@ -328,16 +354,16 @@ pub enum Action {
 
     /// Set the URL to the value of the query param.
     /// # Errors
-    /// If the call to [`BetterUrl::query_param`] reutrns [`None`], returns the error [`ActionError::QueryParamNotFound`].
+    /// If the call to [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     ///
-    /// If the call to [`QuerySegment::into_value`] returns [`None`], returns the error [`ActionError::QueryParamNoValue`].
+    /// If the call to [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     GetUrlFromQueryParam(StringSource),
 
     // Fragment
 
     /// [`BetterUrl::set_fragment`].
     SetFragment(StringSource),
-    /// [`BetterUrl::set_fragment_param`].
+    /// [`BetterUrl::set_fragment_query_param`].
     SetFragmentParam {
         /// The fragment param to set.
         param: QueryParamSelector,
@@ -361,39 +387,15 @@ pub enum Action {
     /// [`MaybeQuery::filter`], keeping only params whose names don't satisfy the [`StringMatcher`].
     AllowFragmentParamsMatching(StringMatcher),
 
-    // General parts
-
-    /// [`UrlPart::set`].
-    SetPart {
-        /// The [`UrlPart`].
-        part: UrlPart,
-        /// The [`StringSource`].
-        value: StringSource
-    },
-    /// [`UrlPart::get`] + [`StringModification::apply`] + [`UrlPart::set`].
-    ModifyPart {
-        /// The [`UrlPart`].
-        part: UrlPart,
-        /// The [`StringModification`].
-        modification: StringModification
-    },
-    /// [`UrlPart::get`] + [`UrlPart::set`].
-    CopyPart {
-        /// The [`UrlPart::get`]ter.
-        from: UrlPart,
-        /// The [`UrlPart::set`]ter.
-        to: UrlPart
-    },
-
     // Misc.
 
-    /// [`Query::filter`] by set and prefix.
+    /// [`MaybeQuery::filter`] by set and prefix.
     ///
     /// If [`Self::HandleParams::query`], filters the query.
     ///
     /// If [`Self::HandleParams::fragment`], filters the fragment.
     ///
-    /// A [`QueryParam`] matches if
+    /// A [`QuerySegment`] matches if its [`QuerySegment::name`]
     ///
     /// 1. It is in [`Self::HandleParams::names`] or it starts with a value in [`Self::HandleParams::prefixes`].
     ///
@@ -459,7 +461,7 @@ pub enum Action {
 
     /// Uses a [`Self`] from [`Cleaner::functions`].
     Function(Box<FunctionCall>),
-    /// Uses a [`Self`] from [`TaskState::call_args`].
+    /// Uses a [`Self`] from [`FunctionArgs`].
     FunctionArg(StringSource),
     /// Calls the specified function and returns its value.
     ///
@@ -487,125 +489,6 @@ pub enum HandleParamsMode {
 
 /// Helper function to get the default [`Action::Repeat::limit`].
 const fn get_10_u64() -> u64 {10}
-
-/// The enum of errors [`Action::apply`] can return.
-#[derive(Debug, Error)]
-pub enum ActionError {
-    /// [`ExplicitError`].
-    #[error(transparent)]
-    ExplicitError(#[from] ExplicitError),
-    /// [`TryElseError`].
-    #[error(transparent)]
-    TryElseError(#[from] Box<TryElseError<Self>>),
-    /// [`FirstNotErrorErrors`].
-    #[error(transparent)]
-    FirstNotErrorErrors(#[from] FirstNotErrorErrors<Self>),
-
-
-    /// [`url::ParseError`].
-    #[error(transparent)]
-    UrlParseError(#[from] url::ParseError),
-
-    /// [`SetSchemeError`].
-    #[error(transparent)]
-    SetSchemeError(#[from] SetSchemeError),
-
-    /// [`SetHostError`].
-    #[error(transparent)]
-    SetHostError(#[from] SetHostError),
-    /// [`SetDomainError`].
-    #[error(transparent)]
-    SetDomainError(#[from] SetDomainError),
-
-    /// [`SetPathError`].
-    #[error(transparent)]
-    SetPathError(#[from] SetPathError),
-    /// Returned when attxting to set a URL's path to [`None`].
-    #[error("Attempted to set the URL's path to None.")]
-    PathCantBeNone,
-
-    /// Returned when attempting to get the value of a query param that wasn't found.
-    #[error("Attempted to get the value of a query param that wasn't found.")]
-    QueryParamNotFound,
-    /// Returned when attempting to get the value of a query param that didn't have a value.
-    #[error("Attempted to get the value of a query param that didn't have a value.")]
-    QueryParamNoValue,
-    /// [`SetQueryError`].
-    #[error(transparent)]
-    SetQueryError(#[from] SetQueryError),
-
-    /// [`SetFragmentError`].
-    #[error(transparent)]
-    SetFragmentError(#[from] SetFragmentError),
-
-    /// [`ConditionError`].
-    #[error(transparent)]
-    ConditionError(#[from] ConditionError),
-    /// [`StringSourceError`].
-    #[error(transparent)]
-    StringSourceError(#[from] StringSourceError),
-    /// [`StringNotFound`].
-    #[error(transparent)]
-    StringNotFound(#[from] StringNotFound),
-    /// [`StringModificationError`].
-    #[error(transparent)]
-    StringModificationError(#[from] StringModificationError),
-    /// [`StringMatcherError`].
-    #[error(transparent)]
-    StringMatcherError(#[from] StringMatcherError),
-    /// [`StringLocationError`].
-    #[error(transparent)]
-    StringLocationError(#[from] StringLocationError),
-    /// [`SetUrlPartError`].
-    #[error(transparent)]
-    SetUrlPartError(#[from] SetUrlPartError),
-
-    /// [`PartitioningSourceError`].
-    #[error(transparent)]
-    PartitioningSourceError(#[from] PartitioningSourceError),
-    /// [`PartitioningNotFound`].
-    #[error(transparent)]
-    PartitioningNotFound(#[from] PartitioningNotFound),
-    /// [`ListSourceError`].
-    #[error(transparent)]
-    ListSourceError(#[from] ListSourceError),
-    /// [`ListNotFound`].
-    #[error(transparent)]
-    ListNotFound(#[from] ListNotFound),
-    /// [`SetSourceError`].
-    #[error(transparent)]
-    SetSourceError(#[from] SetSourceError),
-    /// [`SetNotFound`].
-    #[error(transparent)]
-    SetNotFound(#[from] SetNotFound),
-
-    /// Returned when attempting to get a URL from the cache but its value is [`None`].
-    #[cfg(feature = "cache")]
-    #[error("Attempted to get a URL from the cache but its value was None.")]
-    CachedUrlIsNone,
-    /// [`ReadFromCacheError`].
-    #[cfg(feature = "cache")]
-    #[error(transparent)]
-    ReadFromCacheError(#[from] ReadFromCacheError),
-    /// [`WriteToCacheError`].
-    #[cfg(feature = "cache")]
-    #[error(transparent)]
-    WriteToCacheError(#[from] WriteToCacheError),
-
-    /// [`FunctionNotFound`].
-    #[error(transparent)]
-    FunctionNotFound(#[from] FunctionNotFound),
-    /// [`NotInFunction`].
-    #[error(transparent)]
-    NotInFunction(#[from] NotInFunction),
-    /// [`FunctionArgFunctionNotFound`].
-    #[error(transparent)]
-    FunctionArgFunctionNotFound(#[from] FunctionArgFunctionNotFound),
-
-    /// An arbitrary [`std::error::Error`] returned by [`Action::Extern`].
-    #[error(transparent)]
-    Extern(Box<dyn std::error::Error + Send + Sync>)
-}
 
 /// Generate the "modify {part}" [`Action`]s.
 macro_rules! modify_part {
@@ -638,11 +521,12 @@ impl Action {
 
             // Error handling
 
-            Self::IgnoreError(action) => action.apply(task_state, args).unwrap_or_default(),
+            Self::IgnoreError(action) => action.apply(task_state, args).unwrap_or(true),
+            Self::IgnoreAndRevertOnError(action) => action.apply(task_state, args).unwrap_or(false),
             Self::TryElse {r#try, r#else} => match r#try.apply(task_state, args) {
                 Ok(x) => x,
                 Err(try_error) => match r#else.apply(task_state, args) {
-                    Ok(x) => x,
+                    Ok(_) => true,
                     Err(else_error) => Err(TryElseError {try_error, else_error})?
                 }
             },
@@ -703,21 +587,11 @@ impl Action {
 
             // Maps
 
-            Self::PartMap   {part , map} => if let Some(action) = map.get(part.get(&task_state.url)) {action.apply(task_state, args)?} else {false},
-            Self::StringMap {value, map} => if let Some(action) = map.get(get!(?&value))             {action.apply(task_state, args)?} else {false},
+            Self::PartMap   {part , map, r#else} => map.get(part.get(&task_state.url).as_deref()).unwrap_or(r#else).apply(task_state, args)?,
+            Self::StringMap {value, map, r#else} => map.get(get!(?&value)                       ).unwrap_or(r#else).apply(task_state, args)?,
 
-            Self::PartPartitioning {partitioning, part, map} => {
-                match map.get(get!(partitioning).get(part.get(&task_state.url).as_deref())) {
-                    Some(action) => action.apply(task_state, args)?,
-                    None         => false
-                }
-            },
-            Self::StringPartitioning {partitioning, value, map} => {
-                match map.get(get!(partitioning).get(get!(?&value))) {
-                    Some(action) => action.apply(task_state, args)?,
-                    None         => false
-                }
-            },
+            Self::PartPartitioning   {partitioning, part , map, r#else} => map.get(get!(partitioning).get(part.get(&task_state.url).as_deref())).unwrap_or(r#else).apply(task_state, args)?,
+            Self::StringPartitioning {partitioning, value, map, r#else} => map.get(get!(partitioning).get(get!(?&value)                       )).unwrap_or(r#else).apply(task_state, args)?,
 
             Self::FirstMappedPartPartitioning {partitioning, parts, map} => {
                 let partitioning = get!(partitioning);
@@ -775,22 +649,22 @@ impl Action {
 
             // Domain
 
-            Self::SetHost        (value) => task_state.url.set_host         (get!(?&!value))?,
-            Self::SetDomainPrefix(value) => task_state.url.set_domain_prefix(get!(?&!value))?,
-            Self::SetDomainMiddle(value) => task_state.url.set_domain_middle(get!(?&!value))?,
-            Self::SetDomainSuffix(value) => task_state.url.set_domain_suffix(get!(?&!value))?,
-            Self::SetDomainOrigin(value) => task_state.url.set_domain_origin(get!(?&!value))?,
+            Self::SetHost               (       value) => task_state.url.set_host                 (        get!(?&!value))?,
+            Self::SetDomainPrefix       (       value) => task_state.url.set_domain_prefix        (        get!(?&!value))?,
+            Self::SetDomainMiddle       (       value) => task_state.url.set_domain_middle        (        get!(?&!value))?,
+            Self::SetDomainSuffix       (       value) => task_state.url.set_domain_suffix        (        get!(?&!value))?,
+            Self::SetDomainOrigin       (       value) => task_state.url.set_domain_origin        (        get!(?&!value))?,
 
             Self::SetDomainSegment      {index, value} => task_state.url.set_domain_segment       (*index, get!(?&!value))?,
             Self::SetDomainOriginSegment{index, value} => task_state.url.set_domain_origin_segment(*index, get!(?&!value))?,
             Self::SetDomainPrefixSegment{index, value} => task_state.url.set_domain_prefix_segment(*index, get!(?&!value))?,
             Self::SetDomainSuffixSegment{index, value} => task_state.url.set_domain_suffix_segment(*index, get!(?&!value))?,
 
-            Self::ModifyHost        (modification) => modify_part!(task_state, args, modification, host_str         , set_host         ),
-            Self::ModifyDomainPrefix(modification) => modify_part!(task_state, args, modification, domain_prefix_str, set_domain_prefix),
-            Self::ModifyDomainMiddle(modification) => modify_part!(task_state, args, modification, domain_middle_str, set_domain_middle),
-            Self::ModifyDomainSuffix(modification) => modify_part!(task_state, args, modification, domain_suffix_str, set_domain_suffix),
-            Self::ModifyDomainOrigin(modification) => modify_part!(task_state, args, modification, domain_origin_str, set_domain_origin),
+            Self::ModifyHost               (       modification) => modify_part!(task_state, args, modification, host_str                 , set_host         ),
+            Self::ModifyDomainPrefix       (       modification) => modify_part!(task_state, args, modification, domain_prefix_str        , set_domain_prefix),
+            Self::ModifyDomainMiddle       (       modification) => modify_part!(task_state, args, modification, domain_middle_str        , set_domain_middle),
+            Self::ModifyDomainSuffix       (       modification) => modify_part!(task_state, args, modification, domain_suffix_str        , set_domain_suffix),
+            Self::ModifyDomainOrigin       (       modification) => modify_part!(task_state, args, modification, domain_origin_str        , set_domain_origin),
 
             Self::ModifyDomainSegment      {index, modification} => modify_part!(task_state, args, modification, domain_segment_str       , set_domain_segment       , *index),
             Self::ModifyDomainOriginSegment{index, modification} => modify_part!(task_state, args, modification, domain_origin_segment_str, set_domain_origin_segment, *index),
@@ -802,7 +676,7 @@ impl Action {
             Self::InsertDomainPrefixSegment {index, value} => {task_state.url.insert_domain_prefix_segment(*index, get!(&!value))?; true},
             Self::InsertDomainSuffixSegment {index, value} => {task_state.url.insert_domain_suffix_segment(*index, get!(&!value))?; true},
 
-            Self::EnsureFqdnPeriod => task_state.url.set_fqdn(true)?,
+            Self::EnsureFqdnPeriod => task_state.url.set_fqdn(true )?,
             Self::RemoveFqdnPeriod => task_state.url.set_fqdn(false)?,
 
             // Path
@@ -812,7 +686,7 @@ impl Action {
                 let mut path = Some(task_state.url.path().into_inner());
 
                 match modification.apply(task_state, args, &mut path)? {
-                    true  => task_state.url.set_path(path.ok_or(ActionError::PathCantBeNone)?.into_owned())?,
+                    true  => task_state.url.set_path(path.ok_or(StringNotFound)?.into_owned())?,
                     false => false
                 }
             },
@@ -824,6 +698,7 @@ impl Action {
             Self::SetPathSegment {index, value} => task_state.url.set_path_segment(*index, get!(?&!value))?,
             Self::ModifyPathSegment {index, modification} => {
                 let mut value = task_state.url.path_segment(*index).map(PathSegment::decode);
+
                 match modification.apply(task_state, args, &mut value)? {
                     true  => task_state.url.set_path_segment(*index, value.map(Cow::into_owned).as_deref())?,
                     false => false
@@ -855,10 +730,7 @@ impl Action {
             },
 
             Self::GetUrlFromQueryParam(name) => {
-                task_state.url = task_state.url
-                    .query_param(get!(&name), 0).ok_or(ActionError::QueryParamNotFound)?
-                    .into_value().ok_or(ActionError::QueryParamNoValue)?
-                    .parse()?;
+                task_state.url = task_state.url.query_param(get!(&name), 0).and_then(QuerySegment::into_value).ok_or(QueryParamNotFound)?.parse()?;
                 true
             },
 
@@ -883,29 +755,6 @@ impl Action {
                     (true , fragment) => task_state.url.set_fragment(fragment.into_owned())?,
                     (false, _       ) => false
                 }
-            },
-
-            // General parts
-
-            Self::SetPart {part, value} => {
-                let temp = get!(?!value);
-                part.set(&mut task_state.url, temp.as_deref())?
-            },
-
-            Self::ModifyPart {part, modification} => {
-                let mut temp = part.get(&task_state.url);
-                match modification.apply(task_state, args, &mut temp)? {
-                    true => {
-                        let temp = temp.map(Cow::into_owned);
-                        part.set(&mut task_state.url, temp.as_deref())?
-                    },
-                    false => false
-                }
-            },
-
-            Self::CopyPart {from, to} => {
-                let temp = from.get(&task_state.url).map(Cow::into_owned);
-                to.set(&mut task_state.url, temp.as_deref())?
             },
 
             // Misc.
@@ -955,7 +804,7 @@ impl Action {
                 let subject = get!(&!subject);
 
                 if let Some(entry) = task_state.job.cache.read(CacheEntryKeys {subject, key: task_state.url.as_str()})? {
-                    task_state.url = BetterUrl::parse(&entry.value.ok_or(ActionError::CachedUrlIsNone)?)?;
+                    task_state.url = BetterUrl::parse(&entry.value.ok_or(StringNotFound)?)?;
                     return Ok(true);
                 }
 

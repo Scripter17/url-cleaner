@@ -7,35 +7,35 @@ use crate::prelude::*;
 /// ```
 /// use better_url::util::*;
 ///
-/// assert_eq!(uts46_normalize("a"                  ).1, "a"                  );
-/// assert_eq!(uts46_normalize("A"                  ).1, "a"                  );
-/// assert_eq!(uts46_normalize("3"                  ).1, "3"                  );
-/// assert_eq!(uts46_normalize("-"                  ).1, "-"                  );
-/// assert_eq!(uts46_normalize("--"                 ).1, "--"                 );
-/// assert_eq!(uts46_normalize("London"             ).1, "london"             );
-/// assert_eq!(uts46_normalize("Lloyd-Atkinson"     ).1, "lloyd-atkinson"     );
-/// assert_eq!(uts46_normalize("This has spaces"    ).1, "this has spaces"    );
-/// assert_eq!(uts46_normalize("-> $1.00 <-"        ).1, "-> $1.00 <-"        );
-/// assert_eq!(uts46_normalize("Б"                  ).1, "б"                  );
-/// assert_eq!(uts46_normalize("ü"                  ).1, "ü"                  );
-/// assert_eq!(uts46_normalize("α"                  ).1, "α"                  );
-/// assert_eq!(uts46_normalize("例"                 ).1, "例"                 );
-/// assert_eq!(uts46_normalize("😉"                 ).1, "😉"                 );
-/// assert_eq!(uts46_normalize("αβγ"                ).1, "αβγ"                );
-/// assert_eq!(uts46_normalize("München"            ).1, "münchen"            );
-/// assert_eq!(uts46_normalize("Mnchen-3ya"         ).1, "mnchen-3ya"         );
-/// assert_eq!(uts46_normalize("München-Ost"        ).1, "münchen-ost"        );
-/// assert_eq!(uts46_normalize("Bahnhof München-Ost").1, "bahnhof münchen-ost");
-/// assert_eq!(uts46_normalize("abæcdöef"           ).1, "abæcdöef"           );
-/// assert_eq!(uts46_normalize("Αθήνα"              ).1, "αθήνα"              );
-/// assert_eq!(uts46_normalize("правда"             ).1, "правда"             );
-/// assert_eq!(uts46_normalize("ยจฆฟคฏข"            ).1, "ยจฆฟคฏข"            );
-/// assert_eq!(uts46_normalize("도메인"             ).1, "도메인"             );
-/// assert_eq!(uts46_normalize("ドメイン名例"       ).1, "ドメイン名例"       );
-/// assert_eq!(uts46_normalize("MajiでKoiする5秒前" ).1, "majiでkoiする5秒前" );
-/// assert_eq!(uts46_normalize("「bücher」"         ).1, "「bücher」"         );
+/// assert_eq!(uts46_map_normalize("a"                  ), (false, "a"                  .into()));
+/// assert_eq!(uts46_map_normalize("A"                  ), (true , "a"                  .into()));
+/// assert_eq!(uts46_map_normalize("3"                  ), (false, "3"                  .into()));
+/// assert_eq!(uts46_map_normalize("-"                  ), (false, "-"                  .into()));
+/// assert_eq!(uts46_map_normalize("--"                 ), (false, "--"                 .into()));
+/// assert_eq!(uts46_map_normalize("London"             ), (true , "london"             .into()));
+/// assert_eq!(uts46_map_normalize("Lloyd-Atkinson"     ), (true , "lloyd-atkinson"     .into()));
+/// assert_eq!(uts46_map_normalize("This has spaces"    ), (true , "this has spaces"    .into()));
+/// assert_eq!(uts46_map_normalize("-> $1.00 <-"        ), (false, "-> $1.00 <-"        .into()));
+/// assert_eq!(uts46_map_normalize("Б"                  ), (true , "б"                  .into()));
+/// assert_eq!(uts46_map_normalize("ü"                  ), (false, "ü"                  .into()));
+/// assert_eq!(uts46_map_normalize("α"                  ), (false, "α"                  .into()));
+/// assert_eq!(uts46_map_normalize("例"                 ), (false, "例"                 .into()));
+/// assert_eq!(uts46_map_normalize("😉"                 ), (false, "😉"                 .into()));
+/// assert_eq!(uts46_map_normalize("αβγ"                ), (false, "αβγ"                .into()));
+/// assert_eq!(uts46_map_normalize("München"            ), (true , "münchen"            .into()));
+/// assert_eq!(uts46_map_normalize("Mnchen-3ya"         ), (true , "mnchen-3ya"         .into()));
+/// assert_eq!(uts46_map_normalize("München-Ost"        ), (true , "münchen-ost"        .into()));
+/// assert_eq!(uts46_map_normalize("Bahnhof München-Ost"), (true , "bahnhof münchen-ost".into()));
+/// assert_eq!(uts46_map_normalize("abæcdöef"           ), (false, "abæcdöef"           .into()));
+/// assert_eq!(uts46_map_normalize("Αθήνα"              ), (true , "αθήνα"              .into()));
+/// assert_eq!(uts46_map_normalize("правда"             ), (false, "правда"             .into()));
+/// assert_eq!(uts46_map_normalize("ยจฆฟคฏข"            ), (false, "ยจฆฟคฏข"            .into()));
+/// assert_eq!(uts46_map_normalize("도메인"             ), (false, "도메인"             .into()));
+/// assert_eq!(uts46_map_normalize("ドメイン名例"       ), (false, "ドメイン名例"       .into()));
+/// assert_eq!(uts46_map_normalize("MajiでKoiする5秒前" ), (true , "majiでkoiする5秒前" .into()));
+/// assert_eq!(uts46_map_normalize("「bücher」"         ), (false, "「bücher」"         .into()));
 /// ```
-pub fn uts46_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+pub fn uts46_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let mut value = value.into();
 
     if value.is_ascii() {

@@ -23,17 +23,6 @@ pub enum HttpJsonBodySource {
     Object(HashMap<String, Self>)
 }
 
-/// The enum of errors [`HttpJsonBodySource::get`] can return.
-#[derive(Debug, Error)]
-pub enum HttpJsonBodySourceError {
-    /// [`StringSourceError`].
-    #[error(transparent)]
-    StringSourceError(#[from] StringSourceError),
-    /// [`StringNotFound`].
-    #[error(transparent)]
-    StringNotFound(#[from] StringNotFound),
-}
-
 impl HttpJsonBodySource {
     /// Makes a [`serde_json::Value`].
     /// # Errors

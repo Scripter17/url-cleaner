@@ -1,7 +1,5 @@
 //! [`CacheConfig`].
 
-use serde::{Serialize, Deserialize};
-
 use crate::prelude::*;
 
 /// Configuration for a [`Cache`].
@@ -27,7 +25,7 @@ pub struct CacheConfig {
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
-            read: true,
+            read : true,
             write: true,
             delay: false,
         }

@@ -20,25 +20,20 @@ impl<'a> FragmentQuerySegment<'a> {
         let raw = segment.into();
 
         Self {
-            vs: raw.find("=").and_then(|x| NonZero::new(x + 1)),
+            vs: raw.bytes().position(|b| b == b'=').and_then(|x| NonZero::new(x + 1)),
             raw
         }
     }
     
     /// Make a new [`Self`] from a pair.
     pub fn from_pair<'b, T: Into<Cow<'a, str>>, U: Into<Cow<'b, str>>>(name: T, value: Option<U>) -> Self {
-        let mut ret = name.into();
+        let (_, mut raw) = encode_query_part(name);
 
-        if let Some(value) = value {
-            ret.to_mut().extend(["=".into(), value.into()]);
-        }
-
-        let mut raw = encode_query_part(ret).1;
-
-        match raw.find("%3D") {
-            Some(x) => {
-                raw.replace_range(x..=x+2, "=");
-                Self {raw, vs: NonZero::new(x + 1)}
+        match value {
+            Some(value) => {
+                let vs = raw.len() + 1;
+                raw.to_mut().extend(["=", &encode_query_part(value).1]);
+                Self {raw, vs: NonZero::new(vs)}
             },
             None => Self {raw, vs: None}
         }

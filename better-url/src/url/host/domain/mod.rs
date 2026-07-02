@@ -13,18 +13,18 @@ mod normal;
 impl BetterUrl {
     /// If it has a domain.
     pub fn has_domain(&self) -> bool {
-        self.domain_parts_details().is_some()
+        self.domain_details().is_some()
     }
 
 
 
     /// The domain host as a [`str`].
     pub fn domain_str(&self) -> Option<&str> {
-        self.domain_parts_details().and(self.host_str())
+        self.domain_details().and(self.host_str())
     }
 
     /// Shorthand for [`Self::domain_labels_segment_strs`].
-    pub fn domain_segment_strs(&self) -> Option<std::str::Split<'_, char>> {
+    pub fn domain_segment_strs(&self) -> Option<SplitDots<'_>> {
         self.domain_labels_segment_strs()
     }
 
@@ -96,7 +96,7 @@ impl BetterUrl {
         Ok(())
     }
 
-    /// [`DomainHost::set_domain_range`].
+    /// [`DomainHost::set_range`].
     /// # Errors
     /// If the call to [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
     ///

@@ -1,47 +1,60 @@
+//! Benchmark URL parsing.
+
 use crate::prelude::*;
 
+/// Benchmark URL parsing.
 #[derive(Debug, Parser)]
 pub struct Args {
-    #[clap(long)]
+    /// The URLs.
+    pub urls: Vec<String>,
+    /// The num.
+    #[arg(long)]
     pub num: u32,
-    #[clap(long)]
+    /// Test [`MyUrl`].
+    #[arg(long)]
     pub new: bool,
-    #[clap(long)]
+    /// Test [`BetterUrl`].
+    #[arg(long)]
     pub old: bool,
-    #[clap(long)]
+    /// Test [`url::Url`].
+    #[arg(long)]
     pub raw: bool,
 }
 
 impl Args {
+    /// Do the command.
     pub fn r#do(self) {
-        let urls = [
-            "httPs://a:b@1:3/a",
-            "https://example.com",
-            "https://example.com?#",
-            "https://example.com?a#a",
-            "https://example.com/asdakjdfsd/f/sdf/sdf/sdfsdafsdfsdf/sdaf/sdafsdgffsdg/fsdg/fsdg/fsdg/fsdgfsdgfdgfdsgfsd/gfsd/gfd/gfsdg",
-            "test:abc",
-        ];
-
-        for url in urls {
+        for url in self.urls.into_iter().chain(std::io::stdin().lines().map(|x| x.expect("???"))) {
             println!("{url}");
 
             if self.new {
-                let a = std::time::Instant::now();
-                for _ in 0..self.num {MyUrl::new(url).unwrap();}
-                println!("  New: {:?}", a.elapsed());
+                let start = std::time::Instant::now();
+
+                for _ in 0..self.num {
+                    MyUrl::new(&url).expect("To parse the URL.");
+                }
+
+                println!("  New: {:?}", start.elapsed());
             }
 
             if self.old {
-                let a = std::time::Instant::now();
-                for _ in 0..self.num {BetterUrl::parse(url).unwrap();}
-                println!("  Old: {:?}", a.elapsed());
+                let start = std::time::Instant::now();
+
+                for _ in 0..self.num {
+                    BetterUrl::parse(&url).expect("To parse the URL.");
+                }
+
+                println!("  Old: {:?}", start.elapsed());
             }
 
             if self.raw {
-                let a = std::time::Instant::now();
-                for _ in 0..self.num {url::Url::parse(url).unwrap();}
-                println!("  Raw: {:?}", a.elapsed());
+                let start = std::time::Instant::now();
+
+                for _ in 0..self.num {
+                    url::Url::parse(&url).expect("To parse the URL.");
+                }
+
+                println!("  Raw: {:?}", start.elapsed());
             }
 
             println!();

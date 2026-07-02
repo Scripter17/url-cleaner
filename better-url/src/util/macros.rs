@@ -176,7 +176,7 @@ macro_rules! as_str_impls {
     };
 }
 
-/// Impls for types that impl [`From`] of [`Cow`] of [`str`].
+/// Impls for types that impl [`From`] of [`std::borrow::Cow`] of [`str`].
 macro_rules! from_cow_impls {
     ($($t:ident),*) => {
         $(
@@ -208,7 +208,7 @@ macro_rules! from_cow_impls {
     };
 }
 
-/// Impls for types that impl [`From`] of [`Option`] of [`Cow`] of [`str`].
+/// Impls for types that impl [`From`] of [`Option`] of [`std::borrow::Cow`] of [`str`].
 macro_rules! from_option_cow_impls {
     ($($t:ident),*) => {
         $(
@@ -244,7 +244,7 @@ macro_rules! from_option_cow_impls {
     };
 }
 
-/// Impls for types that impl [`TryFrom`] of [`Cow`] of [`str`].
+/// Impls for types that impl [`TryFrom`] of [`std::borrow::Cow`] of [`str`].
 macro_rules! try_from_cow_impls {
     ($($t:ident),*) => {
         $(
@@ -291,7 +291,7 @@ macro_rules! try_from_cow_impls {
     };
 }
 
-/// Impls for types that impl [`TryFrom`] of [`Option`] of [`Cow`] of [`str`].
+/// Impls for types that impl [`TryFrom`] of [`Option`] of [`std::borrow::Cow`] of [`str`].
 macro_rules! try_from_option_cow_impls {
     ($($t:ident),*) => {
         $(

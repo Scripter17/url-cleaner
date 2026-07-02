@@ -2,90 +2,152 @@
 
 use crate::prelude::*;
 
-/// [`uts46_normalize`] + [`decode_normalized_domain_segments`].
+/// Percent decode, UTS46 normalize, and decode a string of domain segments.
+///
+/// If you know the input is already percent decoded, see [`percent_decoded_domain_segments_to_unicode`].
 /// # Errors
-/// If the call to [`decode_normalized_domain_segments`] returns an error, that error is returned.
-pub fn decode_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, BidiDetails), InvalidDomainSegments> {
-    let (a, value) = uts46_normalize(value);
-    let (b, value, bidi_details) = decode_normalized_domain_segments(value)?;
-    Ok((a || b, value, bidi_details))
+/// If the call to [`try_percent_decode`] returns an error, returns the error [`InvalidDomainSegments`].
+///
+/// If the call to [`normalized_domain_segments_to_unicode`] returns an error, that error is returned.
+pub fn domain_segments_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
+    let (a, value) = try_percent_decode(value).map_err(|_| InvalidDomainSegments)?;
+    let (b, value) = percent_decoded_domain_segments_to_unicode(value)?;
+    Ok((a || b, value))
 }
 
-/// Applies [`decode_normalized_domain_segment`] to each segment.
+/// UTS46 normalize and decode a percent decoded string of domain segments.
+///
+/// If you know the input is already UTS46 normalized, see [`normalized_domain_segments_to_unicode`].
 /// # Errors
-/// If any call to [`decode_normalized_domain_segment`] returns an error, returns the error [`InvalidDomainSegments`].
-pub fn decode_normalized_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, BidiDetails), InvalidDomainSegments> {
+/// If the call to [`normalized_domain_segments_to_unicode`] returns an error, that error is returned.
+pub fn percent_decoded_domain_segments_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
+    let (a, value) = uts46_map_normalize(value);
+    let (b, value) = normalized_domain_segments_to_unicode(value)?;
+    Ok((a || b, value))
+}
+
+/// Decode a percent decoded and UTS46 normalized string of domain segments.
+/// # Errors
+/// If any call to [`strict_normalized_domain_segment_to_unicode`] returns an error, returns the error [`InvalidDomainSegments`].
+pub fn normalized_domain_segments_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
     let value = value.into();
-
-    let mut bytes = value.bytes().peekable();
-
-    'a: {if matches!(bytes.next(), None | Some(b'a'..=b'z')) {
-        let mut segments = 1;
-
-        while let Some(b) = bytes.next() {
-            match b {
-                b'a'..=b'z' | b'0'..=b'9' => {},
-                b'.' if matches!(bytes.peek(), None | Some(b'a'..=b'z' | b'.')) => segments += 1,
-                _ => break 'a
-            }
-        }
-
-        return Ok((false, value, BidiDetails(SmallBitVec::from_elem(segments + 1, false))));
-    }}
-
-    let mut segments = value.split('.');
-    let mut bidi_details = BidiDetails::default();
+    let mut segments = SplitDots(Some(&value));
+    let mut saw_inv = false;
+    let mut saw_rtl = false;
 
     while let Some(segment) = segments.next() {
-        let (changed, decoded, bidi_detail) = decode_normalized_domain_segment(segment)?;
-        bidi_details.try_push(bidi_detail)?;
+        let (changed, decoded, bidi_detail) = match strict_normalized_domain_segment_to_unicode(segment) {
+            Ok (x) => x,
+            Err(_) if value.is_ascii() => return Ok((false, value)),
+            Err(e) => Err(e)?
+        };
+
+        match bidi_detail {
+            BidiDetail::Ltr => {},
+            BidiDetail::Inv => saw_inv = true,
+            BidiDetail::Rtl => saw_rtl = true,
+        }
+
+        if saw_inv && saw_rtl {
+            return Ok((false, value));
+        }
+
         if changed {
             let mut ret = value[..segment.addr() - value.addr()].to_string();
             ret.push_str(&decoded);
             for segment in segments {
-                let (_, segment, bidi_detail) = decode_normalized_domain_segment(segment)?;
-                bidi_details.try_push(bidi_detail)?;
-                ret.push('.');
-                ret.push_str(&segment);
+                let (_, decoded, bidi_detail) = match strict_normalized_domain_segment_to_unicode(segment) {
+                    Ok (x) => x,
+                    Err(_) if value.is_ascii() => return Ok((false, value)),
+                    Err(e) => Err(e)?
+                };
+
+                match bidi_detail {
+                    BidiDetail::Ltr => {},
+                    BidiDetail::Inv => saw_inv = true,
+                    BidiDetail::Rtl => saw_rtl = true,
+                }
+
+                if saw_inv && saw_rtl {
+                    return Ok((false, value));
+                }
+
+                ret.extend([".", &decoded]);
             }
-            return Ok((true, ret.into(), bidi_details));
+            return Ok((true, ret.into()));
         }
     }
 
-    Ok((false, value, bidi_details))
+    Ok((false, value))
 }
 
-/// Applies [`decode_normalized_domain_segment_unchecked`] to each segment.
+
+
+/// Strictly decode a percent decoded and UTS46 normalized string of domain segments.
+/// # Errors
+/// If any call to [`strict_normalized_domain_segment_to_unicode`] returns an error, returns the error [`InvalidDomainSegments`].
 ///
-/// Notably also skips making a [`BidiDetails`].
-/// # Panics
-/// If any call to [`decode_normalized_domain_segment_unchecked`] panics, that panic is continued.
-pub fn decode_normalized_domain_segments_unchecked<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+/// If any call to [`BidiDetail::parse`] returns an error, that error is returned.
+pub fn strict_normalized_domain_segments_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
     let value = value.into();
-
-    let mut bytes = value.bytes().peekable();
-
-    'a: {if matches!(bytes.next(), None | Some(b'a'..=b'z')) {
-        while let Some(b) = bytes.next() {
-            match b {
-                b'a'..=b'z' | b'0'..=b'9' => {},
-                b'.' if matches!(bytes.peek(), None | Some(b'a'..=b'z' | b'.')) => {},
-                _ => break 'a
-            }
-        }
-
-        return (false, value);
-    }}
-
-    let mut segments = value.split('.');
+    let mut segments = SplitDots(Some(&value));
+    let mut saw_inv = false;
+    let mut saw_rtl = false;
 
     while let Some(segment) = segments.next() {
-        if let (true, decoded) = decode_normalized_domain_segment_unchecked(segment) {
+        let (changed, decoded, bidi_detail) = strict_normalized_domain_segment_to_unicode(segment)?;
+
+        match bidi_detail {
+            BidiDetail::Ltr => {},
+            BidiDetail::Inv => saw_inv = true,
+            BidiDetail::Rtl => saw_rtl = true,
+        }
+
+        if saw_inv && saw_rtl {
+            return Ok((false, value));
+        }
+
+        if changed {
             let mut ret = value[..segment.addr() - value.addr()].to_string();
             ret.push_str(&decoded);
             for segment in segments {
-                ret.push('.');
-                ret.push_str(&decode_normalized_domain_segment_unchecked(segment).1);
+                let (_, decoded, bidi_detail) =  strict_normalized_domain_segment_to_unicode(segment)?;
+
+                match bidi_detail {
+                    BidiDetail::Ltr => {},
+                    BidiDetail::Inv => saw_inv = true,
+                    BidiDetail::Rtl => saw_rtl = true,
+                }
+
+                if saw_inv && saw_rtl {
+                    return Ok((false, value));
+                }
+
+                ret.extend([".", &decoded]);
+            }
+            return Ok((true, ret.into()));
+        }
+    }
+
+    Ok((false, value))
+}
+
+
+
+/// Uncheckedly deocde a percent decoded and UTS46 normalized string of domain segments.
+/// # Panics
+/// If any call to [`unchecked_normalized_domain_segment_to_unicode`] panics, that panic is continued.
+pub fn unchecked_normalized_domain_segments_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    let value = value.into();
+    let mut segments = SplitDots(Some(&value));
+
+    while let Some(segment) = segments.next() {
+        if let (true, decoded) = unchecked_normalized_domain_segment_to_unicode(segment) {
+            let mut ret = value[..segment.addr() - value.addr()].to_string();
+            ret.push_str(&decoded);
+            for segment in segments {
+                let (_, decoded) = unchecked_normalized_domain_segment_to_unicode(segment);
+                ret.extend([".", &decoded]);
             }
             return (true, ret.into());
         }

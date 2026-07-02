@@ -1,35 +1,28 @@
 //! [`help`].
 
-use std::fmt::Write;
+use crate::*;
 
-use poise::serenity_prelude::CreateAttachment;
-use poise::reply::CreateReply;
+impl Bot {
+    /// The `help` slash command.
+    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
+    pub async fn help(&self, context: &Context, command: &CommandInteraction) {
+        let mut message = format!("\
+            {INFO}\n\n\
+            Use either the `clean_url` slash command or the various \"Clean URLs\" context menu commands to clean URLs.\
+        ");
 
-use crate::prelude::*;
+        if let CurrentApplicationInfo {bot_public: true, id, ..} = context.http.get_current_application_info().await.expect("???") {
+            message.push_str(&format!("\n\
+                Install to your account: https://discord.com/oauth2/authorize?client_id={id}\
+                Insrall to a server: https://discord.com/oauth2/authorize?client_id={id}&scope=bot\
+            "));
+        }
 
-/// The help command.
-#[poise::command(slash_command)]
-pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
-    let mut ret = crate::INFO.to_string();
+        let response = CreateInteractionResponseMessage::new()
+            .content(message)
+            .ephemeral(true)
+            .add_files([self.cleaner_file.clone(), self.profiles_file.clone()]);
 
-    let bot_data = ctx.http().get_current_application_info().await.expect("Getting the current application info to work.");
-
-    if bot_data.bot_public {
-        writeln!(ret, "\n\nInstall to your account: https://discord.com/oauth2/authorize?client_id={0}"    , bot_data.id).expect("???");
-        writeln!(ret, "Install to a server: https://discord.com/oauth2/authorize?client_id={0}&scope=bot", bot_data.id).expect("???");
-    } else {
-        writeln!(ret, "\n\nThis instance is private.").expect("???");
+        command.create_response(&context.http, CreateInteractionResponse::Message(response)).await.expect("Sending response to work.");
     }
-
-    ret.push_str("\nTo clean the URLs in a message, right click/long press a message, go to the apps, and click any of the available \"Clean URLs\" actions");
-    ret.push_str("\nAlternatively, you can use the /clean_url slash command.");
-
-    ctx.send(CreateReply::default()
-        .ephemeral(true)
-        .content(ret)
-        .attachment(CreateAttachment::bytes(ctx.data().cleaner_string        .clone(), "cleaner.json" ).description("The Cleaner this bot is using."))
-        .attachment(CreateAttachment::bytes(ctx.data().profiles_config_string.clone(), "profiles.json").description("The ProfilesConfig this bot is using."))
-    ).await?;
-    Ok(())
 }
-

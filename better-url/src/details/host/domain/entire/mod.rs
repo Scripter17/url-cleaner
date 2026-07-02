@@ -2,108 +2,111 @@
 
 use crate::prelude::*;
 
-mod parts;
+mod prefix;
+mod middle;
+mod suffix;
+mod fqddot;
+mod origin;
+mod labels;
+mod normal;
 
-pub use parts::*;
-
-/// Details for a [`DomainHost`].
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+/// The details of where a domain's parts are.
+/// # Examples
+/// ```
+/// use better_url::prelude::*;
+///
+/// let domain = "abc.def.example.co.uk.";
+/// let details = DomainDetails::parse_unchecked(domain);
+///
+/// assert_eq!(&domain[details.prefix_range().unwrap()], "abc.def"               );
+/// assert_eq!(&domain[details.predot_range().unwrap()],        "."              );
+/// assert_eq!(&domain[details.middle_range().unwrap()],         "example"       );
+/// assert_eq!(&domain[details.middot_range().unwrap()],                "."      );
+/// assert_eq!(&domain[details.suffix_range()         ],                 "co.uk" );
+/// assert_eq!(&domain[details.fqddot_range().unwrap()],                      ".");
+///
+/// assert_eq!(&domain[details.origin_range().unwrap()],         "example.co.uk" );
+/// assert_eq!(&domain[details.labels_range()         ], "abc.def.example.co.uk" );
+/// assert_eq!(&domain[details.normal_range()         ], "abc.def.example.co.uk" );
+///
+/// let domain = "www.example.co.uk";
+/// let details = DomainDetails::parse_unchecked(domain);
+///
+/// assert_eq!(&domain[details.prefix_range().unwrap()], "www"               );
+/// assert_eq!(&domain[details.predot_range().unwrap()],     "."             );
+/// assert_eq!(&domain[details.middle_range().unwrap()],      "example"      );
+/// assert_eq!(&domain[details.middot_range().unwrap()],             "."     );
+/// assert_eq!(&domain[details.suffix_range()         ],              "co.uk");
+/// assert_eq!(        details.fqddot_range()          , None                );
+///
+/// assert_eq!(&domain[details.origin_range().unwrap()],     "example.co.uk" );
+/// assert_eq!(&domain[details.labels_range()         ], "www.example.co.uk" );
+/// assert_eq!(&domain[details.normal_range()         ],     "example.co.uk" );
+/// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DomainDetails {
-    /// The [`DomainPartsDetails`].
-    pub(crate) parts: DomainPartsDetails,
-    /// The [`BidiDetails`].
-    pub(crate) bidi : BidiDetails,
+    /// If [`Self::ss`] is non-zero, the [`Range::start`] of the middle.
+    pub(crate) ms: u32,
+    /// The [`Range::start`] of the suffix.
+    pub(crate) ss: u32,
+    /// The [`Range::end`] of the suffix.
+    pub(crate) sa: u32,
+    /// If the domain is fully qualified.
+    pub(crate) fq: bool,
+    /// If the prefix is `www`.
+    pub(crate) wp: bool,
 }
 
 impl DomainDetails {
-    /// The [`BidiDetails`].
-    pub fn bidi(&self) -> &BidiDetails {
-        &self.bidi
-    }
-
-    /// The [`DomainPartsDetails`].
-    pub fn parts(&self) -> DomainPartsDetails {
-        self.parts
-    }
-
-
-
-    /// The range of segment indices of the prefix.
-    pub fn prefix_segments_urange(&self) -> Option<RangeTo<usize>> {
-        Some(.. self.middle_segment_uindex()?)
-    }
-
-    /// The segment index of the middle.
-    pub fn middle_segment_uindex(&self) -> Option<usize> {
-        Some(self.bidi.len() - self.parts.mi?.get() as usize - 1)
-    }
-
-    /// The range of segment indices of the suffix.
-    pub fn suffix_segments_urange(&self) -> RangeFrom<usize> {
-        match self.middle_segment_uindex() {
-            Some(x) => x + 1 ..,
-            None    => 0 ..
+    /// Parse an encoded domain.
+    /// # Errors
+    /// If the call to [`ends_in_a_number`] returns [`true`], returns the error [`InvalidDomainHost`].
+    ///
+    /// If the call to [`Self::parse_not_eian`] returns an error, that error is returned.
+    pub fn parse(value: &str) -> Result<Self, InvalidDomainHost> {
+        match ends_in_a_number(value) {
+            true  => Err(InvalidDomainHost),
+            false => Self::parse_not_eian(value),
         }
     }
 
-    /// The range of segment indices of the labels.
-    pub fn labels_segments_urange(&self) -> RangeFull {
-        ..
-    }
-
-    /// The range of segment indices of the origin.
-    pub fn origin_segments_urange(&self) -> Option<RangeFrom<usize>> {
-        Some(self.middle_segment_uindex()?..)
-    }
-
-    /// The range of segment indices of the normal.
-    pub fn normal_segments_urange(&self) -> RangeFrom<usize> {
-        match self.parts.wp {
-            true  => 1..,
-            false => 0..,
+    /// Parse a not-[`ends_in_a_number`] encoded domain.
+    /// # Errors
+    /// If `value` is empty, returns the error [`InvalidDomainHost`].
+    pub fn parse_not_eian(value: &str) -> Result<Self, InvalidDomainHost> {
+        match value {
+            "" => Err(InvalidDomainHost),
+            _  => Ok(Self::parse_unchecked(value)),
         }
     }
 
+    /// Parse a domain literal without checking for validity.
+    /// # Panics
+    /// If the call to [`psl::suffix`] returns [`None`] (`value` is empty), panics.
+    pub fn parse_unchecked(value: &str) -> Self {
+        let suffix = psl::suffix(value.as_bytes()).expect("A non-empty host").trim().as_bytes();
 
+        let ss = (suffix as *const [u8]).addr() - value.addr();
+        let sa = ss + suffix.len();
 
-    /// A [`BidiDetailsIter`] for the prefix.
-    pub fn prefix_bidi_details(&self) -> Option<BidiDetailsIter<'_>> {
-        self.bidi.urange(self.prefix_segments_urange()?)
+        let ms = match ss {
+            0 => 0,
+            x => value.as_bytes()[..x - 1].iter().rposition(|&b| b == b'.').map_or(0, |x| x + 1)
+        };
+
+        Self {
+            ms: ms as u32,
+            ss: ss as u32,
+            sa: sa as u32,
+            fq: sa != value.len(),
+            wp: &value[..ms] == "www.",
+        }
     }
-
-    /// The [`BidiDetail`] for the middle.
-    pub fn middle_bidi_detail(&self) -> Option<BidiDetail> {
-        self.bidi.uget(self.middle_segment_uindex()?)
-    }
-
-    /// A [`BidiDetailsIter`] for the suffix.
-    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn suffix_bidi_details(&self) -> BidiDetailsIter<'_> {
-        self.bidi.urange(self.suffix_segments_urange()).expect("To always have a suffix.")
-    }
-
-    /// A [`BidiDetailsIter`] for the labels.
-    pub fn labels_bidi_details(&self) -> BidiDetailsIter<'_> {
-        self.bidi.iter()
-    }
-
-    /// A [`BidiDetailsIter`] for the origin.
-    pub fn origin_bidi_details(&self) -> Option<BidiDetailsIter<'_>> {
-        self.bidi.urange(self.origin_segments_urange()?)
-    }
-
-    /// A [`BidiDetailsIter`] for the normal.
-    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn normal_bidi_details(&self) -> BidiDetailsIter<'_> {
-        self.bidi.urange(self.normal_segments_urange()).expect("To always have a normal.")
-    }
-
-
 
     /// The length of the domain.
-    #[allow(clippy::len_without_is_empty, reason = "Can't be empty.")]
+    #[expect(clippy::len_without_is_empty, reason = "Can't be empty.")]
     pub fn len(&self) -> usize {
-        self.parts.len()
+        self.sa as usize + self.fq as usize
     }
 }
 

@@ -2,52 +2,38 @@
 
 use std::fmt::Write;
 
-use poise::reply::CreateReply;
-use comrak::nodes::NodeValue;
+use crate::*;
 
-use url_cleaner_engine::prelude::*;
+impl Bot {
+    /// The `clean_urls` message context menu command.
+    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
+    pub async fn clean_urls(&self, context: &Context, command: &CommandInteraction, profile: Option<&str>) {
+        if let Some(ResolvedTarget::Message(msg)) = command.data.target() {
+            let job = Job {
+                cleaner    : self.profiled_cleaner.get(profile).expect("To only be given valid profiles."),
+                context    : Default::default(),
+                unthreader : &Default::default(),
+                secrets    : &self.secrets,
+                #[cfg(feature = "cache")]
+                cache      : self.cache,
+                #[cfg(feature = "http")]
+                http_client: &self.http_client,
+            };
 
-use crate::prelude::*;
+            let mut ret = String::new();
 
-/// Clean a message's URLs.
-pub async fn clean_urls(ctx: Context<'_>, msg: serenity::Message, cleaner: Cleaner<'_>) -> Result<(), serenity::Error> {
-    let job = &Job {
-        context: Default::default(),
-        cleaner,
-        unthreader: &Unthreader::default(),
-        #[cfg(feature = "cache")]
-        cache: ctx.data().cache,
-        #[cfg(feature = "http")]
-        http_client: &ctx.data().http_client
-    };
-
-    let mut ret = String::with_capacity(64 * msg.content.len().checked_ilog2().unwrap_or(0).pow(2) as usize);
-
-    {
-        let arena = comrak::Arena::new();
-        let root = comrak::parse_document(
-            &arena,
-            &msg.content,
-            &comrak::Options {
-                extension: comrak::options::Extension::builder().autolink(true).spoiler(true).strikethrough(true).underline(true).build(),
-                ..Default::default()
-            }
-        );
-
-        for node in root.descendants() {
-            if let NodeValue::Link(ref link) = node.data.borrow().value {
-                match job.r#do(&*link.url) {
-                    Ok (x) => writeln!(ret, "{x}"   ).expect("This to always work."),
-                    Err(e) => writeln!(ret, "-{e:?}").expect("This to always work.")
+            for url in crate::parse::parse(&msg.content) {
+                match job.r#do(url) {
+                    Ok ((_, x)) => writeln!(ret, "{x}"   ).expect("This to always work."),
+                    Err(e     ) => writeln!(ret, "-{e:?}").expect("This to always work.")
                 }
             }
+
+            if ret.is_empty() {
+                ret = "No URLs".into();
+            }
+
+            command.create_response(&context.http, CreateInteractionResponse::Message(CreateInteractionResponseMessage::new().ephemeral(true).content(ret))).await.expect("Sending the response to work.");
         }
     }
-
-    if ret.is_empty() {
-        ret = "No URLs found".into();
-    }
-
-    ctx.send(CreateReply::default().ephemeral(true).content(ret)).await?;
-    Ok(())
 }

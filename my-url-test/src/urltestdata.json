@@ -3967,38 +3967,6 @@
     "search": "?%EF%BF%BD",
     "hash": "#%EF%BF%BD"
   },
-  "Domain is ASCII, but a label is invalid IDNA",
-  {
-    "input": "http://a.b.c.xn--pokxncvks",
-    "base": null,
-    "failure": true
-  },
-  {
-    "input": "http://10.0.0.xn--pokxncvks",
-    "base": null,
-    "failure": true
-  },
-  "IDNA labels should be matched case-insensitively",
-  {
-    "input": "http://a.b.c.XN--pokxncvks",
-    "base": null,
-    "failure": true
-  },
-  {
-    "input": "http://a.b.c.Xn--pokxncvks",
-    "base": null,
-    "failure": true
-  },
-  {
-    "input": "http://10.0.0.XN--pokxncvks",
-    "base": null,
-    "failure": true
-  },
-  {
-    "input": "http://10.0.0.xN--pokxncvks",
-    "base": null,
-    "failure": true
-  },
   "Test name prepping, fullwidth input should be converted to ASCII and NOT IDN-ized. This is 'Go' in fullwidth UTF-8/UTF-16.",
   {
     "input": "http://Ｇｏ.com",
@@ -8719,11 +8687,6 @@
     "base": null,
     "failure": true
   },
-  {
-    "input": "file://xn--/p",
-    "base": null,
-    "failure": true
-  },
   "https://bugzilla.mozilla.org/show_bug.cgi?id=1647058",
   {
     "input": "#link",
@@ -9462,11 +9425,6 @@
   },
   {
     "input": "https://%C2%AD/",
-    "base": null,
-    "failure": true
-  },
-  {
-    "input": "https://xn--/",
     "base": null,
     "failure": true
   },

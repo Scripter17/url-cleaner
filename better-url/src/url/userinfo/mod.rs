@@ -1,4 +1,4 @@
-//! [`Userinfo`] and co.
+//! Userinfo stuff.
 
 mod both;
 mod username;

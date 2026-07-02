@@ -14,7 +14,7 @@ pub fn encode_opaque_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a,
         value.replace_range(value.len() - 1 .., "%20");
     }
 
-    percent_encode(cow_str_to_bytes(value), false, false, false, OPAQUE_PATH)
+    percent_encode::<'_, _, false, false, false>(cow_str_to_bytes(value), OPAQUE_PATH)
 }
 
 /// Turn a [`SegmentedPath`] into an [`OpaquePath`].

@@ -26,7 +26,7 @@ Licensed under the AGPL 3.0 or later.
   - Unset: Keep URLs as-is.
   - `desktop`: to change mobile URLs to desktop URLs.
   - `mobile`: to change dekstop URLs to mobile URLs.
-- `bypass_vip_api_key`: The API key used for [bypass.vip](https://bypass.vip). Overrides the `URL_CLEANER_BYPASS_VIP_API_KEY` environment var.
+- `bypass_vip_api_key`: The API key used for [bypass.vip](https://bypass.vip). Overrides the `bypass_vip_api_key` Secret Var.
   - Required: false.
 - `bluesky_mode`: Decides what host to replace Bluesky/Bluesky embed hosts with.
   - Required: false.
@@ -117,10 +117,14 @@ Licensed under the AGPL 3.0 or later.
 ### Vars
 
 - `unmangle_mode`: The unmangle mode to use.
+  - Required: false.
 - `site`: The name of the website used in the contact_info unmangle_mode.
+  - Required: false.
 - `text`: The text of the link used in the contact_info unmangle_mode.
+  - Required: false.
 
-## Environment Vars
+## Secrets
 
-- `URL_CLEANER_BYPASS_VIP_API_KEY`: The API key used for [bypass.vip](https://bypass.vip). Can be overridden with the `bypass_vip_api_key` var.
+- `bypass_vip_api_key`: The API key used for [bypass.vip](https://bypass.vip). Can be overridden with the `bypass_vip_api_key` Params Var.
+  - Required: false.
 

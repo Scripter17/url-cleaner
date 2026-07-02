@@ -21,4 +21,7 @@ pub enum SetPortError {
     /// Returned when attempting to set the port of a file URL.
     #[error("Attempted to set the port of a file URL.")]
     SchemeIsFile,
+    /// [`InvalidPort`].
+    #[error(transparent)]
+    InvalidPort(#[from] InvalidPort),
 }

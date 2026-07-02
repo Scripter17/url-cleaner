@@ -179,14 +179,6 @@ impl<'a> PathSegment<'a> {
 
 
 
-impl<'a> From<Cow<'a, str>> for PathSegment<'a> {
-    fn from(value: Cow<'a, str>) -> Self {
-        Self::SpecialNotFile(value.into())
-    }
-}
-
-
-
 impl<'a> From<SpecialNotFilePathSegment<'a>> for PathSegment<'a> {fn from(value: SpecialNotFilePathSegment<'a>) -> Self {Self::SpecialNotFile(value)}}
 impl<'a> From<FilePathSegment          <'a>> for PathSegment<'a> {fn from(value: FilePathSegment          <'a>) -> Self {Self::File          (value)}}
 impl<'a> From<NonSpecialPathSegment    <'a>> for PathSegment<'a> {fn from(value: NonSpecialPathSegment    <'a>) -> Self {Self::NonSpecial    (value)}}

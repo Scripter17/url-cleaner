@@ -1,14 +1,6 @@
 //! `/clean`.
 
-use axum::{
-    http::StatusCode,
-    extract::{State, Request, WebSocketUpgrade, FromRequest, FromRequestParts},
-};
-
-use url_cleaner_engine::prelude::*;
-use url_cleaner_site_types::prelude::*;
-
-use crate::prelude::*;
+use crate::*;
 
 mod ws;
 mod http;
@@ -35,13 +27,18 @@ impl<S: Send + Sync> FromRequest<S> for CleanPayload {
     }
 }
 
+impl FromRequestParts<&'static crate::State> for &'static crate::State {
+    type Rejection = std::convert::Infallible;
+
+    async fn from_request_parts(_: &mut Parts, state: &&'static crate::State) -> Result<Self, Self::Rejection> {
+        Ok(*state)
+    }
+}
+
 /// `/clean`.
-pub async fn clean(state: State<&'static crate::State>, job_config: JobConfig, clean_payload: CleanPayload) -> Result<Response, (StatusCode, &'static str)> {
-    match (&state.passwords, job_config.password) {
-        (None           , None          ) => {},
-        (None           , Some(_       )) => Err((StatusCode::UNAUTHORIZED, "Requires no password"))?,
-        (Some(_        ), None          ) => Err((StatusCode::UNAUTHORIZED, "Requires password"))?,
-        (Some(passwords), Some(password)) => if !passwords.contains(&password) {Err((StatusCode::UNAUTHORIZED, "Invalid password"))?}
+pub async fn clean(state: &'static crate::State, job_config: JobConfig, clean_payload: CleanPayload) -> Result<Response, (StatusCode, &'static str)> {
+    if !state.secrets.auth_info.check(job_config.username.as_deref(), job_config.password.as_deref()) {
+        Err((StatusCode::UNAUTHORIZED, "Bad auth"))?;
     }
 
     let mut cleaner = state.profiled_cleaner.get(job_config.profile.as_deref()).ok_or((StatusCode::BAD_REQUEST, "Unknown profile"))?;
@@ -51,13 +48,14 @@ pub async fn clean(state: State<&'static crate::State>, job_config: JobConfig, c
         context: job_config.context,
         cleaner,
         unthreader: state.unthreader.filter(job_config.unthread),
+        secrets: &state.secrets,
         #[cfg(feature = "cache")]
         cache: Cache {
             inner: &state.inner_cache,
             config: CacheConfig {
-                read : job_config.read_cache,
+                read : job_config.read_cache ,
                 write: job_config.write_cache,
-                delay: job_config.cache_delay
+                delay: job_config.cache_delay,
             }
         },
         #[cfg(feature = "http")]
@@ -65,7 +63,7 @@ pub async fn clean(state: State<&'static crate::State>, job_config: JobConfig, c
     };
 
     Ok(match clean_payload {
-        CleanPayload::Ws  (wsu ) => ws  ::clean_ws  (state, job, wsu ).await,
-        CleanPayload::Http(body) => http::clean_http(state, job, body).await,
+        CleanPayload::Ws  (wsu ) => ws  ::clean_ws  (state, job, job_config.brief_unchanged, job_config.brief_error, wsu ).await,
+        CleanPayload::Http(body) => http::clean_http(state, job, job_config.brief_unchanged, job_config.brief_error, body).await,
     })
 }
