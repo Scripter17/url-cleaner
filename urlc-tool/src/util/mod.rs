@@ -55,6 +55,8 @@ pub enum Bin {
     SiteClient,
     /// Discord
     Discord,
+    /// My URL Test.
+    MyUrlTest,
 }
 
 impl Bin {
@@ -64,7 +66,8 @@ impl Bin {
             Self::Cli        => "url-cleaner",
             Self::Site       => "url-cleaner-site",
             Self::SiteClient => "url-cleaner-site-client",
-            Self::Discord    => "url-cleaner-discord,"
+            Self::Discord    => "url-cleaner-discord",
+            Self::MyUrlTest  => "my-url-test",
         }
     }
 
@@ -74,7 +77,8 @@ impl Bin {
             Self::Cli        => "target/release/url-cleaner",
             Self::Site       => "target/release/url-cleaner-site",
             Self::SiteClient => "target/release/url-cleaner-site-client",
-            Self::Discord    => "target/release/url-cleaner-discord,"
+            Self::Discord    => "target/release/url-cleaner-discord",
+            Self::MyUrlTest  => "target/release/my-url-test",
         }
     }
 
@@ -84,7 +88,8 @@ impl Bin {
             Self::Cli        => "target/debug/url-cleaner",
             Self::Site       => "target/debug/url-cleaner-site",
             Self::SiteClient => "target/debug/url-cleaner-site-client",
-            Self::Discord    => "target/debug/url-cleaner-discord,"
+            Self::Discord    => "target/debug/url-cleaner-discord",
+            Self::MyUrlTest  => "target/debug/my-url-test",
         }
     }
 }

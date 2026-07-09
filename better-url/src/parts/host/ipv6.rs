@@ -14,6 +14,16 @@ pub struct Ipv6Host<'a> {
 }
 
 impl<'a> Ipv6Host<'a> {
+    /// Make a new [`Self`] with zero validity checks.
+    /// # Safety
+    /// `value` must be a valid IPv6 host literal and `details` must be its [`Ipv6Details`].
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: Ipv6Details) -> Self {
+        Self {
+            host: value.into(),
+            details,
+        }
+    }
+
     /// The host as a [`str`].
     pub fn as_str(&self) -> &str {
         &self.host
@@ -52,8 +62,12 @@ impl<'a> TryFrom<Cow<'a, str>> for Ipv6Host<'a> {
     type Error = InvalidIpv6Host;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        // TODO: Fix.
-        Ok(value.parse::<Ipv6Details>()?.parsed.into())
+        let (_, addr, host) = make_ipv6_host(value)?;
+
+        Ok(Self {
+            host,
+            details: addr.into(),
+        })
     }
 }
 
@@ -61,10 +75,43 @@ impl<'a> TryFrom<Host<'a>> for Ipv6Host<'a> {
     type Error = Host<'a>;
 
     fn try_from(value: Host<'a>) -> Result<Self, Self::Error> {
-        match value {
-            Host::Ipv6(x) => Ok(x),
-            x => Err(x)
-        }
+        Ok(match value {
+            Host::Ipv6(x) => x,
+            x             => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<FileHost<'a>> for Ipv6Host<'a> {
+    type Error = FileHost<'a>;
+
+    fn try_from(value: FileHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            FileHost::Ipv6(x) => x,
+            x                 => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<SpecialNotFileHost<'a>> for Ipv6Host<'a> {
+    type Error = SpecialNotFileHost<'a>;
+
+    fn try_from(value: SpecialNotFileHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            SpecialNotFileHost::Ipv6(x) => x,
+            x                           => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<NonSpecialHost<'a>> for Ipv6Host<'a> {
+    type Error = NonSpecialHost<'a>;
+
+    fn try_from(value: NonSpecialHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            NonSpecialHost::Ipv6(x) => x,
+            x                       => Err(x)?,
+        })
     }
 }
 
@@ -78,6 +125,8 @@ impl<'a> TryFrom<IpHost<'a>> for Ipv6Host<'a> {
         }
     }
 }
+
+
 
 impl From<Ipv6Addr> for Ipv6Host<'static> {
     fn from(value: Ipv6Addr) -> Self {

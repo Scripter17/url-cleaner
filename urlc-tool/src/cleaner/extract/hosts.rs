@@ -45,14 +45,14 @@ fn get_parts<'a>(layer: &'a serde_json::Value, out: &mut BTreeSet<Host<'a>>) {
         },
         serde_json::Value::Object(obj) => {
             for (k, v) in obj {
-                if !out.contains(&**k) && let Ok(host) = (&**k).try_into() {
+                if !out.contains(&**k) && let Ok(host) = Host::new_special_not_file(&**k) {
                     out.insert(host);
                 }
                 get_parts(v, out);
             }
         },
         serde_json::Value::String(x) => {
-            if !out.contains(&**x) && let Ok(host) = (&**x).try_into() {
+            if !out.contains(&**x) && let Ok(host) = Host::new_special_not_file(&**x) {
                 out.insert(host);
             }
         },

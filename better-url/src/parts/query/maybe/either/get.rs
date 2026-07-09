@@ -3,23 +3,30 @@
 use crate::prelude::*;
 
 impl MaybeQuery<'_> {
-    /// [`Query::iter`].
+    /// A [`DoubleEndedIterator`] of the [`QuerySegment`]s.
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = QuerySegment<'_>> {
-        self.0.as_ref().into_iter().flat_map(Query::iter)
+        let is_special = self.is_special();
+
+        SplitAmpersands(self.as_str()).map(move |x| {
+            match is_special {
+                true  => SpecialQuerySegment   ::new_unchecked(x).into(),
+                false => NonSpecialQuerySegment::new_unchecked(x).into(),
+            }
+        })
     }
 
     /// [`Query::find_iter`].
     pub fn find_iter<'b>(&'b self, name: &str) -> impl DoubleEndedIterator<Item = QuerySegment<'b>> {
-        self.0.as_ref().into_iter().flat_map(|x| x.find_iter(name))
+        self.iter().filter(move |x| x.name() == name)
     }
 
     /// [`Query::get`].
     pub fn get(&self, index: isize) -> Option<QuerySegment<'_>> {
-        self.0.as_ref()?.get(index)
+        self.iter().neg_nth(index)
     }
 
     /// [`Query::find`].
     pub fn find<'b>(&'b self, name: &str, index: isize) -> Option<QuerySegment<'b>> {
-        self.0.as_ref()?.find(name, index)
+        self.find_iter(name).neg_nth(index)
     }
 }

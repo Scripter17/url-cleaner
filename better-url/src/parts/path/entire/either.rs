@@ -36,6 +36,11 @@ impl<'a> Path<'a> {
         path.into().into()
     }
 
+    /// [`NonSpecialEmptyPath`].
+    pub fn new_non_special_empty<T: Into<NonSpecialEmptyPath<'a>>>(path: T) -> Self {
+        path.into().into()
+    }
+
     /// [`OpaquePath`].
     pub fn new_opaque<T: Into<OpaquePath<'a>>>(path: T) -> Self {
         path.into().into()
@@ -49,7 +54,7 @@ impl<'a> Path<'a> {
             Self::File          (x) => x.as_str(),
             Self::SpecialNotFile(x) => x.as_str(),
             Self::NonSpecial    (x) => x.as_str(),
-            Self::Opaque (x) => x.as_str(),
+            Self::Opaque        (x) => x.as_str(),
         }
     }
 

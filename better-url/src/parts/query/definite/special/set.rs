@@ -24,22 +24,22 @@ impl SpecialQuery<'_> {
     ///
     /// let mut query = SpecialQuery::new("a=1&b=2&a=3");
     ///
-    /// query.set(0, "a", Some(Some("2"))).unwrap();
+    /// query.set("a",  0, Some(Some("2"))).unwrap();
     /// assert_eq!(query, "a=2&b=2&a=3");
     ///
-    /// query.set(0, "c", Some(Some("4"))).unwrap();
+    /// query.set("c",  0, Some(Some("4"))).unwrap();
     /// assert_eq!(query, "a=2&b=2&a=3&c=4");
     ///
-    /// query.set(0, "c", Some(None)).unwrap();
+    /// query.set("c",  0, Some(None)).unwrap();
     /// assert_eq!(query, "a=2&b=2&a=3&c");
     ///
-    /// query.set(0, "c", None).unwrap();
+    /// query.set("c",  0, None).unwrap();
     /// assert_eq!(query, "a=2&b=2&a=3");
     ///
-    /// query.set(-1, "c", Some(None)).unwrap();
+    /// query.set("c", -1, Some(None)).unwrap();
     /// assert_eq!(query, "c&a=2&b=2&a=3");
     /// ```
-    pub fn set(&mut self, index: isize, name: &str, value: Option<Option<&str>>) -> Result<bool, SetQueryError> {
+    pub fn set(&mut self, name: &str, index: isize, value: Option<Option<&str>>) -> Result<bool, SetQueryError> {
         let temp = self.find_iter(name).try_neg_nth(index);
 
         match value.map(|value| SpecialQuerySegment::from_pair(name, value)) {

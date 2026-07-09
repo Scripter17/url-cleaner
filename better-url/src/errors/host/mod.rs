@@ -44,16 +44,10 @@ pub struct NoHost;
 #[error("Failed to get a domain.")]
 pub struct NoDomain;
 
-/// Returned when failing to parse a host.
+/// Returned when attempting to set a URL that can't have a host to have a host.
 #[derive(Debug, Error)]
-pub enum InvalidHost {
-    /** [`InvalidDomainHost`]. **/ #[error(transparent)] InvalidDomainHost(#[from] InvalidDomainHost),
-    /** [`InvalidIpv4Host`].   **/ #[error(transparent)] InvalidIpv4Host  (#[from] InvalidIpv4Host  ),
-    /** [`InvalidIpv6Host`].   **/ #[error(transparent)] InvalidIpv6Host  (#[from] InvalidIpv6Host  ),
-    /** [`InvalidIpHost`].     **/ #[error(transparent)] InvalidIpHost    (#[from] InvalidIpHost    ),
-    /** [`InvalidOpaqueHost`]. **/ #[error(transparent)] InvalidOpaqueHost(#[from] InvalidOpaqueHost),
-    /** [`InvalidEmptyHost`].  **/ #[error(transparent)] InvalidEmptyHost (#[from] InvalidEmptyHost ),
-}
+#[error("Attempted to set a URL that can't have a host to have a host.")]
+pub struct CantHaveHost;
 
 /// Returned when failing to set a host.
 #[derive(Debug, Error)]
@@ -63,5 +57,18 @@ pub enum SetHostError {
     /** [`NoDomain`]        **/ #[error(transparent)] NoDomain      (#[from] NoDomain      ),
     /** [`CantBeNone`].     **/ #[error(transparent)] CantBeNone    (#[from] CantBeNone    ),
     /** [`CantBeEmpty`].    **/ #[error(transparent)] CantBeEmpty   (#[from] CantBeEmpty   ),
+    /** [`CantHaveHost`].   **/ #[error(transparent)] CantHaveHost  (#[from] CantHaveHost  ),
     /** [`TooLong`].        **/ #[error(transparent)] TooLong       (#[from] TooLong       ),
 }
+
+/// Returned when failing to parse a host.
+#[derive(Debug, Error)]
+#[error("Failed to parse a host.")]
+pub struct InvalidHost;
+
+impl From<InvalidDomainHost> for InvalidHost {fn from(_: InvalidDomainHost) -> Self {Self}}
+impl From<InvalidIpv4Host  > for InvalidHost {fn from(_: InvalidIpv4Host  ) -> Self {Self}}
+impl From<InvalidIpv6Host  > for InvalidHost {fn from(_: InvalidIpv6Host  ) -> Self {Self}}
+impl From<InvalidIpHost    > for InvalidHost {fn from(_: InvalidIpHost    ) -> Self {Self}}
+impl From<InvalidOpaqueHost> for InvalidHost {fn from(_: InvalidOpaqueHost) -> Self {Self}}
+impl From<InvalidEmptyHost > for InvalidHost {fn from(_: InvalidEmptyHost ) -> Self {Self}}

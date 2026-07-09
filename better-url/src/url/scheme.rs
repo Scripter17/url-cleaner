@@ -44,11 +44,10 @@ impl BetterUrl {
             Err(TooLong)?;
         }
 
-        if  self.cannot_be_a_base() &&  new.is_special_not_file() {Err(SetSchemeError::CannotBeABaseToSpecialNotFile)?;}
-        if  self.is_special      () && !new.is_special         () {Err(SetSchemeError::SpecialToNonSpecial          )?;}
-        if !self.is_special      () &&  new.is_special         () {Err(SetSchemeError::NonSpecialToSpecial          )?;}
-        if  self.has_authority   () &&  new.is_file            () {Err(SetSchemeError::FileCantHaveAuthority        )?;}
-        if !self.has_host        () &&  new.is_special         () {Err(SetSchemeError::NoHostToSpecial              )?;}
+        if  self.is_special   () && !new.is_special() {return Ok(false);}
+        if !self.is_special   () &&  new.is_special() {return Ok(false);}
+        if  self.has_authority() &&  new.is_file   () {return Ok(false);}
+        if !self.has_host     () &&  new.is_special() {return Ok(false);}
 
         self.url.set_scheme(new.as_str()).expect("To be valid.");
         self.details.scheme = new.details();

@@ -40,6 +40,6 @@ For each line:
 
 - If it begins with `-`, it is an error result.
 
-  - If "brief error" is disabled, the rest of the line is a possibly empty string detailing the error.
+  - If "brief error" is disabled, the rest of the line is a non-empty string detailing the error.
 
   - If "brief error" is enabeld, the rest of the line is empty.

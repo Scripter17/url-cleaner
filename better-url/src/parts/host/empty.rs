@@ -12,6 +12,18 @@ pub struct EmptyHost<'a> {
 }
 
 impl<'a> EmptyHost<'a> {
+    /// Make a new [`Self`] with zero validity checks.
+    /// # Safety
+    /// `value` must be a valid empty host literal and `details` must be its [`OpaqueHostDetails`].
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: EmptyHostDetails) -> Self {
+        let _ = value.into();
+
+        Self {
+            details,
+            ..Self::default()
+        }
+    }
+
     /// The host as a [`str`].
     pub fn as_str(&self) -> &str {
         ""
@@ -55,9 +67,31 @@ impl<'a> TryFrom<Host<'a>> for EmptyHost<'a> {
     type Error = Host<'a>;
 
     fn try_from(value: Host<'a>) -> Result<Self, Self::Error> {
-        match value {
-            Host::Empty(x) => Ok(x),
-            x => Err(x),
-        }
+        Ok(match value {
+            Host::Empty(x) => x,
+            x              => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<FileHost<'a>> for EmptyHost<'a> {
+    type Error = FileHost<'a>;
+
+    fn try_from(value: FileHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            FileHost::Empty(x) => x,
+            e                  => Err(e)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<NonSpecialHost<'a>> for EmptyHost<'a> {
+    type Error = NonSpecialHost<'a>;
+
+    fn try_from(value: NonSpecialHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            NonSpecialHost::Empty(x) => x,
+            e                        => Err(e)?,
+        })
     }
 }

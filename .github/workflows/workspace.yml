@@ -49,7 +49,7 @@ jobs:
     - name: Test
       run: |
         set -euo pipefail
-        cargo hack --exclude my-url-test test --feature-powerset --clean-per-run
+        cargo hack test --feature-powerset --clean-per-run
 
   doc:
     runs-on: ubuntu-latest
@@ -59,7 +59,7 @@ jobs:
     - name: Doc
       run: |
         set -euo pipefail
-        RUSTDOCFLAGS="-Dwarnings" cargo hack --exclude my-url-test doc --feature-powerset --no-deps --clean-per-run --document-private-items
+        RUSTDOCFLAGS="-Dwarnings" cargo hack doc --feature-powerset --no-deps --clean-per-run --document-private-items
 
   clippy:
     runs-on: ubuntu-latest
@@ -69,4 +69,4 @@ jobs:
     - name: Clippy
       run: |
         set -euo pipefail
-        cargo hack --exclude my-url-test clippy --feature-powerset --clean-per-run -- -D warnings
+        cargo hack clippy --feature-powerset --clean-per-run -- -D warnings

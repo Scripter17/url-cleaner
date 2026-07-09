@@ -291,75 +291,6 @@ macro_rules! try_from_cow_impls {
     };
 }
 
-/// Impls for types that impl [`TryFrom`] of [`Option`] of [`std::borrow::Cow`] of [`str`].
-macro_rules! try_from_option_cow_impls {
-    ($($t:ident),*) => {
-        $(
-            impl<'a> $t<'a> {
-                /// Make a new [`Self`].
-                /// # Errors
-                /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
-                pub fn new<T: TryInto<Self>>(value: T) -> Result<Self, T::Error> {
-                    value.try_into()
-                }
-            }
-
-            impl FromStr for $t<'static> {
-                type Err = <Self as TryFrom<String>>::Error;
-
-                fn from_str(s: &str) -> Result<Self, Self::Err> {
-                    s.to_string().try_into()
-                }
-            }
-
-            impl<'a> TryFrom<&'a str     > for $t<'a     > {
-                type Error = <Self as TryFrom<Option<Cow<'a, str>>>>::Error;
-
-                fn try_from(value: &'a str     ) -> Result<Self, Self::Error> {
-                    Cow::from(value).try_into()
-                }
-            }
-            impl     TryFrom<String      > for $t<'static> {
-                type Error = <Self as TryFrom<Option<Cow<'static, str>>>>::Error;
-
-                fn try_from(value: String      ) -> Result<Self, Self::Error> {
-                    Cow::from(value).try_into()
-                }
-            }
-            impl<'a> TryFrom<Cow<'a, str>> for $t<'a     > {
-                type Error = <Self as TryFrom<Option<Cow<'a, str>>>>::Error;
-
-                fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-                    Some(value).try_into()
-                }
-            }
-
-            impl<'a> TryFrom<Option<&'a str>> for $t<'a     > {
-                type Error = <Self as TryFrom<Option<Cow<'a, str>>>>::Error;
-
-                fn try_from(value: Option<&'a str>) -> Result<Self, Self::Error> {
-                    value.map(Cow::from).try_into()
-                }
-            }
-
-            impl     TryFrom<Option<String >> for $t<'static> {
-                type Error = <Self as TryFrom<Option<Cow<'static, str>>>>::Error;
-
-                fn try_from(value: Option<String >) -> Result<Self, Self::Error> {
-                    value.map(Cow::from).try_into()
-                }
-            }
-
-            #[cfg(feature = "serde")]
-            impl<'de> Deserialize<'de> for $t<'de> {
-                fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-                    <Option<Cow<'de, str>>>::deserialize(deserializer)?.try_into().map_err(D::Error::custom)
-                }
-            }
-        )*
-    };
-}
-
 /// Impls for `T::borrowed`.
 macro_rules! borrowed_impls {
     ($($t:ident),*) => {
@@ -377,5 +308,4 @@ pub(crate) use as_str_impls;
 pub(crate) use from_cow_impls;
 pub(crate) use from_option_cow_impls;
 pub(crate) use try_from_cow_impls;
-pub(crate) use try_from_option_cow_impls;
 pub(crate) use borrowed_impls;

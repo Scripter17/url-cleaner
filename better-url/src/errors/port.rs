@@ -24,4 +24,10 @@ pub enum SetPortError {
     /// [`InvalidPort`].
     #[error(transparent)]
     InvalidPort(#[from] InvalidPort),
+    /// Returned when attempting to set a URL that can't have a port to have a port.
+    #[error("Attempted to set a URL that can't have a port to have a port")]
+    CantHavePort,
+    /// [`TooLong`].
+    #[error(transparent)]
+    TooLong(#[from] TooLong),
 }

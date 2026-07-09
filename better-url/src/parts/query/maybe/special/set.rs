@@ -16,7 +16,7 @@ impl MaybeSpecialQuery<'_> {
     /// If the call to [`SpecialQuery::set`] returns an error, that error is returned.
     pub fn set(&mut self, name: &str, index: isize, value: Option<Option<&str>>) -> Result<bool, SetQueryError> {
         match &mut self.0 {
-            Some(query) => match query.set(index, name, value) {
+            Some(query) => match query.set(name, index, value) {
                 Err(SetQueryError::CantBeNone(CantBeNone)) => {self.0 = None; Ok(true)},
                 x => x
             },

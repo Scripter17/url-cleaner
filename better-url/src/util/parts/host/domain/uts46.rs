@@ -38,7 +38,7 @@ use crate::prelude::*;
 pub fn uts46_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let mut value = value.into();
 
-    if value.is_ascii() {
+    if value.is_ascii() || value.chars().all(idna_valid) {
         if value.bytes().any(|b| b.is_ascii_uppercase()) {
             value.to_mut().make_ascii_lowercase();
             return (true, value);

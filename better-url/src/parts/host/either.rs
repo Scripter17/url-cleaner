@@ -9,13 +9,13 @@ use crate::prelude::*;
 /// ```
 /// use better_url::prelude::*;
 ///
-/// assert_eq!(Host::new("example.com"  ).unwrap().domain().unwrap(), "example.com");
+/// assert_eq!(Host::new_special_not_file("example.com"  ).unwrap().domain().unwrap(), "example.com");
 ///
 /// // Accepts percent encoded domain/IPv4 hosts.
-/// assert_eq!(Host::new("example%2Ecom").unwrap().domain().unwrap(), "example.com");
+/// assert_eq!(Host::new_special_not_file("example%2Ecom").unwrap().domain().unwrap(), "example.com");
 ///
 /// // Accepts the stupid bullshit the IPv4 host parser accepts.
-/// assert_eq!(Host::new("0x12.034"     ).unwrap().ipv4  ().unwrap(), "18.0.0.28"  );
+/// assert_eq!(Host::new_special_not_file("0x12.034"     ).unwrap().ipv4  ().unwrap(), "18.0.0.28"  );
 /// ```
 #[derive(Debug, Clone)]
 pub enum Host<'a> {
@@ -27,26 +27,60 @@ pub enum Host<'a> {
 }
 
 impl<'a> Host<'a> {
-    /// Make a new [`Self::Domain`].
+    /// Create a [`Self`] depending on the variant of the [`HostDetails`].
+    /// # Safety
+    /// `value` must be a valid literal for the corresponding [`Self`] variant and `details` must be its [`HostDetails`].
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: HostDetails) -> Self {
+        unsafe {
+            match details {
+                HostDetails::Domain(x) => DomainHost::new_unchecked(value, x).into(),
+                HostDetails::Ipv4  (x) => Ipv4Host  ::new_unchecked(value, x).into(),
+                HostDetails::Ipv6  (x) => Ipv6Host  ::new_unchecked(value, x).into(),
+                HostDetails::Opaque(x) => OpaqueHost::new_unchecked(value, x).into(),
+                HostDetails::Empty (x) => EmptyHost ::new_unchecked(value, x).into(),
+            }
+        }
+    }
+
+    /// Make a new [`Self`] for the specified [`SchemeType`].
+    /// # Errors
+    /// If the call to [`Self::new_file`] returns an error, returns the error [`InvalidHost`].
+    ///
+    /// If the call to [`Self::new_special_not_file`] returns an error, returns the error [`InvalidHost`].
+    ///
+    /// If the call to [`Self::new_non_special`] returns an error, returns the error [`InvalidHost`].
+    pub fn new<T: TryInto<FileHost<'a>> + TryInto<SpecialNotFileHost<'a>> + TryInto<NonSpecialHost<'a>>>(value: T, scheme_type: SchemeType) -> Result<Self, InvalidHost>
+        where InvalidHost: From<<T as TryInto<FileHost<'a>>>::Error> + From<<T as TryInto<SpecialNotFileHost<'a>>>::Error> + From<<T as TryInto<NonSpecialHost<'a>>>::Error>
+    {
+        Ok(match scheme_type {
+            SchemeType::File           => Self::new_file            (value)?,
+            SchemeType::SpecialNotFile => Self::new_special_not_file(value)?,
+            SchemeType::NonSpecial     => Self::new_non_special     (value)?,
+        })
+    }
+
+    /// Make from a new [`FileHost`].
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_file<T: TryInto<FileHost<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }
 
-    /// Make a new [`Self::Domain`].
+    /// Make from a new [`SpecialNotFileHost`].
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_special_not_file<T: TryInto<SpecialNotFileHost<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }
 
-    /// Make a new [`Self::Domain`].
+    /// Make from a new [`NonSpecialHost`].
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_non_special<T: TryInto<NonSpecialHost<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }
+
+
 
     /// Make a new [`Self::Domain`].
     /// # Errors
@@ -66,6 +100,13 @@ impl<'a> Host<'a> {
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_ipv6<T: TryInto<Ipv6Host<'a>>>(value: T) -> Result<Self, T::Error> {
+        value.try_into().map(Into::into)
+    }
+
+    /// Make a new [`Self::Ipv4`] or [`Self::Ipv6`].
+    /// # Errors
+    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    pub fn new_ip<T: TryInto<IpHost<'a>>>(value: T) -> Result<Self, T::Error> {
         value.try_into().map(Into::into)
     }
 
@@ -178,22 +219,6 @@ impl<'a> Host<'a> {
     /** The [`DomainHost::labels`]. **/ pub fn domain_labels(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_labels_str()?.into()))}
     /** The [`DomainHost::origin`]. **/ pub fn domain_origin(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_origin_str()?.into()))}
     /** The [`DomainHost::normal`]. **/ pub fn domain_normal(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_normal_str()?.into()))}
-}
-
-impl<'a> TryFrom<Cow<'a, str>> for Host<'a> {
-    type Error = InvalidHost;
-
-    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        Ok(if value.starts_with('[') {
-            Ipv6Host::try_from(value)?.into()
-        } else {
-            let value = lossy_percent_decode(value).1;
-            match ends_in_a_number(&value) {
-                true  => Ipv4Host  ::new_percent_decoded(value)?.into(),
-                false => DomainHost::new_percent_decoded(value)?.into(),
-            }
-        })
-    }
 }
 
 impl<'a> From<DomainHost<'a>> for Host<'a> {fn from(value: DomainHost<'a>) -> Self {Self::Domain(value)}}

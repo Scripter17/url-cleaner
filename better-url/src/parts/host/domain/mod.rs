@@ -152,23 +152,52 @@ pub struct DomainHost<'a> {
 
 impl<'a> DomainHost<'a> {
     /// Make a new [`Self`] from a percent decoded value.
+    /// # Safety
+    /// Requires that `value` be percent decoded.
     /// # Errors
     /// If the call to [`Self::new_normalized`] returns an error, that error is returned.
-    pub fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
+    pub unsafe fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
         let (_, value) = uts46_map_normalize(value);
-        Self::new_normalized(value)
+
+        unsafe {
+            Self::new_normalized(value)
+        }
     }
 
-    /// Make a new [`Self`] from a percent decoded and UTS46 normalized value.
+    /// Make a new [`Self`] from a percent decoded and UTS46 map normalized value.
+    /// # Safety
+    /// Requires that `value` be percent decoded and UTS46 map normalized.
     /// # Errors
-    /// If the call to [`normalized_domain_to_ascii`] returns an error, that error is returned.
-    pub fn new_normalized<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
+    /// If the call to [`Self::new_normalized`] returns an error, that error is returned.
+    pub unsafe fn new_normalized<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
         let (_, value) = normalized_domain_to_ascii(value)?;
 
-        Ok(Self {
-            details: DomainDetails::parse_unchecked(&value),
-            host: value
-        })
+        unsafe {
+            Ok(Self::new_raw(value))
+        }
+    }
+
+    /// Make a new [`Self`] from a percent decoded, UTS46 map normalized, and DomainToASCIIi'd value.
+    /// # Safety
+    /// Requires that `value` be percent decoded, UTS46 map normalized, and DomainToASCII'd.
+    pub unsafe fn new_raw<T: Into<Cow<'a, str>>>(value: T) -> Self {
+        let value = value.into();
+
+        let details = DomainDetails::parse_unchecked(&value);
+
+        unsafe {
+            Self::new_unchecked(value, details)
+        }
+    }
+
+    /// Make a new [`Self`] with zero validity checks.
+    /// # Safety
+    /// `value` must be a valid domain literal and `details` must be its [`DomainDetails`].
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: DomainDetails) -> Self {
+        Self {
+            host: value.into(),
+            details
+        }
     }
 
     /// The host as a [`str`].
@@ -255,10 +284,9 @@ impl<'a> TryFrom<Cow<'a, str>> for DomainHost<'a> {
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
         let (_, value) = domain_to_ascii(value)?;
 
-        Ok(Self {
-            details: DomainDetails::parse_unchecked(&value),
-            host: value,
-        })
+        unsafe {
+            Ok(Self::new_raw(value))
+        }
     }
 }
 
@@ -286,9 +314,54 @@ impl<'a> TryFrom<Host<'a>> for DomainHost<'a> {
     type Error = Host<'a>;
 
     fn try_from(value: Host<'a>) -> Result<Self, Self::Error> {
-        match value {
-            Host::Domain(x) => Ok(x),
-            _ => Err(value)
-        }
+        Ok(match value {
+            Host::Domain(x) => x,
+            x               => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<FileHost<'a>> for DomainHost<'a> {
+    type Error = FileHost<'a>;
+
+    fn try_from(value: FileHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            FileHost::Domain(x) => x,
+            x                   => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<SpecialNotFileHost<'a>> for DomainHost<'a> {
+    type Error = SpecialNotFileHost<'a>;
+
+    fn try_from(value: SpecialNotFileHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            SpecialNotFileHost::Domain(x) => x,
+            x                             => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<NonSpecialHost<'a>> for DomainHost<'a> {
+    type Error = NonSpecialHost<'a>;
+
+    fn try_from(value: NonSpecialHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            NonSpecialHost::Opaque(x) => x.try_into()?,
+            x                         => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<OpaqueHost<'a>> for DomainHost<'a> {
+    type Error = OpaqueHost<'a>;
+
+    fn try_from(value: OpaqueHost<'a>) -> Result<Self, Self::Error> {
+        // TODO: This is dumb.
+
+        let (host, _) = value.clone().into_parts();
+
+        host.try_into().map_err(|_| value)
     }
 }

@@ -4,36 +4,36 @@ use crate::prelude::*;
 
 impl MaybeSpecialQuery<'_> {
     /// [`Self::filter`] but chainable.
-    pub fn filtered<F: FnMut(&SpecialQuerySegment<'_>) -> bool>(mut self, f: F) -> (bool, Self) {
+    pub fn filtered<F: FnMut(SpecialQuerySegment<'_>) -> bool>(mut self, f: F) -> (bool, Self) {
         (self.filter(f), self)
     }
 
     /// [`Self::try_filter`] but chainable.
     /// # Errors
     /// If the call to [`Self::try_filter`] returns an error, that error is returned.
-    pub fn try_filtered<F: FnMut(&SpecialQuerySegment<'_>) -> Result<bool, E>, E>(mut self, f: F) -> Result<(bool, Self), E> {
+    pub fn try_filtered<F: FnMut(SpecialQuerySegment<'_>) -> Result<bool, E>, E>(mut self, f: F) -> Result<(bool, Self), E> {
         Ok((self.try_filter(f)?, self))
     }
 
     /// Keeps only [`SpecialQuerySegment`]s matching the predicate `f`.
     #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
-    pub fn filter<F: FnMut(&SpecialQuerySegment<'_>) -> bool>(&mut self, mut f: F) -> bool {
+    pub fn filter<F: FnMut(SpecialQuerySegment<'_>) -> bool>(&mut self, mut f: F) -> bool {
         self.try_filter(|x| Ok::<_, std::convert::Infallible>(f(x))).expect("???")
     }
 
     /// Keeps only [`SpecialQuerySegment`]s matching the predicate `f`.
     /// # Errors
     /// If any call to `f` returns an error, that error is returned.
-    pub fn try_filter<F: FnMut(&SpecialQuerySegment<'_>) -> Result<bool, E>, E>(&mut self, mut f: F) -> Result<bool, E> {
+    pub fn try_filter<F: FnMut(SpecialQuerySegment<'_>) -> Result<bool, E>, E>(&mut self, mut f: F) -> Result<bool, E> {
         let old_len = self.len();
 
         if let Some(query) = &mut self.0 {
             let mut ranges = Vec::<Range<usize>>::new();
 
             for segment in query.iter() {
-                if f(&segment)? {
-                    let range = query.as_str().my_substr_range(segment.as_str());
+                let range = query.as_str().my_substr_range(segment.as_str());
 
+                if f(segment)? {
                     if let Some(x) = ranges.last_mut() && x.end == range.start - 1 {
                         x.end = range.end;
                     } else {

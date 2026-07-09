@@ -29,9 +29,9 @@ impl<'a> MaybeNonSpecialQuery<'a> {
 
 
 
-    /// Turn into the inner [`Cow`].
-    pub fn into_inner(self) -> Option<Cow<'a, str>> {
-        self.0.map(NonSpecialQuery::into_inner)
+    /// Make a borrowing [`Self`].
+    pub fn borrowed(&self) -> MaybeNonSpecialQuery<'_> {
+        MaybeNonSpecialQuery(self.0.as_ref().map(NonSpecialQuery::borrowed))
     }
 
     /// Turn into an owned [`Self`].
@@ -39,26 +39,46 @@ impl<'a> MaybeNonSpecialQuery<'a> {
         MaybeNonSpecialQuery(self.0.map(NonSpecialQuery::into_owned))
     }
 
-    /// Make a borrowing [`Self`].
-    pub fn borrowed(&self) -> MaybeNonSpecialQuery<'_> {
-        MaybeNonSpecialQuery(self.0.as_ref().map(NonSpecialQuery::borrowed))
+    /// Turn into the inner [`Cow`].
+    pub fn into_inner(self) -> Option<Cow<'a, str>> {
+        self.0.map(NonSpecialQuery::into_inner)
     }
 }
 
 impl<'a> From<Option<Cow<'a, str>>> for MaybeNonSpecialQuery<'a> {fn from(value: Option<Cow<'a, str>>) -> Self {Self(value.map(Into::into))}}
 
+impl<'a> From<MaybeQueryLike<'a>> for MaybeNonSpecialQuery<'a> {
+    fn from(value: MaybeQueryLike<'a>) -> Self {
+        match value {
+            MaybeQueryLike::Query   (x) => x.into(),
+            MaybeQueryLike::Fragment(x) => x.into(),
+        }
+    }
+}
+
+impl<'a> From<MaybeQuery<'a>> for MaybeNonSpecialQuery<'a> {
+    fn from(value: MaybeQuery<'a>) -> Self {
+        match value {
+            MaybeQuery::Special   (x) => x.into(),
+            MaybeQuery::NonSpecial(x) => x,
+        }
+    }
+}
+
 impl<'a> From<Query          <'a>> for MaybeNonSpecialQuery<'a> {fn from(value: Query          <'a>) -> Self {Self(Some(value.into()))}}
 impl<'a> From<SpecialQuery   <'a>> for MaybeNonSpecialQuery<'a> {fn from(value: SpecialQuery   <'a>) -> Self {Self(Some(value.into()))}}
 impl<'a> From<NonSpecialQuery<'a>> for MaybeNonSpecialQuery<'a> {fn from(value: NonSpecialQuery<'a>) -> Self {Self(Some(value))}}
+impl<'a> From<Fragment       <'a>> for MaybeNonSpecialQuery<'a> {fn from(value: Fragment       <'a>) -> Self {Self(Some(value.into()))}}
 impl<'a> From<FragmentQuery  <'a>> for MaybeNonSpecialQuery<'a> {fn from(value: FragmentQuery  <'a>) -> Self {Self(Some(value.into()))}}
 
 impl<'a> From<Option<Query          <'a>>> for MaybeNonSpecialQuery<'a> {fn from(value: Option<Query          <'a>>) -> Self {Self(value.map(Into::into))}}
 impl<'a> From<Option<SpecialQuery   <'a>>> for MaybeNonSpecialQuery<'a> {fn from(value: Option<SpecialQuery   <'a>>) -> Self {Self(value.map(Into::into))}}
 impl<'a> From<Option<NonSpecialQuery<'a>>> for MaybeNonSpecialQuery<'a> {fn from(value: Option<NonSpecialQuery<'a>>) -> Self {Self(value)}}
+impl<'a> From<Option<Fragment       <'a>>> for MaybeNonSpecialQuery<'a> {fn from(value: Option<Fragment       <'a>>) -> Self {Self(value.map(Into::into))}}
 impl<'a> From<Option<FragmentQuery  <'a>>> for MaybeNonSpecialQuery<'a> {fn from(value: Option<FragmentQuery  <'a>>) -> Self {Self(value.map(Into::into))}}
 
-impl<'a> From<MaybeQuery        <'a>> for MaybeNonSpecialQuery<'a> {fn from(value: MaybeQuery        <'a>) -> Self {Self(value.0.map(Into::into))}}
 impl<'a> From<MaybeSpecialQuery <'a>> for MaybeNonSpecialQuery<'a> {fn from(value: MaybeSpecialQuery <'a>) -> Self {Self(value.0.map(Into::into))}}
+impl<'a> From<MaybeFragment     <'a>> for MaybeNonSpecialQuery<'a> {fn from(value: MaybeFragment     <'a>) -> Self {Self(value.0.map(Into::into))}}
 impl<'a> From<MaybeFragmentQuery<'a>> for MaybeNonSpecialQuery<'a> {fn from(value: MaybeFragmentQuery<'a>) -> Self {Self(value.0.map(Into::into))}}
 
 impl<'a> From<QuerySegment          <'a>> for MaybeNonSpecialQuery<'a> {fn from(value: QuerySegment          <'a>) -> Self {Self(Some(value.into()))}}
@@ -71,7 +91,3 @@ impl<'a> From<Option<NonSpecialQuerySegment<'a>>> for MaybeNonSpecialQuery<'a> {
 impl<'a> From<Option<SpecialQuerySegment   <'a>>> for MaybeNonSpecialQuery<'a> {fn from(value: Option<SpecialQuerySegment   <'a>>) -> Self {Self(value.map(Into::into))}}
 impl<'a> From<Option<FragmentQuerySegment  <'a>>> for MaybeNonSpecialQuery<'a> {fn from(value: Option<FragmentQuerySegment  <'a>>) -> Self {Self(value.map(Into::into))}}
 
-
-impl<'a> From<Fragment       <'a> > for MaybeNonSpecialQuery<'a> {fn from(value: Fragment       <'a> ) -> Self {Self(Some(value.into()))}}
-impl<'a> From<Option<Fragment<'a>>> for MaybeNonSpecialQuery<'a> {fn from(value: Option<Fragment<'a>>) -> Self {Self(value.map(Into::into))}}
-impl<'a> From<MaybeFragment  <'a> > for MaybeNonSpecialQuery<'a> {fn from(value: MaybeFragment  <'a> ) -> Self {Self(value.0.map(Into::into))}}

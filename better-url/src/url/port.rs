@@ -37,14 +37,30 @@ impl BetterUrl {
         self.port_str().or_else(|| self.scheme_details().default_port_str())
     }
 
-    /// The port.
-    pub fn port(&self) -> Option<u16> {
+    /// The port as a [`u16`].
+    pub fn port_num(&self) -> Option<u16> {
         self.url.port()
     }
 
+    /// The port or known default as a [`u16`]
+    pub fn port_num_or_known_default(&self) -> Option<u16> {
+        self.url.port_or_known_default()
+    }
+
+    /// The port.
+    pub fn port(&self) -> MaybePort<'_> {
+        match self.port_str().zip(self.port_num()) {
+            Some((s, n)) => MaybePort(Some(Port {port: s.into(), port_num: n})),
+            None => MaybePort(None)
+        }
+    }
+
     /// [`Self::port`] or [`SchemeDetails::default_port`].
-    pub fn port_or_known_default(&self) -> Option<u16> {
-        self.port().or_else(|| self.scheme_details().default_port())
+    pub fn port_or_known_default(&self) -> MaybePort<'_> {
+        match self.port() {
+            x @ MaybePort(Some(_)) => x,
+            MaybePort(None) => MaybePort(self.scheme_details().default_port())
+        }
     }
 
     /// Set the port.
@@ -66,8 +82,8 @@ impl BetterUrl {
             Err(SetPortError::SchemeIsFile)?;
         }
 
-        if port.as_u16() != self.port_or_known_default() {
-            self.url.set_port(port.as_u16()).expect("To always work.");
+        if port != self.port_or_known_default() {
+            self.url.set_port(port.as_num()).expect("To always work.");
             Ok(true)
         } else {
             Ok(false)

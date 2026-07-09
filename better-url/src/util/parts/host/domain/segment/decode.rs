@@ -1,12 +1,9 @@
 //! Decoding.
 
-use icu_normalizer::ComposingNormalizerBorrowed;
 use icu_properties::{CodePointMapDataBorrowed, props::{GeneralCategory, GeneralCategoryGroup}};
 
 use crate::prelude::*;
 
-/// The NFC checker.
-static NFC: ComposingNormalizerBorrowed = ComposingNormalizerBorrowed::new_nfc();
 /// the general category getter.
 static GC: CodePointMapDataBorrowed<GeneralCategory> = CodePointMapDataBorrowed::new();
 
@@ -109,9 +106,9 @@ pub fn unchecked_normalized_domain_segment_to_unicode<'a, T: Into<Cow<'a, str>>>
 
     match value.strip_prefix("xn--") {
         Some(punycode) => match decode_punycode(punycode) {
-            Ok(decoded) => (true, decoded.into()),
-            Err(_) if value.is_ascii() => (false, value),
-            Err(_) => panic!("normalized_domain_segment_unchecked_to_unicode was given invalid punycode: {punycode:?}.")
+            Ok (x)                     => (true , x.into()),
+            Err(_) if value.is_ascii() => (false, value   ),
+            Err(_)                     => panic!("normalized_domain_segment_unchecked_to_unicode was given invalid punycode: {punycode:?}.")
         },
         None => (false, value)
     }
@@ -137,7 +134,7 @@ pub fn domain_segment_decode_punycode(value: &str) -> Result<String, InvalidDoma
     // If `value` is non-ASCII and ends in a `-`, it violates 4.1 anyway, so a false positive for violating 4.3 is fine.
     // If `value` is ASCII and ends in a `-`, its output will be ASCII, violating 4.3.
 
-    if value.ends_with('-') || value.is_empty() {
+    if matches!(value.as_bytes(), [] | [.., b'-']) {
         Err(InvalidDomainSegment)?;
     }
 
@@ -158,9 +155,11 @@ pub fn domain_segment_decode_punycode(value: &str) -> Result<String, InvalidDoma
 ///
 /// See [`idna_invalid`] for details on 7.2 and [`validate_domain_segment_joiners`] for details on 8.
 pub fn mostly_validate_domain_segment_unicode(value: &str) -> bool {
-    NFC.is_normalized(value)
-        && !value.starts_with("xn--")
-        && !value.contains('.')
+    // Note to self: NFC checking is removed because, I think, all characters being IDNA-Table valid/deviation implies NFKC, and NFKC implies NFC.
+    // If I'm wrong then... fuck.
+
+    !matches!(value.as_bytes(), [b'x', b'n', b'-', b'-', ..])
+        && !value.bytes().any(|b| b == b'.')
         && !value.starts_with(mark)
         && !value.contains(idna_invalid)
         && validate_domain_segment_joiners(value)

@@ -231,7 +231,7 @@ impl UrlPart {
         Some(match self {
             Self::Whole => url.as_str().into(),
 
-            Self::Scheme => url.scheme().into_inner(),
+            Self::Scheme => url.scheme_str().into(),
 
             Self::Userinfo => url.userinfo().into_inner(),
             Self::Username => url.username().into_inner(),

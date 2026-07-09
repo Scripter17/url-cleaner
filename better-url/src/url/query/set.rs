@@ -76,7 +76,7 @@ impl BetterUrl {
 
     /// [`MaybeQuery::filtered`].
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn filter_query<F: FnMut(&QuerySegment<'_>) -> bool>(&mut self, f: F) -> bool {
+    pub fn filter_query<F: FnMut(QuerySegment<'_>) -> bool>(&mut self, f: F) -> bool {
         if let (true, query) = self.query().filtered(f) {
             self.set_query(query.into_owned()).expect("???");
             true
@@ -89,7 +89,7 @@ impl BetterUrl {
     /// # Errors
     /// If the call to [`MaybeQuery::try_filtered`] returns an error, that error is returned in an `Ok(Err(_))`.
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn try_filter_query<F: FnMut(&QuerySegment<'_>) -> Result<bool, E>, E>(&mut self, f: F) -> Result<bool, E> {
+    pub fn try_filter_query<F: FnMut(QuerySegment<'_>) -> Result<bool, E>, E>(&mut self, f: F) -> Result<bool, E> {
         if let (true, query) = self.query().try_filtered(f)? {
             self.set_query(query.into_owned()).expect("???");
             Ok(true)

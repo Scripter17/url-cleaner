@@ -18,7 +18,7 @@ impl NonSpecialQuery<'_> {
     /// - If we're more than one short and `value` is `Some(_)`, returns the error [`InsertNotFound`].
     ///
     /// - If not found and `value` is `None`, returns the error [`SegmentNotFound`].
-    pub fn set(&mut self, index: isize, name: &str, value: Option<Option<&str>>) -> Result<bool, SetQueryError> {
+    pub fn set(&mut self, name: &str, index: isize, value: Option<Option<&str>>) -> Result<bool, SetQueryError> {
         let temp = self.find_iter(name).try_neg_nth(index);
 
         match value.map(|value| NonSpecialQuerySegment::from_pair(name, value)) {

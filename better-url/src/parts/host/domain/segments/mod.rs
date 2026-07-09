@@ -11,6 +11,13 @@ pub use iter::*;
 pub struct DomainSegments<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> DomainSegments<'a> {
+    /// Make a new [`Self`] with zero validity checks.
+    /// # Safety
+    /// `value` must be a valid domain segments literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+        Self(value.into())
+    }
+
     /// Borrow as a [`str`].
     pub fn as_str(&self) -> &str {
         &self.0
@@ -19,8 +26,11 @@ impl<'a> DomainSegments<'a> {
     /// [`unchecked_normalized_domain_segments_to_unicode`].
     pub fn decode(self) -> Cow<'a, str> {
         let (_, value) = unchecked_normalized_domain_segments_to_unicode(self.0);
+
         value
     }
+
+
 
     /// A [`DomainSegmentsIter`].
     pub fn iter(&self) -> DomainSegmentsIter<'_> {
@@ -42,9 +52,11 @@ impl<'a> DomainSegments<'a> {
         last_is_a_number(self.as_str())
     }
 
-    /// Turn into the inner [`Cow`].
-    pub fn into_inner(self) -> Cow<'a, str> {
-        self.0
+
+
+    /// Make a borrowing [`Self`].
+    pub fn borrowed(&self) -> DomainSegments<'_> {
+        DomainSegments(Cow::Borrowed(&self.0))
     }
 
     /// Turn into an owned [`Self`].
@@ -52,9 +64,9 @@ impl<'a> DomainSegments<'a> {
         DomainSegments(self.0.into_owned().into())
     }
 
-    /// Make a borrowing [`Self`].
-    pub fn borrowed(&self) -> DomainSegments<'_> {
-        DomainSegments(Cow::Borrowed(&self.0))
+    /// Turn into the inner [`Cow`].
+    pub fn into_inner(self) -> Cow<'a, str> {
+        self.0
     }
 }
 

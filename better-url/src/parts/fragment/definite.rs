@@ -49,7 +49,15 @@ impl<'a> From<Query<'a>> for Fragment<'a> {
         match value {
             Query::Special   (x) => x.into(),
             Query::NonSpecial(x) => x.into(),
-            Query::Fragment  (x) => x.into(),
+        }
+    }
+}
+
+impl<'a> From<QueryLike<'a>> for Fragment<'a> {
+    fn from(value: QueryLike<'a>) -> Self {
+        match value {
+            QueryLike::Query   (x) => x.into(),
+            QueryLike::Fragment(x) => x.into(),
         }
     }
 }
@@ -63,7 +71,15 @@ impl<'a> From<QuerySegment<'a>> for Fragment<'a> {
         match value {
             QuerySegment::Special   (x) => x.into(),
             QuerySegment::NonSpecial(x) => x.into(),
-            QuerySegment::Fragment  (x) => x.into(),
+        }
+    }
+}
+
+impl<'a> From<QueryLikeSegment<'a>> for Fragment<'a> {
+    fn from(value: QueryLikeSegment<'a>) -> Self {
+        match value {
+            QueryLikeSegment::Query   (x) => x.into(),
+            QueryLikeSegment::Fragment(x) => x.into(),
         }
     }
 }

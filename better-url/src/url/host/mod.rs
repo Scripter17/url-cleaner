@@ -30,7 +30,11 @@ impl BetterUrl {
 
     /// Set the host.
     /// # Errors
-    /// If the call to [`Host::new`] returns an error, that error is returned.
+    /// If the call to [`Host::new_file`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Host::new_special_not_file`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Host::new_non_special`] returns an error, that error is returned.
     ///
     /// If attempting to set a non-empty host to the empty host, reutrns the error [`CantBeEmpty`].
     ///
@@ -66,8 +70,10 @@ impl BetterUrl {
     /// url.set_host(None::<&str>         ).unwrap    ();
     /// ```
     #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn set_host<'a, T: TryInto<Host<'a>>>(&mut self, host: Option<T>) -> Result<bool, SetHostError> where SetHostError: From<T::Error> {
-        let host = host.map(TryInto::try_into).transpose()?;
+    pub fn set_host<'a, T: TryInto<FileHost<'a>> + TryInto<SpecialNotFileHost<'a>> + TryInto<NonSpecialHost<'a>>>(&mut self, value: Option<T>) -> Result<bool, SetHostError> 
+        where InvalidHost: From<<T as TryInto<FileHost<'a>>>::Error> + From<<T as TryInto<SpecialNotFileHost<'a>>>::Error> + From<<T as TryInto<NonSpecialHost<'a>>>::Error>
+    {
+        let host = value.map(|x| Host::new(x, self.scheme_type())).transpose()?;
 
         let new_len = match (self.host_str(), host.as_ref()) {
             (None     , None     )                   => return Ok(false),

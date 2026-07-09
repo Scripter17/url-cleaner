@@ -9,6 +9,7 @@ mod port;
 mod path;
 mod query;
 mod fragment;
+mod query_like;
 
 pub use scheme::*;
 pub use userinfo::*;
@@ -17,6 +18,7 @@ pub use port::*;
 pub use path::*;
 pub use query::*;
 pub use fragment::*;
+pub use query_like::*;
 
 from_cow_impls!(
     Userinfo, Username, Password,
@@ -36,16 +38,13 @@ from_cow_impls!(
 
 try_from_cow_impls!(
     Scheme,
-    Host, FileHost, SpecialNotFileHost, NonSpecialHost,
+    FileHost, SpecialNotFileHost, NonSpecialHost,
     DomainHost, DomainSegment, DomainSegments,
     IpHost, Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost,
-    Port,
     NonSpecialEmptyPath
 );
 
 from_option_cow_impls!(MaybeSpecialQuery, MaybeNonSpecialQuery, MaybeFragmentQuery, MaybeFragment);
-
-try_from_option_cow_impls!(MaybePort);
 
 
 as_str_impls!(Scheme);
@@ -88,21 +87,20 @@ borrowed_impls!(
     Userinfo,
     Username, Password,
 
-    Path,
-    OpaquePath, SegmentedPath,
-    SpecialNotFileSegmentedPath, FileSegmentedPath, NonSpecialSegmentedPath, NonSpecialPath,
+    Host, FileHost, SpecialNotFileHost, NonSpecialHost,
+    DomainHost, DomainSegment, DomainSegments,
+    IpHost, Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost,
 
+    Port, MaybePort,
+
+    Path, SegmentedPath, OpaquePath,
+    FileSegmentedPath, SpecialNotFileSegmentedPath,
+    NonSpecialPath, NonSpecialSegmentedPath, NonSpecialEmptyPath,
 
     PathSegment              , PathSegments              ,
     SpecialNotFilePathSegment, SpecialNotFilePathSegments,
     FilePathSegment          , FilePathSegments          ,
     NonSpecialPathSegment    , NonSpecialPathSegments    ,
-
-
-    Host,
-    DomainHost, DomainSegment, DomainSegments,
-    IpHost, Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost,
-
 
     Query          , MaybeQuery          , QuerySegment          ,
     SpecialQuery   , MaybeSpecialQuery   , SpecialQuerySegment   ,
@@ -110,5 +108,7 @@ borrowed_impls!(
 
     Fragment, MaybeFragment,
 
-    FragmentQuery, MaybeFragmentQuery, FragmentQuerySegment
+    FragmentQuery, MaybeFragmentQuery, FragmentQuerySegment,
+
+    QueryLike, MaybeQueryLike, QueryLikeSegment
 );

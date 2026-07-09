@@ -26,7 +26,7 @@ pub struct JobContext {
 
 /// Deserialize an owned [`Host`].
 fn deserialize_owned_url_host<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Option<Host<'static>>, D::Error> {
-    Ok(<Option<Host>>::deserialize(deserializer)?.map(Host::into_owned))
+    Ok(<Option<SpecialNotFileHost>>::deserialize(deserializer)?.map(Host::from).map(Host::into_owned))
 }
 
 impl JobContext {

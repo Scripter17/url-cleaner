@@ -14,6 +14,22 @@ pub enum IpHost<'a> {
 }
 
 impl<'a> IpHost<'a> {
+    /// Make a new [`Self::V4`].
+    /// # Errors
+    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    pub fn new_v4<T: TryInto<Ipv4Host<'a>>>(value: T) -> Result<Self, T::Error> {
+        Ok(value.try_into()?.into())
+    }
+
+    /// Make a new [`Self::V6`].
+    /// # Errors
+    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    pub fn new_v6<T: TryInto<Ipv6Host<'a>>>(value: T) -> Result<Self, T::Error> {
+        Ok(value.try_into()?.into())
+    }
+
+
+
     /// The host as a [`str`].
     pub fn as_str(&self) -> &str {
         match self {
@@ -85,10 +101,9 @@ impl<'a> TryFrom<Cow<'a, str>> for IpHost<'a> {
     type Error = InvalidIpHost;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        Ok(if value.starts_with("[") {
-            Self::V6(value.try_into()?)
-        } else {
-            Self::V4(value.try_into()?)
+        Ok(match value.as_bytes() {
+            [b'[', ..] => Self::new_v6(value)?,
+            _          => Self::new_v4(value)?,
         })
     }
 }
@@ -112,10 +127,54 @@ impl<'a> TryFrom<Host<'a>> for IpHost<'a> {
     type Error = Host<'a>;
 
     fn try_from(value: Host<'a>) -> Result<Self, Self::Error> {
-        match value {
-            Host::Ipv4(x) => Ok(x.into()),
-            Host::Ipv6(x) => Ok(x.into()),
-            x => Err(x)
-        }
+        Ok(match value {
+            Host::Ipv4(x) => x.into(),
+            Host::Ipv6(x) => x.into(),
+            x             => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<FileHost<'a>> for IpHost<'a> {
+    type Error = FileHost<'a>;
+
+    fn try_from(value: FileHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            FileHost::Ipv4(x) => x.into(),
+            FileHost::Ipv6(x) => x.into(),
+            x                 => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<SpecialNotFileHost<'a>> for IpHost<'a> {
+    type Error = SpecialNotFileHost<'a>;
+
+    fn try_from(value: SpecialNotFileHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            SpecialNotFileHost::Ipv4(x) => x.into(),
+            SpecialNotFileHost::Ipv6(x) => x.into(),
+            x                           => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<NonSpecialHost<'a>> for IpHost<'a> {
+    type Error = NonSpecialHost<'a>;
+
+    fn try_from(value: NonSpecialHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            NonSpecialHost::Opaque(x) => x.try_into()?,
+            NonSpecialHost::Ipv6  (x) => x.into(),
+            x                         => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<OpaqueHost<'a>> for IpHost<'a> {
+    type Error = OpaqueHost<'a>;
+
+    fn try_from(value: OpaqueHost<'a>) -> Result<Self, Self::Error> {
+        Self::new_v4(value)
     }
 }

@@ -3,18 +3,15 @@
 use crate::prelude::*;
 
 impl Query<'_> {
-    /// Either [`SpecialQuery::set`], [`NonSpecialQuery::set`], or [`FragmentQuery::set`].
+    /// Either [`SpecialQuery::set`] or, [`NonSpecialQuery::set`].
     /// # Errors
     /// If the call to [`SpecialQuery::set`] returns an error, that error is returned.
     ///
     /// If the call to [`NonSpecialQuery::set`] returns an error, that error is returned.
-    ///
-    /// If the call to [`FragmentQuery::set`] returns an error, that error is returned.
-    pub fn set(&mut self, index: isize, name: &str, value: Option<Option<&str>>) -> Result<bool, SetQueryError> {
+    pub fn set(&mut self, name: &str, index: isize, value: Option<Option<&str>>) -> Result<bool, SetQueryError> {
         match self {
-            Self::Special   (x) => x.set(index, name, value),
-            Self::NonSpecial(x) => x.set(index, name, value),
-            Self::Fragment  (x) => x.set(index, name, value),
+            Self::Special   (x) => x.set(name, index, value),
+            Self::NonSpecial(x) => x.set(name, index, value),
         }
     }
 }

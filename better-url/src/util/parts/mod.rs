@@ -1,5 +1,6 @@
 //! Parts.
 
+mod canonize;
 mod scheme;
 mod userinfo;
 mod host;
@@ -8,6 +9,7 @@ mod path;
 mod query;
 mod fragment;
 
+pub use canonize::*;
 pub use scheme::*;
 pub use userinfo::*;
 pub use host::*;

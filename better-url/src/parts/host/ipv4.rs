@@ -14,6 +14,16 @@ pub struct Ipv4Host<'a> {
 }
 
 impl<'a> Ipv4Host<'a> {
+    /// Make a new [`Self`] with zero validity checks.
+    /// # Safety
+    /// `value` must be a valid IPv4 host literal and `details` must be its [`Ipv4Details`].
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: Ipv4Details) -> Self {
+        Self {
+            host: value.into(),
+            details,
+        }
+    }
+
     /// Make a new [`Self`] from a percent decoded value.
     /// # Errors
     /// If the call to [`Self::new_normalized`] returns an error, that error is returned.
@@ -26,11 +36,11 @@ impl<'a> Ipv4Host<'a> {
     /// # Errors
     /// If the call to [`parse_ipv4_host`] returns an error, that error is returned.
     pub fn new_normalized<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
-        let addr = parse_ipv4_host(&value.into()).ok_or(InvalidIpv4Host)?;
+        let (_, addr, host) = make_ipv4_host(value)?;
 
         Ok(Self {
+            host,
             details: addr.into(),
-            host: addr.to_string().into(),
         })
     }
 
@@ -72,7 +82,9 @@ impl<'a> TryFrom<Cow<'a, str>> for Ipv4Host<'a> {
     type Error = InvalidIpv4Host;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        Self::new_percent_decoded(lossy_percent_decode(value).1)
+        let (_, value) = try_percent_decode(value).map_err(|_| InvalidIpv4Host)?; // TODO: Fix.
+
+        Self::new_percent_decoded(value)
     }
 }
 
@@ -80,10 +92,43 @@ impl<'a> TryFrom<Host<'a>> for Ipv4Host<'a> {
     type Error = Host<'a>;
 
     fn try_from(value: Host<'a>) -> Result<Self, Self::Error> {
-        match value {
-            Host::Ipv4(x) => Ok(x),
-            x => Err(x)
-        }
+        Ok(match value {
+            Host::Ipv4(x) => x,
+            x             => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<FileHost<'a>> for Ipv4Host<'a> {
+    type Error = FileHost<'a>;
+
+    fn try_from(value: FileHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            FileHost::Ipv4(x) => x,
+            x                 => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<SpecialNotFileHost<'a>> for Ipv4Host<'a> {
+    type Error = SpecialNotFileHost<'a>;
+
+    fn try_from(value: SpecialNotFileHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            SpecialNotFileHost::Ipv4(x) => x,
+            x                           => Err(x)?,
+        })
+    }
+}
+
+impl<'a> TryFrom<NonSpecialHost<'a>> for Ipv4Host<'a> {
+    type Error = NonSpecialHost<'a>;
+
+    fn try_from(value: NonSpecialHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            NonSpecialHost::Opaque(x) => x.try_into()?,
+            x                         => Err(x)?,
+        })
     }
 }
 
@@ -97,6 +142,22 @@ impl<'a> TryFrom<IpHost<'a>> for Ipv4Host<'a> {
         }
     }
 }
+
+
+
+impl<'a> TryFrom<OpaqueHost<'a>> for Ipv4Host<'a> {
+    type Error = OpaqueHost<'a>;
+
+    fn try_from(value: OpaqueHost<'a>) -> Result<Self, Self::Error> {
+        // TODO: This is dumb.
+
+        let (host, _) = value.clone().into_parts();
+
+        host.try_into().map_err(|_| value)
+    }
+}
+
+
 
 impl From<Ipv4Addr> for Ipv4Host<'static> {
     fn from(value: Ipv4Addr) -> Self {

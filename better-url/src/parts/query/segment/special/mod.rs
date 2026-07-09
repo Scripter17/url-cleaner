@@ -15,6 +15,11 @@ pub struct SpecialQuerySegment<'a> {
 }
 
 impl<'a> SpecialQuerySegment<'a> {
+    /// Borrow as a [`str`].
+    pub fn as_str(&self) -> &str {
+        &self.raw
+    }
+
     /// Make a new [`Self`] without checking for validity.
     pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(segment: T) -> Self {
         let raw = segment.into();
@@ -39,9 +44,14 @@ impl<'a> SpecialQuerySegment<'a> {
         }
     }
 
-    /// Borrow as a [`str`].
-    pub fn as_str(&self) -> &str {
-        &self.raw
+
+
+    /// Make a borrowing [`Self`].
+    pub fn borrowed(&self) -> SpecialQuerySegment<'_> {
+        SpecialQuerySegment {
+            raw: Cow::Borrowed(&self.raw),
+            vs: self.vs
+        }
     }
 
     /// Turn into an owned [`SpecialQuerySegment`].
@@ -56,15 +66,9 @@ impl<'a> SpecialQuerySegment<'a> {
     pub fn into_inner(self) -> Cow<'a, str> {
         self.raw
     }
-
-    /// Make a borrowing [`Self`].
-    pub fn borrowed(&self) -> SpecialQuerySegment<'_> {
-        SpecialQuerySegment {
-            raw: Cow::Borrowed(&self.raw),
-            vs: self.vs
-        }
-    }
 }
+
+
 
 impl<'a> From<Cow<'a, str>> for SpecialQuerySegment<'a> {
     fn from(value: Cow<'a, str>) -> Self {
@@ -74,12 +78,20 @@ impl<'a> From<Cow<'a, str>> for SpecialQuerySegment<'a> {
     }
 }
 
+impl<'a> From<QueryLikeSegment<'a>> for SpecialQuerySegment<'a> {
+    fn from(value: QueryLikeSegment<'a>) -> Self {
+        match value {
+            QueryLikeSegment::Query   (x) => x.into(),
+            QueryLikeSegment::Fragment(x) => x.into(),
+        }
+    }
+}
+
 impl<'a> From<QuerySegment<'a>> for SpecialQuerySegment<'a> {
     fn from(value: QuerySegment<'a>) -> Self {
         match value {
             QuerySegment::Special   (x) => x,
             QuerySegment::NonSpecial(x) => x.into(),
-            QuerySegment::Fragment  (x) => x.into(),
         }
     }
 }
@@ -89,7 +101,7 @@ impl<'a> From<NonSpecialQuerySegment<'a>> for SpecialQuerySegment<'a> {
         let old_vs = value.vs;
 
         match non_special_query_to_special_query(value.into_inner()) {
-            (true , raw) => Self {vs: raw.find('=').and_then(|x| NonZero::new(x + 1)), raw},
+            (true , raw) => Self {vs: raw.bytes().position(|b| b == b'=').and_then(|x| NonZero::new(x + 1)), raw},
             (false, raw) => Self {vs: old_vs, raw}
         }
     }
@@ -100,7 +112,7 @@ impl<'a> From<FragmentQuerySegment<'a>> for SpecialQuerySegment<'a> {
         let old_vs = value.vs;
 
         match fragment_to_special_query(value.into_inner()) {
-            (true , raw) => Self {vs: raw.find('=').and_then(|x| NonZero::new(x + 1)), raw},
+            (true , raw) => Self {vs: raw.bytes().position(|b| b == b'=').and_then(|x| NonZero::new(x + 1)), raw},
             (false, raw) => Self {vs: old_vs, raw}
         }
     }

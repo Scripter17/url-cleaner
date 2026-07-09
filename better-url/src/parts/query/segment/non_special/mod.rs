@@ -15,6 +15,11 @@ pub struct NonSpecialQuerySegment<'a> {
 }
 
 impl<'a> NonSpecialQuerySegment<'a> {
+    /// Borrow as a [`str`].
+    pub fn as_str(&self) -> &str {
+        &self.raw
+    }
+
     /// Make a new [`Self`] without checking for validity.
     pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(segment: T) -> Self {
         let raw = segment.into();
@@ -39,9 +44,14 @@ impl<'a> NonSpecialQuerySegment<'a> {
         }
     }
 
-    /// Borrow as a [`str`].
-    pub fn as_str(&self) -> &str {
-        &self.raw
+
+
+    /// Make a borrowing [`Self`].
+    pub fn borrowed(&self) -> NonSpecialQuerySegment<'_> {
+        NonSpecialQuerySegment {
+            raw: Cow::Borrowed(&self.raw),
+            vs: self.vs
+        }
     }
 
     /// Turn into an owned [`NonSpecialQuerySegment`].
@@ -56,15 +66,9 @@ impl<'a> NonSpecialQuerySegment<'a> {
     pub fn into_inner(self) -> Cow<'a, str> {
         self.raw
     }
-
-    /// Make a borrowing [`Self`].
-    pub fn borrowed(&self) -> NonSpecialQuerySegment<'_> {
-        NonSpecialQuerySegment {
-            raw: Cow::Borrowed(&self.raw),
-            vs: self.vs
-        }
-    }
 }
+
+
 
 impl<'a> From<Cow<'a, str>> for NonSpecialQuerySegment<'a> {
     fn from(value: Cow<'a, str>) -> Self {
@@ -74,12 +78,20 @@ impl<'a> From<Cow<'a, str>> for NonSpecialQuerySegment<'a> {
     }
 }
 
+impl<'a> From<QueryLikeSegment<'a>> for NonSpecialQuerySegment<'a> {
+    fn from(value: QueryLikeSegment<'a>) -> Self {
+        match value {
+            QueryLikeSegment::Query   (x) => x.into(),
+            QueryLikeSegment::Fragment(x) => x.into(),
+        }
+    }
+}
+
 impl<'a> From<QuerySegment<'a>> for NonSpecialQuerySegment<'a> {
     fn from(value: QuerySegment<'a>) -> Self {
         match value {
             QuerySegment::Special   (x) => x.into(),
             QuerySegment::NonSpecial(x) => x,
-            QuerySegment::Fragment  (x) => x.into(),
         }
     }
 }
@@ -98,7 +110,7 @@ impl<'a> From<FragmentQuerySegment<'a>> for NonSpecialQuerySegment<'a> {
         let old_vs = value.vs;
 
         match fragment_to_non_special_query(value.into_inner()) {
-            (true , raw) => Self {vs: raw.find('=').and_then(|x| NonZero::new(x + 1)), raw},
+            (true , raw) => Self {vs: raw.bytes().position(|b| b == b'=').and_then(|x| NonZero::new(x + 1)), raw},
             (false, raw) => Self {vs: old_vs, raw}
         }
     }

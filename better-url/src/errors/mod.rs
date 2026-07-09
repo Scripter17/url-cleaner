@@ -4,6 +4,7 @@ mod generic;
 mod scheme;
 mod userinfo;
 mod host;
+mod host_port;
 mod port;
 mod path;
 mod query;
@@ -13,6 +14,7 @@ pub use generic::*;
 pub use scheme::*;
 pub use userinfo::*;
 pub use host::*;
+pub use host_port::*;
 pub use port::*;
 pub use path::*;
 pub use query::*;
@@ -33,9 +35,14 @@ macro_rules! from_infallible {
 
 from_infallible!(
     InvalidScheme, SetSchemeError,
-    InvalidEmptyPath,
+    SetUsernameError,
+    SetPasswordError,
     InvalidHost, SetHostError,
-    InvalidDomainSegment, InvalidDomainSegments, SetDomainError
+    InvalidDomainSegment, InvalidDomainSegments, SetDomainError,
+    InvalidPort, SetPortError,
+    InvalidEmptyPath, SetPathError,
+    SetQueryError,
+    SetFragmentError
 );
 
 #[cfg(test)]
@@ -54,7 +61,7 @@ mod tests {
         // TODO: Make SetHostError 1 byte.
 
         assert_size_1!(
-            InvalidHost, InvalidIpHost, SetDomainError,
+            InvalidIpHost, SetDomainError,
             SetSchemeError,
             SetUserinfoError, SetUsernameError, SetPasswordError,
             SetPathError,

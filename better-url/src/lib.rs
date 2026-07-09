@@ -24,5 +24,5 @@ pub mod prelude {
     pub(crate) use std::str::FromStr;
     pub(crate) use std::num::NonZero;
     #[cfg(feature = "serde")]
-    pub(crate) use serde::{Serialize, Deserialize, ser::Serializer, de::{Deserializer, Error as _}};
+    pub(crate) use serde::{Serialize, Deserialize, ser::Serializer, de::{Deserializer, Visitor, Error as _}};
 }

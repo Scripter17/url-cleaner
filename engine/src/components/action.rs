@@ -774,8 +774,8 @@ impl Action {
 
                 let excepts = !except_names.is_empty() || !except_prefixes.is_empty();
 
-                let filter = |segment: &QuerySegment<'_>| -> bool {
-                    let name = segment.name();
+                let filter = |segment: QueryLikeSegment<'_>| -> bool {
+                    let name = segment.into_name();
 
                     let matches = (names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix)))
                         && !(excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix))));
@@ -786,11 +786,11 @@ impl Action {
                 let mut changed = false;
 
                 if *fragment {
-                    changed |= task_state.url.filter_fragment_query(filter);
+                    changed |= task_state.url.filter_fragment_query(|x| filter(x.into()));
                 }
 
                 if *query {
-                    changed |= task_state.url.filter_query(filter);
+                    changed |= task_state.url.filter_query(|x| filter(x.into()));
                 }
 
                 changed

@@ -9,8 +9,6 @@ enum QueryType {
     Special,
     /// [`Query::NonSpecial`].
     NonSpecial,
-    /// [`Query::NonSpecial`].
-    Fragment,
 }
 
 impl Query<'_> {
@@ -24,7 +22,6 @@ impl Query<'_> {
         match self {
             Self::Special   (_) => QueryType::Special,
             Self::NonSpecial(_) => QueryType::NonSpecial,
-            Self::Fragment  (_) => QueryType::Fragment,
         }
     }
 
@@ -35,7 +32,6 @@ impl Query<'_> {
         self.iter_strs().map(move |x| match r#type {
             QueryType::Special    => SpecialQuerySegment   ::new_unchecked(x).into(),
             QueryType::NonSpecial => NonSpecialQuerySegment::new_unchecked(x).into(),
-            QueryType::Fragment   => FragmentQuerySegment  ::new_unchecked(x).into(),
         })
     }
 

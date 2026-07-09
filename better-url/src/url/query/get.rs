@@ -11,8 +11,8 @@ impl BetterUrl {
     /// The [`MaybeQuery`].
     pub fn query(&self) -> MaybeQuery<'_> {
         match self.is_special() {
-            true  => MaybeQuery(self.query_str().map(|x| SpecialQuery   (Cow::Borrowed(x)).into())),
-            false => MaybeQuery(self.query_str().map(|x| NonSpecialQuery(Cow::Borrowed(x)).into())),
+            true  => MaybeQuery::Special   (self.query_str().map(SpecialQuery   ::new_unchecked).into()),
+            false => MaybeQuery::NonSpecial(self.query_str().map(NonSpecialQuery::new_unchecked).into()),
         }
     }
 

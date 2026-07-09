@@ -139,10 +139,18 @@ impl SchemeDetails {
 
 
     /// [`SpecialSchemeDetails::default_port`].
-    pub fn default_port(self) -> Option<u16> {
+    pub fn default_port(self) -> Option<Port<'static>> {
         match self {
             Self::Special   (x) => x.default_port(),
-            Self::NonSpecial(_) => None
+            Self::NonSpecial(_) => None,
+        }
+    }
+
+    /// [`SpecialSchemeDetails::default_port_num`].
+    pub fn default_port_num(self) -> Option<u16> {
+        match self {
+            Self::Special   (x) => x.default_port_num(),
+            Self::NonSpecial(_) => None,
         }
     }
 
@@ -150,7 +158,7 @@ impl SchemeDetails {
     pub fn default_port_str(self) -> Option<&'static str> {
         match self {
             Self::Special   (x) => x.default_port_str(),
-            Self::NonSpecial(_) => None
+            Self::NonSpecial(_) => None,
         }
     }
 }

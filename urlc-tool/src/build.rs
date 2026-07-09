@@ -24,7 +24,8 @@ impl Args {
                 Bin::Cli        => "url-cleaner",
                 Bin::Site       => "url-cleaner-site",
                 Bin::SiteClient => "url-cleaner-site-client",
-                Bin::Discord    => "url-cleaner-discord"
+                Bin::Discord    => "url-cleaner-discord",
+                Bin::MyUrlTest  => "my-url-test",
             }]);
         }
 

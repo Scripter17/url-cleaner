@@ -7,6 +7,13 @@ use crate::prelude::*;
 pub struct DomainSegment<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> DomainSegment<'a> {
+    /// Make a new [`Self`] with zero validity checks.
+    /// # Safety
+    /// `value` must be a valid domain segment literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+        Self(value.into())
+    }
+
     /// Borrow as a [`str`].
     pub fn as_str(&self) -> &str {
         &self.0

@@ -47,13 +47,21 @@ impl<'a> SpecialQuerySegment<'a> {
     }
 
     /// Set the value.
-    pub fn set_value(&mut self, value: &str) {
-        let value = encode_query_part(value).1;
-        match self.value_range() {
-            Some(range) => self.raw.replace_range(range, &value),
-            None => {
-                self.vs = NonZero::new(self.len() + 1);
-                self.raw.to_mut().extend(["=", &value]);
+    pub fn set_value(&mut self, value: Option<&str>) {
+        match value {
+            Some(value) => {
+                let (_, value) = encode_query_part(value);
+
+                match self.value_range() {
+                    Some(range) => self.raw.replace_range(range, &value),
+                    None => {
+                        self.vs = NonZero::new(self.len() + 1);
+                        self.raw.to_mut().extend(["=", &value]);
+                    }
+                }
+            },
+            None => if let Some(vs) = self.vs {
+                self.raw.retain_range(..vs.get() - 1);
             }
         }
     }
