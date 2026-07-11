@@ -10,7 +10,7 @@ impl SpecialQuery<'_> {
 
     /// A [`DoubleEndedIterator`] of [`SpecialQuerySegment`]s.
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = SpecialQuerySegment<'_>> {
-        self.iter_strs().map(SpecialQuerySegment::new_unchecked)
+        self.iter_strs().map(|x| unsafe {SpecialQuerySegment::new_unchecked(x)})
     }
 
     /// A [`DoubleEndedIterator`] of [`SpecialQuerySegment`]s whose [`SpecialQuerySegment::name`]s are `name`.

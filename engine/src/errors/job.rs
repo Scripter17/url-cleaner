@@ -39,7 +39,7 @@ pub enum ApplyCleanerError {
 /// [`Task::try_from`].
 #[derive(Debug, Error)]
 pub enum MakeTaskError {
-    /** [`url::ParseError`].     **/  #[error(transparent)]  UrlParseError (#[from] url::ParseError    ),
+    /** [`InvalidUrl`].          **/  #[error(transparent)]  InvalidUrl    (#[from] InvalidUrl         ),
     /** [`std::str::Utf8Error`]. **/  #[error(transparent)]  Utf8Error     (#[from] std::str::Utf8Error),
     /** [`serde_json::Error`].   **/  #[error(transparent)]  SerdeJsonError(#[from] serde_json::Error  ),
 

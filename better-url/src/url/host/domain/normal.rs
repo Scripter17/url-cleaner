@@ -73,7 +73,7 @@ impl BetterUrl {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
         if domain.set_normal(value)? {
-            self.set_host(Some(domain.into_owned()))?;
+            self.set_host(domain.into_owned())?;
             Ok(true)
         } else {
             Ok(false)
@@ -91,7 +91,7 @@ impl BetterUrl {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
         if domain.set_normal_segment(index, value)? {
-            self.set_host(Some(domain.into_owned()))?;
+            self.set_host(domain.into_owned())?;
             Ok(true)
         } else {
             Ok(false)
@@ -109,7 +109,7 @@ impl BetterUrl {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
         if domain.set_normal_range(range, value)? {
-            self.set_host(Some(domain.into_owned()))?;
+            self.set_host(domain.into_owned())?;
             Ok(true)
         } else {
             Ok(false)
@@ -126,7 +126,7 @@ impl BetterUrl {
     pub fn insert_domain_normal_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetHostError> where SetDomainError: From<T::Error> {
         let mut domain = self.domain().ok_or(NoDomain)?;
         domain.insert_normal_segment(index, value)?;
-        self.set_host(Some(domain.into_owned()))?;
+        self.set_host(domain.into_owned())?;
 
         Ok(())
     }

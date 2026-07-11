@@ -1,0 +1,18 @@
+//! [`BetterUrl::join_scheme_file_slash_path`].
+
+use crate::prelude::*;
+
+impl BetterUrl {
+    /// Found a leading path.
+    pub(super) fn join_scheme_file_slash_path(&mut self, rest: &str) -> Result<(), InvalidJoin> {
+        let (p, q, f) = split_pqf(rest);
+
+        self.set_path(p)?;
+
+        if let Some(q) = q {self.set_query(q)?;}
+
+        self.set_fragment(f)?;
+
+        Ok(())
+    }
+}

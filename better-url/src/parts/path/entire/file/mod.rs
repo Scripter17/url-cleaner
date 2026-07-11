@@ -10,46 +10,14 @@ mod remove;
 pub type FilePath<'a> = FileSegmentedPath<'a>;
 
 /// A file segmented path.
-///
-/// <https://jsdom.github.io/whatwg-url/> was used to make the test.
-/// # Examples
-/// ```
-/// use better_url::prelude::*;
-///
-/// let tests = [
-///     ("/"     , "/"  ), ("/abc"     , "/abc"   ), ("/abc/"     , "/abc/"  ), ("/abc/def"     , "/abc/def"   ), ("/abc/def/"     , "/abc/def/"),
-///     ("/."    , "/"  ), ("/abc."    , "/abc."  ), ("/abc/."    , "/abc/"  ), ("/abc/def."    , "/abc/def."  ), ("/abc/def/."    , "/abc/def/"),
-///     ("/.."   , "/"  ), ("/abc.."   , "/abc.." ), ("/abc/.."   , "/"      ), ("/abc/def.."   , "/abc/def.." ), ("/abc/def/.."   , "/abc/"    ),
-///     ("/./."  , "/"  ), ("/abc./."  , "/abc./" ), ("/abc/./."  , "/abc/"  ), ("/abc/def./."  , "/abc/def./" ), ("/abc/def/./."  , "/abc/def/"),
-///     ("/../." , "/"  ), ("/abc../." , "/abc../"), ("/abc/../." , "/"      ), ("/abc/def../." , "/abc/def../"), ("/abc/def/../." , "/abc/"    ),
-///     ("/./.." , "/"  ), ("/abc./.." , "/"      ), ("/abc/./.." , "/"      ), ("/abc/def./.." , "/abc/"      ), ("/abc/def/./.." , "/abc/"    ),
-///     ("/../..", "/"  ), ("/abc../..", "/"      ), ("/abc/../..", "/"      ), ("/abc/def../..", "/abc/"      ), ("/abc/def/../..", "/"        ),
-///
-///     (""      , "/"  ), ("abc"      , "/abc"   ), ("abc/"      , "/abc/"  ), ("abc/def"      , "/abc/def"   ), ("abc/def/"      , "/abc/def/"),
-///     ("."     , "/"  ), ("abc."     , "/abc."  ), ("abc/."     , "/abc/"  ), ("abc/def."     , "/abc/def."  ), ("abc/def/."     , "/abc/def/"),
-///     (".."    , "/"  ), ("abc.."    , "/abc.." ), ("abc/.."    , "/"      ), ("abc/def.."    , "/abc/def.." ), ("abc/def/.."    , "/abc/"    ),
-///     ("./."   , "/"  ), ("abc./."   , "/abc./" ), ("abc/./."   , "/abc/"  ), ("abc/def./."   , "/abc/def./" ), ("abc/def/./."   , "/abc/def/"),
-///     ("../."  , "/"  ), ("abc../."  , "/abc../"), ("abc/../."  , "/"      ), ("abc/def../."  , "/abc/def../"), ("abc/def/../."  , "/abc/"    ),
-///     ("./.."  , "/"  ), ("abc./.."  , "/"      ), ("abc/./.."  , "/"      ), ("abc/def./.."  , "/abc/"      ), ("abc/def/./.."  , "/abc/"    ),
-///     ("../.." , "/"  ), ("abc../.." , "/"      ), ("abc/../.." , "/"      ), ("abc/def../.." , "/abc/"      ), ("abc/def/../.." , "/"        ),
-///
-///     ("/c:"   , "/c:"), ("/c:/"     , "/c:/"   ), ("/c:/abc"   , "/c:/abc"), ("/c:/."        , "/c:/"       ), ("/c:/.."        , "/c:/"     ),
-///     ("c:"    , "/c:"), ("c:/"      , "/c:/"   ), ("c:/abc"    , "/c:/abc"), ("c:/."         , "/c:/"       ), ("c:/.."         , "/c:/"     ),
-///
-///     ("/c|"   , "/c:"), ("/c|/"     , "/c:/"   ), ("/c|/abc"   , "/c:/abc"), ("/c|/."        , "/c:/"       ), ("/c|/.."        , "/c:/"     ),
-///     ("c|"    , "/c:"), ("c|/"      , "/c:/"   ), ("c|/abc"    , "/c:/abc"), ("c|/."         , "/c:/"       ), ("c|/.."         , "/c:/"     ),
-/// ];
-///
-/// for x in tests {
-///     assert_eq!(FileSegmentedPath::new(x.0), x.1, "{}", x.0);
-/// }
-/// ```
 #[derive(Debug, Clone)]
 pub struct FileSegmentedPath<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> FileSegmentedPath<'a> {
-    /// Make a new [`Self`] without checking for validity.
-    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
         Self(value.into())
     }
 

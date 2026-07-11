@@ -20,8 +20,10 @@ impl<'a> NonSpecialQuerySegment<'a> {
         &self.raw
     }
 
-    /// Make a new [`Self`] without checking for validity.
-    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(segment: T) -> Self {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(segment: T) -> Self {
         let raw = segment.into();
 
         Self {

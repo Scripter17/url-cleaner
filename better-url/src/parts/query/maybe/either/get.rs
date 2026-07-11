@@ -9,8 +9,8 @@ impl MaybeQuery<'_> {
 
         SplitAmpersands(self.as_str()).map(move |x| {
             match is_special {
-                true  => SpecialQuerySegment   ::new_unchecked(x).into(),
-                false => NonSpecialQuerySegment::new_unchecked(x).into(),
+                true  => unsafe {SpecialQuerySegment   ::new_unchecked(x)}.into(),
+                false => unsafe {NonSpecialQuerySegment::new_unchecked(x)}.into(),
             }
         })
     }

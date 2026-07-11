@@ -3,24 +3,43 @@
 use crate::prelude::*;
 
 impl BetterUrl {
-    /// The [`Path`] as a [`str`].
+    /// The [`Range::start`] of the path.
+    fn path_start(&self) -> usize {
+        self.path_start as usize
+    }
+
+    /// The [`Range::end`] of the path.
+    pub(crate) fn path_after(&self) -> usize {
+        self.query_mark.or(self.fragment_mark).map_or(self.len(), |x| x.get() as usize)
+    }
+
+    /// The [`Range`] of the path.
+    pub(crate) fn path_range(&self) -> Range<usize> {
+        self.path_start() .. self.path_after()
+    }
+
+
+
+    /// The path as a [`str`].
     pub fn path_str(&self) -> &str {
-        self.url.path()
+        &self.serialization[self.path_range()]
     }
 
     /// The [`Path`].
     pub fn path(&self) -> Path<'_> {
         let ret = self.path_str();
 
-        match self.cannot_be_a_base() {
-            true  => match ret.starts_with('/') {
-                true  => NonSpecialSegmentedPath::new_unchecked(ret).into(),
-                false => OpaquePath             ::new_unchecked(ret).into(),
-            },
-            false => match self.scheme_type() {
-                SchemeType::File           => FilePath          ::new_unchecked(ret).into(),
-                SchemeType::SpecialNotFile => SpecialNotFilePath::new_unchecked(ret).into(),
-                SchemeType::NonSpecial     => NonSpecialPath    ::new_unchecked(ret).into(),
+        unsafe {
+            match self.cannot_be_a_base() {
+                true  => match ret.starts_with('/') {
+                    true  => NonSpecialSegmentedPath::new_unchecked(ret).into(),
+                    false => OpaquePath             ::new_unchecked(ret).into(),
+                },
+                false => match self.scheme_type() {
+                    SchemeType::File           => FilePath          ::new_unchecked(ret).into(),
+                    SchemeType::SpecialNotFile => SpecialNotFilePath::new_unchecked(ret).into(),
+                    SchemeType::NonSpecial     => NonSpecialPath    ::new_unchecked(ret).into(),
+                }
             }
         }
     }

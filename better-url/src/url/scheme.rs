@@ -1,60 +1,72 @@
-//! Scheme stuff.
+//! [`Scheme`].
 
 use crate::prelude::*;
 
 impl BetterUrl {
+    /// The scheme as a [`str`].
+    pub fn scheme_str(&self) -> &str {
+        &self.serialization[.. self.scheme_mark as usize]
+    }
+
     /// The [`SchemeDetails`].
     pub fn scheme_details(&self) -> SchemeDetails {
-        self.details().scheme
-    }
-
-    /// The [`SchemeType`].
-    pub fn scheme_type(&self) -> SchemeType {
-        self.scheme_details().r#type()
-    }
-
-    /// The scheme.
-    pub fn scheme_str(&self) -> &str {
-        self.url.scheme()
+        self.details.scheme
     }
 
     /// The [`Scheme`].
     pub fn scheme(&self) -> Scheme<'_> {
         Scheme {
-            scheme : self.scheme_str().into(),
-            details: self.scheme_details()
+            scheme: self.scheme_str().into(),
+            details: self.details.scheme
         }
     }
 
+    /** [`SchemeDetails::type`].                **/ pub fn scheme_type        (&self) -> SchemeType {self.details.scheme.r#type             ()}
+    /** [`SchemeDetails::is_special`].          **/ pub fn is_special         (&self) -> bool       {self.details.scheme.is_special         ()}
+    /** [`SchemeDetails::is_file`].             **/ pub fn is_file            (&self) -> bool       {self.details.scheme.is_file            ()}
+    /** [`SchemeDetails::is_special_not_file`]. **/ pub fn is_special_not_file(&self) -> bool       {self.details.scheme.is_special_not_file()}
+    /** [`SchemeDetails::is_non_special`].      **/ pub fn is_non_special     (&self) -> bool       {self.details.scheme.is_non_special     ()}
+
     /// Set the scheme.
     /// # Errors
-    /// See [`SetSchemeError`].
-    #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn set_scheme<'a, T: TryInto<Scheme<'a>>>(&mut self, value: T) -> Result<bool, SetSchemeError> where SetSchemeError: From<T::Error> {
+    /// If the call to [`Scheme::new`] returns an error, that error is returned.
+    ///
+    /// If the URL would become too long, returns the error [`TooLong`].
+    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
+    pub fn set_scheme<'a, T: TryInto<Scheme<'a>>>(&mut self, value: T) -> Result<(), SetSchemeError> where SetSchemeError: From<T::Error> {
         let new = value.try_into()?;
-        let old = self.scheme();
 
-        if old == new {
-            return Ok(false);
-        }
+        if  self.is_special  () && !new .is_special   () {return Ok(());}
+        if !self.is_special  () &&  new .is_special   () {return Ok(());}
+        if  self.has_username() &&  new .is_file      () {return Ok(());}
+        if  self.has_port    () &&  new .is_file      () {return Ok(());}
+        if  self.is_file     () &&  self.host_is_empty() {return Ok(());}
 
-        let new_len = self.len() - old.len() + new.len();
+        let start_len = self.len();
+        let after_len = self.len() - self.scheme_mark as usize + new.len();
 
-        if new_len > u32::MAX as usize {
+        if after_len > u32::MAX as usize {
             Err(TooLong)?;
         }
 
-        if  self.is_special   () && !new.is_special() {return Ok(false);}
-        if !self.is_special   () &&  new.is_special() {return Ok(false);}
-        if  self.has_authority() &&  new.is_file   () {return Ok(false);}
-        if !self.has_host     () &&  new.is_special() {return Ok(false);}
+        let diff = (after_len as u32).wrapping_sub(start_len as u32);
 
-        self.url.set_scheme(new.as_str()).expect("To be valid.");
+        self.serialization.replace_range(..self.scheme_mark as usize, new.as_str());
         self.details.scheme = new.details();
 
-        debug_assert_eq!(self.scheme(), new    );
-        debug_assert_eq!(self.len   (), new_len);
+        self.scheme_mark = self.scheme_mark.wrapping_add(diff);
+        self.path_start  = self.path_start .wrapping_add(diff);
 
-        Ok(true)
+        if let Some(x) = self.username_after {self.username_after = NonZero::new(x.get().wrapping_add(diff));}
+        if let Some(x) = self.host_start     {self.host_start     = NonZero::new(x.get().wrapping_add(diff));}
+        if let Some(x) = self.port_mark      {self.port_mark      = NonZero::new(x.get().wrapping_add(diff));}
+        if let Some(x) = self.query_mark     {self.query_mark     = NonZero::new(x.get().wrapping_add(diff));}
+        if let Some(x) = self.fragment_mark  {self.fragment_mark  = NonZero::new(x.get().wrapping_add(diff));}
+
+        if let Some((x, y)) = self.port_num().zip(self.details.scheme.default_port_num()) && x == y {
+            self.set_port(None::<&str>).expect("???");
+        }
+
+        Ok(())
     }
 }

@@ -3,45 +3,68 @@
 use crate::prelude::*;
 
 impl BetterUrl {
-    /// Make a new [`Query`] for this URL.
-    pub fn new_query<'a, T: Into<MaybeSpecialQuery<'a>> + Into<MaybeNonSpecialQuery<'a>>>(&self, query: T) -> MaybeQuery<'a> {
-        match self.is_special() {
-            true  => MaybeQuery::new_special    (query),
-            false => MaybeQuery::new_non_special(query),
-        }
-    }
-
     /// Set the query.
     /// # Errors
-    /// If setting a query that's too long, returns the error [`TooLong`].
-    pub fn set_query<'a, T: Into<MaybeSpecialQuery<'a>> + Into<MaybeNonSpecialQuery<'a>>>(&mut self, query: T) -> Result<bool, SetQueryError> {
-        let query = self.new_query(query);
+    /// If the URL would become too long, returns the error [`TooLong`].
+    pub fn set_query<'a, T: Into<MaybeSpecialQuery<'a>> + Into<MaybeNonSpecialQuery<'a>>>(&mut self, value: T) -> Result<(), SetQueryError> {
+        let new = MaybeQuery::new(value, self.is_special());
 
-        let new_len = match (self.query_str(), query.as_str()) {
-            (None     , None     )               => return Ok(false),
-            (Some(old), Some(new)) if old == new => return Ok(false),
+        match (self.query_range(), new.as_str()) {
+            (None, None) => {},
 
-            (None     , Some(new)) => self.len()             + new.len() + 1,
-            (Some(old), None     ) => self.len() - old.len()             - 1,
-            (Some(old), Some(new)) => self.len() - old.len() + new.len(),
-        };
+            (None, Some(new)) => {
+                if self.len() + new.len() + 1 > u32::MAX as usize {
+                    Err(TooLong)?
+                }
 
-        if new_len > u32::MAX as usize {
-            Err(TooLong)?;
+                match self.fragment_mark {
+                    Some(x) => {
+                        self.query_mark    = Some(x);
+                        self.fragment_mark = NonZero::new(x.get() + new.len() as u32 + 1);
+
+                        self.serialization.insert_str(x.get() as usize, new);
+                        self.serialization.insert    (x.get() as usize, '?');
+                    },
+                    None => {
+                        self.query_mark = NonZero::new(self.len() as u32);
+                        self.serialization.extend(["?", new]);
+                    }
+                }
+            },
+
+            (Some(range), None     ) => {
+                self.serialization.replace_range(range.start - 1 .. range.end, "");
+
+                if self.fragment_mark.is_some() {
+                    self.fragment_mark = self.query_mark;
+                }
+
+                self.query_mark = None;
+            },
+
+            (Some(range), Some(new)) => {
+                if self.len() - range.len() + new.len() > u32::MAX as usize {
+                    Err(TooLong)?;
+                }
+
+                self.serialization.replace_range(range.clone(), new);
+
+                if let Some(x) = self.fragment_mark {
+                    self.fragment_mark = NonZero::new(x.get() - range.len() as u32 + new.len() as u32)
+                }
+            },
         }
 
-        self.url.set_query(query.as_str());
-
-        debug_assert_eq!(self.len(), new_len);
-        debug_assert_eq!(self.query(), query);
-
-        Ok(true)
+        Ok(())
     }
 
+
+
     /// Remove the query.
+    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
     pub fn remove_query(&mut self) -> bool {
         if self.query_str().is_some() {
-            self.url.set_query(None);
+            self.set_query(None::<&str>).expect("???");
             true
         } else {
             false
@@ -49,9 +72,10 @@ impl BetterUrl {
     }
 
     /// Remove the query if it's empty.
+    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
     pub fn remove_empty_query(&mut self) -> bool {
         if self.query_str() == Some("") {
-            self.url.set_query(None);
+            self.set_query(None::<&str>).expect("???");
             true
         } else {
             false

@@ -12,6 +12,16 @@ pub struct Scheme<'a> {
 }
 
 impl<'a> Scheme<'a> {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal and `details` must be its details.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: SchemeDetails) -> Self {
+        Self {
+            scheme: value.into(),
+            details
+        }
+    }
+
     /// Borrow as a [`str`].
     pub fn as_str(&self) -> &str {
         &self.scheme

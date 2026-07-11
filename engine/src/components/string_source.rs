@@ -302,12 +302,6 @@ impl From<Option<StringSource>> for StringSource {
     }
 }
 
-impl From<url::Url> for StringSource {
-    fn from(value: url::Url) -> Self {
-        Self::String(value.into())
-    }
-}
-
 impl From<BetterUrl> for StringSource {
     fn from(value: BetterUrl) -> Self {
         Self::String(value.into())
@@ -464,7 +458,7 @@ impl StringSource {
 
 
 
-            Self::ExtractPart{value, part} => part.get(&BetterUrl::parse(get!(&value))?).map(|x| x.into_owned().into()),
+            Self::ExtractPart{value, part} => part.get(&BetterUrl::new(get!(value))?).map(|x| x.into_owned().into()),
             Self::JobSourceHostPart(part) => task_state.job.context.source_host.as_ref().and_then(|host| part.get(host)),
 
 

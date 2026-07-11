@@ -10,6 +10,13 @@ use crate::prelude::*;
 pub struct MaybePort<'a>(pub Option<Port<'a>>);
 
 impl<'a> MaybePort<'a> {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be either [`None`] or a valid pair of a [`Self`] literal its number.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: Option<(T, u16)>) -> Self {
+        Self(value.map(|(s, n)| unsafe {Port::new_unchecked(s, n)}))
+    }
+
     /// Make a new [`Self`].
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.

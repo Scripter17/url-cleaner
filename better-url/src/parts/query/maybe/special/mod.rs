@@ -29,6 +29,17 @@ impl<'a> MaybeSpecialQuery<'a> {
 
 
 
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: Option<T>) -> Self {
+        unsafe {
+            Self(value.map(|x| SpecialQuery::new_unchecked(x)))
+        }
+    }
+
+
+
     /// Make a borrowing [`Self`].
     pub fn borrowed(&self) -> MaybeSpecialQuery<'_> {
         MaybeSpecialQuery(self.0.as_ref().map(SpecialQuery::borrowed))

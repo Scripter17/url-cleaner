@@ -32,11 +32,6 @@ impl SchemeDetails {
         else {Err(InvalidScheme)}
     }
 
-    /// Make a new [`Self`] from a [`url::Url`].
-    pub fn from_url(value: &url::Url) -> Self {
-        Self::new_unchecked(value.scheme())
-    }
-
     /// Make a new [`Self`] without case or validity checks.
     pub(crate) fn new_unchecked(value: &str) -> Self {
         match value {

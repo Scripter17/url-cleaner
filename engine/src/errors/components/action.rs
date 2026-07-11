@@ -9,7 +9,8 @@ pub enum ActionError {
     /** [`TryElseError`].                **/ #[error(transparent)] TryElseError       (#[from] Box<TryElseError<Self>>  ),
     /** [`FirstNotErrorErrors`].         **/ #[error(transparent)] FirstNotErrorErrors(#[from] FirstNotErrorErrors<Self>),
 
-    /** [`url::ParseError`].             **/ #[error(transparent)] UrlParseError (#[from] url::ParseError),
+    /** [`InvalidUrl`].                  **/ #[error(transparent)] InvalidUrl      (#[from] InvalidUrl      ),
+    /** [`InvalidJoin`].                 **/ #[error(transparent)] InvalidJoin     (#[from] InvalidJoin     ),
 
     /** [`SetSchemeError`].              **/ #[error(transparent)] SetSchemeError  (#[from] SetSchemeError  ), 
     /** [`SetHostError`].                **/ #[error(transparent)] SetHostError    (#[from] SetHostError    ), 

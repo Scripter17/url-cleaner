@@ -27,9 +27,9 @@ pub enum Host<'a> {
 }
 
 impl<'a> Host<'a> {
-    /// Create a [`Self`] depending on the variant of the [`HostDetails`].
+    /// Make a new [`Self`] without doing any validity checks.
     /// # Safety
-    /// `value` must be a valid literal for the corresponding [`Self`] variant and `details` must be its [`HostDetails`].
+    /// `value` must be a valid [`Self`] literal and `details` must be its details.
     pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: HostDetails) -> Self {
         unsafe {
             match details {

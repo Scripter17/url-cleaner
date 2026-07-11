@@ -30,8 +30,8 @@ impl Query<'_> {
         let r#type = self.r#type();
 
         self.iter_strs().map(move |x| match r#type {
-            QueryType::Special    => SpecialQuerySegment   ::new_unchecked(x).into(),
-            QueryType::NonSpecial => NonSpecialQuerySegment::new_unchecked(x).into(),
+            QueryType::Special    => unsafe {SpecialQuerySegment   ::new_unchecked(x)}.into(),
+            QueryType::NonSpecial => unsafe {NonSpecialQuerySegment::new_unchecked(x)}.into(),
         })
     }
 

@@ -7,8 +7,10 @@ use crate::prelude::*;
 pub struct SpecialNotFilePathSegments<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> SpecialNotFilePathSegments<'a> {
-    /// Make a new [`Self`] without checking for validity.
-    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal and `details` must be its details.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
         Self(value.into())
     }
 

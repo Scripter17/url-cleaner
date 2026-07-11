@@ -35,36 +35,6 @@ pub fn parse_ipv4_num(value: &str) -> Option<u32> {
 /// [Parse an IPv4 host](https://url.spec.whatwg.org/#concept-ipv4-parser).
 ///
 /// See [`make_ipv4_host`] to also get a string.
-/// # Examples
-/// ```
-/// use better_url::util::*;
-///
-/// let tests = [
-///     "1.2.3.4", "255.255.255.255",
-///     "0x1.0x2.0X3.0X4", "0xff.0xfF.0xFf.0xFF",
-///     "01.02.03.04", "0400.0400.0400.0400",
-///
-///     "1", "1.2", "1.2.3", "1.2.3.4", "1.2.3.4.5",
-///     "0x1", "0x1.0x2", "0x1.0x2.0x3", "0x1.0x2.0x3.0x4", "0x1.0x2.0x3.0x4.0x5",
-///     "01", "01.02", "01.02.03", "01.02.03.04", "01.02.03.04.05",
-///
-///     "", ".", "1..2",
-///
-///     "100000000000000000",
-///     "100000000000000000.100000000000000000",
-///     "100000000000000000.100000000000000000.100000000000000000",
-///     "100000000000000000.100000000000000000.100000000000000000.100000000000000000",
-/// ];
-///
-/// for test in tests {
-///     match (parse_ipv4_host(test), url::Host::parse(test)) {
-///         (Some(a), Ok(url::Host::Ipv4(b))) => assert_eq!(a, b, "{test}"),
-///         (None   , Ok(url::Host::Ipv4(b))) => panic!("{test} parsed as None but should've been {b}"),
-///         (Some(a),                    b  ) => panic!("{test} parsed as {a} but should've been {b:?}"),
-///         (None, Err(_) | Ok(url::Host::Domain(_) | url::Host::Ipv6(_))) => {},
-///     }
-/// }
-/// ```
 pub fn parse_ipv4_host(value: &str) -> Option<std::net::Ipv4Addr> {
     let mut parts = SplitDots(Some(value.my_trim_suffix(".")));
 

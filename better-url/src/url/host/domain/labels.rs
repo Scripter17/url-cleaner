@@ -71,7 +71,7 @@ impl BetterUrl {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
         if domain.set_labels(value)? {
-            self.set_host(Some(domain.into_owned()))?;
+            self.set_host(domain.into_owned())?;
             Ok(true)
         } else {
             Ok(false)
@@ -89,7 +89,7 @@ impl BetterUrl {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
         if domain.set_labels_segment(index, value)? {
-            self.set_host(Some(domain.into_owned()))?;
+            self.set_host(domain.into_owned())?;
             Ok(true)
         } else {
             Ok(false)
@@ -107,7 +107,7 @@ impl BetterUrl {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
         if domain.set_labels_range(range, value)? {
-            self.set_host(Some(domain.into_owned()))?;
+            self.set_host(domain.into_owned())?;
             Ok(true)
         } else {
             Ok(false)
@@ -125,7 +125,7 @@ impl BetterUrl {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
         domain.insert_labels_segment(index, value)?;
-        self.set_host(Some(domain.into_owned()))?;
+        self.set_host(domain.into_owned())?;
 
         Ok(())
     }

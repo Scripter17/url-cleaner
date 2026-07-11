@@ -2,6 +2,7 @@
 
 use crate::prelude::*;
 
+mod parsing;
 mod split;
 mod parts;
 mod percent;
@@ -10,6 +11,7 @@ mod normalizer;
 mod macros;
 mod ext_traits;
 
+pub use parsing::*;
 pub use split::*;
 pub use parts::*;
 pub use percent::*;

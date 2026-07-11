@@ -5,35 +5,44 @@ use crate::prelude::*;
 impl BetterUrl {
     /// Set the fragment.
     /// # Errors
-    /// If setting a fragment that's too long, returns the error [`TooLong`].
-    pub fn set_fragment<'a, T: Into<MaybeFragment<'a>>>(&mut self, fragment: T) -> Result<bool, SetFragmentError> {
-        let fragment = fragment.into();
+    /// If the URL would become too long, returns the error [`TooLong`].
+    pub fn set_fragment<'a, T: Into<MaybeFragment<'a>>>(&mut self, value: T) -> Result<(), SetFragmentError> {
+        let new = value.into();
 
-        let new_len = match (self.fragment_str(), fragment.as_str()) {
-            (None     , None     ) => return Ok(false),
-            (Some(old), Some(new)) if old == new => return Ok(false),
+        match (self.fragment_mark, new.as_str()) {
+            (None, None) => {},
 
-            (None     , Some(new)) => self.len() + new.len() + 1,
-            (Some(old), None     ) => self.len() - old.len() - 1,
-            (Some(old), Some(new)) => self.len() - old.len() + new.len()
-        };
+            (None, Some(new)) => {
+                if self.len() + new.len() + 1 > u32::MAX as usize {
+                    Err(TooLong)?;
+                }
 
-        if new_len > u32::MAX as usize {
-            Err(TooLong)?;
+                self.fragment_mark = NonZero::new(self.len() as u32);
+                self.serialization.extend(["#", new]);
+            },
+
+            (Some(mark), None) => {
+                self.serialization.truncate(mark.get() as usize);
+                self.fragment_mark = None;
+            },
+
+            (Some(mark), Some(new)) => {
+                if mark.get() as usize + new.len() > u32::MAX as usize {
+                    Err(TooLong)?;
+                }
+
+                self.serialization.replace_range(mark.get() as usize + 1 .., new);
+            },
         }
 
-        self.url.set_fragment(fragment.as_str());
-
-        debug_assert_eq!(self.len(), new_len);
-        debug_assert_eq!(self.fragment(), fragment);
-
-        Ok(true)
+        Ok(())
     }
 
     /// Remove the fragment.
     pub fn remove_fragment(&mut self) -> bool {
-        if self.fragment_str().is_some() {
-            self.url.set_fragment(None);
+        if let Some(x) = self.fragment_mark {
+            self.serialization.truncate(x.get() as usize);
+            self.fragment_mark = None;
             true
         } else {
             false
@@ -42,8 +51,9 @@ impl BetterUrl {
 
     /// Remove the fragment if it's empty.
     pub fn remove_empty_fragment(&mut self) -> bool {
-        if self.fragment_str() == Some("") {
-            self.url.set_fragment(None);
+        if let Some(x) = self.fragment_mark && x.get() as usize == self.len() - 1 {
+            self.serialization.truncate(x.get() as usize);
+            self.fragment_mark = None;
             true
         } else {
             false

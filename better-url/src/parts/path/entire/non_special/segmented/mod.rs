@@ -7,45 +7,14 @@ mod set;
 mod remove;
 
 /// A non-special segmented path.
-/// # Examples
-/// ```
-/// use better_url::prelude::*;
-///
-/// let paths = [
-///     "/"     , "/abc"     , "/abc/"     , "/abc/def"     , "/abc/def/"     ,
-///     "/."    , "/abc."    , "/abc/."    , "/abc/def."    , "/abc/def/."    ,
-///     "/.."   , "/abc.."   , "/abc/.."   , "/abc/def.."   , "/abc/def/.."   ,
-///     "/./."  , "/abc./."  , "/abc/./."  , "/abc/def./."  , "/abc/def/./."  ,
-///     "/../." , "/abc../." , "/abc/../." , "/abc/def../." , "/abc/def/../." ,
-///     "/./.." , "/abc./.." , "/abc/./.." , "/abc/def./.." , "/abc/def/./.." ,
-///     "/../..", "/abc../..", "/abc/../..", "/abc/def../..", "/abc/def/../..",
-///
-///     // Non-special URLs can have empty paths...
-///
-///               "abc"      , "abc/"      , "abc/def"      , "abc/def/"      ,
-///     "."     , "abc."     , "abc/."     , "abc/def."     , "abc/def/."     ,
-///     ".."    , "abc.."    , "abc/.."    , "abc/def.."    , "abc/def/.."    ,
-///     "./."   , "abc./."   , "abc/./."   , "abc/def./."   , "abc/def/./."   ,
-///     "../."  , "abc../."  , "abc/../."  , "abc/def../."  , "abc/def/../."  ,
-///     "./.."  , "abc./.."  , "abc/./.."  , "abc/def./.."  , "abc/def/./.."  ,
-///     "../.." , "abc../.." , "abc/../.." , "abc/def../.." , "abc/def/../.." ,
-/// ];
-///
-/// let mut url = url::Url::parse("nonspecial://example.com").unwrap();
-///
-/// for path in paths {
-///     url.set_path(path);
-///     let mine = NonSpecialSegmentedPath::new(path);
-///
-///     assert_eq!(url.path(), mine, "{path}");
-/// }
-/// ```
 #[derive(Debug, Clone)]
 pub struct NonSpecialSegmentedPath<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> NonSpecialSegmentedPath<'a> {
-    /// Make a new [`Self`] without checking for validity.
-    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
         Self(value.into())
     }
 
@@ -105,7 +74,7 @@ impl<'a> From<SegmentedPath<'a>> for NonSpecialSegmentedPath<'a> {
 
 impl<'a> From<FileSegmentedPath          <'a>> for NonSpecialSegmentedPath<'a> {fn from(value: FileSegmentedPath          <'a>) -> Self {Self(                                          value.into_inner()   )}}
 impl<'a> From<SpecialNotFileSegmentedPath<'a>> for NonSpecialSegmentedPath<'a> {fn from(value: SpecialNotFileSegmentedPath<'a>) -> Self {Self(                                          value.into_inner()   )}}
-impl<'a> From<NonSpecialEmptyPath        <'a>> for NonSpecialSegmentedPath<'a> {fn from(_    : NonSpecialEmptyPath        <'a>) -> Self {Self::new_unchecked("/")}}
+impl<'a> From<NonSpecialEmptyPath        <'a>> for NonSpecialSegmentedPath<'a> {fn from(_    : NonSpecialEmptyPath        <'a>) -> Self {unsafe {Self::new_unchecked("/")}}}
 impl<'a> From<OpaquePath                 <'a>> for NonSpecialSegmentedPath<'a> {fn from(value: OpaquePath                 <'a>) -> Self {Self(opaque_path_to_non_special_segmented_path(value.into_inner()).1)}}
 
 impl<'a> From<NonSpecialPath<'a>> for NonSpecialSegmentedPath<'a> {

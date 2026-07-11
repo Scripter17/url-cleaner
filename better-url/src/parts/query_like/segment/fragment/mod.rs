@@ -20,9 +20,11 @@ impl<'a> FragmentQuerySegment<'a> {
         &self.raw
     }
 
-    /// Make a new [`Self`] without checking for validity.
-    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(segment: T) -> Self {
-        let raw = segment.into();
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+        let raw = value.into();
 
         Self {
             vs: raw.bytes().position(|b| b == b'=').and_then(|x| NonZero::new(x + 1)),

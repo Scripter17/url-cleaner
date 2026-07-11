@@ -5,17 +5,14 @@ use crate::prelude::*;
 impl<'a> Userinfo<'a> {
     /// The [`Range::start`] of the password.
     pub(crate) fn password_start(&self) -> usize {
-        match self.ps {
-            0 => 0,
-            x => x
-        }
+        self.ps.map_or(0, NonZero::get)
     }
 
     /// The [`Range::end`] of the password.
     pub(crate) fn password_after(&self) -> usize {
         match self.ps {
-            0 => 0,
-            _ => self.len()
+            None    => 0,
+            Some(_) => self.len(),
         }
     }
 
@@ -39,12 +36,12 @@ impl<'a> Userinfo<'a> {
         match (self.password_start(), value.into().as_str()) {
             (0, "" ) => {},
             (0, new) => {
-                self.ps = self.raw.len() + 1;
+                self.ps = NonZero::new(self.raw.len() + 1);
                 self.raw.to_mut().extend([":", new]);
             },
             (x, "") => {
                 self.raw.retain_range(..x - 1);
-                self.ps = 0;
+                self.ps = None;
             },
             (x, new) => {
                 self.raw.to_mut().replace_range(x.., new);

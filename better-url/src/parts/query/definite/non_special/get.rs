@@ -10,7 +10,7 @@ impl NonSpecialQuery<'_> {
 
     /// A [`DoubleEndedIterator`] of [`NonSpecialQuerySegment`]s.
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = NonSpecialQuerySegment<'_>> {
-        self.iter_strs().map(NonSpecialQuerySegment::new_unchecked)
+        self.iter_strs().map(|x| unsafe {NonSpecialQuerySegment::new_unchecked(x)})
     }
 
     /// A [`DoubleEndedIterator`] of [`NonSpecialQuerySegment`]s whose [`NonSpecialQuerySegment::name`]s are `name`.

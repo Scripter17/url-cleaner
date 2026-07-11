@@ -10,10 +10,7 @@ impl<'a> Userinfo<'a> {
 
     /// The [`Range::end`] of the username.
     pub(crate) fn username_after(&self) -> usize {
-        match self.ps {
-            0 => self.len(),
-            x => x - 1
-        }
+        self.ps.map_or(self.len(), |x| x.get() - 1)
     }
 
     /// The [`Range`] of the username.
@@ -35,10 +32,10 @@ impl<'a> Userinfo<'a> {
     pub fn set_username<'b, T: Into<Username<'b>>>(&mut self, value: T) {
         let value = value.into().into_inner();
 
-        self.raw.replace_substr(self.username_str(), &value);
+        self.raw.replace_range(self.username_range(), &value);
 
-        if self.ps != 0 {
-            self.ps = value.len() + 1;
+        if self.ps.is_some() {
+            self.ps = NonZero::new(value.len() + 1);
         }
     }
 }

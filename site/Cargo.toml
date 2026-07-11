@@ -15,7 +15,7 @@ async-stream = "0.3.6"
 axum = { version = "0.8.9", features = ["http2", "ws"] }
 axum-server = { version = "0.8.0", features = ["tls-rustls-no-provider"] }
 bstr = "1.12.3"
-bytes = "1.12.0"
+bytes = "1.12.1"
 clap = { version = "4.6.1", features = ["derive"] }
 const-str = { version = "1.1.0", features = ["proc"] }
 futures-util = { version = "0.3.32", features = ["io"] }

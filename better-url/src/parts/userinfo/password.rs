@@ -7,8 +7,10 @@ use crate::prelude::*;
 pub struct Password<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> Password<'a> {
-    /// Make a new [`Self`] without checking for validity.
-    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(username: T) -> Self {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(username: T) -> Self {
         Self(username.into())
     }
 

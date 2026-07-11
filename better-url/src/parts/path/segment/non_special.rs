@@ -7,6 +7,13 @@ use crate::prelude::*;
 pub struct NonSpecialPathSegment<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> NonSpecialPathSegment<'a> {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+        Self(value.into())
+    }
+
     /// Borrow as a [`str`].
     pub fn as_str(&self) -> &str {
         &self.0

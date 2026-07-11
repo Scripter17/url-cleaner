@@ -12,13 +12,15 @@ pub enum NonSpecialPath<'a> {
 }
 
 impl<'a> NonSpecialPath<'a> {
-    /// Make a new [`Self`] without checkign for validity.
-    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
         let value = value.into();
 
         match value.is_empty() {
-            true  => NonSpecialEmptyPath    ::default().into(),
-            false => NonSpecialSegmentedPath::new_unchecked(value).into(),
+            true  =>         NonSpecialEmptyPath    ::default      (     ) .into(),
+            false => unsafe {NonSpecialSegmentedPath::new_unchecked(value)}.into(),
         }
     }
 

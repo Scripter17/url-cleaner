@@ -32,7 +32,7 @@ macro_rules! always_suitable {
     }
 }
 
-always_suitable!(char, str, String, u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64, bool, url::Url, BetterUrl, serde_json::Value, serde_json::Number, Path, PathBuf, std::time::Duration);
+always_suitable!(char, str, String, u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64, bool, BetterUrl, serde_json::Value, serde_json::Number, Path, PathBuf, std::time::Duration);
 #[cfg(feature = "http")] always_suitable!(reqwest::header::HeaderMap, reqwest::header::HeaderValue, reqwest::Method);
 
 impl Suitability for NonZero<u8> {fn assert_suitability(&self, _: &Cleaner) {}}

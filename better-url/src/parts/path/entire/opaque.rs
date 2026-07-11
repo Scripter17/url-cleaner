@@ -3,10 +3,6 @@
 use crate::prelude::*;
 
 /// An opaque path.
-///
-/// Please note that this differs from [`url::Url::set_path`] in that a trailing space is always replaced with `%20`.
-///
-/// See [servo/rust-url#1123](https://github.com/servo/rust-url/issues/1123) and [whatwg/url#909](https://github.com/whatwg/url/issues/909) for discussion.
 /// # Examples
 /// ```
 /// use better_url::prelude::*;
@@ -17,8 +13,10 @@ use crate::prelude::*;
 pub struct OpaquePath<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> OpaquePath<'a> {
-    /// Make a new [`Self`] without checking for validity.
-    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
         Self(value.into())
     }
 

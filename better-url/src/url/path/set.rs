@@ -3,42 +3,76 @@
 use crate::prelude::*;
 
 impl BetterUrl {
-    /// Make a new [`Path`] for this URL.
-    pub fn new_path<'a, T: Into<FilePath<'a>> + Into<SpecialNotFilePath<'a>> + Into<NonSpecialPath<'a>> + Into<OpaquePath<'a>>>(&self, path: T) -> Path<'a> {
-        match self.cannot_be_a_base() {
-            true  => Path::new_opaque(path),
-            false => match self.scheme_type() {
-                SchemeType::File           => Path::new_file            (path),
-                SchemeType::SpecialNotFile => Path::new_special_not_file(path),
-                SchemeType::NonSpecial     => Path::new_non_special     (path),
-            }
-        }
-    }
-
     /// Set the path.
     /// # Errors
-    /// If setting a path that's too long, returns the error [`TooLong`].
-    pub fn set_path<'a, T: Into<FilePath<'a>> + Into<SpecialNotFilePath<'a>> + Into<NonSpecialPath<'a>> + Into<OpaquePath<'a>>>(&mut self, path: T) -> Result<bool, SetPathError> {
-        let old = self.path_str();
-
-        let new = self.new_path(path);
-
-        if old == new {
-            return Ok(false);
+    /// If the URL would become too long, returns the error [`TooLong`].
+    pub fn set_path<'a, T: Into<FilePath<'a>> + Into<SpecialNotFilePath<'a>> + Into<NonSpecialPath<'a>> + Into<NonSpecialSegmentedPath<'a>>>(&mut self, path: T) -> Result<(), SetPathError> {
+        if self.cannot_be_a_base() {
+            return Ok(());
         }
 
-        let new_len = self.len() - old.len() + new.len();
+        let new = match self.details.scheme.r#type() {
+            SchemeType::File           => Path::new_file            (path),
+            SchemeType::SpecialNotFile => Path::new_special_not_file(path),
+            SchemeType::NonSpecial     => match self.has_host() {
+                true  => Path::new_non_special          (path),
+                false => Path::new_non_special_segmented(path),
+            }
+        };
 
-        if new_len > u32::MAX as usize {
-            Err(TooLong)?;
+        let a = self.has_host();
+        let b = &self.serialization[self.scheme_mark as usize .. self.path_start as usize] == ":/.";
+        let c = new.as_str().starts_with("//");
+
+        match (a, b, c) {
+            (false, false, true) => {
+                let after_len = self.len() - self.path_range().len() + new.len() + 2;
+
+                if after_len > u32::MAX as usize {
+                    Err(TooLong)?;
+                }
+
+                let diff = (after_len as u32).wrapping_sub(self.len() as u32);
+
+                self.serialization.replace_range(self.path_range(), new.as_str());
+                self.serialization.insert_str(self.path_start as usize, "/.");
+
+                self.path_start += 2;
+                if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
+            },
+            (false, true, false) => {
+                let after_len = self.len() - self.path_range().len() + new.len() - 2;
+
+                if after_len > u32::MAX as usize {
+                    Err(TooLong)?;
+                }
+
+                let diff = (after_len as u32).wrapping_sub(self.len() as u32);
+
+                self.serialization.replace_range(self.path_start as usize - 2 .. self.path_after(), new.as_str());
+
+                self.path_start -= 2;
+                if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
+            },
+            _ => {
+                let after_len = self.len() - self.path_range().len() + new.len();
+
+                if after_len > u32::MAX as usize {
+                    Err(TooLong)?;
+                }
+
+                let diff = (after_len as u32).wrapping_sub(self.len() as u32);
+
+                self.serialization.replace_range(self.path_range(), new.as_str());
+
+                if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
+            },
         }
 
-        self.url.set_path(new.as_str());
-
-        debug_assert_eq!(self.len (), new_len);
-        debug_assert_eq!(self.path(), new    );
-
-        Ok(true)
+        Ok(())
     }
 
     /// [`SegmentedPath::set`].

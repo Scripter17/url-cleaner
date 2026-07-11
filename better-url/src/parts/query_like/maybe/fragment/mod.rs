@@ -34,6 +34,17 @@ impl<'a> MaybeFragmentQuery<'a> {
 
 
 
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: Option<T>) -> Self {
+        unsafe {
+            Self(value.map(|x| FragmentQuery::new_unchecked(x)))
+        }
+    }
+
+
+
     /// Turn into the inner [`Cow`].
     pub fn into_inner(self) -> Option<Cow<'a, str>> {
         self.0.map(FragmentQuery::into_inner)

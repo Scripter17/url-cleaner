@@ -162,7 +162,7 @@ pub enum Action {
 
     /// Sets the whole URL.
     SetWhole(StringSource),
-    /// [`url::Url::join`].
+    /// [`BetterUrl::join`].
     Join(StringSource),
 
     // Scheme
@@ -621,35 +621,29 @@ impl Action {
                     return Ok(false);
                 }
 
-                let new = url::Url::parse(&new)?;
+                let new = BetterUrl::new(new)?;
 
                 if task_state.url == new {
                     return Ok(false);
                 }
 
-                task_state.url = new.into();
+                task_state.url = new;
 
                 true
             },
 
             Self::Join(with) => {
-                let new = task_state.url.join(get!(&with))?;
-
-                if task_state.url != new {
-                    task_state.url = new.into();
-                    true
-                } else {
-                    false
-                }
+                task_state.url.join(get!(&!with))?;
+                true
             },
 
             // Scheme
 
-            Self::SetScheme(to) => task_state.url.set_scheme(get!(!to))?,
+            Self::SetScheme(to) => {task_state.url.set_scheme(get!(!to))?; true},
 
             // Domain
 
-            Self::SetHost               (       value) => task_state.url.set_host                 (        get!(?&!value))?,
+            Self::SetHost               (       value) => {task_state.url.set_host                 (        get!(&!value))?; true},
             Self::SetDomainPrefix       (       value) => task_state.url.set_domain_prefix        (        get!(?&!value))?,
             Self::SetDomainMiddle       (       value) => task_state.url.set_domain_middle        (        get!(?&!value))?,
             Self::SetDomainSuffix       (       value) => task_state.url.set_domain_suffix        (        get!(?&!value))?,
@@ -660,7 +654,16 @@ impl Action {
             Self::SetDomainPrefixSegment{index, value} => task_state.url.set_domain_prefix_segment(*index, get!(?&!value))?,
             Self::SetDomainSuffixSegment{index, value} => task_state.url.set_domain_suffix_segment(*index, get!(?&!value))?,
 
-            Self::ModifyHost               (       modification) => modify_part!(task_state, args, modification, host_str                 , set_host         ),
+            Self::ModifyHost               (       modification) => {
+                let mut host = task_state.url.host_str().map(Cow::from);
+
+                if modification.apply(task_state, args, &mut host)? {
+                    task_state.url.set_host(host.ok_or(StringNotFound)?.into_owned())?;
+                    true
+                } else {
+                    false
+                }
+            },
             Self::ModifyDomainPrefix       (       modification) => modify_part!(task_state, args, modification, domain_prefix_str        , set_domain_prefix),
             Self::ModifyDomainMiddle       (       modification) => modify_part!(task_state, args, modification, domain_middle_str        , set_domain_middle),
             Self::ModifyDomainSuffix       (       modification) => modify_part!(task_state, args, modification, domain_suffix_str        , set_domain_suffix),
@@ -681,13 +684,15 @@ impl Action {
 
             // Path
 
-            Self::SetPath(to) => task_state.url.set_path(get!(!to))?,
+            Self::SetPath(to) => {task_state.url.set_path(get!(!to))?; true},
             Self::ModifyPath(modification) => {
-                let mut path = Some(task_state.url.path().into_inner());
+                let mut path = Some(task_state.url.path_str().into());
 
-                match modification.apply(task_state, args, &mut path)? {
-                    true  => task_state.url.set_path(path.ok_or(StringNotFound)?.into_owned())?,
-                    false => false
+                if modification.apply(task_state, args, &mut path)? {
+                    task_state.url.set_path(path.ok_or(StringNotFound)?.into_owned())?;
+                    true
+                } else {
+                    false
                 }
             },
 
@@ -708,7 +713,7 @@ impl Action {
 
             // Query
 
-            Self::SetQuery                 (to)           => task_state.url.set_query(get!(?!to))?,
+            Self::SetQuery                 (to)           => {task_state.url.set_query(get!(?!to))?; true},
             Self::SetQueryParam            {param, value} => task_state.url.set_query_param(&param.name, param.index, get!(?&!value).map(Some))?,
             Self::RemoveQuery                             => task_state.url.remove_query      (),
             Self::RemoveEmptyQuery                        => task_state.url.remove_empty_query(),
@@ -718,13 +723,13 @@ impl Action {
             Self::AllowQueryParams         (names  )      => task_state.url.filter_query(|s|  names.contains(&*s.name())),
             Self::AllowQueryParamsMatching (matcher)      => {
                 match task_state.url.query().try_filtered(|s| matcher.check(task_state, args, Some(&s.name())))? {
-                    (true , query) => task_state.url.set_query(query.into_owned())?,
+                    (true , query) => {task_state.url.set_query(query.into_owned())?; true},
                     (false, _    ) => false
                 }
             },
             Self::RemoveQueryParamsMatching (matcher) => {
                 match task_state.url.query().try_filtered(|s| matcher.check(task_state, args, Some(&s.name())).map(|x| !x))? {
-                    (true , query) => task_state.url.set_query(query.into_owned())?,
+                    (true , query) => {task_state.url.set_query(query.into_owned())?; true},
                     (false, _    ) => false
                 }
             },
@@ -736,7 +741,7 @@ impl Action {
 
             // Fragment
 
-            Self::SetFragment                 (to)           => task_state.url.set_fragment(get!(?!to))?,
+            Self::SetFragment                 (to)           => {task_state.url.set_fragment(get!(?!to))?; true},
             Self::SetFragmentParam            {param, value} => task_state.url.set_fragment_query_param(&param.name, param.index, get!(?&!value).map(Some))?,
             Self::RemoveFragment                             => task_state.url.remove_fragment      (),
             Self::RemoveEmptyFragment                        => task_state.url.remove_empty_fragment(),
@@ -746,13 +751,13 @@ impl Action {
             Self::AllowFragmentParams         (names  )      => task_state.url.filter_fragment_query(|s|  names.contains(&*s.name())),
             Self::AllowFragmentParamsMatching (matcher)      => {
                 match task_state.url.fragment_query().try_filtered(|s| matcher.check(task_state, args, Some(&s.name())))? {
-                    (true , fragment) => task_state.url.set_fragment(fragment.into_owned())?,
+                    (true , fragment) => {task_state.url.set_fragment(fragment.into_owned())?; true},
                     (false, _       ) => false
                 }
             },
             Self::RemoveFragmentParamsMatching (matcher) => {
                 match task_state.url.fragment_query().try_filtered(|s| matcher.check(task_state, args, Some(&s.name())).map(|x| !x))? {
-                    (true , fragment) => task_state.url.set_fragment(fragment.into_owned())?,
+                    (true , fragment) => {task_state.url.set_fragment(fragment.into_owned())?; true},
                     (false, _       ) => false
                 }
             },
@@ -804,7 +809,7 @@ impl Action {
                 let subject = get!(&!subject);
 
                 if let Some(entry) = task_state.job.cache.read(CacheEntryKeys {subject, key: task_state.url.as_str()})? {
-                    task_state.url = BetterUrl::parse(&entry.value.ok_or(StringNotFound)?)?;
+                    task_state.url = BetterUrl::new(entry.value.ok_or(StringNotFound)?)?;
                     return Ok(true);
                 }
 

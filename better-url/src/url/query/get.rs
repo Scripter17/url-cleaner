@@ -3,16 +3,32 @@
 use crate::prelude::*;
 
 impl BetterUrl {
+    /// The [`Range::start`] of the query.
+    fn query_start(&self) -> Option<usize> {
+        Some(self.query_mark?.get() as usize + 1)
+    }
+
+    /// The [`Range::end`] of the query.
+    fn query_after(&self) -> Option<usize> {
+        Some(self.fragment_mark.map_or(self.len(), |x| x.get() as usize))
+    }
+
+    /// The [`Range`] of the query.
+    pub(crate) fn query_range(&self) -> Option<Range<usize>> {
+        Some(self.query_start()? .. self.query_after()?)
+    }
+
+
+
     /// The query as a [`str`].
     pub fn query_str(&self) -> Option<&str> {
-        self.url.query()
+        Some(&self.serialization[self.query_range()?])
     }
 
     /// The [`MaybeQuery`].
     pub fn query(&self) -> MaybeQuery<'_> {
-        match self.is_special() {
-            true  => MaybeQuery::Special   (self.query_str().map(SpecialQuery   ::new_unchecked).into()),
-            false => MaybeQuery::NonSpecial(self.query_str().map(NonSpecialQuery::new_unchecked).into()),
+        unsafe {
+            MaybeQuery::new_unchecked(self.query_str(), self.is_special())
         }
     }
 
@@ -28,8 +44,8 @@ impl BetterUrl {
         let is_special = self.is_special();
 
         Some(self.query_segment_strs()?.map(move |x| match is_special {
-            true  => SpecialQuerySegment   ::new_unchecked(x).into(),
-            false => NonSpecialQuerySegment::new_unchecked(x).into(),
+            true  => unsafe {SpecialQuerySegment   ::new_unchecked(x)}.into(),
+            false => unsafe {NonSpecialQuerySegment::new_unchecked(x)}.into(),
         }))
     }
 

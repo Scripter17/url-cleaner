@@ -10,8 +10,10 @@ mod set;
 pub struct NonSpecialQuery<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> NonSpecialQuery<'a> {
-    /// Create a new [`Self`] without checking for validity.
-    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
         Self(value.into())
     }
 

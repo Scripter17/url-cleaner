@@ -17,20 +17,17 @@ pub struct Userinfo<'a> {
     /// The raw string.
     pub(crate) raw: Cow<'a, str>,
     /// If non-zero, the [`Range::start`] of the password.
-    pub(crate) ps: usize,
+    pub(crate) ps: Option<NonZero<usize>>,
 }
 
 impl<'a> Userinfo<'a> {
-    /// Make a new [`Self`] without checking for validity.
-    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(userinfo: T) -> Self {
-        let raw = userinfo.into();
-
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal and `ps` must be the index just after the first `:`, if any.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, ps: Option<NonZero<usize>>) -> Self {
         Self {
-            ps: match raw.split_once(':') {
-                Some((x, _)) => x.len() + 1,
-                None => 0
-            },
-            raw
+            raw: value.into(),
+            ps
         }
     }
 
@@ -65,12 +62,8 @@ impl<'a> From<Cow<'a, str>> for Userinfo<'a> {
     fn from(value: Cow<'a, str>) -> Self {
         let (_, raw, ps) = encode_userinfo(value);
 
-        Self {
-            raw,
-            ps: match ps {
-                None => 0,
-                Some(x) => x.get()
-            }
+        unsafe {
+            Self::new_unchecked(raw, ps)
         }
     }
 }

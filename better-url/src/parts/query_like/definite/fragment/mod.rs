@@ -10,11 +10,6 @@ mod set;
 pub struct FragmentQuery<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> FragmentQuery<'a> {
-    /// Make a new [`Self`] without checking for validity.
-    pub(crate) fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
-        Self(value.into())
-    }
-
     /// Borrow as a [`str`].
     pub fn as_str(&self) -> &str {
         &self.0
@@ -28,6 +23,15 @@ impl<'a> FragmentQuery<'a> {
     /// Turn into a [`Fragment`].
     pub fn string(self) -> Fragment<'a> {
         self.into()
+    }
+
+
+
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+        Self(value.into())
     }
 
 

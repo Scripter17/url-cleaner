@@ -1,6 +1,7 @@
 //! Error types.
 
 mod generic;
+mod url;
 mod scheme;
 mod userinfo;
 mod host;
@@ -11,6 +12,7 @@ mod query;
 mod fragment;
 
 pub use generic::*;
+pub use url::*;
 pub use scheme::*;
 pub use userinfo::*;
 pub use host::*;

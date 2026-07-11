@@ -33,7 +33,7 @@ impl BetterUrl {
         if self.domain_details().ok_or(NoDomain)?.is_fqdn() != value {
             let mut domain = self.domain().ok_or(NoDomain)?;
             domain.set_fqdn(value)?;
-            self.set_host(Some(domain.into_owned()))?;
+            self.set_host(domain.into_owned())?;
             Ok(true)
         } else {
             Ok(false)

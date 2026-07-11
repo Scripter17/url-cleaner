@@ -1,85 +1,133 @@
-//! Username stuff.
+//! [`Username`].
 
 use crate::prelude::*;
 
 impl BetterUrl {
+    /// If it has a visible username.
+    pub fn has_username(&self) -> bool {
+        self.username_after.is_some()
+    }
+
+    /// If it has a visible password.
+    pub fn has_password(&self) -> bool {
+        self.username_after.zip(self.host_start).is_none_or(|(ua, hs)| ua.get() != hs.get() - 1)
+    }
+
     /// The [`Range::start`] of the username.
-    pub(crate) fn username_start(&self) -> usize {
-        // Can't just use the address of [`Url::username`].
-        match self.has_authority() {
-            true  => self.scheme().len() + 3,
-            false => self.scheme().len() + 1,
+    pub(crate) fn username_start(&self) -> Option<usize> {
+        if self.has_username() {
+            Some(self.scheme_mark as usize + 3)
+        } else {
+            None
         }
     }
 
-    /// The [`Range::end`] of the username.
-    pub(crate) fn username_after(&self) -> usize {
-        self.username_start() + self.url.username().len()
+    /// The [`Range::end`] of ther username.
+    pub(crate) fn username_after(&self) -> Option<usize> {
+        Some(self.username_after?.get() as usize)
     }
 
     /// The [`Range`] of the username.
-    pub(crate) fn username_range(&self) -> Range<usize> {
-        self.username_start() .. self.username_after()
+    pub(crate) fn username_range(&self) -> Option<Range<usize>> {
+        Some(self.username_start()? .. self.username_after()?)
     }
 
-    /// The username.
-    /// # Examples
-    /// ```
-    /// use better_url::prelude::*;
-    ///
-    /// assert_eq!(BetterUrl::parse("https://example.com"      ).unwrap().username_str(), ""  );
-    /// assert_eq!(BetterUrl::parse("https://ab@example.com"   ).unwrap().username_str(), "ab");
-    /// assert_eq!(BetterUrl::parse("https://:cd@example.com"  ).unwrap().username_str(), ""  );
-    /// assert_eq!(BetterUrl::parse("https://ab:cd@example.com").unwrap().username_str(), "ab");
-    /// ```
+
+
+    /// The username as a [`str`], or [`None`] if absent.
+    pub fn maybe_username_str(&self) -> Option<&str> {
+        Some(&self.serialization[self.username_range()?])
+    }
+
+    /// The username as a [`str`].
     pub fn username_str(&self) -> &str {
-        &self.as_str()[self.username_range()]
+        self.maybe_username_str().unwrap_or_default()
     }
 
-    /// The [`Username`],
+    /// The [`Username`].
     pub fn username(&self) -> Username<'_> {
-        Username::new_unchecked(self.username_str())
+        unsafe {
+            Username::new_unchecked(self.username_str())
+        }
     }
+
+
 
     /// Set the username.
     /// # Errors
-    /// If the URL doesn't have a host, returns the error [`NoHost`].
-    ///
-    /// If setting the username to be too long, returns the error [`TooLong`].
-    #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn set_username<'a, T: Into<Username<'a>>>(&mut self, username: T) -> Result<bool, SetUsernameError> {
-        if !self.has_host() {
-            Err(NoHost)?;
+    /// If the URL would become too long, returns the error [`TooLong`].
+    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
+    pub fn set_username<'a, T: Into<Username<'a>>>(&mut self, value: T) -> Result<(), SetUsernameError> {
+        let new = value.into();
+
+        if self.cannot_have_userinfo_or_port() {
+            return Ok(())
         }
 
-        let username = username.into();
+        match self.username_range() {
+            Some(range) => match new.is_empty() && !self.has_password() {
+                true => {
+                    let diff = range.len() as u32 + 1;
 
-        let new_len = match (self.username().len(), self.password().len(), username.len()) {
-            (0, 0, 0) => self.len(),
-            (0, 0, y) => self.len() + y + 1,
-            (0, _, 0) => self.len(),
-            (0, _, y) => self.len() + y,
+                    let i = self.host_start.expect("???").get();
 
-            (x, 0, 0) => self.len() - x - 1,
-            (x, 0, y) => self.len() - x + y,
-            (x, _, 0) => self.len() - x,
-            (x, _, y) => self.len() - x + y
-        };
+                    self.serialization.replace_range((i - diff) as usize .. i as usize, "");
 
-        if new_len > u32::MAX as usize {
-            Err(TooLong)?;
+                    self.username_after = None;
+
+                    self.host_start = NonZero::new(i - diff);
+
+                    if let Some(x) = self.port_mark {self.port_mark = NonZero::new(x.get() - diff);}
+
+                    self.path_start -= diff;
+
+                    if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get() - diff);}
+                    if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get() - diff);}
+                },
+                false => {
+                    if self.len() - range.len() + new.len() > u32::MAX as usize {
+                        Err(TooLong)?;
+                    }
+
+                    let diff = (new.len() as u32).wrapping_sub(range.len() as u32);
+
+                    self.serialization.replace_range(range, new.as_str());
+
+                    self.username_after = NonZero::new(self.scheme_mark + 3 + new.len() as u32);
+
+                    if let Some(x) = self.host_start     {self.host_start     = NonZero::new(x.get().wrapping_add(diff));}
+                    if let Some(x) = self.port_mark      {self.port_mark      = NonZero::new(x.get().wrapping_add(diff));}
+
+                    self.path_start = self.path_start.wrapping_add(diff);
+
+                    if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
+                    if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
+                }
+            },
+            None => if !new.is_empty() {
+                if self.len() + new.len() + 1 > u32::MAX as usize {
+                    Err(TooLong)?;
+                }
+
+                let diff = new.len() as u32 + 1;
+
+                let i = self.host_start.expect("???").get() as usize;
+
+                self.serialization.insert(i, '@');
+                self.serialization.insert_str(i, new.as_str());
+
+                self.username_after = NonZero::new(self.scheme_mark + 3 + new.len() as u32);
+
+                if let Some(x) = self.host_start     {self.host_start     = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.port_mark      {self.port_mark      = NonZero::new(x.get().wrapping_add(diff));}
+
+                self.path_start = self.path_start.wrapping_add(diff);
+
+                if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
+            }
         }
 
-        let mut changed = false;
-
-        if self.username() != username {
-            self.url.set_username(username.as_str()).expect("To be valid.");
-            changed = true;
-        }
-
-        debug_assert_eq!(self.len(), new_len);
-        debug_assert_eq!(self.username(), username);
-
-        Ok(changed)
+        Ok(())
     }
 }

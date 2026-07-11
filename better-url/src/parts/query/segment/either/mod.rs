@@ -23,14 +23,56 @@ impl<'a> QuerySegment<'a> {
         }
     }
 
-    /// [`Self::Special`].
+
+
+    /// Make a new [`Self`].
+    pub fn new<T: Into<SpecialQuerySegment<'a>> + Into<NonSpecialQuerySegment<'a>>>(value: T, special: bool) -> Self {
+        match special {
+            true  => Self::new_special    (value),
+            false => Self::new_non_special(value),
+        }
+    }
+
+    /// Make a new [`Self::Special`].
     pub fn new_special<T: Into<SpecialQuerySegment<'a>>>(value: T) -> Self {
         value.into().into()
     }
 
-    /// [`Self::NonSpecial`].
+    /// Make a new [`Self::NonSpecial`].
     pub fn new_non_special<T: Into<NonSpecialQuerySegment<'a>>>(value: T) -> Self {
         value.into().into()
+    }
+
+
+
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, special: bool) -> Self {
+        unsafe {
+            match special {
+                true  => Self::new_special_unchecked    (value),
+                false => Self::new_non_special_unchecked(value),
+            }
+        }
+    }
+
+    /// Make a new [`Self::Special`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self::Special`] literal.
+    pub unsafe fn new_special_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+        unsafe {
+            SpecialQuerySegment::new_unchecked(value).into()
+        }
+    }
+
+    /// Make a new [`Self::NonSpecial`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self::NonSpecial`] literal.
+    pub unsafe fn new_non_special_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
+        unsafe {
+            NonSpecialQuerySegment::new_unchecked(value).into()
+        }
     }
 
 

@@ -26,6 +26,6 @@ impl SpecialNotFileSegmentedPath<'_> {
     /// assert_eq!(path.get_range(0..=-1).unwrap(), "ab/cd/ef");
     /// ```
     pub fn get_range<B: RangeBounds<isize>>(&self, range: B) -> Option<SpecialNotFilePathSegments<'_>> {
-        path_segments_range_thing(&self.as_str()[1..], range).map(SpecialNotFilePathSegments::new_unchecked)
+        path_segments_range_thing(&self.as_str()[1..], range).map(|x| unsafe {SpecialNotFilePathSegments::new_unchecked(x)})
     }
 }

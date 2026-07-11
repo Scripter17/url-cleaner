@@ -1,87 +1,158 @@
-//! Password stuff.
+//! [`Password`].
 
 use crate::prelude::*;
 
 impl BetterUrl {
     /// The [`Range::start`] of the password.
-    pub(crate) fn password_start(&self) -> usize {
-        match self.url.password() {
-            Some(x) => x.addr() - self.as_str().addr(),
-            None => self.username_after()
+    pub(crate) fn password_start(&self) -> Option<usize> {
+        if self.has_password() {
+            Some(self.username_after?.get() as usize + 1)
+        } else {
+            None
         }
     }
 
     /// The [`Range::end`] of the password.
-    pub(crate) fn password_after(&self) -> usize {
-        match self.url.password() {
-            Some(x) => x.end_addr() - self.as_str().addr(),
-            None => self.username_after()
+    pub(crate) fn password_after(&self) -> Option<usize> {
+        if self.has_password() {
+            Some(self.host_start?.get() as usize - 1)
+        } else {
+            None
         }
     }
 
     /// The [`Range`] of the password.
-    pub(crate) fn password_range(&self) -> Range<usize> {
-        self.password_start() .. self.password_after()
+    fn password_range(&self) -> Option<Range<usize>> {
+        Some(self.password_start()? .. self.password_after()?)
     }
 
-    /// The password.
-    /// # Examples
-    /// ```
-    /// use better_url::prelude::*;
-    ///
-    /// assert_eq!(BetterUrl::parse("https://example.com"      ).unwrap().password_str(), ""  );
-    /// assert_eq!(BetterUrl::parse("https://ab@example.com"   ).unwrap().password_str(), ""  );
-    /// assert_eq!(BetterUrl::parse("https://:cd@example.com"  ).unwrap().password_str(), "cd");
-    /// assert_eq!(BetterUrl::parse("https://ab:cd@example.com").unwrap().password_str(), "cd");
-    /// ```
+    /// The password as a [`str`], or [`None`] if absent.
+    pub fn maybe_password_str(&self) -> Option<&str> {
+        Some(&self.serialization[self.password_range()?])
+    }
+
+    /// The password as a [`str`].
     pub fn password_str(&self) -> &str {
-        &self.as_str()[self.password_range()]
+        self.maybe_password_str().unwrap_or_default()
     }
 
     /// The [`Password`].
     pub fn password(&self) -> Password<'_> {
-        Password::new_unchecked(self.password_str())
+        unsafe {
+            Password::new_unchecked(self.password_str())
+        }
     }
 
     /// Set the password.
     /// # Errors
-    /// If the URL doesn't have a host, returns the error [`NoHost`].
-    ///
-    /// If setting the password to be too long, returns the error [`TooLong`].
-    #[allow(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
-    pub fn set_password<'a, T: Into<Password<'a>>>(&mut self, password: T) -> Result<bool, SetPasswordError> {
-        if !self.has_host() {
-            Err(NoHost)?;
+    /// If the URL would become too long, returns the error [`TooLong`].
+    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
+    pub fn set_password<'a, T: Into<Username<'a>>>(&mut self, value: T) -> Result<(), SetUsernameError> {
+        let new = value.into();
+
+        if self.cannot_have_userinfo_or_port() {
+            return Ok(());
         }
 
-        let password = password.into();
+        match self.password_range() {
+            Some(pr) => match new.is_empty() {
+                true  => {
+                    let (r, diff) = match self.username_str() {
+                        "" => {
+                            self.username_after = None;
 
-        let new_len = match (self.username().len(), self.password().len(), password.len()) {
-            (_, 0, 0) => self.len(),
+                            let r = pr.start - 1 .. pr.end + 1;
 
-            (0, 0, y) => self.len()     + y + 2,
-            (0, x, 0) => self.len() - x     - 2,
-            (0, x, y) => self.len() - x + y + 1,
+                            let diff = r.len() as u32;
 
-            (_, 0, y) => self.len()     + y + 1,
-            (_, x, 0) => self.len() - x     - 1,
-            (_, x, y) => self.len() - x + y    ,
-        };
+                            (r, diff)
+                        },
+                        _  => {
+                            let r = pr.start - 1 .. pr.end;
 
-        if new_len > u32::MAX as usize {
-            Err(TooLong)?;
+                            let diff = r.len() as u32;
+
+                            (r, diff)
+                        }
+                    };
+
+                    self.serialization.replace_range(r, "");
+
+                    if let Some(x) = self.host_start {self.host_start = NonZero::new(x.get() - diff);}
+                    if let Some(x) = self.port_mark  {self.port_mark  = NonZero::new(x.get() - diff);}
+
+                    self.path_start -= diff;
+
+                    if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get() - diff);}
+                    if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get() - diff);}
+                },
+                false => {
+                    if self.len() - pr.len() + new.len() > u32::MAX as usize {
+                        Err(TooLong)?;
+                    }
+
+                    let diff = (new.len() as u32).wrapping_sub(pr.len() as u32);
+
+                    self.serialization.replace_range(pr, new.as_str());
+
+                    if let Some(x) = self.host_start {self.host_start = NonZero::new(x.get().wrapping_add(diff));}
+                    if let Some(x) = self.port_mark  {self.port_mark  = NonZero::new(x.get().wrapping_add(diff));}
+
+                    self.path_start = self.path_start.wrapping_add(diff);
+
+                    if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
+                    if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
+                },
+            },
+            None => if !new.is_empty() {
+                match self.username_range() {
+                    Some(ur) => {
+                        if self.len() + new.len() + 1 > u32::MAX as usize {
+                            Err(TooLong)?;
+                        }
+
+                        let diff = new.len() as u32 + 1;
+
+                        self.serialization.insert_str(ur.end, new.as_str());
+                        self.serialization.insert    (ur.end, ':');
+
+                        self.host_start = NonZero::new(ur.end as u32 + 1 + diff);
+
+                        if let Some(x) = self.port_mark {self.port_mark = NonZero::new(x.get() + diff);}
+
+                        self.path_start += diff;
+
+                        if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get() + diff);}
+                        if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get() + diff);}
+                    },
+                    None => {
+                        if self.len() + new.len() + 2 > u32::MAX as usize {
+                            Err(TooLong)?;
+                        }
+
+                        let diff = new.len() as u32 + 2;
+
+                        let i = self.host_start.expect("???").get();
+
+                        self.serialization.insert    (i as usize, '@');
+                        self.serialization.insert_str(i as usize, new.as_str());
+                        self.serialization.insert    (i as usize, ':');
+
+                        self.username_after = NonZero::new(i);
+
+                        self.host_start = NonZero::new(i + diff);
+
+                        if let Some(x) = self.port_mark {self.port_mark = NonZero::new(x.get() + diff);}
+
+                        self.path_start += diff;
+
+                        if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get() + diff);}
+                        if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get() + diff);}
+                    },
+                }
+            }
         }
 
-        let mut changed = false;
-
-        if self.password() != password {
-            self.url.set_password(Some(password.as_str())).expect("To be valid.");
-            changed = true;
-        }
-
-        debug_assert_eq!(self.len(), new_len);
-        debug_assert_eq!(self.password(), password);
-
-        Ok(changed)
+        Ok(())
     }
 }

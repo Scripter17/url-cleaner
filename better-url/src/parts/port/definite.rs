@@ -14,6 +14,16 @@ pub struct Port<'a> {
 }
 
 impl<'a> Port<'a> {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal and `details` must be its number.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, num: u16) -> Self {
+        Self {
+            port: value.into(),
+            port_num: num
+        }
+    }
+
     /// Make a new [`Self`].
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.

@@ -26,6 +26,6 @@ impl NonSpecialSegmentedPath<'_> {
     /// assert_eq!(path.get_range(0..=-1).unwrap(), "ab/cd/ef");
     /// ```
     pub fn get_range<B: RangeBounds<isize>>(&self, range: B) -> Option<NonSpecialPathSegments<'_>> {
-        path_segments_range_thing(&self.as_str()[1..], range).map(NonSpecialPathSegments::new_unchecked)
+        path_segments_range_thing(&self.as_str()[1..], range).map(|x| unsafe {NonSpecialPathSegments::new_unchecked(x)})
     }
 }

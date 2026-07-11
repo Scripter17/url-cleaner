@@ -10,7 +10,7 @@ use crate::prelude::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum UrlPart {
-    /// [`url::Url::as_str`].
+    /// [`BetterUrl::as_str`].
     Whole,
 
 

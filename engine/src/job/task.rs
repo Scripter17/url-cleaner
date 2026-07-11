@@ -28,7 +28,6 @@ impl Task {
 }
 
 impl From<BetterUrl> for Task {fn from(url: BetterUrl) -> Self {Self {url, context: Default::default()}}}
-impl From<url::Url > for Task {fn from(url: url::Url ) -> Self {BetterUrl::from(url).into()}}
 
 impl FromStr for Task {
     type Err = MakeTaskError;
@@ -36,7 +35,7 @@ impl FromStr for Task {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(match s.as_bytes() {
             [b'{' | b'"'                  , ..] => serde_json::from_str(s)?,
-            [b'a' ..= b'z' | b'A' ..= b'Z', ..] => BetterUrl::parse(s)?.into(),
+            [b'a' ..= b'z' | b'A' ..= b'Z', ..] => BetterUrl::new(s)?.into(),
             [] => Err(MakeTaskError::IgnoreLineNotIgnored)?,
             _  => Err(MakeTaskError::OtherwiseInvalid)?
         })

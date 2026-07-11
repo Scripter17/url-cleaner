@@ -18,9 +18,9 @@ impl<'a> QueryLike<'a> {
 
         SplitAmpersands(Some(self.as_str())).map(move |x| {
             match mode {
-                QueryLikeMode::Special    => SpecialQuerySegment   ::new_unchecked(x).into(),
-                QueryLikeMode::NonSpecial => NonSpecialQuerySegment::new_unchecked(x).into(),
-                QueryLikeMode::Fragment   => FragmentQuerySegment  ::new_unchecked(x).into(),
+                QueryLikeMode::Special    => unsafe {SpecialQuerySegment   ::new_unchecked(x)}.into(),
+                QueryLikeMode::NonSpecial => unsafe {NonSpecialQuerySegment::new_unchecked(x)}.into(),
+                QueryLikeMode::Fragment   => unsafe {FragmentQuerySegment  ::new_unchecked(x)}.into(),
             }
         })
     }

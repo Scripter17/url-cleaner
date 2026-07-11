@@ -26,6 +26,6 @@ impl FileSegmentedPath<'_> {
     /// assert_eq!(path.get_range(0..=-1).unwrap(), "ab/cd/ef");
     /// ```
     pub fn get_range<B: RangeBounds<isize>>(&self, range: B) -> Option<FilePathSegments<'_>> {
-        path_segments_range_thing(&self.as_str()[1..], range).map(FilePathSegments::new_unchecked)
+        path_segments_range_thing(&self.as_str()[1..], range).map(|x| unsafe {FilePathSegments::new_unchecked(x)})
     }
 }

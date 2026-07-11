@@ -15,37 +15,6 @@ pub enum HostDetails {
 }
 
 impl HostDetails {
-    /// Parse an encoded host with `isOpaque` set to [`false`].
-    ///
-    /// Please note that this assumes the input is already put through [`domain_to_ascii`].
-    /// # Errors
-    /// If `value` starts with `[` and the call to [`Ipv6Details::parse`] returns an error, that error is returned.
-    ///
-    /// If `value` [`ends_in_a_number`] and the call to [`Ipv4Details::parse`] returns an error, that error is returned.
-    ///
-    /// Otherwise, if the call to [`DomainDetails::parse_not_eian`] returns an error, that error is returned.
-    pub fn parse(value: &str) -> Result<Self, InvalidHost> {
-        Ok(if value.starts_with('[') {
-            Ipv6Details::parse(value)?.into()
-        } else if ends_in_a_number(value) {
-            Ipv4Details::parse(value)?.into()
-        } else {
-            DomainDetails::parse_not_eian(value)?.into()
-        })
-    }
-
-    /// Make a [`Self`] from a [`url::Url`]'s [`url::Host`].
-    pub fn from_url(url: &url::Url) -> Option<Self> {
-        Some(match url.host()? {
-            url::Host::Domain(x) => match url.is_special() {
-                true  => DomainDetails::parse_unchecked(x).into(),
-                false => OpaqueHostDetails.into(),
-            },
-            url::Host::Ipv4(x) => x.into(),
-            url::Host::Ipv6(x) => x.into(),
-        })
-    }
-
     /// If it's [`Self::Domain`].
     pub fn is_domain(self) -> bool {
         matches!(self, Self::Domain(_))
