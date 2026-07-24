@@ -3,16 +3,36 @@
 use crate::prelude::*;
 
 impl DomainHost<'_> {
-    /// [`DomainDetails::has_normal`].
+    /// If it has a normal.
     pub fn has_normal(&self) -> bool {
-        self.details().has_normal()
+        true
+    }
+
+
+
+    /// The [`Range::start`] of the normal.
+    fn normal_start(&self) -> usize {
+        match self.details.wp {
+            false => 0,
+            true  => self.details.ms as usize
+        }
+    }
+
+    /// The [`Range::end`] of the normal.
+    fn normal_after(&self) -> usize {
+        self.len() - self.details.fq as usize
+    }
+
+    /// The [`Range`] of the normal.
+    pub(crate) fn normal_thing(&self) -> Range<usize> {
+        self.normal_start() .. self.normal_after()
     }
 
 
 
     /// The normal as a [`str`].
     pub fn normal_str(&self) -> &str {
-        &self.host[self.details.normal_range()]
+        unsafe {self.as_str().get_unchecked(self.normal_thing())}
     }
 
     /// The normal as a [`DomainSegments`].
@@ -48,14 +68,12 @@ impl DomainHost<'_> {
 
     /// The range of normal segments as a [`str`].
     pub fn normal_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
-        domain_range_thing(self.normal_str(), range)
+        self.normal_segments().range_str(range)
     }
 
     /// The range of normal segments as a [`DomainSegments`].
     pub fn normal_range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'_>> {
-        let range = (range.start_bound().cloned(), range.end_bound().cloned());
-
-        Some(DomainSegments(self.normal_range_str(range)?.into()))
+        self.normal_segments().range(range)
     }
 
 

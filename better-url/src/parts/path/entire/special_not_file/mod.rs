@@ -1,4 +1,4 @@
-//! [`SpecialNotFileSegmentedPath`].
+//! [`SpecialNotFilePath`].
 
 use crate::prelude::*;
 
@@ -6,14 +6,11 @@ mod get;
 mod set;
 mod remove;
 
-/// Symmetry with [`NonSpecialPath`].
-pub type SpecialNotFilePath<'a> = SpecialNotFileSegmentedPath<'a>;
-
-/// A special but not file segmented path.
+/// A [`SchemeType::SpecialNotFile`] path.
 #[derive(Debug, Clone)]
-pub struct SpecialNotFileSegmentedPath<'a>(pub(crate) Cow<'a, str>);
+pub struct SpecialNotFilePath<'a>(pub(crate) Cow<'a, str>);
 
-impl<'a> SpecialNotFileSegmentedPath<'a> {
+impl<'a> SpecialNotFilePath<'a> {
     /// Make a new [`Self`] without doing any validity checks.
     /// # Safety
     /// `value` must be a valid [`Self`] literal.
@@ -26,6 +23,11 @@ impl<'a> SpecialNotFileSegmentedPath<'a> {
         &self.0
     }
 
+    /// The [`SpecialNotFilePathSegments`].
+    pub fn segments(&self) -> SpecialNotFilePathSegments<'_> {
+        unsafe {SpecialNotFilePathSegments::new_unchecked(self.as_str().get_unchecked(1..))}
+    }
+
 
 
     /// Turn into the inner [`Cow`].
@@ -34,36 +36,40 @@ impl<'a> SpecialNotFileSegmentedPath<'a> {
     }
 
     /// Turn into an owned [`Self`].
-    pub fn into_owned(self) -> SpecialNotFileSegmentedPath<'static> {
-        SpecialNotFileSegmentedPath(self.0.into_owned().into())
+    pub fn into_owned(self) -> SpecialNotFilePath<'static> {
+        SpecialNotFilePath(self.0.into_owned().into())
     }
 
     /// Make a borrowing [`Self`].
-    pub fn borrowed(&self) -> SpecialNotFileSegmentedPath<'_> {
-        SpecialNotFileSegmentedPath(Cow::Borrowed(&self.0))
+    pub fn borrowed(&self) -> SpecialNotFilePath<'_> {
+        SpecialNotFilePath(Cow::Borrowed(&self.0))
     }
 }
 
-impl<'a> From<Cow<'a, str>> for SpecialNotFileSegmentedPath<'a> {
+
+
+impl<'a> From<Cow<'a, str>> for SpecialNotFilePath<'a> {
     fn from(value: Cow<'a, str>) -> Self {
-        Self(encode_special_not_file_path(value).1)
-    }
-}
+        let (_, value) = make_special_not_file_path(value);
 
-
-
-impl<'a> From<Path<'a>> for SpecialNotFileSegmentedPath<'a> {
-    fn from(value: Path<'a>) -> Self {
-        match value {
-            Path::File          (x) => x.into(),
-            Path::SpecialNotFile(x) => x,
-            Path::NonSpecial    (x) => x.into(),
-            Path::Opaque        (x) => x.into(),
+        unsafe {
+            Self::new_unchecked(value)
         }
     }
 }
 
-impl<'a> From<SegmentedPath<'a>> for SpecialNotFileSegmentedPath<'a> {
+
+
+impl<'a> From<Path<'a>> for SpecialNotFilePath<'a> {
+    fn from(value: Path<'a>) -> Self {
+        match value {
+            Path::Segmented(x) => x.into(),
+            Path::Opaque   (x) => x.into(),
+        }
+    }
+}
+
+impl<'a> From<SegmentedPath<'a>> for SpecialNotFilePath<'a> {
     fn from(value: SegmentedPath<'a>) -> Self {
         match value {
             SegmentedPath::File          (x) => x.into(),
@@ -73,31 +79,13 @@ impl<'a> From<SegmentedPath<'a>> for SpecialNotFileSegmentedPath<'a> {
     }
 }
 
-impl<'a> From<FileSegmentedPath      <'a>> for SpecialNotFileSegmentedPath<'a> {fn from(value: FileSegmentedPath      <'a>) -> Self {Self(                                                              value.into_inner()   )}}
-impl<'a> From<NonSpecialSegmentedPath<'a>> for SpecialNotFileSegmentedPath<'a> {fn from(value: NonSpecialSegmentedPath<'a>) -> Self {Self(non_special_segmented_path_to_special_not_file_segmented_path(value.into_inner()).1)}}
-impl<'a> From<OpaquePath             <'a>> for SpecialNotFileSegmentedPath<'a> {fn from(value: OpaquePath             <'a>) -> Self {Self(opaque_path_to_special_not_file_segmented_path               (value.into_inner()).1)}}
-
-impl<'a> From<NonSpecialEmptyPath<'a>> for SpecialNotFileSegmentedPath<'a> {
-    fn from(_: NonSpecialEmptyPath<'a>) -> Self {
-        unsafe {
-            Self::new_unchecked("/")
-        }
-    }
-}
-
-impl<'a> From<NonSpecialPath<'a>> for SpecialNotFileSegmentedPath<'a> {
-    fn from(value: NonSpecialPath<'a>) -> Self {
-        match value {
-            NonSpecialPath::Segmented(x) => x.into(),
-            NonSpecialPath::Empty    (x) => x.into(),
-        }
-    }
-}
 
 
+impl<'a> From<FilePath      <'a>> for SpecialNotFilePath<'a> {fn from(value: FilePath      <'a>) -> Self {Self(                                          value.into_inner()   )}}
+impl<'a> From<NonSpecialPath<'a>> for SpecialNotFilePath<'a> {fn from(value: NonSpecialPath<'a>) -> Self {Self(non_special_path_to_special_not_file_path(value.into_inner()).1)}}
+impl<'a> From<OpaquePath    <'a>> for SpecialNotFilePath<'a> {fn from(value: OpaquePath    <'a>) -> Self {Self(opaque_path_to_special_not_file_path     (value.into_inner()).1)}}
 
-impl<'b, T: Into<SpecialNotFilePathSegment<'b>>> Extend<T> for SpecialNotFileSegmentedPath<'_> {
-    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
-        extend_path_segments(self.0.to_mut(), false, iter.into_iter().map(Into::into));
-    }
-}
+impl From<PathSegments              <'_>> for SpecialNotFilePath<'static> {fn from(value: PathSegments              <'_>) -> Self {Self(resolve_special_not_file_path(                value.into_inner().with_insert_str(0, "/")   ).1)}}
+impl From<FilePathSegments          <'_>> for SpecialNotFilePath<'static> {fn from(value: FilePathSegments          <'_>) -> Self {Self(resolve_special_not_file_path(                value.into_inner().with_insert_str(0, "/")   ).1)}}
+impl From<SpecialNotFilePathSegments<'_>> for SpecialNotFilePath<'static> {fn from(value: SpecialNotFilePathSegments<'_>) -> Self {Self(resolve_special_not_file_path(                value.into_inner().with_insert_str(0, "/")   ).1)}}
+impl From<NonSpecialPathSegments    <'_>> for SpecialNotFilePath<'static> {fn from(value: NonSpecialPathSegments    <'_>) -> Self {Self(resolve_special_not_file_path(forward_slashes(value.into_inner().with_insert_str(0, "/")).1).1)}}

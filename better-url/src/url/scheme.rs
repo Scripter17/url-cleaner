@@ -5,7 +5,9 @@ use crate::prelude::*;
 impl BetterUrl {
     /// The scheme as a [`str`].
     pub fn scheme_str(&self) -> &str {
-        &self.serialization[.. self.scheme_mark as usize]
+        unsafe {
+            self.serialization.get_unchecked(.. self.details.scheme_mark as usize)
+        }
     }
 
     /// The [`SchemeDetails`].
@@ -16,8 +18,8 @@ impl BetterUrl {
     /// The [`Scheme`].
     pub fn scheme(&self) -> Scheme<'_> {
         Scheme {
-            scheme: self.scheme_str().into(),
-            details: self.details.scheme
+            scheme : self.scheme_str().into(),
+            details: self.scheme_details(),
         }
     }
 
@@ -36,14 +38,14 @@ impl BetterUrl {
     pub fn set_scheme<'a, T: TryInto<Scheme<'a>>>(&mut self, value: T) -> Result<(), SetSchemeError> where SetSchemeError: From<T::Error> {
         let new = value.try_into()?;
 
-        if  self.is_special  () && !new .is_special   () {return Ok(());}
-        if !self.is_special  () &&  new .is_special   () {return Ok(());}
-        if  self.has_username() &&  new .is_file      () {return Ok(());}
-        if  self.has_port    () &&  new .is_file      () {return Ok(());}
-        if  self.is_file     () &&  self.host_is_empty() {return Ok(());}
+        if  self.is_special          () && !new .is_special   () {return Ok(());}
+        if !self.is_special          () &&  new .is_special   () {return Ok(());}
+        if  self.has_visible_username() &&  new .is_file      () {return Ok(());}
+        if  self.has_port            () &&  new .is_file      () {return Ok(());}
+        if  self.is_file             () &&  self.host_is_empty() {return Ok(());}
 
         let start_len = self.len();
-        let after_len = self.len() - self.scheme_mark as usize + new.len();
+        let after_len = self.len() - self.details.scheme_mark as usize + new.len();
 
         if after_len > u32::MAX as usize {
             Err(TooLong)?;
@@ -51,17 +53,17 @@ impl BetterUrl {
 
         let diff = (after_len as u32).wrapping_sub(start_len as u32);
 
-        self.serialization.replace_range(..self.scheme_mark as usize, new.as_str());
+        self.serialization.replace_range(..self.details.scheme_mark as usize, new.as_str());
         self.details.scheme = new.details();
 
-        self.scheme_mark = self.scheme_mark.wrapping_add(diff);
-        self.path_start  = self.path_start .wrapping_add(diff);
+        self.details.scheme_mark = self.details.scheme_mark.wrapping_add(diff);
+        self.details.path_start  = self.details.path_start .wrapping_add(diff);
 
-        if let Some(x) = self.username_after {self.username_after = NonZero::new(x.get().wrapping_add(diff));}
-        if let Some(x) = self.host_start     {self.host_start     = NonZero::new(x.get().wrapping_add(diff));}
-        if let Some(x) = self.port_mark      {self.port_mark      = NonZero::new(x.get().wrapping_add(diff));}
-        if let Some(x) = self.query_mark     {self.query_mark     = NonZero::new(x.get().wrapping_add(diff));}
-        if let Some(x) = self.fragment_mark  {self.fragment_mark  = NonZero::new(x.get().wrapping_add(diff));}
+        if let Some(x) = self.details.username_after {self.details.username_after = NonZero::new(x.get().wrapping_add(diff));}
+        if let Some(x) = self.details.host_start     {self.details.host_start     = NonZero::new(x.get().wrapping_add(diff));}
+        if let Some(x) = self.details.port_mark      {self.details.port_mark      = NonZero::new(x.get().wrapping_add(diff));}
+        if let Some(x) = self.details.query_mark     {self.details.query_mark     = NonZero::new(x.get().wrapping_add(diff));}
+        if let Some(x) = self.details.fragment_mark  {self.details.fragment_mark  = NonZero::new(x.get().wrapping_add(diff));}
 
         if let Some((x, y)) = self.port_num().zip(self.details.scheme.default_port_num()) && x == y {
             self.set_port(None::<&str>).expect("???");

@@ -3,16 +3,39 @@
 use crate::prelude::*;
 
 impl DomainHost<'_> {
-    /// [`DomainDetails::has_middle`].
+    /// If it has a middle..
     pub fn has_middle(&self) -> bool {
-        self.details.has_middle()
+        self.details.ss != 0
+    }
+
+
+
+    /// The [`Range::start`] of the middle.
+    pub(crate) fn middle_start(&self) -> Option<usize> {
+        match self.details.ss {
+            0 => None,
+            _ => Some(self.details.ms as usize)
+        }
+    }
+
+    /// The [`Range::end`] of the middle.
+    fn middle_after(&self) -> Option<usize> {
+        match self.details.ss {
+            0 => None,
+            x => Some(x as usize - 1)
+        }
+    }
+
+    /// The [`Range`] of the middle.
+    pub(crate) fn middle_thing(&self) -> Option<Range<usize>> {
+        Some(self.middle_start()? .. self.middle_after()?)
     }
 
 
 
     /// The middle as a [`str`].
     pub fn middle_str(&self) -> Option<&str> {
-        self.details.middle_range().map(|r| &self.host[r])
+        Some(unsafe {self.as_str().get_unchecked(self.middle_thing()?)})
     }
 
     /// The middle as a [`DomainSegment`].
@@ -41,10 +64,10 @@ impl DomainHost<'_> {
                 self.host.replace_range(range, "");
             },
 
-            (None, Some(new)) => self.host.to_mut().insert_with(0, &[new.as_str(), "."]),
+            (None, Some(new)) => self.host.insert_with(0, [new.as_str(), "."]),
         }
 
-        self.details = DomainDetails::parse_unchecked(&self.host);
+        self.details = DomainHostDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }

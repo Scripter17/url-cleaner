@@ -10,6 +10,7 @@ use crate::prelude::*;
 /// assert_eq!(std::mem::size_of::<SchemeDetails>(), 1);
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum SchemeDetails {
     /// [`SpecialSchemeDetails`].
     Special(SpecialSchemeDetails),

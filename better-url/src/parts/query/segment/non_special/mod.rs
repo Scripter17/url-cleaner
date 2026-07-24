@@ -27,7 +27,7 @@ impl<'a> NonSpecialQuerySegment<'a> {
         let raw = segment.into();
 
         Self {
-            vs: raw.bytes().position(|b| b == b'=').and_then(|x| NonZero::new(x + 1)),
+            vs: raw.memchr(b'=').and_then(|x| NonZero::new(x + 1)),
             raw
         }
     }
@@ -39,7 +39,7 @@ impl<'a> NonSpecialQuerySegment<'a> {
         match value {
             Some(value) => {
                 let vs = raw.len() + 1;
-                raw.to_mut().extend(["=", &encode_query_part(value).1]);
+                raw.extend(["=", &encode_query_part(value).1]);
                 Self {raw, vs: NonZero::new(vs)}
             },
             None => Self {raw, vs: None}
@@ -112,7 +112,7 @@ impl<'a> From<FragmentQuerySegment<'a>> for NonSpecialQuerySegment<'a> {
         let old_vs = value.vs;
 
         match fragment_to_non_special_query(value.into_inner()) {
-            (true , raw) => Self {vs: raw.bytes().position(|b| b == b'=').and_then(|x| NonZero::new(x + 1)), raw},
+            (true , raw) => Self {vs: raw.memchr(b'=').and_then(|x| NonZero::new(x + 1)), raw},
             (false, raw) => Self {vs: old_vs, raw}
         }
     }

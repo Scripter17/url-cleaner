@@ -25,8 +25,8 @@ pub fn validate_domain_segment_joiners(value: &str) -> bool {
         let mut x = value.split('\u{200C}').peekable();
 
         while let Some((l, &r)) = x.next().zip(x.peek()) {
-            if !l.ends_with(cccv) {
-                return false;
+            if l.ends_with(cccv) {
+                return true;
             }
 
             if !l.trim_end_matches(jtt).ends_with(jtld) || !r.trim_start_matches(jtt).starts_with(jtrd) {

@@ -16,7 +16,7 @@ pub struct Args {
     #[arg(long, default_value = "")]
     pub task_filter: Regex,
     /// The nums.
-    #[arg(long, num_args = 1.., default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000])]
+    #[arg(long, num_args = 1.., default_values_t = [0, 1, 10, 100, 1_000, 10_000, 100_000])]
     pub nums: Vec<u64>,
     /// Don't build anything.
     #[arg(long)]

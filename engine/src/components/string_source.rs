@@ -118,14 +118,16 @@ pub enum StringSource {
 
 
 
-    /// [`BetterUrl::domain_segment`].
-    DomainSegment(isize),
-    /// [`BetterUrl::domain_origin_segment`].
-    DomainOriginSegment(isize),
-    /// [`BetterUrl::domain_prefix_segment`].
-    DomainPrefixSegment(isize),
-    /// [`BetterUrl::domain_suffix_segment`]..
-    DomainSuffixSegment(isize),
+    /** [`BetterUrl::domain_segment_str`].        **/ DomainSegment      (isize),
+    /** [`BetterUrl::domain_origin_segment_str`]. **/ DomainOriginSegment(isize),
+    /** [`BetterUrl::domain_prefix_segment_str`]. **/ DomainPrefixSegment(isize),
+    /** [`BetterUrl::domain_suffix_segment_str`]. **/ DomainSuffixSegment(isize),
+
+    /** [`BetterUrl::domain_segment`]        + [`DomainSegment::decode`]. **/ DecodedDomainSegment      (isize),
+    /** [`BetterUrl::domain_origin_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainOriginSegment(isize),
+    /** [`BetterUrl::domain_prefix_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainPrefixSegment(isize),
+    /** [`BetterUrl::domain_suffix_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainSuffixSegment(isize),
+
     /// [`BetterUrl::path_segment`] + [`PathSegment::decode`].
     PathSegment(isize),
     /// [`BetterUrl::path_segment`] + [`PathSegment::into_inner`].
@@ -363,6 +365,7 @@ impl StringSource {
         debug!(StringSource::get, self, args; self._get(task_state, args))
     }
 
+    /// [`Self::get`] with [`None`] replaced with [`StringNotFound`].
     /// # Errors
     /// If the call to [`Self::get`] returns an error, that error is returned.
     ///
@@ -382,6 +385,7 @@ impl StringSource {
         })
     }
 
+    /// [`Self::get_part`] with [`None`] replaced with [`StringNotFound`].
     /// # Errors
     /// If the call to [`Self::get_part`] returns an error, that error is returned.
     ///
@@ -441,10 +445,15 @@ impl StringSource {
 
 
 
-            Self::DomainSegment      (index) => task_state.url.domain_segment       (*index).map(DomainSegment::decode),
-            Self::DomainOriginSegment(index) => task_state.url.domain_origin_segment(*index).map(DomainSegment::decode),
-            Self::DomainPrefixSegment(index) => task_state.url.domain_prefix_segment(*index).map(DomainSegment::decode),
-            Self::DomainSuffixSegment(index) => task_state.url.domain_suffix_segment(*index).map(DomainSegment::decode),
+            Self::DomainSegment      (index) => task_state.url.domain_segment_str       (*index).map(Into::into),
+            Self::DomainOriginSegment(index) => task_state.url.domain_origin_segment_str(*index).map(Into::into),
+            Self::DomainPrefixSegment(index) => task_state.url.domain_prefix_segment_str(*index).map(Into::into),
+            Self::DomainSuffixSegment(index) => task_state.url.domain_suffix_segment_str(*index).map(Into::into),
+
+            Self::DecodedDomainSegment      (index) => task_state.url.domain_segment       (*index).map(DomainSegment::decode),
+            Self::DecodedDomainOriginSegment(index) => task_state.url.domain_origin_segment(*index).map(DomainSegment::decode),
+            Self::DecodedDomainPrefixSegment(index) => task_state.url.domain_prefix_segment(*index).map(DomainSegment::decode),
+            Self::DecodedDomainSuffixSegment(index) => task_state.url.domain_suffix_segment(*index).map(DomainSegment::decode),
 
             Self::PathSegment         (index     ) => task_state.url.path_segment      (*index        ).map(PathSegment ::decode    ),
             Self::RawPathSegment      (index     ) => task_state.url.path_segment      (*index        ).map(PathSegment ::into_inner),
@@ -490,7 +499,7 @@ impl StringSource {
             #[cfg(feature = "http")]
             Self::HttpRequest {request, response} => {
                 let _unthread_handle = task_state.job.unthreader.unthread();
-                response.handle(task_state, args, &mut get!(?request).send()?)?
+                task_state.job.http_client.r#do(request, response, task_state, args)?
             },
 
 

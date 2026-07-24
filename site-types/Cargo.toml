@@ -11,13 +11,13 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-serde = { version = "1.0.228", features = ["derive"] }
-thiserror = "2.0.18"
+serde = { version = "1.0.229", features = ["derive"] }
+thiserror = "2.0.19"
 url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
 better-url = { version = "0.12.0-beta", path = "../better-url", features = ["serde"]}
 axum-core = { version = "0.5.6", optional = true }
 http = { version = "1.4.2", optional = true }
-serde_json = { version = "1.0.150", optional = true }
+serde_json = { version = "1.0.151", optional = true }
 
 [features]
 axum = ["dep:axum-core", "dep:http", "dep:serde_json"]

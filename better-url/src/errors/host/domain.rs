@@ -9,19 +9,19 @@ use crate::prelude::*;
 #[error("Attempted to parse invalid Punycode.")]
 pub struct InvalidPunycode;
 
-/// Returned when failing to parse a domain segment.
+/// Returned when attempting to parse an invalid [`DomainSegment`].
 #[derive(Debug, Error)]
-#[error("Invalid domain segment.")]
+#[error("Attempted to parse an invalid DomainSegment.")]
 pub struct InvalidDomainSegment;
 
-/// Returned when failing to parse a list of domain segments.
+/// Returned when attempting to parse an invalid [`DomainSegments`].
 #[derive(Debug, Error)]
-#[error("Invalid domain segments.")]
+#[error("Attempted to parse an invalid DomainSegments.")]
 pub struct InvalidDomainSegments;
 
-/// Returned when failing to parse a domain host.
+/// Returned when attempting to parse an invalid [`DomainHost`].
 #[derive(Debug, Error)]
-#[error("Invalid domain host.")]
+#[error("Attempted to parse an invalid DomainHost.")]
 pub struct InvalidDomainHost;
 
 impl From<InvalidDomainSegment > for InvalidDomainSegments {fn from(_: InvalidDomainSegment ) -> Self {Self}}

@@ -70,7 +70,7 @@ impl BetterUrl {
     /// # Errors
     /// If the call to [`Self::set_query`] returns an error, that error is returned.
     pub fn canon_set_search<'a, T: Into<Cow<'a, str>>>(&mut self, value: T) -> Result<(), SetQueryError> {
-        let (_, value) = canonize_maybe_query_setter(value);
+        let (_, value) = canonize_query_setter(value);
 
         self.set_query(value)
     }
@@ -79,7 +79,7 @@ impl BetterUrl {
     /// # Errors
     /// If the call to [`Self::set_fragment`] returns an error, that error is returned.
     pub fn canon_set_hash<'a, T: Into<Cow<'a, str>>>(&mut self, value: T) -> Result<(), SetFragmentError> {
-        let (_, value) = canonize_maybe_fragment_setter(value);
+        let (_, value) = canonize_fragment_setter(value);
 
         self.set_fragment(value)
     }

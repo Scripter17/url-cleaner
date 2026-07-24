@@ -146,8 +146,8 @@ mod normal;
 pub struct DomainHost<'a> {
     /// The host string.
     pub(crate) host: Cow<'a, str>,
-    /// The [`DomainDetails`].
-    pub(crate) details: DomainDetails,
+    /// The [`DomainHostDetails`].
+    pub(crate) details: DomainHostDetails,
 }
 
 impl<'a> DomainHost<'a> {
@@ -170,7 +170,7 @@ impl<'a> DomainHost<'a> {
     /// # Errors
     /// If the call to [`Self::new_normalized`] returns an error, that error is returned.
     pub unsafe fn new_normalized<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
-        let (_, value) = normalized_domain_to_ascii(value)?;
+        let (_, value) = encode_normalized_domain_host(value)?;
 
         unsafe {
             Ok(Self::new_raw(value))
@@ -183,7 +183,7 @@ impl<'a> DomainHost<'a> {
     pub unsafe fn new_raw<T: Into<Cow<'a, str>>>(value: T) -> Self {
         let value = value.into();
 
-        let details = DomainDetails::parse_unchecked(&value);
+        let details = DomainHostDetails::parse_unchecked(&value);
 
         unsafe {
             Self::new_unchecked(value, details)
@@ -192,8 +192,8 @@ impl<'a> DomainHost<'a> {
 
     /// Make a new [`Self`] with zero validity checks.
     /// # Safety
-    /// `value` must be a valid domain literal and `details` must be its [`DomainDetails`].
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: DomainDetails) -> Self {
+    /// `value` must be a valid domain literal and `details` must be its [`DomainHostDetails`].
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: DomainHostDetails) -> Self {
         Self {
             host: value.into(),
             details
@@ -205,19 +205,20 @@ impl<'a> DomainHost<'a> {
         &self.host
     }
 
-    /// The [`DomainDetails`].
-    pub fn details(&self) -> DomainDetails {
+    /// The [`DomainHostDetails`].
+    pub fn details(&self) -> DomainHostDetails {
         self.details
     }
 
     /// Unwrap into the host and details.
-    pub fn into_parts(self) -> (Cow<'a, str>, DomainDetails) {
+    pub fn into_parts(self) -> (Cow<'a, str>, DomainHostDetails) {
         (self.host, self.details)
     }
 
-    /// [`unchecked_normalized_domain_to_unicode`].
-    pub fn decode(self) -> (Cow<'a, str>, DomainDetails) {
-        let (_, value) = unchecked_normalized_domain_to_unicode(self.host);
+    /// [`unchecked_decode_domain_host`].
+    pub fn decode(self) -> (Cow<'a, str>, DomainHostDetails) {
+        let (_, value) = unchecked_decode_domain_host(self.host);
+
         (value, self.details)
     }
 
@@ -282,7 +283,7 @@ impl<'a> TryFrom<Cow<'a, str>> for DomainHost<'a> {
     type Error = InvalidDomainHost;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, value) = domain_to_ascii(value)?;
+        let (_, value) = encode_domain_host(value)?;
 
         unsafe {
             Ok(Self::new_raw(value))
@@ -297,10 +298,9 @@ impl<'a> TryFrom<DomainSegment<'a>> for DomainHost<'a> {
         match value.is_a_number() {
             true  => Err(value),
             false => Ok(Self {
-                details: DomainDetails {
+                details: DomainHostDetails {
                     ms: 0,
                     ss: 0,
-                    sa: value.len() as u32,
                     fq: false,
                     wp: false,
                 },

@@ -3,16 +3,33 @@
 use crate::prelude::*;
 
 impl DomainHost<'_> {
-    /// [`DomainDetails::has_labels`].
+    /// If it has a labels.
     pub fn has_labels(&self) -> bool {
-        self.details.has_labels()
+        true
+    }
+
+
+
+    /// The [`Range::start`] of the labels.
+    fn labels_start(&self) -> usize {
+        0
+    }
+
+    /// The [`Range::end`] of the labels.
+    fn labels_after(&self) -> usize {
+        self.len() - self.details.fq as usize
+    }
+
+    /// The [`Range`] of the labels.
+    pub(crate) fn labels_thing(&self) -> Range<usize> {
+        self.labels_start() .. self.labels_after()
     }
 
 
 
     /// The labels as a [`str`].
     pub fn labels_str(&self) -> &str {
-        &self.host[self.details.labels_range()]
+        unsafe {self.as_str().get_unchecked(self.labels_thing())}
     }
 
     /// The labels as a [`DomainSegments`].
@@ -48,14 +65,12 @@ impl DomainHost<'_> {
 
     /// The range of labels segments as a [`str`].
     pub fn labels_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
-        domain_range_thing(self.labels_str(), range)
+        self.labels_segments().range_str(range)
     }
 
     /// The range of labels segments as a [`DomainSegments`].
     pub fn labels_range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'_>> {
-        let range = (range.start_bound().cloned(), range.end_bound().cloned());
-
-        Some(DomainSegments(self.labels_range_str(range)?.into()))
+        self.labels_segments().range(range)
     }
 
 
@@ -77,7 +92,7 @@ impl DomainHost<'_> {
             (old, new) => self.host.replace_substr(old.as_str(), new.as_str()),
         }
 
-        self.details = DomainDetails::parse_unchecked(&self.host);
+        self.details = DomainHostDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -137,12 +152,12 @@ impl DomainHost<'_> {
             (Err(0), Some(new)) => match index {
                 0.. if (!self.is_fqdn() || !new.last_is_empty()) && new.ends_in_a_number() => Err(CantEndInANumber)?,
 
-                0.. => self.host.to_mut().insert_with(self.details.suffix_after(), &[".", new.as_str()]),
-                ..0 => self.host.to_mut().insert_with(0                          , &[new.as_str(), "."]),
+                0.. => {let i = self.suffix_after(); self.host.insert_with(i, [".", new.as_str()]);},
+                ..0 =>                               self.host.insert_with(0, [new.as_str(), "."]),
             },
         }
 
-        self.details = DomainDetails::parse_unchecked(&self.host);
+        self.details = DomainHostDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -192,7 +207,7 @@ impl DomainHost<'_> {
             }
         }
 
-        self.details = DomainDetails::parse_unchecked(&self.host);
+        self.details = DomainHostDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -232,14 +247,14 @@ impl DomainHost<'_> {
 
             (Err(1..), _) => Err(InsertNotFound)?,
 
-            (Ok(Range {start, ..}), 0..) => self.host.to_mut().insert_with(start, &[new.as_str(), "."]),
-            (Ok(Range {end  , ..}), ..0) => self.host.to_mut().insert_with(end  , &[".", new.as_str()]),
+            (Ok(Range {start, ..}), 0..) => self.host.insert_with(start, [new.as_str(), "."]),
+            (Ok(Range {end  , ..}), ..0) => self.host.insert_with(end  , [".", new.as_str()]),
 
-            (Err(0), 0..) => self.host.to_mut().insert_with(self.details.suffix_after(), &[".", new.as_str()]),
-            (Err(0), ..0) => self.host.to_mut().insert_with(0                          , &[new.as_str(), "."]),
+            (Err(0), 0..) => {let i = self.suffix_after(); self.host.insert_with(i, [".", new.as_str()]);},
+            (Err(0), ..0) =>                               self.host.insert_with(0, [new.as_str(), "."]),
         }
 
-        self.details = DomainDetails::parse_unchecked(&self.host);
+        self.details = DomainHostDetails::parse_unchecked(&self.host);
 
         Ok(())
     }

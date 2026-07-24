@@ -19,6 +19,11 @@ impl<'a> Fragment<'a> {
         &self.0
     }
 
+    /// The length of the [`BetterUrl::canon_get_hash`] for this fragment.
+    pub fn hash_len(&self) -> usize {
+        self.len() + 1
+    }
+
     /// Turn into a [`FragmentQuery`].
     pub fn query(self) -> FragmentQuery<'a> {
         self.into()

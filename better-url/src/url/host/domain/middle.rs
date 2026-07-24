@@ -3,21 +3,32 @@
 use crate::prelude::*;
 
 impl BetterUrl {
-    /// [`DomainDetails::has_middle`].
+    /// If it has a domain middle.
     pub fn has_domain_middle(&self) -> bool {
-        self.domain_details().is_some_and(DomainDetails::has_middle)
+        self.domain_details().is_some_and(|x| x.ss != 0)
     }
 
 
 
+    /// The [`Range`] of the domain middle.
+    fn domain_middle_thing(&self) -> Option<Range<usize>> {
+        let hs = self.host_start    ()?;
+        let dd = self.domain_details()?;
+
+        match dd.ss {
+            0 => None,
+            _ => Some(hs + dd.ms as usize .. hs + dd.ss as usize - 1),
+        }
+    }
+
     /// The domain middle as a [`str`].
     pub fn domain_middle_str(&self) -> Option<&str> {
-        Some(&self.host_str()?[self.domain_details()?.middle_range()?])
+        Some(unsafe {self.as_str().get_unchecked(self.domain_middle_thing()?)})
     }
 
     /// The domain middle as a [`DomainSegment`].
     pub fn domain_middle(&self) -> Option<DomainSegment<'_>> {
-        Some(DomainSegment(self.domain_middle_str()?.into()))
+        Some(unsafe {DomainSegment::new_unchecked(self.domain_middle_str()?)})
     }
 
 

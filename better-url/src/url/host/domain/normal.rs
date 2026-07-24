@@ -3,21 +3,33 @@
 use crate::prelude::*;
 
 impl BetterUrl {
-    /// [`DomainDetails::has_normal`].
+    /// If it has a domain normal.
     pub fn has_domain_normal(&self) -> bool {
-        self.domain_details().is_some_and(DomainDetails::has_normal)
+        self.domain_details().is_some()
     }
 
 
 
+    /// The [`Range`] of the domain normal.
+    fn domain_normal_thing(&self) -> Option<Range<usize>> {
+        let hs = self.host_start    ()?;
+        let ha = self.host_after    ()?;
+        let dd = self.domain_details()?;
+
+        Some(match dd.wp {
+            false => hs                  .. ha - dd.fq as usize,
+            true  => hs + dd.ms as usize .. ha - dd.fq as usize,
+        })
+    }
+
     /// The domain normal as a [`str`].
     pub fn domain_normal_str(&self) -> Option<&str> {
-        Some(&self.host_str()?[self.domain_details()?.normal_range()])
+        Some(unsafe {self.as_str().get_unchecked(self.domain_normal_thing()?)})
     }
 
     /// The domain normal as a [`DomainSegments`].
     pub fn domain_normal(&self) -> Option<DomainSegments<'_>> {
-        Some(DomainSegments(self.domain_normal_str()?.into()))
+        Some(unsafe {DomainSegments::new_unchecked(self.domain_normal_str()?)})
     }
 
 
@@ -48,14 +60,12 @@ impl BetterUrl {
 
     /// The range of the domain normal segments as a [`str`].
     pub fn domain_normal_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
-        domain_range_thing(self.domain_normal_str()?, range)
+        self.domain_normal_segments()?.range_str(range)
     }
 
     /// The range of the domain normal segments as a [`DomainSegments`].
     pub fn domain_normal_range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'_>> {
-        let range = (range.start_bound().cloned(), range.end_bound().cloned());
-
-        Some(DomainSegments(self.domain_normal_range_str(range)?.into()))
+        self.domain_normal_segments()?.range(range)
     }
 
 

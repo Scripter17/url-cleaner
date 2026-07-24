@@ -1,4 +1,4 @@
-//! An alternate URL crate that's better than the normal one.
+//! A URL crate that's better than the one provided by Servo.
 
 mod url;
 pub mod parts;
@@ -7,6 +7,9 @@ pub mod errors;
 pub mod util;
 
 pub use url::*;
+
+#[cfg(test)]
+mod tests;
 
 /// Prelude module for importing everything here better.
 pub mod prelude {

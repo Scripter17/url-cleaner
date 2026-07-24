@@ -24,20 +24,20 @@ impl SpecialQuery<'_> {
     ///
     /// let mut query = SpecialQuery::new("a=1&b=2&a=3");
     ///
-    /// query.set("a",  0, Some(Some("2"))).unwrap();
-    /// assert_eq!(query, "a=2&b=2&a=3");
+    /// query.set("a",  0, Some(Some("4 5"))).unwrap();
+    /// assert_eq!(query, "a=4+5&b=2&a=3");
     ///
-    /// query.set("c",  0, Some(Some("4"))).unwrap();
-    /// assert_eq!(query, "a=2&b=2&a=3&c=4");
+    /// query.set("c",  0, Some(Some("6"))).unwrap();
+    /// assert_eq!(query, "a=4+5&b=2&a=3&c=6");
     ///
     /// query.set("c",  0, Some(None)).unwrap();
-    /// assert_eq!(query, "a=2&b=2&a=3&c");
+    /// assert_eq!(query, "a=4+5&b=2&a=3&c");
     ///
     /// query.set("c",  0, None).unwrap();
-    /// assert_eq!(query, "a=2&b=2&a=3");
+    /// assert_eq!(query, "a=4+5&b=2&a=3");
     ///
     /// query.set("c", -1, Some(None)).unwrap();
-    /// assert_eq!(query, "c&a=2&b=2&a=3");
+    /// assert_eq!(query, "c&a=4+5&b=2&a=3");
     /// ```
     pub fn set(&mut self, name: &str, index: isize, value: Option<Option<&str>>) -> Result<bool, SetQueryError> {
         let temp = self.find_iter(name).try_neg_nth(index);
@@ -47,8 +47,8 @@ impl SpecialQuery<'_> {
                 Ok(old) if old == new => return Ok(false),
                 Ok(old) => self.0.replace_substr(old.as_str(), new.as_str()),
                 Err(0) => match index {
-                    0.. => self.0.to_mut().extend     (    ["&", new.as_str()]),
-                    ..0 => self.0.to_mut().insert_with(0, &[new.as_str(), "&"]),
+                    0.. => self.0.extend     (   ["&", new.as_str()]),
+                    ..0 => self.0.insert_with(0, [new.as_str(), "&"]),
                 },
                 Err(_) => Err(InsertNotFound)?
             },

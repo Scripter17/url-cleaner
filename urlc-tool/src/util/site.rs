@@ -8,7 +8,7 @@ pub fn start_site(tls: bool) -> TerminateOnDrop {
 
     let mut cmd = Command::new("target/release/url-cleaner-site");
 
-    cmd.args(["--port", "9148"]);
+    cmd.args(["run", "--port", "9148"]);
 
     if tls {
         cmd.args([

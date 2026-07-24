@@ -3,16 +3,33 @@
 use crate::prelude::*;
 
 impl DomainHost<'_> {
-    /// [`DomainDetails::has_suffix`].
+    /// If it has a suffix.
     pub fn has_suffix(&self) -> bool {
-        self.details().has_suffix()
+        true
+    }
+
+
+
+    /// The [`Range::start`] of the suffix.
+    pub(crate) fn suffix_start(&self) -> usize {
+        self.details.ss as usize
+    }
+
+    /// The [`Range::end`] of the suffix.
+    pub(crate) fn suffix_after(&self) -> usize {
+        self.len() - self.details.fq as usize
+    }
+
+    /// The [`Range`] of the suffix.
+    pub(crate) fn suffix_thing(&self) -> Range<usize> {
+        self.suffix_start() .. self.suffix_after()
     }
 
 
 
     /// The suffix as a [`str`].
     pub fn suffix_str(&self) -> &str {
-        &self.host[self.details.suffix_range()]
+        unsafe {self.as_str().get_unchecked(self.suffix_thing())}
     }
 
     /// The suffix as a [`DomainSegments`].
@@ -48,14 +65,12 @@ impl DomainHost<'_> {
 
     /// The range of suffix segments as a [`str`].
     pub fn suffix_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
-        domain_range_thing(self.suffix_str(), range)
+        self.suffix_segments().range_str(range)
     }
 
     /// The range of suffix segments as a [`DomainSegments`].
     pub fn suffix_range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'_>> {
-        let range = (range.start_bound().cloned(), range.end_bound().cloned());
-
-        Some(DomainSegments(self.suffix_range_str(range)?.into()))
+        self.suffix_segments().range(range)
     }
 
 
@@ -101,7 +116,7 @@ impl DomainHost<'_> {
             }
         }
 
-        self.details = DomainDetails::parse_unchecked(&self.host);
+        self.details = DomainHostDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -158,14 +173,14 @@ impl DomainHost<'_> {
             },
 
             (Err(0), Some(new)) => match index {
-                0.. if !(self.details.is_fqdn() && new.last_is_empty()) && new.ends_in_a_number() => Err(CantEndInANumber)?,
+                0.. if !(self.is_fqdn() && new.last_is_empty()) && new.ends_in_a_number() => Err(CantEndInANumber)?,
 
-                0.. => self.host.to_mut().insert_with(self.details.suffix_after(), &[".", new.as_str()]),
-                ..0 => self.host.to_mut().insert_with(self.details.suffix_start(), &[new.as_str(), "."]),
+                0.. => {let i = self.suffix_after(); self.host.insert_with(i, [".", new.as_str()]);},
+                ..0 => {let i = self.suffix_start(); self.host.insert_with(i, [new.as_str(), "."]);},
             },
         }
 
-        self.details = DomainDetails::parse_unchecked(&self.host);
+        self.details = DomainHostDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -201,7 +216,7 @@ impl DomainHost<'_> {
             }
         }
 
-        self.details = DomainDetails::parse_unchecked(&self.host);
+        self.details = DomainHostDetails::parse_unchecked(&self.host);
 
         Ok(true)
     }
@@ -240,14 +255,14 @@ impl DomainHost<'_> {
 
             (Err(1..), _) => Err(InsertNotFound)?,
 
-            (Ok(Range {start, ..}), 0..) => self.host.to_mut().insert_with(start, &[new.as_str(), "."]),
-            (Ok(Range {end  , ..}), ..0) => self.host.to_mut().insert_with(end  , &[".", new.as_str()]),
+            (Ok(Range {start, ..}), 0..) => self.host.insert_with(start, [new.as_str(), "."]),
+            (Ok(Range {end  , ..}), ..0) => self.host.insert_with(end  , [".", new.as_str()]),
 
-            (Err(0), 0..) => self.host.to_mut().insert_with(self.details.suffix_after(), &[".", new.as_str()]),
-            (Err(0), ..0) => self.host.to_mut().insert_with(self.details.suffix_start(), &[new.as_str(), "."]),
+            (Err(0), 0..) => {let i = self.suffix_after(); self.host.insert_with(i, [".", new.as_str()]);},
+            (Err(0), ..0) => {let i = self.suffix_start(); self.host.insert_with(i, [new.as_str(), "."]);},
         }
 
-        self.details = DomainDetails::parse_unchecked(&self.host);
+        self.details = DomainHostDetails::parse_unchecked(&self.host);
 
         Ok(())
     }

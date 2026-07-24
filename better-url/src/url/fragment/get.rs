@@ -5,12 +5,12 @@ use crate::prelude::*;
 impl BetterUrl {
     /// The [`Range::start`] of the fragment.
     pub(crate) fn fragment_mark(&self) -> Option<usize> {
-        Some(self.fragment_mark?.get() as usize + 1)
+        Some(self.details.fragment_mark?.get() as usize + 1)
     }
 
     /// The [`Range::end`] of the fragment.
     pub(crate) fn fragment_after(&self) -> Option<usize> {
-        match self.fragment_mark.is_some() {
+        match self.details.fragment_mark.is_some() {
             true  => Some(self.len()),
             false => None,
         }
@@ -25,7 +25,7 @@ impl BetterUrl {
 
     /// The fragment as a [`str`].
     pub fn fragment_str(&self) -> Option<&str> {
-        Some(&self.serialization[self.fragment_range()?])
+        Some(unsafe {self.serialization.get_unchecked(self.fragment_range()?)})
     }
 
     /// The [`MaybeFragment`].

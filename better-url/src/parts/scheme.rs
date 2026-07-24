@@ -22,61 +22,18 @@ impl<'a> Scheme<'a> {
         }
     }
 
-    /// Borrow as a [`str`].
-    pub fn as_str(&self) -> &str {
-        &self.scheme
-    }
+    /** Borrow as a [`str`].     **/ pub fn as_str (&self) -> &str          {&self.scheme         }
+    /** The [`SchemeDetails`].   **/ pub fn details(&self) -> SchemeDetails {self.details         }
+    /** [`SchemeDetails::type`]. **/ pub fn r#type (&self) -> SchemeType    {self.details.r#type()}
 
-    /// The [`SchemeDetails`].
-    pub fn details(&self) -> SchemeDetails {
-        self.details
-    }
+    /** [`SchemeDetails::is_special`].          **/ pub fn is_special         (&self) -> bool {self.details.is_special         ()}
+    /** [`SchemeDetails::is_file`].             **/ pub fn is_file            (&self) -> bool {self.details.is_file            ()}
+    /** [`SchemeDetails::is_special_not_file`]. **/ pub fn is_special_not_file(&self) -> bool {self.details.is_special_not_file()}
+    /** [`SchemeDetails::is_non_special`].      **/ pub fn is_non_special     (&self) -> bool {self.details.is_non_special     ()}
 
-    /// [`SchemeDetails::type`].
-    pub fn r#type(&self) -> SchemeType {
-        self.details.r#type()
-    }
-
-
-
-    /// [`SchemeDetails::is_special`].
-    pub fn is_special(&self) -> bool {
-        self.details.is_special()
-    }
-
-    /// [`SchemeDetails::is_file`].
-    pub fn is_file(&self) -> bool {
-        self.details.is_file()
-    }
-
-    /// [`SchemeDetails::is_special_not_file`].
-    pub fn is_special_not_file(&self) -> bool {
-        self.details.is_special_not_file()
-    }
-
-    /// [`SchemeDetails::is_non_special`].
-    pub fn is_non_special(&self) -> bool {
-        self.details.is_non_special()
-    }
-
-
-
-    /// [`SchemeDetails::default_port`].
-    pub fn default_port(&self) -> Option<Port<'static>> {
-        self.details.default_port()
-    }
-
-    /// [`SchemeDetails::default_port_num`]
-    pub fn default_port_num(&self) -> Option<u16> {
-        self.details.default_port_num()
-    }
-
-    /// [`SchemeDetails::default_port_str`].
-    pub fn default_port_str(&self) -> Option<&'static str> {
-        self.details.default_port_str()
-    }
-
-
+    /** [`SchemeDetails::default_port`].     **/ pub fn default_port    (&self) -> Option<Port<'static>> {self.details.default_port    ()}
+    /** [`SchemeDetails::default_port_num`]  **/ pub fn default_port_num(&self) -> Option<u16          > {self.details.default_port_num()}
+    /** [`SchemeDetails::default_port_str`]. **/ pub fn default_port_str(&self) -> Option<&'static str > {self.details.default_port_str()}
 
     /// Make a borrowing [`Self`].
     pub fn borrowed(&self) -> Scheme<'_> {

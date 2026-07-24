@@ -156,13 +156,11 @@ pub enum StringMatcher {
     /// If [`None`], returns the error [`SubjectIsNone`].
     LengthIs(usize),
 
-    /// Applies [`Self::Modified::modification`] to a copy of the string, leaving the original unchanged, and returns the satisfaction of [`Self::Modified::matcher`] on that string.
-    /// # Errors
-    #[doc = edoc!(applyerr(StringModification), checkerr(Self))]
+    /// [`StringModification::apply`] then [`Self::check`].
     Modified {
-        /// The [`StringModification`] to apply to the copy of the string.
+        /// The [`StringModification`].
         modification: Box<StringModification>,
-        /// The [`Self`] to match the modified string with.
+        /// The [`Self`].
         matcher: Box<Self>
     },
 
@@ -171,21 +169,13 @@ pub enum StringMatcher {
     /// Satisfied if the string is [`None`].
     IsNone,
     /// Satisfied if the string is [`Some`] and [`Self::IsSomeAnd::0`] is satisfied.
-    /// # Errors
-    #[doc = edoc!(checkerr(Self))]
     IsSomeAnd(Box<Self>),
     /// Satisfied if the string is [`None`] or [`Self::IsNoneOr::0`] is satisfied.
-    /// # Errors
-    #[doc = edoc!(checkerr(Self))]
     IsNoneOr(Box<Self>),
 
     // Glue
 
     /// Satisfied if the call to [`Regex::is_match`] returns [`true`].
-    /// # Errors
-    /// If [`None`], returns the error [`SubjectIsNone`].
-    ///
-    #[doc = edoc!(geterr(LazyRegex))]
     Regex(LazyRegex),
 
     // Function/Extern
@@ -200,7 +190,6 @@ pub enum StringMatcher {
     ///
     /// Additionally, using a function pointer means this variant cannot be [`Serialize`]d or [`Deserialize`]d.
     /// # Errors
-    #[doc = edoc!(callerr(Self::Extern::0))]
     #[suitable(never)]
     #[serde(skip)]
     Extern(StringMatcherExtern)

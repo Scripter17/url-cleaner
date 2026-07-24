@@ -2,8 +2,6 @@
 
 use crate::prelude::*;
 
-#[cfg(test)]
-mod tests;
 mod new;
 mod join;
 
@@ -17,34 +15,91 @@ mod query;
 mod fragment;
 
 /// A URL.
+/// # Canon APIs
+/// The [URL spec](https://url.spec.whatwg.org/) specifies a number of APIs that do specific additional things that the normal type based API provided by this crate does not.
+///
+/// For example:
+///
+/// ```
+/// use better_url::prelude::*;
+///
+/// let mut x = BetterUrl::new("https://example.com/abc").unwrap();
+/// x.canon_set_hostname("example\t2.net/def").unwrap();
+/// assert_eq!(x, "https://example2.net/abc");
+///
+/// let mut x = BetterUrl::new("https://example.com/abc").unwrap();
+/// x.set_host("example\t3.net/def").unwrap_err();
+/// ```
+///
+/// Primarily, this involves getters doing stupid things to avoid ever returning [`None`] and setters doing a bit of pre-processing to remove any port, path, query, and fragment that ends up in a call to the hostname setter.
+///
+/// Generally, you should stick to the non-canon APIs since they're just better, but if you need them the canon APIs are provided.
 #[derive(Debug, Clone)]
 pub struct BetterUrl {
-    /** The serialization.                            **/ serialization : String,
-    /** The `:` marking the scheme.                   **/ scheme_mark   : u32,
-    /** The end of the username.                      **/ username_after: Option<NonZero<u32>>,
-    /** The start of the host.                        **/ host_start    : Option<NonZero<u32>>,
-    /** The `:` marking the port.                     **/ port_mark     : Option<NonZero<u32>>,
-    /** If [`Self::port_mark`] is [`Some`], the port. **/ port          : u16,
-    /** The start of the path.                        **/ path_start    : u32,
-    /** The `?` marking the query.                    **/ query_mark    : Option<NonZero<u32>>,
-    /** The `#` marking the fragment.                 **/ fragment_mark : Option<NonZero<u32>>,
-    /** The [`UrlDetails`].                           **/ details       : UrlDetails,
+    /** The serialization.  **/ serialization: String,
+    /** The [`UrlDetails`]. **/ details      : UrlDetails,
 }
 
 impl BetterUrl {
-    /// The URL as a [`str`].
-    pub fn as_str(&self) -> &str {
-        &self.serialization
+    /// Make a new [`Self`].
+    /// # Errors
+    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    pub fn new<T: TryInto<Self>>(value: T) -> Result<Self, T::Error> {
+        value.try_into()
     }
 
-    /// If the URL cannot be a base.
-    pub fn cannot_be_a_base(&self) -> bool {
-        !self.serialization[self.scheme_mark as usize..].starts_with(":/")
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `serialization`, `splits` and `details` must be a valid output of [`Self::new`] and [`Self::into_parts`].
+    pub unsafe fn from_parts(serialization: String, details: UrlDetails) -> Self {
+        Self {serialization, details}
+    }
+
+    /// Turn into the inner [`String`] and [`UrlDetails`].
+    pub fn into_parts(self) -> (String, UrlDetails) {
+        (self.serialization, self.details)
     }
 
     /// The [`UrlDetails`].
     pub fn details(&self) -> UrlDetails {
         self.details
+    }
+
+    /// The URL as a [`str`].
+    pub fn as_str(&self) -> &str {
+        &self.serialization
+    }
+
+    /// If it cannot be a base.
+    /// # Examples
+    /// ```
+    /// use better_url::prelude::*;
+    ///
+    /// assert!(!BetterUrl::new("https://example.com/").unwrap().cannot_be_a_base());
+    /// assert!(!BetterUrl::new("aaaaa://example.com/").unwrap().cannot_be_a_base());
+    /// assert!(!BetterUrl::new("aaaaa://example.com" ).unwrap().cannot_be_a_base());
+    /// assert!(!BetterUrl::new("aaaaa:/123"          ).unwrap().cannot_be_a_base());
+    /// assert!( BetterUrl::new("aaaaa:123"           ).unwrap().cannot_be_a_base());
+    /// assert!( BetterUrl::new("aaaaa:"              ).unwrap().cannot_be_a_base());
+    /// ```
+    pub fn cannot_be_a_base(&self) -> bool {
+        !self.has_host() && unsafe {!self.as_str().get_unchecked(self.details.path_start as usize ..).starts_with('/')}
+    }
+
+    /// If it can be a base.
+    /// # Examples
+    /// ```
+    /// use better_url::prelude::*;
+    ///
+    /// assert!( BetterUrl::new("https://example.com/").unwrap().can_be_a_base());
+    /// assert!( BetterUrl::new("aaaaa://example.com/").unwrap().can_be_a_base());
+    /// assert!( BetterUrl::new("aaaaa://example.com" ).unwrap().can_be_a_base());
+    /// assert!( BetterUrl::new("aaaaa:/123"          ).unwrap().can_be_a_base());
+    /// assert!(!BetterUrl::new("aaaaa:123"           ).unwrap().can_be_a_base());
+    /// assert!(!BetterUrl::new("aaaaa:"              ).unwrap().can_be_a_base());
+    /// ```
+    pub fn can_be_a_base(&self) -> bool {
+        self.has_host() || unsafe {self.as_str().get_unchecked(self.details.path_start as usize ..).starts_with('/')}
     }
 
     /// The length.
@@ -59,19 +114,10 @@ impl BetterUrl {
 impl TryFrom<Cow<'_, str>> for BetterUrl {
     type Error = InvalidUrl;
 
-    fn try_from(mut value: Cow<'_, str>) -> Result<Self, Self::Error> {
-        let start = value.bytes(). position(|b| b > 0x20 && b != 0x7F).unwrap_or(0);
-        let end   = value.bytes().rposition(|b| b > 0x20 && b != 0x7F).map_or(0, |x| x + 1);
+    fn try_from(value: Cow<'_, str>) -> Result<Self, Self::Error> {
+        let (_, value) = canonize_parser_input(value);
 
-        value.retain_range(start..end);
-
-        if value.bytes().any(|b| b == b'\t' || b == b'\n' || b == b'\r') {
-            value.to_mut().retain(|c| c != '\t' && c != '\n' && c != '\r');
-        }
-
-        let i = value.bytes().position(|b| b == b':').ok_or(InvalidUrl::MissingScheme)?;
-
-        let (scheme, rest) = unsafe {(value.get_unchecked(..i), value.get_unchecked(i+1..))};
+        let (scheme, rest) = value.split_once(':').ok_or(InvalidUrl::MissingScheme)?;
 
         Self::after_scheme(Scheme::new(scheme)?, rest)
     }
@@ -139,18 +185,32 @@ impl PartialEq<BetterUrl> for &str          {fn eq(&self, other: &BetterUrl) -> 
 impl PartialEq<BetterUrl> for &String       {fn eq(&self, other: &BetterUrl) -> bool {other == self}}
 impl PartialEq<BetterUrl> for &Cow<'_, str> {fn eq(&self, other: &BetterUrl) -> bool {other == self}}
 
-impl Hash for BetterUrl {
-    fn hash<H: Hasher>(&self, hasher: &mut H) {
-        self.as_str().hash(hasher)
-    }
-}
-
 
 
 impl PartialOrd for BetterUrl {fn partial_cmp(&self, other: &Self) -> Option<Ordering> {Some(self.cmp(other))}}
 impl Ord        for BetterUrl {fn cmp        (&self, other: &Self) ->        Ordering  {self.as_str().cmp(other.as_str())}}
 
+impl PartialOrd< str         > for BetterUrl {fn partial_cmp(&self, other: & str         ) -> Option<Ordering> {self.as_str().partial_cmp(    other)}}
+impl PartialOrd< String      > for BetterUrl {fn partial_cmp(&self, other: & String      ) -> Option<Ordering> {self.as_str().partial_cmp(& **other)}}
+impl PartialOrd< Cow<'_, str>> for BetterUrl {fn partial_cmp(&self, other: & Cow<'_, str>) -> Option<Ordering> {self.as_str().partial_cmp(& **other)}}
+impl PartialOrd<&str         > for BetterUrl {fn partial_cmp(&self, other: &&str         ) -> Option<Ordering> {self.as_str().partial_cmp(   *other)}}
+impl PartialOrd<&String      > for BetterUrl {fn partial_cmp(&self, other: &&String      ) -> Option<Ordering> {self.as_str().partial_cmp(&***other)}}
+impl PartialOrd<&Cow<'_, str>> for BetterUrl {fn partial_cmp(&self, other: &&Cow<'_, str>) -> Option<Ordering> {self.as_str().partial_cmp(&***other)}}
 
+impl PartialOrd<BetterUrl> for  str          {fn partial_cmp(&self, other: &BetterUrl    ) -> Option<Ordering> {other.partial_cmp(self)}}
+impl PartialOrd<BetterUrl> for  String       {fn partial_cmp(&self, other: &BetterUrl    ) -> Option<Ordering> {other.partial_cmp(self)}}
+impl PartialOrd<BetterUrl> for  Cow<'_, str> {fn partial_cmp(&self, other: &BetterUrl    ) -> Option<Ordering> {other.partial_cmp(self)}}
+impl PartialOrd<BetterUrl> for &str          {fn partial_cmp(&self, other: &BetterUrl    ) -> Option<Ordering> {other.partial_cmp(self)}}
+impl PartialOrd<BetterUrl> for &String       {fn partial_cmp(&self, other: &BetterUrl    ) -> Option<Ordering> {other.partial_cmp(self)}}
+impl PartialOrd<BetterUrl> for &Cow<'_, str> {fn partial_cmp(&self, other: &BetterUrl    ) -> Option<Ordering> {other.partial_cmp(self)}}
+
+
+
+impl Hash for BetterUrl {
+    fn hash<H: Hasher>(&self, hasher: &mut H) {
+        self.as_str().hash(hasher)
+    }
+}
 
 impl std::fmt::Display for BetterUrl {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

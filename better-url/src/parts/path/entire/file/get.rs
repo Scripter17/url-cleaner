@@ -2,10 +2,27 @@
 
 use crate::prelude::*;
 
-impl FileSegmentedPath<'_> {
-    /// The [`FilePathSegment`]s.
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = FilePathSegment<'_>> {
-        SplitSlashes(Some(&self.0[1..])).map(|x| FilePathSegment(Cow::Borrowed(x)))
+impl FilePath<'_> {
+    /// The segments as [`str`]s.
+    pub fn iter_strs(&self) -> SplitSlashes<'_> {
+        SplitSlashes(self.as_str().strip_prefix('/'))
+    }
+
+    /// The `index`th segment as a [`str`].
+    pub fn get_str(&self, index: isize) -> Option<&str> {
+        self.iter_strs().neg_nth(index)
+    }
+
+    /// The range of segments as a [`str`].
+    pub fn range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
+        self.iter_strs().range(range)
+    }
+
+
+
+    /// The [`FilePathSegmentsIter`].
+    pub fn iter(&self) -> FilePathSegmentsIter<'_> {
+        self.into_iter()
     }
 
     /// The `index`th [`FilePathSegment`].
@@ -13,19 +30,19 @@ impl FileSegmentedPath<'_> {
         self.iter().neg_nth(index)
     }
 
-    /// Get a range of segments.
+    /// The range of [`FilePathSegments`].
     /// # Examples
     /// ```
     /// use better_url::prelude::*;
     ///
-    /// let path = FileSegmentedPath::new("/ab/cd/ef");
+    /// let path = FilePath::new("/ab/cd/ef");
     ///
-    /// assert_eq!(path.get_range(0..  2).unwrap(), "ab/cd");
-    /// assert_eq!(path.get_range(0.. -1).unwrap(), "ab/cd");
-    /// assert_eq!(path.get_range(0..= 2).unwrap(), "ab/cd/ef");
-    /// assert_eq!(path.get_range(0..=-1).unwrap(), "ab/cd/ef");
+    /// assert_eq!(path.range(0..  2).unwrap(), "ab/cd");
+    /// assert_eq!(path.range(0.. -1).unwrap(), "ab/cd");
+    /// assert_eq!(path.range(0..= 2).unwrap(), "ab/cd/ef");
+    /// assert_eq!(path.range(0..=-1).unwrap(), "ab/cd/ef");
     /// ```
-    pub fn get_range<B: RangeBounds<isize>>(&self, range: B) -> Option<FilePathSegments<'_>> {
-        path_segments_range_thing(&self.as_str()[1..], range).map(|x| unsafe {FilePathSegments::new_unchecked(x)})
+    pub fn range<B: RangeBounds<isize>>(&self, range: B) -> Option<FilePathSegments<'_>> {
+        self.iter().range(range)
     }
 }

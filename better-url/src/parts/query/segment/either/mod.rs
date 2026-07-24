@@ -8,13 +8,19 @@ mod value;
 /// Either [`SpecialQuerySegment`] or [`NonSpecialQuerySegment`].
 #[derive(Debug, Clone)]
 pub enum QuerySegment<'a> {
-    /// [`SpecialQuerySegment`].
-    Special(SpecialQuerySegment<'a>),
-    /// [`NonSpecialQuerySegment`].
-    NonSpecial(NonSpecialQuerySegment<'a>),
+    /** [`SpecialQuerySegment`].    **/ Special   (SpecialQuerySegment   <'a>),
+    /** [`NonSpecialQuerySegment`]. **/ NonSpecial(NonSpecialQuerySegment<'a>),
 }
 
 impl<'a> QuerySegment<'a> {
+    /// The [`QueryType`].
+    pub fn r#type(&self) -> QueryType {
+        match self {
+            Self::Special   (_) => QueryType::Special   ,
+            Self::NonSpecial(_) => QueryType::NonSpecial,
+        }
+    }
+
     /// Borrow as a [`str`].
     pub fn as_str(&self) -> &str {
         match self {
@@ -25,50 +31,43 @@ impl<'a> QuerySegment<'a> {
 
 
 
-    /// Make a new [`Self`].
-    pub fn new<T: Into<SpecialQuerySegment<'a>> + Into<NonSpecialQuerySegment<'a>>>(value: T, special: bool) -> Self {
-        match special {
-            true  => Self::new_special    (value),
-            false => Self::new_non_special(value),
+    /// Either [`Self::new_special`] or [`Self::new_non_special`].
+    pub fn new<T: Into<SpecialQuerySegment<'a>> + Into<NonSpecialQuerySegment<'a>>>(value: T, r#type: QueryType) -> Self {
+        match r#type {
+            QueryType::Special    => Self::new_special    (value),
+            QueryType::NonSpecial => Self::new_non_special(value),
         }
     }
 
-    /// Make a new [`Self::Special`].
-    pub fn new_special<T: Into<SpecialQuerySegment<'a>>>(value: T) -> Self {
-        value.into().into()
-    }
-
-    /// Make a new [`Self::NonSpecial`].
-    pub fn new_non_special<T: Into<NonSpecialQuerySegment<'a>>>(value: T) -> Self {
-        value.into().into()
-    }
+    /** [`SpecialQuerySegment::new`].    **/ pub fn new_special    <T: Into<SpecialQuerySegment   <'a>>>(value: T) -> Self {SpecialQuerySegment   ::new(value).into()}
+    /** [`NonSpecialQuerySegment::new`]. **/ pub fn new_non_special<T: Into<NonSpecialQuerySegment<'a>>>(value: T) -> Self {NonSpecialQuerySegment::new(value).into()}
 
 
 
-    /// Make a new [`Self`] without doing any validity checks.
+    /// Either [`Self::new_special_unchecked`] or [`Self::new_non_special_unchecked`].
     /// # Safety
-    /// `value` must be a valid [`Self`] literal.
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, special: bool) -> Self {
+    /// Either [`Self::new_special_unchecked`] or [`Self::new_non_special_unchecked`].
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, r#type: QueryType) -> Self {
         unsafe {
-            match special {
-                true  => Self::new_special_unchecked    (value),
-                false => Self::new_non_special_unchecked(value),
+            match r#type {
+                QueryType::Special    => Self::new_special_unchecked    (value),
+                QueryType::NonSpecial => Self::new_non_special_unchecked(value),
             }
         }
     }
 
-    /// Make a new [`Self::Special`] without doing any validity checks.
+    /// [`SpecialQuerySegment::new_unchecked`].
     /// # Safety
-    /// `value` must be a valid [`Self::Special`] literal.
+    /// [`SpecialQuerySegment::new_unchecked`].
     pub unsafe fn new_special_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
         unsafe {
             SpecialQuerySegment::new_unchecked(value).into()
         }
     }
 
-    /// Make a new [`Self::NonSpecial`] without doing any validity checks.
+    /// [`NonSpecialQuerySegment::new_unchecked`].
     /// # Safety
-    /// `value` must be a valid [`Self::NonSpecial`] literal.
+    /// [`NonSpecialQuerySegment::new_unchecked`].
     pub unsafe fn new_non_special_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
         unsafe {
             NonSpecialQuerySegment::new_unchecked(value).into()

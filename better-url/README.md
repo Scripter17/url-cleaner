@@ -1,6 +1,6 @@
 # Better URL
 
-A wrapper around the `url` crate that provides higher level operations.
+A URL crate that's better than the one provided by Servo.
 
 Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
 

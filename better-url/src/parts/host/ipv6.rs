@@ -9,15 +9,15 @@ use crate::prelude::*;
 pub struct Ipv6Host<'a> {
     /// The host string.
     pub(crate) host: Cow<'a, str>,
-    /// The [`Ipv6Details`].
-    pub(crate) details: Ipv6Details
+    /// The [`Ipv6HostDetails`].
+    pub(crate) details: Ipv6HostDetails
 }
 
 impl<'a> Ipv6Host<'a> {
     /// Make a new [`Self`] with zero validity checks.
     /// # Safety
-    /// `value` must be a valid IPv6 host literal and `details` must be its [`Ipv6Details`].
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: Ipv6Details) -> Self {
+    /// `value` must be a valid IPv6 host literal and `details` must be its [`Ipv6HostDetails`].
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: Ipv6HostDetails) -> Self {
         Self {
             host: value.into(),
             details,
@@ -29,13 +29,13 @@ impl<'a> Ipv6Host<'a> {
         &self.host
     }
 
-    /// The [`Ipv6Details`].
-    pub fn details(&self) -> Ipv6Details {
+    /// The [`Ipv6HostDetails`].
+    pub fn details(&self) -> Ipv6HostDetails {
         self.details
     }
 
     /// Unwrap into the host and details.
-    pub fn into_parts(self) -> (Cow<'a, str>, Ipv6Details) {
+    pub fn into_parts(self) -> (Cow<'a, str>, Ipv6HostDetails) {
         (self.host, self.details)
     }
 
@@ -114,19 +114,6 @@ impl<'a> TryFrom<NonSpecialHost<'a>> for Ipv6Host<'a> {
         })
     }
 }
-
-impl<'a> TryFrom<IpHost<'a>> for Ipv6Host<'a> {
-    type Error = Ipv4Host<'a>;
-
-    fn try_from(value: IpHost<'a>) -> Result<Self, Self::Error> {
-        match value {
-            IpHost::V4(x) => Err(x),
-            IpHost::V6(x) => Ok (x),
-        }
-    }
-}
-
-
 
 impl From<Ipv6Addr> for Ipv6Host<'static> {
     fn from(value: Ipv6Addr) -> Self {

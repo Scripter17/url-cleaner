@@ -34,6 +34,16 @@ impl<'a> MaybePort<'a> {
         self.0.as_ref().map(Port::as_num)
     }
 
+    /// If it's [`Some`].
+    pub fn is_some(&self) -> bool {
+        self.0.is_some()
+    }
+
+    /// If it's [`None`].
+    pub fn is_none(&self) -> bool {
+        self.0.is_none()
+    }
+
     /// The length
     #[expect(clippy::len_without_is_empty, reason = "Can't be empty.")]
     pub fn len(&self) -> Option<usize> {

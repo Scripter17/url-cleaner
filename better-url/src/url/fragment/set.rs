@@ -9,7 +9,7 @@ impl BetterUrl {
     pub fn set_fragment<'a, T: Into<MaybeFragment<'a>>>(&mut self, value: T) -> Result<(), SetFragmentError> {
         let new = value.into();
 
-        match (self.fragment_mark, new.as_str()) {
+        match (self.details.fragment_mark, new.as_str()) {
             (None, None) => {},
 
             (None, Some(new)) => {
@@ -17,13 +17,13 @@ impl BetterUrl {
                     Err(TooLong)?;
                 }
 
-                self.fragment_mark = NonZero::new(self.len() as u32);
+                self.details.fragment_mark = NonZero::new(self.len() as u32);
                 self.serialization.extend(["#", new]);
             },
 
             (Some(mark), None) => {
                 self.serialization.truncate(mark.get() as usize);
-                self.fragment_mark = None;
+                self.details.fragment_mark = None;
             },
 
             (Some(mark), Some(new)) => {
@@ -40,9 +40,9 @@ impl BetterUrl {
 
     /// Remove the fragment.
     pub fn remove_fragment(&mut self) -> bool {
-        if let Some(x) = self.fragment_mark {
+        if let Some(x) = self.details.fragment_mark {
             self.serialization.truncate(x.get() as usize);
-            self.fragment_mark = None;
+            self.details.fragment_mark = None;
             true
         } else {
             false
@@ -51,9 +51,9 @@ impl BetterUrl {
 
     /// Remove the fragment if it's empty.
     pub fn remove_empty_fragment(&mut self) -> bool {
-        if let Some(x) = self.fragment_mark && x.get() as usize == self.len() - 1 {
+        if let Some(x) = self.details.fragment_mark && x.get() as usize == self.len() - 1 {
             self.serialization.truncate(x.get() as usize);
-            self.fragment_mark = None;
+            self.details.fragment_mark = None;
             true
         } else {
             false

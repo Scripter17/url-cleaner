@@ -40,8 +40,6 @@ pub enum StringLocation {
 
 
     /// Swap the haystack and the needle.
-    /// # Errors
-    #[doc = edoc!(checkerr(Self))]
     Swap(Box<Self>),
 
     // Logic

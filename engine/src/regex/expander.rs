@@ -5,9 +5,15 @@ use crate::prelude::*;
 /// Expands a [`regex::Captures`] more powerfully.
 /// # Examples
 /// ```
-/// use url_cleaner_engine::{task_state, prelude::*};
+/// use url_cleaner_engine::{job, prelude::*};
 ///
-/// let task_state = task_state!("https://e.newsletters.cnn.com/click?EcmgzMjUyNzA1LmFkZGFAYmxvZ2dlci5jb20/CeyJtaWQiOiIxNzQ5OTkyNTE0NTA4OTEwYTZmOGM4OTljIiwiY3QiOiJjbm4tNmQwZWU3ZmNmNjRkZjIxY2VkZTg1OWJmMDhmYjA2NmMtMSIsInJkIjoiYmxvZ2dlci5jb20ifQ/VaHR0cHM6Ly93d3cuY25uLmNvbS8yMDI0LzA2LzE0L2hlYWx0aC9mYXRoZXJob29kLWdvb2QtZm9yLWRhZHMtd2VsbG5lc3M/SWkhfQ05OX2lfTmV3c19OREJBTjA2MTUyMDI1YzE2OTQwMDBiMQ/LY24x/qP3V0bV9zb3VyY2U9Y25uX0ZpdmUrVGhpbmdzK2ZvcitTdW5kYXklMkMrSnVuZSsxNSUyQysyMDI1JnV0bV9tZWRpdW09ZW1haWwmYnRfZWU9Mm5lSjJLZU9KZWllQ0JRVnBoTSUyRlBNQmp4S3FYeUc4aUhlY0NVNHljRiUyQiUyRm5YSEJkRSUyRiUyQmVhVnRJa2ZScnJESmMmYnRfdHM9MTc0OTk5MjUxNDUxMA/gaE7EWw/JMDYxNTIwMjVDMTY5NDAwMEIx/sdo767ff5f7");
+/// let job = job!();
+///
+/// let task_state = TaskState {
+///     url: BetterUrl::new("https://e.newsletters.cnn.com/click?EcmgzMjUyNzA1LmFkZGFAYmxvZ2dlci5jb20/CeyJtaWQiOiIxNzQ5OTkyNTE0NTA4OTEwYTZmOGM4OTljIiwiY3QiOiJjbm4tNmQwZWU3ZmNmNjRkZjIxY2VkZTg1OWJmMDhmYjA2NmMtMSIsInJkIjoiYmxvZ2dlci5jb20ifQ/VaHR0cHM6Ly93d3cuY25uLmNvbS8yMDI0LzA2LzE0L2hlYWx0aC9mYXRoZXJob29kLWdvb2QtZm9yLWRhZHMtd2VsbG5lc3M/SWkhfQ05OX2lfTmV3c19OREJBTjA2MTUyMDI1YzE2OTQwMDBiMQ/LY24x/qP3V0bV9zb3VyY2U9Y25uX0ZpdmUrVGhpbmdzK2ZvcitTdW5kYXklMkMrSnVuZSsxNSUyQysyMDI1JnV0bV9tZWRpdW09ZW1haWwmYnRfZWU9Mm5lSjJLZU9KZWllQ0JRVnBoTSUyRlBNQmp4S3FYeUc4aUhlY0NVNHljRiUyQiUyRm5YSEJkRSUyRiUyQmVhVnRJa2ZScnJESmMmYnRfdHM9MTc0OTk5MjUxNDUxMA/gaE7EWw/JMDYxNTIwMjVDMTY5NDAwMEIx/sdo767ff5f7").unwrap(),
+///     context: Default::default(),
+///     job: &job,
+/// };
 ///
 /// let x = serde_json::from_str::<StringSource>(r#"
 /// {"RegexExpansion": {

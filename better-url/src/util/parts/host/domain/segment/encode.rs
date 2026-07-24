@@ -2,69 +2,63 @@
 
 use crate::prelude::*;
 
-/// Percent decode, UTS46 normalize, and encode a domain segment.
+/// Encode a domain segment.
 ///
-/// If you know the input is already percent decoded, see [`percent_decoded_domain_segment_to_ascii`].
+/// If you know your input will be percent decoded, see [`encode_percent_decoded_domain_segment`].
 /// # Errors
-/// If the call to [`try_percent_decode`] returns an error, that error is returned.
+/// If the call to [`try_percent_decode`] returns an error, returns the error [`InvalidDomainSegment`].
 ///
-/// If the call to [`percent_decoded_domain_segment_to_ascii`] returns an error, that error is returned.
-pub fn domain_segment_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
+/// If the call to [`encode_percent_decoded_domain_segment`] returns an error, that error is returned.
+pub fn encode_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
     let (a, value) = try_percent_decode(value).map_err(|_| InvalidDomainSegment)?;
-    let (b, value) = percent_decoded_domain_segment_to_ascii(value)?;
+    let (b, value) = encode_percent_decoded_domain_segment(value)?;
     Ok((a || b, value))
 }
 
-/// UTS46 normalize and encode a percent decoded domain segment
+/// Encode a percent decoded domain segment.
 ///
-/// If you know the input is already UTS46 normalized, see [`normalized_domain_segment_to_ascii`].
+/// If you know your input will be UTS46 mapped and normalized, see [`encode_normalized_domain_segment`].
 /// # Errors
-/// If the call to [`normalized_domain_segment_to_ascii`] returns an error, that error is returned.
-pub fn percent_decoded_domain_segment_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
+/// If the call to [`encode_normalized_domain_segment`] returns an error, that error is returned.
+pub fn encode_percent_decoded_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
     let (a, value) = uts46_map_normalize(value);
-    let (b, value) = normalized_domain_segment_to_ascii(value)?;
+    let (b, value) = encode_normalized_domain_segment(value)?;
     Ok((a || b, value))
 }
 
-/// Encode a percent decoded and UTS46 normalized domain segment.
+/// Encode a percent decoded and UTS46 mapped and normalized domain segment.
 /// # Errors
-/// If the call to [`normalized_domain_segment_to_unicode`] returns an error, that error is returned.
-pub fn normalized_domain_segment_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
+/// If `value` contains any ASCII byte in [`FORBIDDEN_DOMAIN_SEGMENT`], returns the error [`InvalidDomainSegment`].
+///
+/// If `value` is not ASCII:
+///
+/// - If the call to [`mostly_validate_domain_segment_unicode`] returns [`false`], returns the error [`InvalidDomainSegment`].
+///
+/// - If the call to [`BidiDetail::parse`] returns [`BidiDetail::ForceAscii`], returns the error [`InvalidDomainSegment`].
+///
+/// - If the call to [`encode_punycode`] returns an error, returns the error [`InvalidDomainSegment`].
+pub fn encode_normalized_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
     let value = value.into();
 
-    if has_forbidden_domain_segment_byte(&value) {
+    if value.bytes().any(|b| b.is_ascii() && FORBIDDEN_DOMAIN_SEGMENT.contains(b)) {
         Err(InvalidDomainSegment)?;
     }
 
     if value.is_ascii() {
-        Ok((false, value))
-    } else {
-        let (_, decoded) = normalized_domain_segment_to_unicode(value)?;
-        let mut ret = encode_punycode(decoded).map_err(|TooLong| InvalidDomainSegment)?;
-        ret.to_mut().insert_str(0, "xn--");
-        Ok((true, ret))
+        return Ok((false, value));
     }
-}
 
-
-
-/// Strictly encode a percent decoded and UTS46 normalized domain segment.
-/// # Errors
-/// If the call to [`strict_normalized_domain_segment_to_unicode`] returns an error, that error is returned.
-pub fn strict_normalized_domain_segment_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, BidiDetail), InvalidDomainSegment> {
-    let value = value.into();
-
-    if has_forbidden_domain_segment_byte(&value) {
+    if !mostly_validate_domain_segment_unicode(&value) {
         Err(InvalidDomainSegment)?;
     }
 
-    if value.is_ascii() {
-        let (_, _, bidi_detail) = strict_normalized_domain_segment_to_unicode(&*value)?;
-        Ok((false, value, bidi_detail))
-    } else {
-        let (_, decoded, bidi_detail) = strict_normalized_domain_segment_to_unicode(value)?;
-        let mut ret = encode_punycode(decoded).map_err(|TooLong| InvalidDomainSegment)?;
-        ret.to_mut().insert_str(0, "xn--");
-        Ok((true, ret, bidi_detail))
+    if BidiDetail::parse(&value) == BidiDetail::ForceAscii {
+        Err(InvalidDomainSegment)?;
     }
+
+    let mut ret = encode_punycode(value).map_err(|_| InvalidDomainSegment)?;
+
+    ret.to_mut().insert_str(0, "xn--");
+
+    Ok((true, ret))
 }

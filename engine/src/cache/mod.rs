@@ -80,9 +80,9 @@ pub struct Cache<'a> {
 }
 
 impl Cache<'_> {
-    /// Read an entry from the cache.
+    /// If the [`CacheConfig::read`] is [`true`], read an entry from the cache.
     /// # Errors
-    #[doc = edoc!(callerr(InnerCache::read))]
+    /// If the call to [`InnerCache::read`] returns an error, that error is returned.
     pub fn read(&self, keys: CacheEntryKeys<'_>) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
         Ok(if self.config.read {
             let start = std::time::Instant::now();
@@ -100,9 +100,9 @@ impl Cache<'_> {
         })
     }
 
-    /// Write an entry to the cache.
+    /// If the [`CacheConfig::write`] is [`true`], write the entry to the cache.
     /// # Errors
-    #[doc = edoc!(callerr(InnerCache::write))]
+    /// If the call to [`InnerCache::write`] returns an error, that error is returned.
     pub fn write(&self, entry: NewCacheEntry<'_>) -> Result<(), WriteToCacheError> {
         if self.config.write {
             self.inner.write(entry)?;

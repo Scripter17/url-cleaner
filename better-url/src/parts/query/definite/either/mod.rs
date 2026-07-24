@@ -8,10 +8,8 @@ mod set;
 /// Either [`SpecialQuery`] or [`NonSpecialQuery`].
 #[derive(Debug, Clone)]
 pub enum Query<'a> {
-    /// [`SpecialQuery`].
-    Special(SpecialQuery<'a>),
-    /// [`NonSpecialQuery`].
-    NonSpecial(NonSpecialQuery<'a>),
+    /** [`SpecialQuery`].    **/ Special   (SpecialQuery   <'a>),
+    /** [`NonSpecialQuery`]. **/ NonSpecial(NonSpecialQuery<'a>),
 }
 
 impl<'a> Query<'a> {
@@ -23,70 +21,59 @@ impl<'a> Query<'a> {
         }
     }
 
+    /// [`Self::len`] + 1 for the `?`.
+    pub fn search_len(&self) -> usize {
+        self.len() + 1
+    }
 
-
-    /// Make a new [`Self`].
-    pub fn new<T: Into<SpecialQuery<'a>> + Into<NonSpecialQuery<'a>>>(value: T, special: bool) -> Self {
-        match special {
-            true  => Self::new_special    (value),
-            false => Self::new_non_special(value),
+    /// The [`QueryType`].
+    pub fn r#type(&self) -> QueryType {
+        match self {
+            Self::Special   (_) => QueryType::Special   ,
+            Self::NonSpecial(_) => QueryType::NonSpecial,
         }
     }
 
-    /// Make a new [`Self::Special`].
-    pub fn new_special<T: Into<SpecialQuery<'a>>>(value: T) -> Self {
-        value.into().into()
+
+
+    /// Either [`Self::new_special`] or [`Self::new_non_special`].
+    pub fn new<T: Into<SpecialQuery<'a>> + Into<NonSpecialQuery<'a>>>(value: T, r#type: QueryType) -> Self {
+        match r#type {
+            QueryType::Special    => Self::new_special    (value),
+            QueryType::NonSpecial => Self::new_non_special(value),
+        }
     }
 
-    /// Make a new [`Self::NonSpecial`].
-    pub fn new_non_special<T: Into<NonSpecialQuery<'a>>>(value: T) -> Self {
-        value.into().into()
-    }
+    /** [`SpecialQuery::new`].    **/ pub fn new_special    <T: Into<SpecialQuery   <'a>>>(value: T) -> Self {SpecialQuery   ::new(value).into()}
+    /** [`NonSpecialQuery::new`]. **/ pub fn new_non_special<T: Into<NonSpecialQuery<'a>>>(value: T) -> Self {NonSpecialQuery::new(value).into()}
 
 
 
-    /// Make a new [`Self`] without doing any validity checks.
+    /// Either [`Self::new_special_unchecked`] or [`Self::new_non_special_unchecked`].
     /// # Safety
-    /// `value` must be a valid [`Self`] literal.
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, special: bool) -> Self {
-        unsafe {
-            match special {
-                true  => Self::new_special_unchecked    (value),
-                false => Self::new_non_special_unchecked(value),
-            }
+    /// Either [`Self::new_special_unchecked`] or [`Self::new_non_special_unchecked`].
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, r#type: QueryType) -> Self {
+        match r#type {
+            QueryType::Special    => unsafe {Self::new_special_unchecked    (value)},
+            QueryType::NonSpecial => unsafe {Self::new_non_special_unchecked(value)},
         }
     }
 
-    /// Make a new [`Self::Special`] without doing any validity checks.
+    /// [`SpecialQuery::new_unchecked`].
     /// # Safety
-    /// `value` must be a valid [`Self::Special`] literal.
-    pub unsafe fn new_special_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
-        unsafe {
-            SpecialQuery::new_unchecked(value).into()
-        }
-    }
+    /// [`SpecialQuery::new_unchecked`].
+    pub unsafe fn new_special_unchecked    <T: Into<Cow<'a, str>>>(value: T) -> Self {unsafe {SpecialQuery   ::new_unchecked(value).into()}}
 
-    /// Make a new [`Self::NonSpecial`] without doing any validity checks.
+    /// [`NonSpecialQuery::new_unchecked`].
     /// # Safety
-    /// `value` must be a valid [`Self::NonSpecial`] literal.
-    pub unsafe fn new_non_special_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
-        unsafe {
-            NonSpecialQuery::new_unchecked(value).into()
-        }
-    }
+    /// [`NonSpecialQuery::new_unchecked`].
+    pub unsafe fn new_non_special_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {unsafe {NonSpecialQuery::new_unchecked(value).into()}}
 
 
 
 
-    /// If it's [`Self::Special`].
-    pub fn is_special(&self) -> bool {
-        matches!(self, Self::Special(_))
-    }
-
-    /// If it's [`Self::NonSpecial`].
-    pub fn is_non_special(&self) -> bool {
-        matches!(self, Self::NonSpecial(_))
-    }
+    /** If it's [`Self::Special`].    **/ pub fn is_special    (&self) -> bool {matches!(self, Self::Special   (_))}
+    /** If it's [`Self::NonSpecial`]. **/ pub fn is_non_special(&self) -> bool {matches!(self, Self::NonSpecial(_))}
 
 
 

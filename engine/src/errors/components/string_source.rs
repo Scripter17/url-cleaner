@@ -24,9 +24,7 @@ pub enum StringSourceError {
     /** [`MapSourceError`].              **/                           #[error(transparent)] MapSourceError             (#[from] Box<MapSourceError>          ),
     /** [`regex::Error`].                **/                           #[error(transparent)] RegexError                 (#[from] regex::Error                 ),
 
-    /** [`reqwest::Error`].              **/ #[cfg(feature = "http" )] #[error(transparent)] ReqwestError               (#[from] reqwest::Error               ),
-    /** [`HttpRequestSourceError`].      **/ #[cfg(feature = "http" )] #[error(transparent)] HttpRequestSourceError     (#[from] Box<HttpRequestSourceError>  ),
-    /** [`HttpResponseHandlerError`].    **/ #[cfg(feature = "http" )] #[error(transparent)] HttpResponseHandlerError   (#[from] Box<HttpResponseHandlerError>),
+    /** [`DoHttpRequestError`].          **/ #[cfg(feature = "http" )] #[error(transparent)] DoHttpRequestError         (#[from] Box<DoHttpRequestError>      ),
 
     /** [`ReadFromCacheError`].          **/ #[cfg(feature = "cache")] #[error(transparent)] ReadFromCacheError         (#[from] ReadFromCacheError           ),
     /** [`WriteToCacheError`].           **/ #[cfg(feature = "cache")] #[error(transparent)] WriteToCacheError          (#[from] WriteToCacheError            ),
@@ -45,5 +43,4 @@ impl From<PartitioningSourceError> for StringSourceError {fn from(value: Partiti
 impl From<RegexExpansionError    > for StringSourceError {fn from(value: RegexExpansionError    ) -> Self {Box::new(value).into()}}
 impl From<MapSourceError         > for StringSourceError {fn from(value: MapSourceError         ) -> Self {Box::new(value).into()}}
 
-#[cfg(feature = "http")] impl From<HttpRequestSourceError  > for StringSourceError {fn from(value: HttpRequestSourceError  ) -> Self {Box::new(value).into()}}
-#[cfg(feature = "http")] impl From<HttpResponseHandlerError> for StringSourceError {fn from(value: HttpResponseHandlerError) -> Self {Box::new(value).into()}}
+#[cfg(feature = "http")] impl From<DoHttpRequestError> for StringSourceError {fn from(value: DoHttpRequestError) -> Self {Box::new(value).into()}}

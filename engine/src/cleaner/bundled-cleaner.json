@@ -2201,7 +2201,7 @@
 						"if": {"Not": {"DomainPrefixIsInSet": ["www", null]}},
 						"then": {"All": [
 							{"InsertPathSegment": {"index": 0, "value": {"Part": "DomainPrefix"}}},
-							{"SetDomainPrefix": null}
+							{"SetDomainPrefix": "www"}
 						]}
 					}},
 					"drinkctrl.com": {"RemoveQueryParams": ["ref", "tid"]},

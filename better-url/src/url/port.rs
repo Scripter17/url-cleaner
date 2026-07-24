@@ -12,18 +12,18 @@ impl BetterUrl {
 
     /// If it has a port.
     pub fn has_port(&self) -> bool {
-        self.port_mark.is_some()
+        self.details.port_mark.is_some()
     }
 
     /// The [`Range::start`] of the port.
     fn port_start(&self) -> Option<usize> {
-        Some(self.port_mark?.get() as usize + 1)
+        Some(self.details.port_mark?.get() as usize + 1)
     }
 
     /// The [`Range::end`] of the port.
     fn port_after(&self) -> Option<usize> {
-        if self.port_mark.is_some() {
-            Some(self.path_start as usize)
+        if self.details.port_mark.is_some() {
+            Some(self.details.path_start as usize)
         } else {
             None
         }
@@ -37,14 +37,14 @@ impl BetterUrl {
     /// The port as a [`u16`].
     pub fn port_num(&self) -> Option<u16> {
         match self.has_port() {
-            true  => Some(self.port),
+            true  => Some(self.details.port),
             false => None,
         }
     }
 
     /// The port as a [`str`].
     pub fn port_str(&self) -> Option<&str> {
-        Some(&self.serialization[self.port_range()?])
+        Some(unsafe {self.serialization.get_unchecked(self.port_range()?)})
     }
 
     /// The [`MaybePort`].
@@ -80,16 +80,16 @@ impl BetterUrl {
                     Err(TooLong)?;
                 }
 
-                self.serialization.insert_str(self.path_start as usize, new.as_str());
-                self.serialization.insert    (self.path_start as usize, ':');
+                self.serialization.insert_str(self.details.path_start as usize, new.as_str());
+                self.serialization.insert    (self.details.path_start as usize, ':');
 
-                self.port = new.as_num();
+                self.details.port = new.as_num();
 
-                self.path_start += diff as u32;
+                self.details.path_start += diff as u32;
 
-                self.port_mark = NonZero::new(host_after as u32);
-                if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get() + diff as u32);}
-                if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get() + diff as u32);}
+                self.details.port_mark = NonZero::new(host_after as u32);
+                if let Some(x) = self.details.query_mark    {self.details.query_mark    = NonZero::new(x.get() + diff as u32);}
+                if let Some(x) = self.details.fragment_mark {self.details.fragment_mark = NonZero::new(x.get() + diff as u32);}
             },
             (Some(pr), Some(new)) if Some(new.as_num()) != self.details.scheme.default_port_num() => {
                 let diff = new.as_str().len() as isize - pr.len() as isize;
@@ -99,12 +99,12 @@ impl BetterUrl {
                 }
 
                 self.serialization.replace_range(pr, new.as_str());
-                self.port = new.as_num();
+                self.details.port = new.as_num();
 
-                self.path_start = self.path_start.wrapping_add_signed(diff as i32);
+                self.details.path_start = self.details.path_start.wrapping_add_signed(diff as i32);
 
-                if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add_signed(diff as i32));}
-                if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add_signed(diff as i32));}
+                if let Some(x) = self.details.query_mark    {self.details.query_mark    = NonZero::new(x.get().wrapping_add_signed(diff as i32));}
+                if let Some(x) = self.details.fragment_mark {self.details.fragment_mark = NonZero::new(x.get().wrapping_add_signed(diff as i32));}
             },
             (Some(pr), _) => {
                 let r = pr.start - 1 .. pr.end;
@@ -112,11 +112,11 @@ impl BetterUrl {
 
                 self.serialization.replace_range(r, "");
 
-                self.path_start -= diff as u32;
-                self.port_mark = None;
+                self.details.path_start -= diff as u32;
+                self.details.port_mark = None;
 
-                if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get() - diff as u32);}
-                if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get() - diff as u32);}
+                if let Some(x) = self.details.query_mark    {self.details.query_mark    = NonZero::new(x.get() - diff as u32);}
+                if let Some(x) = self.details.fragment_mark {self.details.fragment_mark = NonZero::new(x.get() - diff as u32);}
             },
         }
 

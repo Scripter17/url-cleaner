@@ -88,9 +88,9 @@ pub struct Bot {
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     cache: url_cleaner_engine::prelude::Cache<'static>,
-    /// The [`HttpClient`].
+    /// The [`MaybeHttpClient`].
     #[cfg(feature = "http")]
-    http_client: HttpClient
+    http_client: MaybeHttpClient,
 }
 
 /// [`main`].
@@ -140,7 +140,7 @@ async fn main() -> Result<(), DiscordError> {
             },
         },
         #[cfg(feature = "http")]
-        http_client: HttpClient::new(),
+        http_client: MaybeHttpClient::new(Some(tokio::runtime::Handle::current())),
     };
 
     let intents = GatewayIntents::non_privileged();

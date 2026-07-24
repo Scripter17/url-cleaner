@@ -2,13 +2,13 @@
 
 use crate::prelude::*;
 
-impl SpecialNotFileSegmentedPath<'_> {
+impl SpecialNotFilePath<'_> {
     /// Remove the last segment.
     /// # Errors
     /// If there's only one segment, returns the error [`CantBeEmpty`].
     #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn pop(&mut self) -> Result<(), SetPathError> {
-        match self.0.rfind('/').expect("???") {
+        match self.0.memrchr(b'/').expect("???") {
             0 => Err(CantBeEmpty)?,
             x => self.0.retain_range(..x)
         }

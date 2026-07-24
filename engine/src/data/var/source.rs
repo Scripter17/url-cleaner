@@ -33,7 +33,7 @@ impl VarSource {
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn get<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, VarSourceError> {
         debug!(VarSource::get, self; match self {
-            Self::Params(StringSource::String(x)) => Ok(task_state.job.cleaner.params.vars.get(x).map(Into::into)),
+            Self::Params(StringSource::String(x)) => Ok(task_state.job.cleaner.params.vars.get(&**x).map(Into::into)),
             x => x._get(task_state, args)
         })
     }

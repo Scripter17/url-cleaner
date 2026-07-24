@@ -2,15 +2,16 @@
 
 use crate::prelude::*;
 
-mod slash;
-mod no_slash;
+mod abs_path;
+mod rel_path;
 
 impl BetterUrl {
-    /// `self` is a file URL.
+    /// Join without a scheme.
     pub(super) fn join_no_scheme_file(&mut self, rest: &str) -> Result<(), InvalidJoin> {
         match rest.as_bytes() {
-            [b'/' | b'\\', ..] => self.join_no_scheme_file_slash   (rest),
-            _                  => self.join_no_scheme_file_no_slash(rest)
+            [b'/' | b'\\', b'/' | b'\\', ..] => self.join_authority              (rest),
+            [b'/' | b'\\',               ..] => self.join_no_scheme_file_abs_path(rest),
+            _                                => self.join_no_scheme_file_rel_path(rest),
         }
     }
 }

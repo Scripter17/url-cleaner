@@ -78,84 +78,94 @@ pub enum StringModification {
         #[serde(default, skip_serializing_if = "is_default")]
         r#else: Box<Self>,
     },
+    /// Index the [`Map`] with the [`UrlPart`] and use that or [`Self::PartMap::else`].
+    PartMap {
+        /// The [`UrlPart`].
+        part: Box<UrlPart>,
+        /// The [`Map`].
+        ///
+        /// Flattened.
+        #[serde(flatten)]
+        map: Box<Map<Self>>,
+        /// The else.
+        ///
+        /// Defaulted.
+        #[serde(default, skip_serializing_if = "is_default")]
+        r#else: Box<Self>,
+    },
 
 
 
     /// Sets the string to the specified value.
     Set(StringSource),
+
     /// Appends the specified value.
     Append(StringSource),
     /// Prepends the specified value.
     Prepend(StringSource),
-    /// Sets the string to lowercase.
-    Lowercase,
-    /// Sets the string to uppercase.
-    Uppercase,
+
+    /** [`str::to_lowercase`]. **/ Lowercase,
+    /** [`str::to_uppercase`]. **/ Uppercase,
 
 
 
     /// Removes the specified prefix.
+    /// # Errors
+    /// If the prefix isn't found, returns the error [`StringModificationError::PrefixNotFound`].
     StripPrefix(StringSource),
     /// Removes the specified suffix.
+    /// # Errors
+    /// If the suffix isn't found, returns the error [`StringModificationError::SuffixNotFound`].
     StripSuffix(StringSource),
-    /// If the string starts with the specified value, remove it.
-    TrimPrefix(StringSource),
-    /// If the string ends with the specified value, remove it.
-    TrimSuffix(StringSource),
+
+    /** [`Self::StripPrefix`], ignoring missing prefixes. **/ TrimPrefix(StringSource),
+    /** [`Self::StripSuffix`], ignoring missing suffixes. **/ TrimSuffix(StringSource),
 
 
 
-    /// Finds the first instance of the specified substring and keeps only everything before it.
+    /// Keep everything before the first instance of the value.
     /// # Errors
     /// If the substring isn't found, returns the error [`SubstringNotFound`].
     KeepBefore(StringSource),
-    /// Finds the first instance of the specified substring and removes everything after it.
+    /// Remove everything after the first instance of the value.
     /// # Errors
     /// If the substring isn't found, returns the error [`SubstringNotFound`].
     StripAfter(StringSource),
-    /// Finds the first instance of the specified substring and removes everything before it.
+    /// Remove everything before the first instance of the value.
     /// # Errors
     /// If the substring isn't found, returns the error [`SubstringNotFound`].
     StripBefore(StringSource),
-    /// Finds the first instance of the specified substring and keeps only everything after it.
+    /// Keep everything before the first instance of the value.
     /// # Errors
     /// If the substring isn't found, returns the error [`SubstringNotFound`].
     KeepAfter(StringSource),
 
-    /// Finds the last instance of the specified substring and removes everything before it.
+    /// Keep everything before the last instance of the value.
     /// # Errors
     /// If the substring isn't found, returns the error [`SubstringNotFound`].
     StripBeforeLast(StringSource),
-    /// Finds the last instance of the specified substring and removes everything after it.
+    /// Remove everything after the last instance of the value.
     /// # Errors
     /// If the substring isn't found, returns the error [`SubstringNotFound`].
     StripAfterLast(StringSource),
-    /// Finds the last instance of the specified substring and keeps only everything before it.
+    /// Remove everything before the last instance of the value.
     /// # Errors
     /// If the substring isn't found, returns the error [`SubstringNotFound`].
     KeepBeforeLast(StringSource),
-    /// Finds the last instance of the specified substring and keeps only everything after it.
+    /// Keep everything before the last instance of the value.
     /// # Errors
     /// If the substring isn't found, returns the error [`SubstringNotFound`].
     KeepAfterLast(StringSource),
 
-    /// [`Self::StripBefore`] but does nothing if the substring isn't found.
-    TrimBefore(StringSource),
-    /// [`Self::StripAfter`] but does nothing if the substring isn't found.
-    TrimAfter(StringSource),
-    /// [`Self::KeepAfter`] but does nothing if the substring isn't found.
-    KeepTrimBefore(StringSource),
-    /// [`Self::KeepAfter`] but does nothing if the substring isn't found.
-    KeepTrimAfter(StringSource),
+    /** [`Self::StripBefore`],     ignoring missing substrings. **/ TrimBefore        (StringSource),
+    /** [`Self::StripAfter`],      ignoring missing substrings. **/ TrimAfter         (StringSource),
+    /** [`Self::KeepAfter`],       ignoring missing substrings. **/ KeepTrimBefore    (StringSource),
+    /** [`Self::KeepAfter`],       ignoring missing substrings. **/ KeepTrimAfter     (StringSource),
 
-    /// [`Self::StripBeforeLast`] but does nothing if the substring isn't found.
-    TrimBeforeLast(StringSource),
-    /// [`Self::StripAfterLast`] but does nothing if the substring isn't found.
-    TrimAfterLast(StringSource),
-    /// [`Self::KeepAfterLast`] but does nothing if the substring isn't found.
-    KeepTrimBeforeLast(StringSource),
-    /// [`Self::KeepAfterLast`] but does nothing if the substring isn't found.
-    KeepTrimAfterLast(StringSource),
+    /** [`Self::StripBeforeLast`], ignoring missing substrings. **/ TrimBeforeLast    (StringSource),
+    /** [`Self::StripAfterLast`],  ignoring missing substrings. **/ TrimAfterLast     (StringSource),
+    /** [`Self::KeepAfterLast`],   ignoring missing substrings. **/ KeepTrimBeforeLast(StringSource),
+    /** [`Self::KeepAfterLast`],   ignoring missing substrings. **/ KeepTrimAfterLast (StringSource),
 
 
 
@@ -180,16 +190,9 @@ pub enum StringModification {
 
 
 
-    /// Parses the javascript string literal at the start of the string and returns its value.
-    ///
-    /// Useful in combination with [`Self::KeepAfter`].
-    GetJsStringLiteralPrefix,
-    /// Processes HTML character references/escape codes like `&map;` into `&` and `&41;` into `A`.
-    UnescapeHtml,
-    /// Parses the HTML element at the start of the string and returns the [`Self::UnescapeHtml`]ed value of the last attribute with the specified name.
-    ///
-    /// Useful in combination with [`Self::StripBefore`].
-    GetHtmlAttribute(StringSource),
+    /** [`get_js_string_literal_prefix`]. **/ GetJsStringLiteralPrefix,
+    /** [`unescape_html`].                **/ UnescapeHtml,
+    /** [`get_html_attribute`].           **/ GetHtmlAttribute(StringSource),
 
 
 
@@ -235,23 +238,14 @@ pub enum StringModification {
 
 
 
-    /// [`better_url::util::encode_query_part`].
-    EncodeQueryPart,
-    /// [`better_url::util::try_decode_query_part`].
-    TryDecodeQueryPart,
-    /// [`better_url::util::lossy_decode_query_part`].
-    LossyDecodeQueryPart,
-    /// [`better_url::util::try_percent_decode`].
-    TryPercentDecode,
-    /// [`better_url::util::lossy_percent_decode`].
-    LossyPercentDecode,
+    /** [`better_url::util::encode_query_part`].       **/ EncodeQueryPart,
+    /** [`better_url::util::lossy_decode_query_part`]. **/ LossyDecodeQueryPart,
+    /** [`better_url::util::lossy_percent_decode`].    **/ LossyPercentDecode,
 
 
 
-    /// Base64 encodes the string.
-    Base64Encode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
-    /// Base64 decodes the string.
-    Base64Decode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
+    /** Base64 encodes the string. **/ Base64Encode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
+    /** Base64 decodes the string. **/ Base64Decode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
 
 
 
@@ -287,10 +281,21 @@ impl StringModification {
 
             // Error handling
 
-            Self::IgnoreError           (modification) => modification.apply(task_state, args, to).unwrap_or(true ),
-            Self::IgnoreAndRevertOnError(modification) => modification.apply(task_state, args, to).unwrap_or(false),
+            Self::IgnoreError(modification) => modification.apply(task_state, args, to).unwrap_or(true),
+            Self::IgnoreAndRevertOnError(modification) => {
+                let old_to = to.clone();
+
+                match modification.apply(task_state, args, to) {
+                    Ok(x) => x,
+                    Err(_) => {
+                        *to = old_to;
+                        false
+                    }
+                }
+            },
             Self::RevertOnError(modification) => {
                 let old_to = to.clone();
+
                 match modification.apply(task_state, args, to) {
                     Ok(x) => x,
                     Err(e) => {
@@ -323,8 +328,8 @@ impl StringModification {
 
                 for modification in modifications {
                     match modification.apply(task_state, args, to) {
-                        Ok (x) => return Ok(x),
-                        Err(e) => errors.push(e)
+                        Ok (x) => return Ok(x || !errors.is_empty()),
+                        Err(e) => errors.push(e),
                     }
                 }
 
@@ -336,43 +341,44 @@ impl StringModification {
                 false => r#else.apply(task_state, args, to)?,
             },
 
-            Self::StringMap {value, map, r#else} => map.get(get!(?&value)).unwrap_or(r#else).apply(task_state, args, to)?,
+            Self::StringMap {value, map, r#else} => map.get(get!(?&value)                       ).unwrap_or(r#else).apply(task_state, args, to)?,
+            Self::PartMap   {part , map, r#else} => map.get(part.get(&task_state.url).as_deref()).unwrap_or(r#else).apply(task_state, args, to)?,
 
 
 
-            Self::Set    (value) => {let new = get!(?value); if *to != new {*to = new; true} else {false}},
-            Self::Append (value) => {to.as_mut().ok_or(SubjectIsNone)?.to_mut().push_str  (   get!(&value)); true},
-            Self::Prepend(value) => {to.as_mut().ok_or(SubjectIsNone)?.to_mut().insert_str(0, get!(&value)); true},
+            Self::Set    (value) => {*to = get!(?value); true},
+            Self::Append (value) => {to.as_mut().ok_or(SubjectIsNone)?.push_str  (   get!(&value)); true},
+            Self::Prepend(value) => {to.as_mut().ok_or(SubjectIsNone)?.insert_str(0, get!(&value)); true},
 
             Self::Lowercase => {*to = Some(Cow::Owned(to.as_ref().ok_or(SubjectIsNone)?.to_lowercase())); true},
             Self::Uppercase => {*to = Some(Cow::Owned(to.as_ref().ok_or(SubjectIsNone)?.to_uppercase())); true},
 
 
 
-            Self::StripPrefix        (p) => {let to = to.as_mut().ok_or(SubjectIsNone)?; to.retain_substr(to.strip_prefix(get!(&p)).ok_or(StringModificationError::PrefixNotFound)?); true},
-            Self::StripSuffix        (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; to.retain_substr(to.strip_suffix(get!(&s)).ok_or(StringModificationError::SuffixNotFound)?); true},
-            Self::TrimPrefix         (p) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_prefix(get!(&p)) {to.retain_substr(x); true} else {false}},
-            Self::TrimSuffix         (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_suffix(get!(&s)) {to.retain_substr(x); true} else {false}},
+            Self::StripPrefix        (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_prefix(get!(&x)) {to.retain_range(  to.len() - x.len()..); true} else {Err(StringModificationError::PrefixNotFound)?}},
+            Self::StripSuffix        (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_suffix(get!(&x)) {to.retain_range(..x .len()            ); true} else {Err(StringModificationError::SuffixNotFound)?}},
+            Self::TrimPrefix         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_prefix(get!(&x)) {to.retain_range(  to.len() - x.len()..); true} else {false}},
+            Self::TrimSuffix         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_suffix(get!(&x)) {to.retain_range(..x .len()            ); true} else {false}},
 
-            Self::StripBefore        (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; to.remove_substr(to.split_once(get!(&s)).ok_or(SubstringNotFound)?.0); true},
-            Self::StripAfter         (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; to.remove_substr(to.split_once(get!(&s)).ok_or(SubstringNotFound)?.1); true},
-            Self::KeepBefore         (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; to.retain_substr(to.split_once(get!(&s)).ok_or(SubstringNotFound)?.0); true},
-            Self::KeepAfter          (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; to.retain_substr(to.split_once(get!(&s)).ok_or(SubstringNotFound)?.1); true},
+            Self::StripBefore        (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (get!(&x)) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
+            Self::StripAfter         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (get!(&x)) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
+            Self::KeepBefore         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (get!(&x)) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
+            Self::KeepAfter          (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (get!(&x)) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
 
-            Self::StripBeforeLast    (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; to.remove_substr(to.rsplit_once(get!(&s)).ok_or(SubstringNotFound)?.0); true},
-            Self::StripAfterLast     (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; to.remove_substr(to.rsplit_once(get!(&s)).ok_or(SubstringNotFound)?.1); true},
-            Self::KeepBeforeLast     (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; to.retain_substr(to.rsplit_once(get!(&s)).ok_or(SubstringNotFound)?.0); true},
-            Self::KeepAfterLast      (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; to.retain_substr(to.rsplit_once(get!(&s)).ok_or(SubstringNotFound)?.1); true},
+            Self::StripBeforeLast    (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (get!(&x)) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
+            Self::StripAfterLast     (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (get!(&x)) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
+            Self::KeepBeforeLast     (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (get!(&x)) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
+            Self::KeepAfterLast      (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (get!(&x)) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
 
-            Self::TrimBefore         (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some((x, _)) = to. split_once(get!(&s)) {to.remove_substr(x); true} else {false}},
-            Self::TrimAfter          (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some((_, x)) = to. split_once(get!(&s)) {to.remove_substr(x); true} else {false}},
-            Self::KeepTrimBefore     (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some((x, _)) = to. split_once(get!(&s)) {to.retain_substr(x); true} else {false}},
-            Self::KeepTrimAfter      (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some((_, x)) = to. split_once(get!(&s)) {to.retain_substr(x); true} else {false}},
+            Self::TrimBefore         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (get!(&x)) {to.retain_range(  i..); true} else {false}},
+            Self::TrimAfter          (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (get!(&x)) {to.retain_range(..i  ); true} else {false}},
+            Self::KeepTrimBefore     (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (get!(&x)) {to.retain_range(..i  ); true} else {false}},
+            Self::KeepTrimAfter      (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (get!(&x)) {to.retain_range(  i..); true} else {false}},
 
-            Self::TrimBeforeLast     (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some((x, _)) = to.rsplit_once(get!(&s)) {to.remove_substr(x); true} else {false}},
-            Self::TrimAfterLast      (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some((_, x)) = to.rsplit_once(get!(&s)) {to.remove_substr(x); true} else {false}},
-            Self::KeepTrimBeforeLast (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some((x, _)) = to.rsplit_once(get!(&s)) {to.retain_substr(x); true} else {false}},
-            Self::KeepTrimAfterLast  (s) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some((_, x)) = to.rsplit_once(get!(&s)) {to.retain_substr(x); true} else {false}},
+            Self::TrimBeforeLast     (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (get!(&x)) {to.retain_range(  i..); true} else {false}},
+            Self::TrimAfterLast      (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (get!(&x)) {to.retain_range(..i  ); true} else {false}},
+            Self::KeepTrimBeforeLast (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (get!(&x)) {to.retain_range(..i  ); true} else {false}},
+            Self::KeepTrimAfterLast  (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (get!(&x)) {to.retain_range(  i..); true} else {false}},
 
 
 
@@ -406,7 +412,7 @@ impl StringModification {
             Self::RegexReplaceOne {regex, replace} => {
                 let to = to.as_mut().ok_or(SubjectIsNone)?;
                 let temp = regex.get()?.replace(to, get!(&replace));
-                if *to != temp {
+                if !std::ptr::eq::<str>(&**to, &*temp) {
                     *to = temp.into_owned().into();
                     true
                 } else {
@@ -416,7 +422,7 @@ impl StringModification {
             Self::RegexReplaceAll {regex, replace} => {
                 let to = to.as_mut().ok_or(SubjectIsNone)?;
                 let temp = regex.get()?.replace_all(to, get!(&replace));
-                if *to != temp {
+                if !std::ptr::eq::<str>(&**to, &*temp) {
                     *to = temp.into_owned().into();
                     true
                 } else {
@@ -426,7 +432,7 @@ impl StringModification {
             Self::RegexReplacen {regex, n, replace} => {
                 let to = to.as_mut().ok_or(SubjectIsNone)?;
                 let temp = regex.get()?.replacen(to, *n, get!(&replace));
-                if *to != temp {
+                if !std::ptr::eq::<str>(&**to, &*temp) {
                     *to = temp.into_owned().into();
                     true
                 } else {
@@ -444,11 +450,9 @@ impl StringModification {
             },
 
 
-            Self::EncodeQueryPart      => if let Some(x) = to.take() {let (changed, x) =       encode_query_part(x) ; *to = Some(x); changed} else {false},
-            Self::TryDecodeQueryPart   => if let Some(x) = to.take() {let (changed, x) =   try_decode_query_part(x)?; *to = Some(x); changed} else {false},
-            Self::LossyDecodeQueryPart => if let Some(x) = to.take() {let (changed, x) = lossy_decode_query_part(x) ; *to = Some(x); changed} else {false},
-            Self::TryPercentDecode     => if let Some(x) = to.take() {let (changed, x) =   try_percent_decode   (x)?; *to = Some(x); changed} else {false},
-            Self::LossyPercentDecode   => if let Some(x) = to.take() {let (changed, x) = lossy_percent_decode   (x) ; *to = Some(x); changed} else {false},
+            Self::EncodeQueryPart      => if let Some(x) = to.take() {let (changed, x) =       encode_query_part(x); *to = Some(x); changed} else {false},
+            Self::LossyDecodeQueryPart => if let Some(x) = to.take() {let (changed, x) = lossy_decode_query_part(x); *to = Some(x); changed} else {false},
+            Self::LossyPercentDecode   => if let Some(x) = to.take() {let (changed, x) = lossy_percent_decode   (x); *to = Some(x); changed} else {false},
 
 
 
@@ -459,7 +463,7 @@ impl StringModification {
 
             Self::Function   (call    ) => task_state.job.cleaner.functions.string_modifications.get(&call.name ).ok_or(FunctionNotFound           )?.apply(task_state, Some(&call.args), to)?,
             Self::FunctionArg(name    ) => args.ok_or(NotInFunction)?.string_modifications      .get(get!(&name)).ok_or(FunctionArgFunctionNotFound)?.apply(task_state, args            , to)?,
-            Self::Extern     (function) => function(task_state, args, to)?
+            Self::Extern     (function) => function(task_state, args, to)?,
         })
     }
 }

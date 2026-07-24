@@ -2,27 +2,10 @@
 
 use crate::prelude::*;
 
-/// The type of a query.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum QueryType {
-    /// [`Query::Special`].
-    Special,
-    /// [`Query::NonSpecial`].
-    NonSpecial,
-}
-
 impl Query<'_> {
     /// [`SplitAmpersands`].
     pub fn iter_strs(&self) -> SplitAmpersands<'_> {
         SplitAmpersands(Some(self.as_str()))
-    }
-
-    /// The [`QueryType`].
-    fn r#type(&self) -> QueryType {
-        match self {
-            Self::Special   (_) => QueryType::Special,
-            Self::NonSpecial(_) => QueryType::NonSpecial,
-        }
     }
 
     /// The [`QuerySegment`]s.

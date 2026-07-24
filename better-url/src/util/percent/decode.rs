@@ -20,42 +20,25 @@ pub(crate) fn decode_hex_nibble(x: u8) -> Option<u8> {
 /// Try to losslessly percent decode.
 /// # Errors
 /// If the call to [`try_cow_bytes_to_str`] returns an error, that error is returned.
-pub fn try_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), std::str::Utf8Error> {
-    let value = value.into();
-
-    if !value.as_bytes().contains(&b'%') {
-        return Ok((false, value));
-    }
-
-    Ok(match _percent_decode(value) {
-        (true , value) => (true , try_cow_bytes_to_str(value)?),
-        (false, value) => (false, unsafe {cow_bytes_to_str(value)}),
+#[expect(clippy::type_complexity, reason = "It's fine.")]
+pub fn try_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), (std::str::Utf8Error, Cow<'a, [u8]>)> {
+    Ok(match percent_decode(value) {
+        (false, value) => (false, unsafe {cow_bytes_to_str_unchecked(value) }),
+        (true , value) => (true ,         try_cow_bytes_to_str      (value)? ),
     })
 }
 
 /// Lossily percent decode.
 pub fn lossy_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let value = value.into();
-
-    if !value.as_bytes().contains(&b'%') {
-        return (false, value);
-    }
-
-    match _percent_decode(value) {
-        (true , value) => (true , decode_utf8_cow_lossy(value)),
-        (false, value) => (false, unsafe {cow_bytes_to_str(value)}),
+    match percent_decode(value) {
+        (false, value) => (false, unsafe {cow_bytes_to_str_unchecked(value)}),
+        (true , value) => (true ,         lossy_cow_bytes_to_str    (value) ),
     }
 }
 
 /// [`percent_decode_bytes`] but accepting a string.
 pub fn percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, [u8]>) {
-    let value = value.into();
-
-    if !value.as_bytes().contains(&b'%') {
-        return (false, cow_str_to_bytes(value));
-    }
-
-    _percent_decode(value)
+    percent_decode_bytes(cow_str_to_bytes(value))
 }
 
 /// Percent decode bytes.
@@ -69,42 +52,39 @@ pub fn percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, [u8
 /// assert_eq!(percent_decode_bytes(b"%41=%61+"), (true , b"A=a+".into()));
 /// ```
 pub fn percent_decode_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, [u8]>) {
-    let value = value.into();
+    let mut value = value.into();
 
-    if !value.contains(&b'%') {
+    if value.memchr(b'%').is_none() {
         return (false, value);
     }
 
-    _percent_decode_bytes(value)
-}
+    _percent_decode_bytes(value.to_mut());
 
-/// [`percent_decode`] without a fast path for not containing a `%`.
-fn _percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, [u8]>) {
-    _percent_decode_bytes(cow_str_to_bytes(value.into()))
+    (true, value)
 }
 
 /// [`percent_decode_bytes`] without a fast path for not containing a `%`.
-fn _percent_decode_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, [u8]>) {
-    let mut value = value.into();
-
-    let x = value.to_mut();
-
+fn _percent_decode_bytes(value: &mut Vec<u8>) {
     let mut i = 0;
     let mut j = 0;
 
-    while j < x.len() {
-        match x[j..] {
-            [b'%', h, l, ..] if let Some(b) = decode_hex_byte(h, l) => {
-                x[i] = b;
-                j += 2;
-            },
-            _ => x[i] = x[j]
+    unsafe {
+        loop {
+            match *value.get_unchecked(j..) {
+                [b'%', h, l, ..] if let Some(b) = decode_hex_byte(h, l) => {
+                    *value.get_unchecked_mut(i) = b;
+                    i += 1;
+                    j += 3;
+                },
+                [b, ..] => {
+                    *value.get_unchecked_mut(i) = b;
+                    i += 1;
+                    j += 1;
+                },
+                [] => break,
+            }
         }
-        i += 1;
-        j += 1;
+
+        value.set_len(i);
     }
-
-    x.truncate(i);
-
-    (true, value)
 }

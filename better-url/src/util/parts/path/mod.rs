@@ -1,7 +1,9 @@
 //! Path stuff.
 
-mod entire;
 mod segment;
+mod segments;
+mod entire;
 
-pub use entire::*;
 pub use segment::*;
+pub use segments::*;
+pub use entire::*;

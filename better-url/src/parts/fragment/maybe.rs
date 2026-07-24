@@ -37,6 +37,11 @@ impl<'a> MaybeFragment<'a> {
         self.0.is_none()
     }
 
+    /// The length of the [`BetterUrl::canon_get_hash`] for this fragment.
+    pub fn hash_len(&self) -> usize {
+        self.len().map_or(0, |x| x + 1)
+    }
+
     /// Turn into the inner [`Cow`].
     pub fn into_inner(self) -> Option<Cow<'a, str>> {
         self.0.map(Fragment::into_inner)

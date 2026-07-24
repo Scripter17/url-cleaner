@@ -33,7 +33,7 @@ impl FlagSource {
         debug!(FlagSource::get, self; match self {
             Self::False                           => Ok(false),
             Self::True                            => Ok(true ),
-            Self::Params(StringSource::String(x)) => Ok(task_state.job.cleaner.params.flags.contains(x)),
+            Self::Params(StringSource::String(x)) => Ok(task_state.job.cleaner.params.flags.contains(&**x)),
             x => x._get(task_state, args)
         })
     }

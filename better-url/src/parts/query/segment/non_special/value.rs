@@ -56,7 +56,7 @@ impl<'a> NonSpecialQuerySegment<'a> {
                     Some(range) => self.raw.replace_range(range, &value),
                     None => {
                         self.vs = NonZero::new(self.len() + 1);
-                        self.raw.to_mut().extend(["=", &value]);
+                        self.raw.extend(["=", &value]);
                     }
                 }
             },

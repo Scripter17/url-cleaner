@@ -34,8 +34,8 @@ pub fn ends_in_a_number(value: &str) -> bool {
 
 /// If the last segment [`is_a_number`].
 pub fn last_is_a_number(value: &str) -> bool {
-    let i = value.bytes().rposition(|b| b == b'.').map_or(0, |i| i + 1);
-    bytes_is_a_number(&value.as_bytes()[i..])
+    let i = value.memrchr(b'.').map_or(0, |i| i + 1);
+    bytes_is_a_number(unsafe {value.as_bytes().get_unchecked(i..)})
 }
 
 /// [`bytes_is_a_number`].
@@ -46,9 +46,9 @@ pub fn is_a_number(value: &str) -> bool {
 /// If `value` would trigger [`ends_in_a_number`].
 pub fn bytes_is_a_number(value: &[u8]) -> bool {
     match value {
-        [] => false,
+        [                         ] => false,
         [b'0', b'x' | b'X', x @ ..] => x.iter().all(u8::is_ascii_hexdigit),
-        x => x.iter().all(u8::is_ascii_digit)
+        x                           => x.iter().all(u8::is_ascii_digit   ),
     }
 }
 

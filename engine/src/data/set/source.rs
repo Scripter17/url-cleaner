@@ -75,7 +75,7 @@ impl SetSource {
     pub fn get<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<&'j Set<String>>, SetSourceError> {
         debug!(SetSource::get, self; match self {
             Self::Literal(x) => Ok(Some(x)),
-            Self::Params(StringSource::String(x)) => Ok(task_state.job.cleaner.params.sets.get(x)),
+            Self::Params(StringSource::String(x)) => Ok(task_state.job.cleaner.params.sets.get(&**x)),
             x => x._get(task_state, args)
         })
     }

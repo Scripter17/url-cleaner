@@ -4,8 +4,12 @@ use thiserror::Error;
 
 use crate::prelude::*;
 
-mod domain;
-pub use domain::*;
+mod domain; pub use domain::*;
+
+mod either          ; pub use either          ::*;
+mod file            ; pub use file            ::*;
+mod special_not_file; pub use special_not_file::*;
+mod non_special     ; pub use non_special     ::*;
 
 /// Returned when failing to parse an IPv4 host.
 #[derive(Debug, Error)]
@@ -60,15 +64,3 @@ pub enum SetHostError {
     /** [`CantHaveHost`].   **/ #[error(transparent)] CantHaveHost  (#[from] CantHaveHost  ),
     /** [`TooLong`].        **/ #[error(transparent)] TooLong       (#[from] TooLong       ),
 }
-
-/// Returned when failing to parse a host.
-#[derive(Debug, Error)]
-#[error("Failed to parse a host.")]
-pub struct InvalidHost;
-
-impl From<InvalidDomainHost> for InvalidHost {fn from(_: InvalidDomainHost) -> Self {Self}}
-impl From<InvalidIpv4Host  > for InvalidHost {fn from(_: InvalidIpv4Host  ) -> Self {Self}}
-impl From<InvalidIpv6Host  > for InvalidHost {fn from(_: InvalidIpv6Host  ) -> Self {Self}}
-impl From<InvalidIpHost    > for InvalidHost {fn from(_: InvalidIpHost    ) -> Self {Self}}
-impl From<InvalidOpaqueHost> for InvalidHost {fn from(_: InvalidOpaqueHost) -> Self {Self}}
-impl From<InvalidEmptyHost > for InvalidHost {fn from(_: InvalidEmptyHost ) -> Self {Self}}

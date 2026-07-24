@@ -3,7 +3,7 @@
 use crate::prelude::*;
 
 /// Canonize the input for the pathname setter to a form parsable by the various [`MaybeFragment`] types.
-pub fn canonize_maybe_fragment_setter<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Option<Cow<'a, str>>) {
+pub fn canonize_fragment_setter<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Option<Cow<'a, str>>) {
     let mut value = value.into();
     let mut changed = false;
 
@@ -12,7 +12,9 @@ pub fn canonize_maybe_fragment_setter<'a, T: Into<Cow<'a, str>>>(value: T) -> (b
     }
 
     if value.starts_with('#') {
-        value.retain_range(1..);
+        unsafe {
+            value.retain_range_unchecked(1..);
+        }
         changed = true;
     }
 

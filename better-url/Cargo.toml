@@ -11,11 +11,12 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-psl = "2.1.218"
-thiserror = "2.0.18"
-serde = { optional = true, version = "1.0.228" }
-icu_normalizer = "2.2.0"
+psl = "2.1.221"
+thiserror = "2.0.19"
+serde = { optional = true, version = "1.0.229", features = ["derive"] }
+icu_normalizer = { version = "2.2.0", default-features = false, features = ["compiled_data"] }
 icu_properties = "2.2.0"
+memchr = "2.8.3"
 
 [lints]
 workspace = true
@@ -24,5 +25,5 @@ workspace = true
 serde = ["dep:serde"]
 
 [dev-dependencies]
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"

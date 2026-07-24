@@ -27,6 +27,11 @@ impl<'a> MaybeSpecialQuery<'a> {
         self.0.is_none()
     }
 
+    /// The length of the [`BetterUrl::canon_get_search`] for this value.
+    pub fn search_len(&self) -> usize {
+        self.len().map_or(0, |x| x + 1)
+    }
+
 
 
     /// Make a new [`Self`] without doing any validity checks.

@@ -10,7 +10,7 @@ impl<'a> Userinfo<'a> {
 
     /// The [`Range::end`] of the username.
     pub(crate) fn username_after(&self) -> usize {
-        self.ps.map_or(self.len(), |x| x.get() - 1)
+        self.password_start.map_or(self.len(), |x| x.get() - 1)
     }
 
     /// The [`Range`] of the username.
@@ -20,7 +20,7 @@ impl<'a> Userinfo<'a> {
 
     /// Borrow the username as a [`str`].
     pub fn username_str(&self) -> &str {
-        &self.raw[self.username_range()]
+        unsafe {self.as_str().get_unchecked(self.username_range())}
     }
 
     /// Make a [`Username`].
@@ -32,10 +32,10 @@ impl<'a> Userinfo<'a> {
     pub fn set_username<'b, T: Into<Username<'b>>>(&mut self, value: T) {
         let value = value.into().into_inner();
 
-        self.raw.replace_range(self.username_range(), &value);
+        self.userinfo.replace_range(self.username_range(), &value);
 
-        if self.ps.is_some() {
-            self.ps = NonZero::new(value.len() + 1);
+        if self.password_start.is_some() {
+            self.password_start = NonZero::new(value.len() + 1);
         }
     }
 }

@@ -124,18 +124,11 @@ pub enum CliError {
     ProfileNotFound
 }
 
-/// The [`Job`].
-static JOB       : OnceLock<Job       > = OnceLock::new();
-/// The [`Unthreader`].
-static UNTHREADER: OnceLock<Unthreader> = OnceLock::new();
-/// The [`Secrets`].
-static SECRETS   : OnceLock<Secrets   > = OnceLock::new();
-/// The [`InnerCache`].
-#[cfg(feature = "cache")]
-static INNER_CACHE: OnceLock<InnerCache> = OnceLock::new();
-/// The [`HttpClient`].
-#[cfg(feature = "http")]
-static HTTP_CLIENT: OnceLock<HttpClient> = OnceLock::new();
+/** The [`Job`].             **/ static JOB       : OnceLock<Job       > = OnceLock::new();
+/** The [`Unthreader`].      **/ static UNTHREADER: OnceLock<Unthreader> = OnceLock::new();
+/** The [`Secrets`].         **/ static SECRETS   : OnceLock<Secrets   > = OnceLock::new();
+/** The [`InnerCache`].      **/ #[cfg(feature = "cache")] static INNER_CACHE: OnceLock<InnerCache> = OnceLock::new();
+/** The [`MaybeHttpClient`]. **/ #[cfg(feature = "http" )] static HTTP_CLIENT: OnceLock<MaybeHttpClient> = OnceLock::new();
 
 #[tokio::main]
 async fn main() -> Result<(), CliError> {
@@ -171,7 +164,7 @@ async fn main() -> Result<(), CliError> {
         cleaner.params.vars.to_mut().insert(x.remove(0), x.remove(0));
     }
 
-    let (_, context) = JobContext::load_or_default(args.job_context)?; 
+    let (_, context) = JobContext::load_or_default(args.job_context)?;
 
     let job = JOB.get_or_init(|| Job {
         context,
@@ -188,7 +181,7 @@ async fn main() -> Result<(), CliError> {
             }
         },
         #[cfg(feature = "http")]
-        http_client: HTTP_CLIENT.get_or_init(HttpClient::new),
+        http_client: HTTP_CLIENT.get_or_init(|| MaybeHttpClient::new(Some(tokio::runtime::Handle::current()))),
     });
 
     // Do the job.
@@ -213,15 +206,23 @@ async fn main() -> Result<(), CliError> {
             let mut buf = Vec::new();
 
             while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(18)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
-                if let Some(i) = buf.iter().rev().position(|b| *b == b'\n').map(|i| buf.len() - i) {
-                    let temp = buf.split_off(i);
-                    buf.pop();
+                if let Some(i) = memchr::memrchr(b'\n', &buf) {
+                    let temp = buf.split_off(i + 1);
                     let bytes = Bytes::from_owner(buf);
-                    for line in bytes.split(|b| *b == b'\n').map(|x| x.strip_suffix(b"\r").unwrap_or(x)) {
-                        if !line.is_empty() {
-                            iss.get(isi.next().expect("???")).expect("???").send(bytes.slice_ref(line)).await.expect("The in receiever to still exist.");
+
+                    let mut next_start = 0;
+
+                    for i in memchr::memchr_iter(b'\n', &bytes) {
+                        let line = unsafe {bytes.get_unchecked(next_start..i)};
+
+                        next_start = i + 1;
+
+                        match line {
+                            b"" | b"\r" => continue,
+                            [line @ .., b'\r'] | line => iss.get(isi.next().expect("???")).expect("???").send(bytes.slice_ref(line)).await.expect("The in receiever to still exist.")
                         }
                     }
+
                     buf = temp;
                 }
             }

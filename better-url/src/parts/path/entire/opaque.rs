@@ -48,7 +48,11 @@ impl<'a> OpaquePath<'a> {
 
 impl<'a> From<Cow<'a, str>> for OpaquePath<'a> {
     fn from(value: Cow<'a, str>) -> Self {
-        Self(encode_opaque_path(value).1)
+        let (_, value) = make_opaque_path(value);
+
+        unsafe {
+            Self::new_unchecked(value)
+        }
     }
 }
 
@@ -57,25 +61,13 @@ impl<'a> From<Cow<'a, str>> for OpaquePath<'a> {
 impl<'a> From<Path<'a>> for OpaquePath<'a> {
     fn from(value: Path<'a>) -> Self {
         match value {
-            Path::File          (x) => x.into(),
-            Path::SpecialNotFile(x) => x.into(),
-            Path::NonSpecial    (x) => x.into(),
-            Path::Opaque        (x) => x,
+            Path::Segmented(x) => x.into(),
+            Path::Opaque   (x) => x,
         }
     }
 }
 
-impl<'a> From<SegmentedPath              <'a>> for OpaquePath<'a> {fn from(value: SegmentedPath              <'a>) -> Self {Self(segmented_path_to_opaque_path(value.into_inner()).1)}}
-impl<'a> From<FileSegmentedPath          <'a>> for OpaquePath<'a> {fn from(value: FileSegmentedPath          <'a>) -> Self {Self(segmented_path_to_opaque_path(value.into_inner()).1)}}
-impl<'a> From<SpecialNotFileSegmentedPath<'a>> for OpaquePath<'a> {fn from(value: SpecialNotFileSegmentedPath<'a>) -> Self {Self(segmented_path_to_opaque_path(value.into_inner()).1)}}
-impl<'a> From<NonSpecialSegmentedPath    <'a>> for OpaquePath<'a> {fn from(value: NonSpecialSegmentedPath    <'a>) -> Self {Self(segmented_path_to_opaque_path(value.into_inner()).1)}}
-impl<'a> From<NonSpecialEmptyPath        <'a>> for OpaquePath<'a> {fn from(value: NonSpecialEmptyPath        <'a>) -> Self {Self(                              value.into_inner()   )}}
-
-impl<'a> From<NonSpecialPath<'a>> for OpaquePath<'a> {
-    fn from(value: NonSpecialPath<'a>) -> Self {
-        match value {
-            NonSpecialPath::Segmented(x) => x.into(),
-            NonSpecialPath::Empty    (x) => x.into(),
-        }
-    }
-}
+impl<'a> From<SegmentedPath     <'a>> for OpaquePath<'a> {fn from(value: SegmentedPath     <'a>) -> Self {Self(segmented_path_to_opaque_path(value.into_inner()).1)}}
+impl<'a> From<FilePath          <'a>> for OpaquePath<'a> {fn from(value: FilePath          <'a>) -> Self {Self(segmented_path_to_opaque_path(value.into_inner()).1)}}
+impl<'a> From<SpecialNotFilePath<'a>> for OpaquePath<'a> {fn from(value: SpecialNotFilePath<'a>) -> Self {Self(segmented_path_to_opaque_path(value.into_inner()).1)}}
+impl<'a> From<NonSpecialPath    <'a>> for OpaquePath<'a> {fn from(value: NonSpecialPath    <'a>) -> Self {Self(segmented_path_to_opaque_path(value.into_inner()).1)}}

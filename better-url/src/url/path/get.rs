@@ -4,13 +4,13 @@ use crate::prelude::*;
 
 impl BetterUrl {
     /// The [`Range::start`] of the path.
-    fn path_start(&self) -> usize {
-        self.path_start as usize
+    pub(crate) fn path_start(&self) -> usize {
+        self.details.path_start as usize
     }
 
     /// The [`Range::end`] of the path.
     pub(crate) fn path_after(&self) -> usize {
-        self.query_mark.or(self.fragment_mark).map_or(self.len(), |x| x.get() as usize)
+        self.details.query_mark.or(self.details.fragment_mark).map_or(self.len(), |x| x.get() as usize)
     }
 
     /// The [`Range`] of the path.
@@ -22,25 +22,27 @@ impl BetterUrl {
 
     /// The path as a [`str`].
     pub fn path_str(&self) -> &str {
-        &self.serialization[self.path_range()]
+        unsafe {
+            self.serialization.get_unchecked(self.path_range())
+        }
+    }
+
+    /// The [`PathType`].
+    pub fn path_type(&self) -> PathType {
+        match self.cannot_be_a_base() {
+            true => PathType::Opaque,
+            false => match self.scheme_type() {
+                SchemeType::File           => SegmentedPathType::File          .into(),
+                SchemeType::SpecialNotFile => SegmentedPathType::SpecialNotFile.into(),
+                SchemeType::NonSpecial     => SegmentedPathType::NonSpecial    .into(),
+            }
+        }
     }
 
     /// The [`Path`].
     pub fn path(&self) -> Path<'_> {
-        let ret = self.path_str();
-
         unsafe {
-            match self.cannot_be_a_base() {
-                true  => match ret.starts_with('/') {
-                    true  => NonSpecialSegmentedPath::new_unchecked(ret).into(),
-                    false => OpaquePath             ::new_unchecked(ret).into(),
-                },
-                false => match self.scheme_type() {
-                    SchemeType::File           => FilePath          ::new_unchecked(ret).into(),
-                    SchemeType::SpecialNotFile => SpecialNotFilePath::new_unchecked(ret).into(),
-                    SchemeType::NonSpecial     => NonSpecialPath    ::new_unchecked(ret).into(),
-                }
-            }
+            Path::new_unchecked(self.path_str(), self.path_type())
         }
     }
 
@@ -48,69 +50,46 @@ impl BetterUrl {
 
     /// If the path is segmented.
     pub fn path_is_segmented(&self) -> bool {
-        self.path_str().starts_with("/")
+        self.can_be_a_base()
     }
 
-    /// If the path is opaque.
-    pub fn path_is_opaque(&self) -> bool {
-        !self.path_str().starts_with("/")
-    }
-
-    /// If [`Self::path_segment`] returns [`Some`].
-    pub fn has_path_segment(&self, index: isize) -> bool {
-        self.path_segment(index).is_some()
-    }
-
-
-
-    /// The [`SegmentedPath`] as a [`str`].
+    /// If [`Self::path_is_segmented`], [`Self::path_str`].
     pub fn segmented_path_str(&self) -> Option<&str> {
-        let ret = self.path_str();
-
-        match ret.starts_with('/') {
-            true  => Some(ret),
-            false => None,
-        }
+        self.path_is_segmented().then(|| self.path_str())
     }
 
     /// The [`SegmentedPath`].
     pub fn segmented_path(&self) -> Option<SegmentedPath<'_>> {
-        self.path().segmented()
+        Some(unsafe {SegmentedPath::new_unchecked(self.segmented_path_str()?, self.scheme_type().into())})
     }
 
 
 
-    /// The [`OpaquePath`] as a [`str`].
-    pub fn opaque_path_str(&self) -> Option<&str> {
-        let ret = self.path_str();
+    /// If the path is opaque.
+    pub fn path_is_opaque(&self) -> bool {
+        self.cannot_be_a_base()
+    }
 
-        match ret.starts_with('/') {
-            true  => None,
-            false => Some(ret),
-        }
+    /// If [`Self::path_is_opaque`], [`Self::path_str`].
+    pub fn opaque_path_str(&self) -> Option<&str> {
+        self.path_is_opaque().then(|| self.path_str())
     }
 
     /// The [`OpaquePath`].
     pub fn opaque_path(&self) -> Option<OpaquePath<'_>> {
-        self.path().opaque()
+        Some(unsafe {OpaquePath::new_unchecked(self.opaque_path_str()?)})
     }
 
 
 
     /// The path segments as [`str`]s.
     pub fn path_segment_strs(&self) -> Option<SplitSlashes<'_>> {
-        Some(SplitSlashes(Some(&self.segmented_path_str()?[1..])))
+        Some(SplitSlashes(self.segmented_path_str()?.strip_prefix('/')))
     }
 
-    /// The path segments as [`PathSegment`]s.
-    pub fn path_segments(&self) -> Option<impl DoubleEndedIterator<Item = PathSegment<'_>>> {
-        let r#type = self.scheme_type();
-
-        Some(self.path_segment_strs()?.map(move |x| match r#type {
-            SchemeType::SpecialNotFile => SpecialNotFilePathSegment(x.into()).into(),
-            SchemeType::File           => FilePathSegment          (x.into()).into(),
-            SchemeType::NonSpecial     => NonSpecialPathSegment    (x.into()).into(),
-        }))
+    /// The [`PathSegmentsIter`].
+    pub fn path_segments(&self) -> Option<PathSegmentsIter<'_>> {
+        Some(PathSegmentsIter {iter: self.path_segment_strs()?, r#type: self.scheme_type().into()})
     }
 
 
@@ -125,21 +104,20 @@ impl BetterUrl {
         self.path_segments()?.neg_nth(index)
     }
 
+    /// If [`Self::path_segment`] returns [`Some`].
+    pub fn has_path_segment(&self, index: isize) -> bool {
+        self.path_segment_strs().is_some_and(|mut x| x.neg_nth(index).is_some())
+    }
+
 
 
     /// The range of path segments as a [`str`].
     pub fn path_segment_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
-        Some(&self.as_str()[self.as_str().my_substr_range(self.segmented_path()?.get_range(range)?.as_str())])
+        SplitSlashes(self.segmented_path_str()?.strip_prefix('/')).range(range)
     }
 
     /// The range of path segments as a [`PathSegments`].
     pub fn path_segment_range<B: RangeBounds<isize>>(&self, range: B) -> Option<PathSegments<'_>> {
-        let r#type = self.scheme_type();
-
-        self.path_segment_range_str(range).map(|x| match r#type {
-            SchemeType::SpecialNotFile => SpecialNotFilePathSegments(x.into()).into(),
-            SchemeType::File           => FilePathSegments          (x.into()).into(),
-            SchemeType::NonSpecial     => NonSpecialPathSegments    (x.into()).into(),
-        })
+        self.path_segment_range_str(range).map(|x| unsafe {PathSegments::new_unchecked(x, self.scheme_type().into())})
     }
 }

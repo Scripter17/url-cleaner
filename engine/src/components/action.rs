@@ -570,19 +570,19 @@ impl Action {
                 changed
             },
             Self::Repeat{actions, limit} => {
-                let mut changed = false;
+                for i in 0..*limit {
+                    let mut changed = false;
 
-                for _ in 0..*limit {
                     for action in actions {
-                        if action.apply(task_state, args)? {
-                            changed = true;
-                        }
+                        changed |= action.apply(task_state, args)?;
                     }
 
-                    if !changed {break;}
+                    if !changed {
+                        return Ok(i != 0);
+                    }
                 }
 
-                changed
+                *limit != 0
             },
 
             // Maps
@@ -643,16 +643,16 @@ impl Action {
 
             // Domain
 
-            Self::SetHost               (       value) => {task_state.url.set_host                 (        get!(&!value))?; true},
-            Self::SetDomainPrefix       (       value) => task_state.url.set_domain_prefix        (        get!(?&!value))?,
-            Self::SetDomainMiddle       (       value) => task_state.url.set_domain_middle        (        get!(?&!value))?,
-            Self::SetDomainSuffix       (       value) => task_state.url.set_domain_suffix        (        get!(?&!value))?,
-            Self::SetDomainOrigin       (       value) => task_state.url.set_domain_origin        (        get!(?&!value))?,
+            Self::SetHost               (       value) => {task_state.url.set_host         (get!( &!value))?; true},
+            Self::SetDomainPrefix       (       value) =>  task_state.url.set_domain_prefix(get!(?&!value))?,
+            Self::SetDomainMiddle       (       value) =>  task_state.url.set_domain_middle(get!(?&!value))?,
+            Self::SetDomainSuffix       (       value) =>  task_state.url.set_domain_suffix(get!(?&!value))?,
+            Self::SetDomainOrigin       (       value) =>  task_state.url.set_domain_origin(get!(?&!value))?,
 
-            Self::SetDomainSegment      {index, value} => task_state.url.set_domain_segment       (*index, get!(?&!value))?,
-            Self::SetDomainOriginSegment{index, value} => task_state.url.set_domain_origin_segment(*index, get!(?&!value))?,
-            Self::SetDomainPrefixSegment{index, value} => task_state.url.set_domain_prefix_segment(*index, get!(?&!value))?,
-            Self::SetDomainSuffixSegment{index, value} => task_state.url.set_domain_suffix_segment(*index, get!(?&!value))?,
+            Self::SetDomainSegment      {index, value} =>  task_state.url.set_domain_segment       (*index, get!(?&!value))?,
+            Self::SetDomainOriginSegment{index, value} =>  task_state.url.set_domain_origin_segment(*index, get!(?&!value))?,
+            Self::SetDomainPrefixSegment{index, value} =>  task_state.url.set_domain_prefix_segment(*index, get!(?&!value))?,
+            Self::SetDomainSuffixSegment{index, value} =>  task_state.url.set_domain_suffix_segment(*index, get!(?&!value))?,
 
             Self::ModifyHost               (       modification) => {
                 let mut host = task_state.url.host_str().map(Cow::from);
@@ -830,15 +830,9 @@ impl Action {
 
             // Misc
 
-            Self::Function(call) => task_state.job.cleaner.functions.actions
-                .get(&call.name).ok_or(FunctionNotFound)?
-                .apply(task_state, Some(&call.args))?,
-
-            Self::FunctionArg(name) => args.ok_or(NotInFunction)?.actions
-                .get(get!(&name)).ok_or(FunctionArgFunctionNotFound)?
-                .apply(task_state, args)?,
-
-            Self::Extern(function) => function(task_state, args)?
+            Self::Function   (call    ) => task_state.job.cleaner.functions.actions.get(&call.name ).ok_or(FunctionNotFound           )?.apply(task_state, Some(&call.args))?,
+            Self::FunctionArg(name    ) => args.ok_or(NotInFunction)?      .actions.get(get!(&name)).ok_or(FunctionArgFunctionNotFound)?.apply(task_state, args            )?,
+            Self::Extern     (function) => function(task_state, args)?
         })
     }
 }

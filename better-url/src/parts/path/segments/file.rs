@@ -2,14 +2,28 @@
 
 use crate::prelude::*;
 
-/// File path segments.
+/// One or more [`FilePathSegment`]s.
+///
+/// Please note that single and double dot segments are not resolved until placed into a [`FilePath`].
+/// # Examples
+/// ```
+/// use better_url::prelude::*;
+///
+/// let segments = FilePathSegments::new("abc/def/../ghi");
+///
+/// assert_eq!(segments, "abc/def/../ghi");
+///
+/// let path = FilePath::new(segments);
+///
+/// assert_eq!(path, "/abc/ghi");
+/// ```
 #[derive(Debug, Clone)]
 pub struct FilePathSegments<'a>(pub(crate) Cow<'a, str>);
 
 impl<'a> FilePathSegments<'a> {
     /// Make a new [`Self`] without doing any validity checks.
     /// # Safety
-    /// `value` must be a valid [`Self`] literal and `details` must be its details.
+    /// `value` must be a valid [`Self`] literal.
     pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T) -> Self {
         Self(value.into())
     }
@@ -21,9 +35,9 @@ impl<'a> FilePathSegments<'a> {
 
 
 
-    /// The [`FilePathSegment`]s.
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = FilePathSegment<'_>> {
-        SplitSlashes(Some(self.as_str())).map(|x| FilePathSegment(x.into()))
+    /// The [`FilePathSegmentsIter`].
+    pub fn iter(&self) -> FilePathSegmentsIter<'_> {
+        self.into_iter()
     }
 
     /// The `index`th [`FilePathSegment`].
@@ -51,13 +65,36 @@ impl<'a> FilePathSegments<'a> {
 
 
 
-impl<'a> TryFrom<PathSegments<'a>> for FilePathSegments<'a> {
-    type Error = PathSegments<'a>;
+impl<'a> From<Cow<'a, str>> for FilePathSegments<'a> {
+    fn from(value: Cow<'a, str>) -> Self {
+        let (_, value) = encode_file_path_segments(value);
 
-    fn try_from(value: PathSegments<'a>) -> Result<Self, Self::Error> {
-        match value {
-            PathSegments::File(x) => Ok(x),
-            x => Err(x)
+        unsafe {
+            Self::new_unchecked(value)
         }
+    }
+}
+
+impl<'a> From<PathSegments<'a>> for FilePathSegments<'a> {
+    fn from(value: PathSegments<'a>) -> Self {
+        match value {
+            PathSegments::File          (x) => x,
+            PathSegments::SpecialNotFile(x) => x.into(),
+            PathSegments::NonSpecial    (x) => x.into(),
+        }
+    }
+}
+
+impl<'a> From<SpecialNotFilePathSegments<'a>> for FilePathSegments<'a> {fn from(value: SpecialNotFilePathSegments<'a>) -> Self {Self(                value.0   )}}
+impl<'a> From<NonSpecialPathSegments    <'a>> for FilePathSegments<'a> {fn from(value: NonSpecialPathSegments    <'a>) -> Self {Self(forward_slashes(value.0).1)}}
+
+impl<'a> From<PathSegment              <'a>> for FilePathSegments<'a> {fn from(value: PathSegment              <'a>) -> Self {Self(                value.into_inner()   )}}
+impl<'a> From<FilePathSegment          <'a>> for FilePathSegments<'a> {fn from(value: FilePathSegment          <'a>) -> Self {Self(                value.into_inner()   )}}
+impl<'a> From<SpecialNotFilePathSegment<'a>> for FilePathSegments<'a> {fn from(value: SpecialNotFilePathSegment<'a>) -> Self {Self(                value.into_inner()   )}}
+impl<'a> From<NonSpecialPathSegment    <'a>> for FilePathSegments<'a> {fn from(value: NonSpecialPathSegment    <'a>) -> Self {Self(forward_slashes(value.into_inner()).1)}}
+
+impl<'a, 'b> Extend<FilePathSegment<'b>> for FilePathSegments<'a> {
+    fn extend<I: IntoIterator<Item = FilePathSegment<'b>>>(&mut self, iter: I) {
+        self.0.to_mut().extend(iter.into_iter().flat_map(|x| ["/".into(), x.into_inner()]))
     }
 }

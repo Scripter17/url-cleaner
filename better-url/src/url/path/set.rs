@@ -6,27 +6,29 @@ impl BetterUrl {
     /// Set the path.
     /// # Errors
     /// If the URL would become too long, returns the error [`TooLong`].
-    pub fn set_path<'a, T: Into<FilePath<'a>> + Into<SpecialNotFilePath<'a>> + Into<NonSpecialPath<'a>> + Into<NonSpecialSegmentedPath<'a>>>(&mut self, path: T) -> Result<(), SetPathError> {
+    pub fn set_path<'a, T: Into<FilePath<'a>> + Into<SpecialNotFilePath<'a>> + Into<NonSpecialPath<'a>>>(&mut self, path: T) -> Result<(), SetPathError> {
         if self.cannot_be_a_base() {
             return Ok(());
         }
 
-        let new = match self.details.scheme.r#type() {
+        let mut new = match self.details.scheme.r#type() {
             SchemeType::File           => Path::new_file            (path),
             SchemeType::SpecialNotFile => Path::new_special_not_file(path),
-            SchemeType::NonSpecial     => match self.has_host() {
-                true  => Path::new_non_special          (path),
-                false => Path::new_non_special_segmented(path),
-            }
+            SchemeType::NonSpecial     => Path::new_non_special     (path),
         };
 
         let a = self.has_host();
-        let b = &self.serialization[self.scheme_mark as usize .. self.path_start as usize] == ":/.";
-        let c = new.as_str().starts_with("//");
+        let b = unsafe {self.as_str().get_unchecked(self.details.scheme_mark as usize .. self.details.path_start as usize)};
 
-        match (a, b, c) {
-            (false, false, true) => {
-                let after_len = self.len() - self.path_range().len() + new.len() + 2;
+        if !a && new.is_empty() {
+            new = unsafe {NonSpecialPath::new_unchecked("/")}.into();
+        }
+
+        let old_range = self.path_range();
+
+        match a {
+            false if b != ":/." && new.as_str().starts_with("//") => {
+                let after_len = self.len() - old_range.len() + new.len() + 2;
 
                 if after_len > u32::MAX as usize {
                     Err(TooLong)?;
@@ -34,15 +36,16 @@ impl BetterUrl {
 
                 let diff = (after_len as u32).wrapping_sub(self.len() as u32);
 
-                self.serialization.replace_range(self.path_range(), new.as_str());
-                self.serialization.insert_str(self.path_start as usize, "/.");
+                unsafe {
+                    self.serialization.as_mut_vec().replace_range_with_unchecked(old_range.clone(), &[b"/.", new.as_str().as_bytes()]);
+                }
 
-                self.path_start += 2;
-                if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
-                if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
+                self.details.path_start += 2;
+                if let Some(x) = self.details.query_mark    {self.details.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.details.fragment_mark {self.details.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
             },
-            (false, true, false) => {
-                let after_len = self.len() - self.path_range().len() + new.len() - 2;
+            false if b == ":/." && !new.as_str().starts_with("//") => {
+                let after_len = self.len() - old_range.len() + new.len() - 2;
 
                 if after_len > u32::MAX as usize {
                     Err(TooLong)?;
@@ -50,14 +53,16 @@ impl BetterUrl {
 
                 let diff = (after_len as u32).wrapping_sub(self.len() as u32);
 
-                self.serialization.replace_range(self.path_start as usize - 2 .. self.path_after(), new.as_str());
+                unsafe {
+                    self.serialization.as_mut_vec().replace_range_unchecked(old_range.start - 2 .. old_range.end, new.as_str().as_bytes());
+                }
 
-                self.path_start -= 2;
-                if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
-                if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
+                self.details.path_start -= 2;
+                if let Some(x) = self.details.query_mark    {self.details.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.details.fragment_mark {self.details.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
             },
             _ => {
-                let after_len = self.len() - self.path_range().len() + new.len();
+                let after_len = self.len() - old_range.len() + new.len();
 
                 if after_len > u32::MAX as usize {
                     Err(TooLong)?;
@@ -65,10 +70,12 @@ impl BetterUrl {
 
                 let diff = (after_len as u32).wrapping_sub(self.len() as u32);
 
-                self.serialization.replace_range(self.path_range(), new.as_str());
+                unsafe {
+                    self.serialization.as_mut_vec().replace_range_unchecked(old_range, new.as_str().as_bytes());
+                }
 
-                if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
-                if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.details.query_mark    {self.details.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.details.fragment_mark {self.details.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
             },
         }
 
@@ -82,7 +89,7 @@ impl BetterUrl {
     /// If the call to [`SegmentedPath::set`] returns an error, that error is returned.
     ///
     /// If the call to [`Self::set_path`] returns an error, that error is returned.
-    pub fn set_path_segment<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetPathError> {
+    pub fn set_path_segment<'a, T: Into<SpecialNotFilePathSegments<'a>> + Into<FilePathSegments<'a>> + Into<NonSpecialPathSegments<'a>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetPathError> {
         let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
 
         if path.set(index, value)? {
@@ -100,10 +107,10 @@ impl BetterUrl {
     /// If the call to [`SegmentedPath::set_range`] returns an error, that error is returned.
     ///
     /// If the call to [`Self::set_path`] returns an error, that error is returned.
-    pub fn set_path_range<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>, I: IntoIterator<Item = T>, B: RangeBounds<isize>>(&mut self, range: B, iter: I) -> Result<bool, SetPathError> {
+    pub fn set_path_range<'a, T: Into<SpecialNotFilePathSegments<'a>> + Into<FilePathSegments<'a>> + Into<NonSpecialPathSegments<'a>>, B: RangeBounds<isize>>(&mut self, range: B, value: Option<T>) -> Result<bool, SetPathError> {
         let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
 
-        if path.set_range(range, iter)? {
+        if path.set_range(range, value)? {
             self.set_path(path.into_owned())?;
             Ok(true)
         } else {
@@ -118,28 +125,10 @@ impl BetterUrl {
     /// If the call to [`SegmentedPath::insert`] returns an error, that error is returned.
     ///
     /// If the call to [`Self::set_path`] returns an error, that error is returned.
-    pub fn insert_path_segment<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>>(&mut self, index: isize, value: T) -> Result<bool, SetPathError> {
+    pub fn insert_path_segment<'a, T: Into<SpecialNotFilePathSegments<'a>> + Into<FilePathSegments<'a>> + Into<NonSpecialPathSegments<'a>>>(&mut self, index: isize, value: T) -> Result<bool, SetPathError> {
         let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
 
         if path.insert(index, value)? {
-            self.set_path(path.into_owned())?;
-            Ok(true)
-        } else {
-            Ok(false)
-        }
-    }
-
-    /// [`SegmentedPath::insert_segments`].
-    /// # Errors
-    /// If the call to [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
-    ///
-    /// If the call to [`SegmentedPath::insert_segments`] returns an error, that error is returned.
-    ///
-    /// If the call to [`Self::set_path`] returns an error, that error is returned.
-    pub fn insert_path_segments<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>, I: IntoIterator<Item = T>>(&mut self, index: isize, iter: I) -> Result<bool, SetPathError> {
-        let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
-
-        if path.insert_segments(index, iter)? {
             self.set_path(path.into_owned())?;
             Ok(true)
         } else {

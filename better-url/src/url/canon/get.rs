@@ -10,7 +10,7 @@ impl BetterUrl {
 
     /// The official protocol getter.
     pub fn canon_get_protocol(&self) -> &str {
-        &self.serialization[..= self.scheme_mark as usize]
+        &self.serialization[..= self.details.scheme_mark as usize]
     }
 
     /// The official username getter.
@@ -45,9 +45,9 @@ impl BetterUrl {
 
     /// The official search getter.
     pub fn canon_get_search(&self) -> &str {
-        let x = match self.query_mark {
-            None => "",
-            Some(x) => &self.serialization[x.get() as usize .. self.fragment_mark.map_or(self.len(), |x| x.get() as usize)]
+        let x = match self.details.query_mark {
+            Some(x) => unsafe {self.serialization.get_unchecked(x.get() as usize .. self.details.fragment_mark.map_or(self.len(), |x| x.get() as usize))},
+            None    => "",
         };
 
         if x == "?" {
@@ -59,9 +59,9 @@ impl BetterUrl {
 
     /// The official hash getter.
     pub fn canon_get_hash(&self) -> &str {
-        let x = match self.fragment_mark {
-            None => "",
-            Some(x) => &self.serialization[x.get() as usize ..]
+        let x = match self.details.fragment_mark {
+            Some(x) => unsafe {self.serialization.get_unchecked(x.get() as usize ..)},
+            None    => "",
         };
 
         if x == "#" {

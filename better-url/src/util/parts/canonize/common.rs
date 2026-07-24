@@ -9,7 +9,7 @@ pub fn canonize_part_setter<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'
     let mut value = value.into();
     let mut changed = false;
 
-    if value.bytes().any(|b| b == b'\t' || b == b'\n' || b == b'\r') {
+    if value.memchr3(b'\t', b'\n', b'\r').is_some() {
         unsafe {
             value.to_mut().as_mut_vec().retain(|&b| b != b'\t' && b != b'\n' && b != b'\r');
         }

@@ -11,23 +11,31 @@ readme = "README.md"
 rust-version = "1.88.0"
 
 [dependencies]
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
-thiserror = "2.0.18"
-parking_lot = "0.12.5"
-better-url = { version = "0.12.0-beta", path = "../better-url", features = ["serde"]}
+better-url         = { version = "0.12.0-beta", path = "../better-url", features = ["serde"]}
 url-cleaner-macros = { version = "0.12.0-beta", path = "../macros" }
-regex    = "1.13.0"
-base64   = "0.22.1"
-reqwest  = { optional = true, version = "0.12.28", features = ["blocking", "socks", "json"] }
-http     = { optional = true, version = "1.4.2" }
-rusqlite = { optional = true, version = "0.37.0", features = ["bundled"] }
-indexmap = { version = "2.14.0", features = ["serde"] }
+
+serde       = { version = "1.0.229", features = ["derive"] }
+indexmap    = { version = "2.14.0" , features = ["serde" ] }
+serde_json  = "1.0.151"
+thiserror   = "2.0.19"
+parking_lot = "0.12.5"
+regex       = "1.13.1"
+base64      = "0.22.1"
+memchr      = "2.8.3"
+
+# HTTP stuff.
+reqwest  = { version = "0.12.28", optional = true, features = ["socks", "json"] }
+http     = { version = "1.4.2"  , optional = true }
+tokio    = { version = "1.53.1" , optional = true, features = ["rt"] }
+bytes    = { version = "1.12.1" , optional = true }
+
+# Cache stuff.
+rusqlite = { version = "0.37.0" , optional = true, features = ["bundled"] }
 
 [features]
 default        = ["bundled-cleaner"]
 bundled-cleaner= ["http", "cache"]
-http           = ["dep:reqwest", "dep:http"]
+http           = ["dep:reqwest", "dep:http", "dep:tokio", "dep:bytes"]
 cache          = ["dep:rusqlite"]
 debug          = []
 

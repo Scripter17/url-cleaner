@@ -5,12 +5,12 @@ use crate::prelude::*;
 impl BetterUrl {
     /// The [`Range::start`] of the query.
     fn query_start(&self) -> Option<usize> {
-        Some(self.query_mark?.get() as usize + 1)
+        Some(self.details.query_mark?.get() as usize + 1)
     }
 
     /// The [`Range::end`] of the query.
     fn query_after(&self) -> Option<usize> {
-        Some(self.fragment_mark.map_or(self.len(), |x| x.get() as usize))
+        Some(self.details.fragment_mark.map_or(self.len(), |x| x.get() as usize))
     }
 
     /// The [`Range`] of the query.
@@ -18,17 +18,20 @@ impl BetterUrl {
         Some(self.query_start()? .. self.query_after()?)
     }
 
-
+    /// The [`QueryType`].
+    pub fn query_type(&self) -> QueryType {
+        self.scheme_type().into()
+    }
 
     /// The query as a [`str`].
     pub fn query_str(&self) -> Option<&str> {
-        Some(&self.serialization[self.query_range()?])
+        Some(unsafe {self.serialization.get_unchecked(self.query_range()?)})
     }
 
     /// The [`MaybeQuery`].
     pub fn query(&self) -> MaybeQuery<'_> {
         unsafe {
-            MaybeQuery::new_unchecked(self.query_str(), self.is_special())
+            MaybeQuery::new_unchecked(self.query_str(), self.query_type())
         }
     }
 
@@ -41,12 +44,9 @@ impl BetterUrl {
 
     /// The query segments as [`QuerySegment`]s.
     pub fn query_segments(&self) -> Option<impl DoubleEndedIterator<Item = QuerySegment<'_>>> {
-        let is_special = self.is_special();
+        let r#type = self.query_type();
 
-        Some(self.query_segment_strs()?.map(move |x| match is_special {
-            true  => unsafe {SpecialQuerySegment   ::new_unchecked(x)}.into(),
-            false => unsafe {NonSpecialQuerySegment::new_unchecked(x)}.into(),
-        }))
+        Some(self.query_segment_strs()?.map(move |x| unsafe {QuerySegment::new_unchecked(x, r#type)}))
     }
 
     /// The `index`th query segment as a [`str`].
@@ -68,7 +68,7 @@ impl BetterUrl {
 
     /// The query segments named `name` as [`str`]s.
     pub fn query_param_strs<'a>(&'a self, name: &str) -> Option<impl DoubleEndedIterator<Item = &'a str>> {
-        Some(self.query_segment_strs()?.filter(move |x| lossy_decode_query_part(x.split_once('=').map_or(*x, |(x, _)| x)).1 == name))
+        Some(self.query_segment_strs()?.filter(move |&x| lossy_decode_query_part(x.split_once('=').map_or(x, |(x, _)| x)).1 == name))
     }
 
     /// The query segments named `name` as [`str`]s.
@@ -86,8 +86,8 @@ impl BetterUrl {
         self.query_params(name)?.neg_nth(index)
     }
 
-    /// If [`Self::query_param`] is [`Some`].
+    /// If [`Self::query_param_str`] is [`Some`].
     pub fn has_query_param(&self, name: &str, index: isize) -> bool {
-        self.query_param(name, index).is_some()
+        self.query_param_str(name, index).is_some()
     }
 }

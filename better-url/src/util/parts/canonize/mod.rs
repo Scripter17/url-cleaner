@@ -1,7 +1,7 @@
 //! Converters from the inputs to the canonical setters to their corresponding part types.
 
 mod common   ; pub use common   ::*;
-mod whole    ; pub use whole    ::*;
+mod parser   ; pub use parser   ::*;
 mod scheme   ; pub use scheme   ::*;
 mod username ; pub use username ::*;
 mod password ; pub use password ::*;

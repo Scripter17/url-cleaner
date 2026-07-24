@@ -16,5 +16,5 @@ pub fn encode_opaque_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, 
         Err(InvalidOpaqueHost)?;
     }
 
-    Ok(percent_encode::<'_, _, false, false, false>(cow_str_to_bytes(value), OPAQUE_HOST))
+    Ok(percent_encode(value, OPAQUE_HOST))
 }

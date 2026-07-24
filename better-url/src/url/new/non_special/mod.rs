@@ -2,15 +2,17 @@
 
 use crate::prelude::*;
 
-mod can_be_a_base;
-mod cannot_be_a_base;
+mod host;
+mod path;
+mod opaque_path;
 
 impl BetterUrl {
-    /// Make a new non-special [`Self`].
+    /// [`SchemeType::NonSpecial`].
     pub(super) fn new_non_special(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
         match rest.as_bytes() {
-            [b'/', ..]  => Self::new_can_be_a_base   (scheme, rest),
-            _           => Self::new_cannot_be_a_base(scheme, rest),
+            [b'/', b'/', ..]  => Self::new_ns_host       (scheme, &rest[2..]),
+            [b'/',       ..]  => Self::new_ns_path       (scheme, rest),
+            _                 => Self::new_ns_opaque_path(scheme, rest),
         }
     }
 }

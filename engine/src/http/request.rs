@@ -57,22 +57,22 @@ impl Default for HttpRequestSource {
 /** Serde helper. **/ fn is_default_method (value: &StringSource) -> bool         {value == &get_default_method()}
 
 impl HttpRequestSource {
-    /// Get a [`reqwest::blocking::RequestBuilder`].
+    /// Get a [`reqwest::RequestBuilder`].
     /// # Errors
-    /// If the call to [`HttpClient::get`] returns an error, that error is returned.
+    /// If the call to [`HttpClient::get_inner`] returns an error, that error is returned.
     ///
     /// If any call to [`StringSource::get`] returns an error, that error is returned.
     ///
     /// If the call to [`MapSource::get`] returns an error, that error is returned.
     ///
     /// If the call to [`HttpBodyConfig::apply`] returns an error, that error is returned.
-    pub fn get(&self, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::blocking::RequestBuilder, HttpRequestSourceError> {
-        debug!(HttpRequestSource::get, self; self._get(task_state, args))
+    pub fn get(&self, client: &HttpClient, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::RequestBuilder, HttpRequestSourceError> {
+        debug!(HttpRequestSource::get, self; self._get(client, task_state, args))
     }
 
     /// [`Self::get`].
-    fn _get(&self, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::blocking::RequestBuilder, HttpRequestSourceError> {
-        let mut ret = task_state.job.http_client.get()?.request(get!(self.method).parse()?, get!(&self.url));
+    fn _get(&self, client: &HttpClient, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::RequestBuilder, HttpRequestSourceError> {
+        let mut ret = client.get_inner()?.request(get!(self.method).parse()?, get!(&self.url));
 
         if let Some(map) = get!(?self.const_headers) {
             for (key, value) in map.map.iter() {

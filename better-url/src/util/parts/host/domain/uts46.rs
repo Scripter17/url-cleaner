@@ -2,6 +2,9 @@
 
 use crate::prelude::*;
 
+/// A UTS46 normalizer.
+pub(crate) static UTS46: icu_normalizer::uts46::Uts46MapperBorrowed = icu_normalizer::uts46::Uts46MapperBorrowed::new();
+
 /// Do UTS46 normalization, in-place if possible.
 /// # Examples
 /// ```
@@ -38,39 +41,39 @@ use crate::prelude::*;
 pub fn uts46_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let mut value = value.into();
 
-    if value.is_ascii() || value.chars().all(idna_valid) {
+    if value.is_ascii() {
         if value.bytes().any(|b| b.is_ascii_uppercase()) {
             value.to_mut().make_ascii_lowercase();
-            return (true, value);
+            (true, value)
         } else {
-            return (false, value);
+            (false, value)
         }
-    }
+    } else {
+        let mut a = value.char_indices();
+        let mut b = UTS46.map_normalize(value.chars());
 
-    let mut a = value.char_indices();
-    let mut b = UTS46.map_normalize(value.chars());
-
-    loop {
-        match (a.next(), b.next()) {
-            (None, None) => {
-                drop(b);
-                return (false, value);
+        loop {
+            match (a.next(), b.next()) {
+                (None, None) => {
+                    drop(b);
+                    return (false, value);
+                }
+                (None, Some(y)) => {
+                    let mut ret = value.to_string();
+                    ret.extend(std::iter::once(y).chain(b));
+                    return (true, ret.into());
+                },
+                (Some((i, _)), None) => {
+                    drop(b);
+                    value.retain_range(..i);
+                    return (true, value);
+                },
+                (Some((i, x)), Some(y)) => if x != y {
+                    let mut ret = value[..i].to_string();
+                    ret.extend(std::iter::once(y).chain(b));
+                    return (true, ret.into());
+                },
             }
-            (None, Some(y)) => {
-                let mut ret = value.to_string();
-                ret.extend(std::iter::once(y).chain(b));
-                return (true, ret.into());
-            },
-            (Some((i, _)), None) => {
-                drop(b);
-                value.retain_range(..i);
-                return (true, value);
-            },
-            (Some((i, x)), Some(y)) => if x != y {
-                let mut ret = value[..i].to_string();
-                ret.extend(std::iter::once(y).chain(b));
-                return (true, ret.into());
-            },
         }
     }
 }

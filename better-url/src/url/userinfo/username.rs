@@ -4,19 +4,23 @@ use crate::prelude::*;
 
 impl BetterUrl {
     /// If it has a visible username.
-    pub fn has_username(&self) -> bool {
-        self.username_after.is_some()
-    }
-
-    /// If it has a visible password.
-    pub fn has_password(&self) -> bool {
-        self.username_after.zip(self.host_start).is_none_or(|(ua, hs)| ua.get() != hs.get() - 1)
+    /// # Examples
+    /// ```
+    /// use better_url::prelude::*;
+    ///
+    /// assert!(!BetterUrl::new("https://example.com"                  ).unwrap().has_visible_username());
+    /// assert!( BetterUrl::new("https://username@example.com"         ).unwrap().has_visible_username());
+    /// assert!( BetterUrl::new("https://:password@example.com"        ).unwrap().has_visible_username());
+    /// assert!( BetterUrl::new("https://username:password@example.com").unwrap().has_visible_username());
+    /// ```
+    pub fn has_visible_username(&self) -> bool {
+        self.details.username_after.is_some()
     }
 
     /// The [`Range::start`] of the username.
     pub(crate) fn username_start(&self) -> Option<usize> {
-        if self.has_username() {
-            Some(self.scheme_mark as usize + 3)
+        if self.has_visible_username() {
+            Some(self.details.scheme_mark as usize + 3)
         } else {
             None
         }
@@ -24,7 +28,7 @@ impl BetterUrl {
 
     /// The [`Range::end`] of ther username.
     pub(crate) fn username_after(&self) -> Option<usize> {
-        Some(self.username_after?.get() as usize)
+        Some(self.details.username_after?.get() as usize)
     }
 
     /// The [`Range`] of the username.
@@ -34,17 +38,40 @@ impl BetterUrl {
 
 
 
-    /// The username as a [`str`], or [`None`] if absent.
-    pub fn maybe_username_str(&self) -> Option<&str> {
-        Some(&self.serialization[self.username_range()?])
+    /// The visible username as a [`str`].
+    ///
+    /// If the userinfo (not just the username) is the empty string, and thus doesn't show in the URL, returns [`None`].
+    ///
+    /// Thus, any [`str`] returned is guaranteed to be a substring of the URL.
+    ///
+    /// Note that a userinfo of `:password` has a visible but empty username.
+    pub fn visible_username_str(&self) -> Option<&str> {
+        Some(unsafe {self.as_str().get_unchecked(self.username_range()?)})
     }
 
     /// The username as a [`str`].
+    ///
+    /// Please note that in the case of an empty userinfo the returned `str` will not be a substring of the URL.
+    ///
+    /// If you need that property, see [`Self::visible_username_str`].
     pub fn username_str(&self) -> &str {
-        self.maybe_username_str().unwrap_or_default()
+        self.visible_username_str().unwrap_or_default()
+    }
+
+
+
+    /// The visible [`Username`].
+    ///
+    /// See [`Self::visible_username_str`] foe details.
+    pub fn visible_username(&self) -> Option<Username<'_>> {
+        Some(unsafe {
+            Username::new_unchecked(self.visible_username_str()?)
+        })
     }
 
     /// The [`Username`].
+    ///
+    /// See [`Self::username_str`] foe details.
     pub fn username(&self) -> Username<'_> {
         unsafe {
             Username::new_unchecked(self.username_str())
@@ -65,24 +92,24 @@ impl BetterUrl {
         }
 
         match self.username_range() {
-            Some(range) => match new.is_empty() && !self.has_password() {
+            Some(range) => match new.is_empty() && !self.has_visible_password() {
                 true => {
                     let diff = range.len() as u32 + 1;
 
-                    let i = self.host_start.expect("???").get();
+                    let i = self.details.host_start.expect("???").get();
 
                     self.serialization.replace_range((i - diff) as usize .. i as usize, "");
 
-                    self.username_after = None;
+                    self.details.username_after = None;
 
-                    self.host_start = NonZero::new(i - diff);
+                    self.details.host_start = NonZero::new(i - diff);
 
-                    if let Some(x) = self.port_mark {self.port_mark = NonZero::new(x.get() - diff);}
+                    if let Some(x) = self.details.port_mark {self.details.port_mark = NonZero::new(x.get() - diff);}
 
-                    self.path_start -= diff;
+                    self.details.path_start -= diff;
 
-                    if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get() - diff);}
-                    if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get() - diff);}
+                    if let Some(x) = self.details.query_mark    {self.details.query_mark    = NonZero::new(x.get() - diff);}
+                    if let Some(x) = self.details.fragment_mark {self.details.fragment_mark = NonZero::new(x.get() - diff);}
                 },
                 false => {
                     if self.len() - range.len() + new.len() > u32::MAX as usize {
@@ -93,15 +120,15 @@ impl BetterUrl {
 
                     self.serialization.replace_range(range, new.as_str());
 
-                    self.username_after = NonZero::new(self.scheme_mark + 3 + new.len() as u32);
+                    self.details.username_after = NonZero::new(self.details.scheme_mark + 3 + new.len() as u32);
 
-                    if let Some(x) = self.host_start     {self.host_start     = NonZero::new(x.get().wrapping_add(diff));}
-                    if let Some(x) = self.port_mark      {self.port_mark      = NonZero::new(x.get().wrapping_add(diff));}
+                    if let Some(x) = self.details.host_start     {self.details.host_start     = NonZero::new(x.get().wrapping_add(diff));}
+                    if let Some(x) = self.details.port_mark      {self.details.port_mark      = NonZero::new(x.get().wrapping_add(diff));}
 
-                    self.path_start = self.path_start.wrapping_add(diff);
+                    self.details.path_start = self.details.path_start.wrapping_add(diff);
 
-                    if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
-                    if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
+                    if let Some(x) = self.details.query_mark    {self.details.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
+                    if let Some(x) = self.details.fragment_mark {self.details.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
                 }
             },
             None => if !new.is_empty() {
@@ -111,20 +138,20 @@ impl BetterUrl {
 
                 let diff = new.len() as u32 + 1;
 
-                let i = self.host_start.expect("???").get() as usize;
+                let i = self.details.host_start.expect("???").get() as usize;
 
                 self.serialization.insert(i, '@');
                 self.serialization.insert_str(i, new.as_str());
 
-                self.username_after = NonZero::new(self.scheme_mark + 3 + new.len() as u32);
+                self.details.username_after = NonZero::new(self.details.scheme_mark + 3 + new.len() as u32);
 
-                if let Some(x) = self.host_start     {self.host_start     = NonZero::new(x.get().wrapping_add(diff));}
-                if let Some(x) = self.port_mark      {self.port_mark      = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.details.host_start     {self.details.host_start     = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.details.port_mark      {self.details.port_mark      = NonZero::new(x.get().wrapping_add(diff));}
 
-                self.path_start = self.path_start.wrapping_add(diff);
+                self.details.path_start = self.details.path_start.wrapping_add(diff);
 
-                if let Some(x) = self.query_mark    {self.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
-                if let Some(x) = self.fragment_mark {self.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.details.query_mark    {self.details.query_mark    = NonZero::new(x.get().wrapping_add(diff));}
+                if let Some(x) = self.details.fragment_mark {self.details.fragment_mark = NonZero::new(x.get().wrapping_add(diff));}
             }
         }
 

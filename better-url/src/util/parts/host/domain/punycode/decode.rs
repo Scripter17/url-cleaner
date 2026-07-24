@@ -76,7 +76,7 @@ fn decode_punycode_base_bytes(value: &[u8]) -> Result<PunycodeDecoder<'_>, Inval
 
     let mut insertions = Vec::<(u32, char)>::new();
 
-    let (base, input) = match value.iter().position(|b| *b == b'-') {
+    let (base, input) = match value.memchr(b'-') {
         Some(i) => (&value[..i], &value[i+1..]),
         None    => (&value[..0],  value       ),
     };

@@ -4,6 +4,7 @@ use crate::prelude::*;
 
 /// Details for the [`EmptyHost`].
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EmptyHostDetails;
 
 impl EmptyHostDetails {
@@ -17,6 +18,8 @@ impl EmptyHostDetails {
         }
     }
 }
+
+
 
 impl FromStr for EmptyHostDetails {
     type Err = InvalidEmptyHost;
@@ -34,13 +37,37 @@ impl TryFrom<&str> for EmptyHostDetails {
     }
 }
 
+
+
 impl TryFrom<HostDetails> for EmptyHostDetails {
     type Error = HostDetails;
 
     fn try_from(value: HostDetails) -> Result<Self, Self::Error> {
         match value {
-            HostDetails::Empty(details) => Ok(details),
-            details => Err(details)
+            HostDetails::Empty(details) => Ok (details),
+            details                     => Err(details),
+        }
+    }
+}
+
+impl TryFrom<FileHostDetails> for EmptyHostDetails {
+    type Error = FileHostDetails;
+
+    fn try_from(value: FileHostDetails) -> Result<Self, Self::Error> {
+        match value {
+            FileHostDetails::Empty(details) => Ok (details),
+            details                         => Err(details),
+        }
+    }
+}
+
+impl TryFrom<NonSpecialHostDetails> for EmptyHostDetails {
+    type Error = NonSpecialHostDetails;
+
+    fn try_from(value: NonSpecialHostDetails) -> Result<Self, Self::Error> {
+        match value {
+            NonSpecialHostDetails::Empty(details) => Ok (details),
+            details                               => Err(details),
         }
     }
 }

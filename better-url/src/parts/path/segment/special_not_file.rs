@@ -2,7 +2,7 @@
 
 use crate::prelude::*;
 
-/// A special path segment.
+/// A [`SpecialNotFilePath`] segment.
 #[derive(Debug, Clone)]
 pub struct SpecialNotFilePathSegment<'a>(pub(crate) Cow<'a, str>);
 
@@ -19,37 +19,20 @@ impl<'a> SpecialNotFilePathSegment<'a> {
         &self.0
     }
 
-    /// The decoded value.
+    /// [`lossy_percent_decode`].
     pub fn decode(self) -> Cow<'a, str> {
-        lossy_percent_decode(self.0).1
+        let (_, value) = lossy_percent_decode(self.into_inner());
+
+        value
     }
 
 
 
-    /// [`path_segment_is_windows_drive_letter`].
-    pub fn is_windows_drive_letter(&self) -> bool {
-        path_segment_is_windows_drive_letter(self.as_str())
-    }
-
-    /// [`path_segment_is_normalized_windows_drive_letter`].
-    pub fn is_normalized_windows_drive_letter(&self) -> bool {
-        path_segment_is_normalized_windows_drive_letter(self.as_str())
-    }
-
-    /// [`path_segment_is_non_normalized_windows_drive_letter`].
-    pub fn is_non_normalized_windows_drive_letter(&self) -> bool {
-        path_segment_is_non_normalized_windows_drive_letter(self.as_str())
-    }
-
-    /// [`path_segment_is_dot`].
-    pub fn is_dot(&self) -> bool {
-        path_segment_is_dot(self.as_str())
-    }
-
-    /// [`path_segment_is_double_dot`].
-    pub fn is_double_dot(&self) -> bool {
-        path_segment_is_double_dot(self.as_str())
-    }
+    /** [`path_segment_is_drive_letter`].                **/ pub fn is_drive_letter               (&self) -> bool {path_segment_is_drive_letter               (self.as_str())}
+    /** [`path_segment_is_normalized_drive_letter`].     **/ pub fn is_normalized_drive_letter    (&self) -> bool {path_segment_is_normalized_drive_letter    (self.as_str())}
+    /** [`path_segment_is_non_normalized_drive_letter`]. **/ pub fn is_non_normalized_drive_letter(&self) -> bool {path_segment_is_non_normalized_drive_letter(self.as_str())}
+    /** [`path_segment_is_single_dot`].                  **/ pub fn is_single_dot                 (&self) -> bool {path_segment_is_single_dot                 (self.as_str())}
+    /** [`path_segment_is_double_dot`].                  **/ pub fn is_double_dot                 (&self) -> bool {path_segment_is_double_dot                 (self.as_str())}
 
 
 
@@ -73,7 +56,7 @@ impl<'a> SpecialNotFilePathSegment<'a> {
 
 impl<'a> From<Cow<'a, str>> for SpecialNotFilePathSegment<'a> {
     fn from(value: Cow<'a, str>) -> Self {
-        Self(encode_special_path_segment(value).1)
+        Self(encode_special_not_file_path_segment(value).1)
     }
 }
 

@@ -3,21 +3,30 @@
 use crate::prelude::*;
 
 impl BetterUrl {
-    /// [`DomainDetails::has_labels`].
+    /// If it has a domain labels.
     pub fn has_domain_labels(&self) -> bool {
-        self.domain_details().is_some_and(DomainDetails::has_labels)
+        self.domain_details().is_some()
     }
 
 
 
+    /// The [`Range`] of the domain labels.
+    fn domain_labels_thing(&self) -> Option<Range<usize>> {
+        let hs = self.host_start    ()?;
+        let ha = self.host_after    ()?;
+        let dd = self.domain_details()?;
+
+        Some(hs .. ha - dd.fq as usize)
+    }
+
     /// The domain labels as a [`str`].
     pub fn domain_labels_str(&self) -> Option<&str> {
-        Some(&self.host_str()?[self.domain_details()?.labels_range()])
+        Some(unsafe {self.as_str().get_unchecked(self.domain_labels_thing()?)})
     }
 
     /// The domain labels as a [`DomainSegments`].
     pub fn domain_labels(&self) -> Option<DomainSegments<'_>> {
-        Some(DomainSegments(self.domain_labels_str()?.into()))
+        Some(unsafe {DomainSegments::new_unchecked(self.domain_labels_str()?)})
     }
 
 
@@ -48,14 +57,12 @@ impl BetterUrl {
 
     /// The range of the domain labels segments as a [`str`].
     pub fn domain_labels_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
-        domain_range_thing(self.domain_labels_str()?, range)
+        self.domain_labels_segments()?.range_str(range)
     }
 
     /// The range of the domain labels segments as a [`DomainSegments`].
     pub fn domain_labels_range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'_>> {
-        let range = (range.start_bound().cloned(), range.end_bound().cloned());
-
-        Some(DomainSegments(self.domain_labels_range_str(range)?.into()))
+        self.domain_labels_segments()?.range(range)
     }
 
 

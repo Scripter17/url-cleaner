@@ -3,21 +3,32 @@
 use crate::prelude::*;
 
 impl BetterUrl {
-    /// [`DomainDetails::has_prefix`].
+    /// If it has a domain prefix.
     pub fn has_domain_prefix(&self) -> bool {
-        self.domain_details().is_some_and(DomainDetails::has_prefix)
+        self.domain_details().is_some_and(|x| x.ms != 0)
     }
 
 
 
+    /// The [`Range`] of the domain prefix.
+    fn domain_prefix_thing(&self) -> Option<Range<usize>> {
+        let hs = self.host_start    ()?;
+        let dd = self.domain_details()?;
+
+        match dd.ms {
+            0 => None,
+            _ => Some(hs .. hs + dd.ms as usize - 1),
+        }
+    }
+
     /// The domain prefix as a [`str`].
     pub fn domain_prefix_str(&self) -> Option<&str> {
-        Some(&self.host_str()?[self.domain_details()?.prefix_range()?])
+        Some(unsafe {self.as_str().get_unchecked(self.domain_prefix_thing()?)})
     }
 
     /// The domain prefix as a [`DomainSegments`].
     pub fn domain_prefix(&self) -> Option<DomainSegments<'_>> {
-        Some(DomainSegments(self.domain_prefix_str()?.into()))
+        Some(unsafe {DomainSegments::new_unchecked(self.domain_prefix_str()?)})
     }
 
 
@@ -48,14 +59,12 @@ impl BetterUrl {
 
     /// The range of domain prefix segments as a [`str`].
     pub fn domain_prefix_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
-        domain_range_thing(self.domain_prefix_str()?, range)
+        self.domain_prefix_segments()?.range_str(range)
     }
 
     /// The range of domain prefix segments as a [`DomainSegments`].
     pub fn domain_prefix_range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'_>> {
-        let range = (range.start_bound().cloned(), range.end_bound().cloned());
-
-        Some(DomainSegments(self.domain_prefix_range_str(range)?.into()))
+        self.domain_prefix_segments()?.range(range)
     }
 
 

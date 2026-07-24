@@ -15,50 +15,39 @@ pub enum UrlPart {
 
 
 
-    /// [`BetterUrl::scheme`].
+    /// [`BetterUrl::scheme_str`].
     Scheme,
 
 
 
-    /// [`BetterUrl::userinfo`].
+    /// [`BetterUrl::userinfo_str`].
     Userinfo,
-    /// [`BetterUrl::username`].
+    /// [`BetterUrl::username_str`].
     Username,
-    /// [`BetterUrl::password`].
+    /// [`BetterUrl::password_str`].
     Password,
 
 
 
-    /// [`BetterUrl::host`].
+    /// [`BetterUrl::host_str`].
     Host,
 
 
 
-    /// [`BetterUrl::domain_prefix`] + [`DomainSegments::into_inner`].
-    DomainPrefix,
-    /// [`BetterUrl::domain_middle`] + [`DomainSegment::into_inner`].
-    DomainMiddle,
-    /// [`BetterUrl::domain_suffix`] + [`DomainSegments::into_inner`].
-    DomainSuffix,
-    /// [`BetterUrl::domain_origin`] + [`DomainSegments::into_inner`].
-    DomainOrigin,
-    /// [`BetterUrl::domain_labels`] + [`DomainSegments::into_inner`].
-    DomainLabels,
-    /// [`BetterUrl::domain_normal`] + [`DomainSegments::into_inner`].
-    DomainNormal,
+    /** [`BetterUrl::domain_prefix_str`]. **/ DomainPrefix,
+    /** [`BetterUrl::domain_middle_str`]. **/ DomainMiddle,
+    /** [`BetterUrl::domain_suffix_str`]. **/ DomainSuffix,
+    /** [`BetterUrl::domain_origin_str`]. **/ DomainOrigin,
+    /** [`BetterUrl::domain_labels_str`]. **/ DomainLabels,
+    /** [`BetterUrl::domain_normal_str`]. **/ DomainNormal,
 
-    /// [`BetterUrl::domain_segment`] + [`DomainSegment::into_inner`].
-    DomainSegment(isize),
-    /// [`BetterUrl::domain_prefix_segment`] + [`DomainSegment::into_inner`].
-    DomainPrefixSegment(isize),
-    /// [`BetterUrl::domain_suffix_segment`] + [`DomainSegment::into_inner`].
-    DomainSuffixSegment(isize),
-    /// [`BetterUrl::domain_origin_segment`] + [`DomainSegment::into_inner`].
-    DomainOriginSegment(isize),
-    /// [`BetterUrl::domain_normal_segment`] + [`DomainSegment::into_inner`].
-    DomainNormalSegment(isize),
+    /** [`BetterUrl::domain_segment_str`].        **/ DomainSegment(isize),
+    /** [`BetterUrl::domain_prefix_segment_str`]. **/ DomainPrefixSegment(isize),
+    /** [`BetterUrl::domain_suffix_segment_str`]. **/ DomainSuffixSegment(isize),
+    /** [`BetterUrl::domain_origin_segment_str`]. **/ DomainOriginSegment(isize),
+    /** [`BetterUrl::domain_normal_segment_str`]. **/ DomainNormalSegment(isize),
 
-    /// [`BetterUrl::domain_range`] + [`DomainSegment::into_inner`].
+    /// [`BetterUrl::domain_range_str`].
     DomainSegmentRange {
         /// The start of the range.
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
@@ -67,7 +56,7 @@ pub enum UrlPart {
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
         end: Bound<isize>
     },
-    /// [`BetterUrl::domain_prefix_range`] + [`DomainSegment::into_inner`].
+    /// [`BetterUrl::domain_prefix_range_str`].
     DomainPrefixSegmentRange {
         /// The start of the range.
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
@@ -76,7 +65,7 @@ pub enum UrlPart {
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
         end: Bound<isize>
     },
-    /// [`BetterUrl::domain_suffix_range`] + [`DomainSegment::into_inner`].
+    /// [`BetterUrl::domain_suffix_range_str`].
     DomainSuffixSegmentRange {
         /// The start of the range.
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
@@ -85,7 +74,7 @@ pub enum UrlPart {
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
         end: Bound<isize>
     },
-    /// [`BetterUrl::domain_origin_range`] + [`DomainSegment::into_inner`].
+    /// [`BetterUrl::domain_origin_range_str`].
     DomainOriginSegmentRange {
         /// The start of the range.
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
@@ -94,7 +83,7 @@ pub enum UrlPart {
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
         end: Bound<isize>
     },
-    /// [`BetterUrl::domain_normal_range`] + [`DomainSegment::into_inner`].
+    /// [`BetterUrl::domain_normal_range_str`].
     DomainNormalSegmentRange {
         /// The start of the range.
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
@@ -106,29 +95,18 @@ pub enum UrlPart {
 
 
 
-    /// [`BetterUrl::domain_prefix`] + [`DomainSegments::decode`].
-    DecodedDomainPrefix,
-    /// [`BetterUrl::domain_middle`] + [`DomainSegment::decode`].
-    DecodedDomainMiddle,
-    /// [`BetterUrl::domain_suffix`] + [`DomainSegments::decode`].
-    DecodedDomainSuffix,
-    /// [`BetterUrl::domain_origin`] + [`DomainSegments::decode`].
-    DecodedDomainOrigin,
-    /// [`BetterUrl::domain_labels`] + [`DomainSegments::decode`].
-    DecodedDomainLabels,
-    /// [`BetterUrl::domain_normal`] + [`DomainSegments::decode`].
-    DecodedDomainNormal,
+    /** [`BetterUrl::domain_prefix`] + [`DomainSegments::decode`]. **/ DecodedDomainPrefix,
+    /** [`BetterUrl::domain_middle`] + [`DomainSegment::decode`].  **/ DecodedDomainMiddle,
+    /** [`BetterUrl::domain_suffix`] + [`DomainSegments::decode`]. **/ DecodedDomainSuffix,
+    /** [`BetterUrl::domain_origin`] + [`DomainSegments::decode`]. **/ DecodedDomainOrigin,
+    /** [`BetterUrl::domain_labels`] + [`DomainSegments::decode`]. **/ DecodedDomainLabels,
+    /** [`BetterUrl::domain_normal`] + [`DomainSegments::decode`]. **/ DecodedDomainNormal,
 
-    /// [`BetterUrl::domain_segment`] + [`DomainSegment::decode`].
-    DecodedDomainSegment(isize),
-    /// [`BetterUrl::domain_prefix_segment`] + [`DomainSegment::decode`].
-    DecodedDomainPrefixSegment(isize),
-    /// [`BetterUrl::domain_suffix_segment`] + [`DomainSegment::decode`].
-    DecodedDomainSuffixSegment(isize),
-    /// [`BetterUrl::domain_origin_segment`] + [`DomainSegment::decode`].
-    DecodedDomainOriginSegment(isize),
-    /// [`BetterUrl::domain_normal_segment`] + [`DomainSegment::decode`].
-    DecodedDomainNormalSegment(isize),
+    /** [`BetterUrl::domain_segment`]        + [`DomainSegment::decode`]. **/ DecodedDomainSegment      (isize),
+    /** [`BetterUrl::domain_prefix_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainPrefixSegment(isize),
+    /** [`BetterUrl::domain_suffix_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainSuffixSegment(isize),
+    /** [`BetterUrl::domain_origin_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainOriginSegment(isize),
+    /** [`BetterUrl::domain_normal_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainNormalSegment(isize),
 
     /// [`BetterUrl::domain_range`] + [`DomainSegments::decode`].
     DecodedDomainSegmentRange {
@@ -183,13 +161,13 @@ pub enum UrlPart {
 
 
 
-    /// [`BetterUrl::path`].
+    /// [`BetterUrl::path_str`].
     Path,
     /// [`BetterUrl::path_segment`].
     PathSegment(isize),
-    /// [`BetterUrl::path_segment`]
+    /// [`BetterUrl::path_segment_str`]
     RawPathSegment(isize),
-    /// [`BetterUrl::path_segment_range`].
+    /// [`BetterUrl::path_segment_range_str`].
     RawPathSegmentRange {
         /// The start of the range.
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
@@ -210,7 +188,7 @@ pub enum UrlPart {
 
 
 
-    /// [`BetterUrl::fragment`].
+    /// [`BetterUrl::fragment_str`].
     Fragment,
     /// [`BetterUrl::fragment_query_param`].
     FragmentParam(QueryParamSelector),
@@ -233,30 +211,30 @@ impl UrlPart {
 
             Self::Scheme => url.scheme_str().into(),
 
-            Self::Userinfo => url.userinfo().into_inner(),
-            Self::Username => url.username().into_inner(),
-            Self::Password => url.password().into_inner(),
+            Self::Userinfo => url.userinfo_str().into(),
+            Self::Username => url.username_str().into(),
+            Self::Password => url.password_str().into(),
 
             Self::Host => url.host_str()?.into(),
 
-            Self::DomainPrefix => url.domain_prefix()?.into_inner(),
-            Self::DomainMiddle => url.domain_middle()?.into_inner(),
-            Self::DomainSuffix => url.domain_suffix()?.into_inner(),
-            Self::DomainOrigin => url.domain_origin()?.into_inner(),
-            Self::DomainLabels => url.domain_labels()?.into_inner(),
-            Self::DomainNormal => url.domain_normal()?.into_inner(),
+            Self::DomainPrefix => url.domain_prefix_str()?.into(),
+            Self::DomainMiddle => url.domain_middle_str()?.into(),
+            Self::DomainSuffix => url.domain_suffix_str()?.into(),
+            Self::DomainOrigin => url.domain_origin_str()?.into(),
+            Self::DomainLabels => url.domain_labels_str()?.into(),
+            Self::DomainNormal => url.domain_normal_str()?.into(),
 
-            Self::DomainSegment      (index) => url.domain_segment       (*index)?.into_inner(),
-            Self::DomainPrefixSegment(index) => url.domain_prefix_segment(*index)?.into_inner(),
-            Self::DomainSuffixSegment(index) => url.domain_suffix_segment(*index)?.into_inner(),
-            Self::DomainOriginSegment(index) => url.domain_origin_segment(*index)?.into_inner(),
-            Self::DomainNormalSegment(index) => url.domain_normal_segment(*index)?.into_inner(),
+            Self::DomainSegment      (index) => url.domain_segment_str       (*index)?.into(),
+            Self::DomainPrefixSegment(index) => url.domain_prefix_segment_str(*index)?.into(),
+            Self::DomainSuffixSegment(index) => url.domain_suffix_segment_str(*index)?.into(),
+            Self::DomainOriginSegment(index) => url.domain_origin_segment_str(*index)?.into(),
+            Self::DomainNormalSegment(index) => url.domain_normal_segment_str(*index)?.into(),
 
-            Self::DomainSegmentRange       {start, end} => url.domain_range       ((*start, *end))?.into_inner(),
-            Self::DomainPrefixSegmentRange {start, end} => url.domain_prefix_range((*start, *end))?.into_inner(),
-            Self::DomainSuffixSegmentRange {start, end} => url.domain_suffix_range((*start, *end))?.into_inner(),
-            Self::DomainOriginSegmentRange {start, end} => url.domain_origin_range((*start, *end))?.into_inner(),
-            Self::DomainNormalSegmentRange {start, end} => url.domain_normal_range((*start, *end))?.into_inner(),
+            Self::DomainSegmentRange       {start, end} => url.domain_range_str       ((*start, *end))?.into(),
+            Self::DomainPrefixSegmentRange {start, end} => url.domain_prefix_range_str((*start, *end))?.into(),
+            Self::DomainSuffixSegmentRange {start, end} => url.domain_suffix_range_str((*start, *end))?.into(),
+            Self::DomainOriginSegmentRange {start, end} => url.domain_origin_range_str((*start, *end))?.into(),
+            Self::DomainNormalSegmentRange {start, end} => url.domain_normal_range_str((*start, *end))?.into(),
 
             Self::DecodedDomainPrefix => url.domain_prefix()?.decode(),
             Self::DecodedDomainMiddle => url.domain_middle()?.decode(),
@@ -279,16 +257,16 @@ impl UrlPart {
 
             Self::Port => url.port_str()?.into(),
 
-            Self::Path                             => url.path              (              ) .into_inner(),
-            Self::PathSegment         (index     ) => url.path_segment      (*index        )?.decode    (),
-            Self::RawPathSegment      (index     ) => url.path_segment      (*index        )?.into_inner(),
-            Self::RawPathSegmentRange {start, end} => url.path_segment_range((*start, *end))?.into_inner(),
+            Self::Path                             => url.path_str              (              ) .into  (),
+            Self::PathSegment         (index     ) => url.path_segment          (*index        )?.decode(),
+            Self::RawPathSegment      (index     ) => url.path_segment_str      (*index        )?.into  (),
+            Self::RawPathSegmentRange {start, end} => url.path_segment_range_str((*start, *end))?.into  (),
 
-            Self::Query                => url.query().into_inner()?,
+            Self::Query                => url.query_str()?.into(),
             Self::QueryParam   (param) => url.query_param(&param.name, param.index)?.into_value    ()?,
             Self::RawQueryParam(param) => url.query_param(&param.name, param.index)?.into_raw_value()?,
 
-            Self::Fragment                => url.fragment().into_inner()?,
+            Self::Fragment                => url.fragment_str()?.into(),
             Self::FragmentParam   (param) => url.fragment_query_param(&param.name, param.index)?.into_value    ()?,
             Self::RawFragmentParam(param) => url.fragment_query_param(&param.name, param.index)?.into_raw_value()?,
         })

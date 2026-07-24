@@ -8,11 +8,12 @@ use crate::prelude::*;
 /// the [opaque host type itself](https://url.spec.whatwg.org/#opaque-host) is specified to not be empty.
 ///
 /// Therefore, at least for now, I have chosen to have the empty string return an error.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OpaqueHostDetails;
 
 impl OpaqueHostDetails {
-    /// Parse a raw opaque host.
+    /// Parse an opaque host literal.
     /// # Errors
     /// If the host is an invalid opaque host, returns the error [`InvalidOpaqueHost`].
     ///
@@ -21,8 +22,8 @@ impl OpaqueHostDetails {
     ///
     /// Therefore, empty opaque hosts are rejected.
     ///
-    /// See [servo/rust-url#1112](https://github.com/servo/rust-url/issues/1112) and [whatwg/url#908](https://github.com/whatwg/url/issues/908) for discussion.
-    pub fn from_raw(s: &str) -> Result<Self, InvalidOpaqueHost> {
+    /// See and [whatwg/url#908](https://github.com/whatwg/url/issues/908) for discussion.
+    pub fn parse(s: &str) -> Result<Self, InvalidOpaqueHost> {
         if s.is_empty() {
             Err(InvalidOpaqueHost)?;
         }
@@ -35,31 +36,44 @@ impl OpaqueHostDetails {
     }
 }
 
+
+
 impl FromStr for OpaqueHostDetails {
     type Err = InvalidOpaqueHost;
 
-    /// [`Self::from_raw`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::from_raw(s)
+        Self::parse(s)
     }
 }
 
 impl TryFrom<&str> for OpaqueHostDetails {
     type Error = InvalidOpaqueHost;
 
-    /// [`Self::from_raw`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Self::from_raw(value)
+        Self::parse(value)
     }
 }
+
+
 
 impl TryFrom<HostDetails> for OpaqueHostDetails {
     type Error = HostDetails;
 
     fn try_from(value: HostDetails) -> Result<Self, Self::Error> {
         match value {
-            HostDetails::Opaque(details) => Ok(details),
-            details => Err(details)
+            HostDetails::Opaque(details) => Ok (details),
+            details                      => Err(details),
+        }
+    }
+}
+
+impl TryFrom<NonSpecialHostDetails> for OpaqueHostDetails {
+    type Error = NonSpecialHostDetails;
+
+    fn try_from(value: NonSpecialHostDetails) -> Result<Self, Self::Error> {
+        match value {
+            NonSpecialHostDetails::Opaque(details) => Ok (details),
+            details                                => Err(details)
         }
     }
 }

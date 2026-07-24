@@ -54,9 +54,21 @@ impl InnerCache {
         &self.location
     }
 
-    /// Get a lock on the cache.
+    /// Get a lock on the cache, initializing it if needed.
     /// # Errors
-    #[doc = edoc!(callerr(Connection::open_in_memory), callerr(std::fs::exists), callerr(std::fs::File::create_new), callerr(Connection::open), callerr(Connection::execute))]
+    /// If [`Self::location`] is [`CacheLocation::Memory`]:
+    ///
+    /// - If the call to [`Connection::open_in_memory`] returns an error, that error is returned.
+    ///
+    /// If [`Self::location`] is [`CacheLocation::Path`]:
+    ///
+    /// - If the call to [`std::fs::exists`] returns an error, that error is returned.
+    ///
+    /// - If the call to [`std::fs::File::create_new`] returns an error, that error is returned.
+    ///
+    /// - If the call to [`Connection::open`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Connection::execute`] with [`Self::INIT`] returns an error, that error is returned.
     pub fn lock(&self) -> Result<MappedReentrantMutexGuard<'_, Connection>, LockCacheError> {
         Ok(match ReentrantMutexGuard::try_map(self.connection.lock(), OnceLock::get) {
             Ok (lock) => lock,
@@ -78,7 +90,9 @@ impl InnerCache {
 
     /// Read an entry from the cache.
     /// # Errors
-    #[doc = edoc!(callerr(Self::lock), callerr(Connection::query_one))]
+    /// If the call to [`Self::lock`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Connection::query_one`] returns an error after [`rusqlite::OptionalExtension::optional`], that error is returned.
     pub fn read(&self, keys: CacheEntryKeys<'_>) -> Result<Option<CacheEntryValues>, ReadFromCacheError> {
         Ok(self.lock()?.query_one(
             Self::READ,
@@ -92,7 +106,9 @@ impl InnerCache {
 
     /// Write an entry to the cache.
     /// # Errors
-    #[doc = edoc!(callerr(Self::lock), callerr(Connection::execute))]
+    /// If the call to [`Self::lock`] returns an error, that error is returned.
+    ///
+    /// If the call to [`Connection::execute`] returns an error, that error is returned.
     pub fn write(&self, entry: NewCacheEntry<'_>) -> Result<(), WriteToCacheError> {
         self.lock()?.execute(
             Self::WRITE,

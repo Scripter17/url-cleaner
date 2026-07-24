@@ -3,14 +3,14 @@
 use crate::prelude::*;
 
 impl SegmentedPath<'_> {
-    /// Either [`SpecialNotFileSegmentedPath::push`], [`FileSegmentedPath::push`], or [`NonSpecialSegmentedPath::push`].
+    /// Either [`SpecialNotFilePath::push`], [`FilePath::push`], or [`NonSpecialPath::push`].
     /// # Errors
-    /// If the call to [`SpecialNotFileSegmentedPath::push`] returns an error, that error is returned.
+    /// If the call to [`SpecialNotFilePath::push`] returns an error, that error is returned.
     ///
-    /// If the call to [`FileSegmentedPath::push`] returns an error, that error is returned.
+    /// If the call to [`FilePath::push`] returns an error, that error is returned.
     ///
-    /// If the call to [`NonSpecialSegmentedPath::push`] returns an error, that error is returned.
-    pub fn push<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>>(&mut self, value: T) -> bool {
+    /// If the call to [`NonSpecialPath::push`] returns an error, that error is returned.
+    pub fn push<'a, T: Into<SpecialNotFilePathSegments<'a>> + Into<FilePathSegments<'a>> + Into<NonSpecialPathSegments<'a>>>(&mut self, value: T) -> bool {
         match self {
             Self::SpecialNotFile(x) => x.push(value),
             Self::File          (x) => x.push(value),
@@ -18,14 +18,14 @@ impl SegmentedPath<'_> {
         }
     }
 
-    /// Either [`SpecialNotFileSegmentedPath::prepend`], [`FileSegmentedPath::prepend`], or [`NonSpecialSegmentedPath::prepend`].
+    /// Either [`SpecialNotFilePath::prepend`], [`FilePath::prepend`], or [`NonSpecialPath::prepend`].
     /// # Errors
-    /// If the call to [`SpecialNotFileSegmentedPath::prepend`] returns an error, that error is returned.
+    /// If the call to [`SpecialNotFilePath::prepend`] returns an error, that error is returned.
     ///
-    /// If the call to [`FileSegmentedPath::prepend`] returns an error, that error is returned.
+    /// If the call to [`FilePath::prepend`] returns an error, that error is returned.
     ///
-    /// If the call to [`NonSpecialSegmentedPath::prepend`] returns an error, that error is returned.
-    pub fn prepend<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>>(&mut self, value: T) -> bool {
+    /// If the call to [`NonSpecialPath::prepend`] returns an error, that error is returned.
+    pub fn prepend<'a, T: Into<SpecialNotFilePathSegments<'a>> + Into<FilePathSegments<'a>> + Into<NonSpecialPathSegments<'a>>>(&mut self, value: T) -> bool {
         match self {
             Self::SpecialNotFile(x) => x.prepend(value),
             Self::File          (x) => x.prepend(value),
@@ -33,14 +33,14 @@ impl SegmentedPath<'_> {
         }
     }
 
-    /// Either [`SpecialNotFileSegmentedPath::set`], [`FileSegmentedPath::set`], or [`NonSpecialSegmentedPath::set`].
+    /// Either [`SpecialNotFilePath::set`], [`FilePath::set`], or [`NonSpecialPath::set`].
     /// # Errors
-    /// If the call to [`SpecialNotFileSegmentedPath::set`] returns an error, that error is returned.
+    /// If the call to [`SpecialNotFilePath::set`] returns an error, that error is returned.
     ///
-    /// If the call to [`FileSegmentedPath::set`] returns an error, that error is returned.
+    /// If the call to [`FilePath::set`] returns an error, that error is returned.
     ///
-    /// If the call to [`NonSpecialSegmentedPath::set`] returns an error, that error is returned.
-    pub fn set<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetPathError> {
+    /// If the call to [`NonSpecialPath::set`] returns an error, that error is returned.
+    pub fn set<'a, T: Into<SpecialNotFilePathSegments<'a>> + Into<FilePathSegments<'a>> + Into<NonSpecialPathSegments<'a>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetPathError> {
         match self {
             Self::SpecialNotFile(x) => x.set(index, value),
             Self::File          (x) => x.set(index, value),
@@ -48,14 +48,14 @@ impl SegmentedPath<'_> {
         }
     }
 
-    /// Either [`SpecialNotFileSegmentedPath::insert`], [`FileSegmentedPath::insert`], or [`NonSpecialSegmentedPath::insert`].
+    /// Either [`SpecialNotFilePath::insert`], [`FilePath::insert`], or [`NonSpecialPath::insert`].
     /// # Errors
-    /// If the call to [`SpecialNotFileSegmentedPath::insert`] returns an error, that error is returned.
+    /// If the call to [`SpecialNotFilePath::insert`] returns an error, that error is returned.
     ///
-    /// If the call to [`FileSegmentedPath::insert`] returns an error, that error is returned.
+    /// If the call to [`FilePath::insert`] returns an error, that error is returned.
     ///
-    /// If the call to [`NonSpecialSegmentedPath::insert`] returns an error, that error is returned.
-    pub fn insert<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>>(&mut self, index: isize, value: T) -> Result<bool, SetPathError> {
+    /// If the call to [`NonSpecialPath::insert`] returns an error, that error is returned.
+    pub fn insert<'a, T: Into<SpecialNotFilePathSegments<'a>> + Into<FilePathSegments<'a>> + Into<NonSpecialPathSegments<'a>>>(&mut self, index: isize, value: T) -> Result<bool, SetPathError> {
         match self {
             Self::SpecialNotFile(x) => x.insert(index, value),
             Self::File          (x) => x.insert(index, value),
@@ -63,33 +63,18 @@ impl SegmentedPath<'_> {
         }
     }
 
-    /// Either [`SpecialNotFileSegmentedPath::set_range`], [`FileSegmentedPath::set_range`], or [`NonSpecialSegmentedPath::set_range`].
+    /// Either [`SpecialNotFilePath::set_range`], [`FilePath::set_range`], or [`NonSpecialPath::set_range`].
     /// # Errors
-    /// If the call to [`SpecialNotFileSegmentedPath::set_range`] returns an error, that error is returned.
+    /// If the call to [`SpecialNotFilePath::set_range`] returns an error, that error is returned.
     ///
-    /// If the call to [`FileSegmentedPath::set_range`] returns an error, that error is returned.
+    /// If the call to [`FilePath::set_range`] returns an error, that error is returned.
     ///
-    /// If the call to [`NonSpecialSegmentedPath::set_range`] returns an error, that error is returned.
-    pub fn set_range<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>, I: IntoIterator<Item = T>, B: RangeBounds<isize>>(&mut self, range: B, iter: I) -> Result<bool, SetPathError> {
+    /// If the call to [`NonSpecialPath::set_range`] returns an error, that error is returned.
+    pub fn set_range<'a, T: Into<SpecialNotFilePathSegments<'a>> + Into<FilePathSegments<'a>> + Into<NonSpecialPathSegments<'a>>, B: RangeBounds<isize>>(&mut self, range: B, value: Option<T>) -> Result<bool, SetPathError> {
         match self {
-            Self::SpecialNotFile(x) => x.set_range(range, iter),
-            Self::File          (x) => x.set_range(range, iter),
-            Self::NonSpecial    (x) => x.set_range(range, iter),
-        }
-    }
-
-    /// Either [`SpecialNotFileSegmentedPath::insert_segments`], [`FileSegmentedPath::insert_segments`], or [`NonSpecialSegmentedPath::insert_segments`].
-    /// # Errors
-    /// If the call to [`SpecialNotFileSegmentedPath::insert_segments`] returns an error, that error is returned.
-    ///
-    /// If the call to [`FileSegmentedPath::insert_segments`] returns an error, that error is returned.
-    ///
-    /// If the call to [`NonSpecialSegmentedPath::insert_segments`] returns an error, that error is returned.
-    pub fn insert_segments<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>, I: IntoIterator<Item = T>>(&mut self, index: isize, iter: I) -> Result<bool, SetPathError> {
-        match self {
-            Self::SpecialNotFile(x) => x.insert_segments(index, iter),
-            Self::File          (x) => x.insert_segments(index, iter),
-            Self::NonSpecial    (x) => x.insert_segments(index, iter),
+            Self::SpecialNotFile(x) => x.set_range(range, value),
+            Self::File          (x) => x.set_range(range, value),
+            Self::NonSpecial    (x) => x.set_range(range, value),
         }
     }
 }

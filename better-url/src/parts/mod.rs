@@ -9,7 +9,6 @@ mod port;
 mod path;
 mod query;
 mod fragment;
-mod query_like;
 
 pub use scheme::*;
 pub use userinfo::*;
@@ -18,16 +17,14 @@ pub use port::*;
 pub use path::*;
 pub use query::*;
 pub use fragment::*;
-pub use query_like::*;
 
 from_cow_impls!(
     Userinfo, Username, Password,
 
     OpaquePath,
-    FileSegmentedPath          , FilePathSegment,
-    SpecialNotFileSegmentedPath, SpecialNotFilePathSegment,
-    NonSpecialSegmentedPath    , NonSpecialPathSegment,
-    NonSpecialPath,
+    FilePath          , FilePathSegment          , FilePathSegments,
+    SpecialNotFilePath, SpecialNotFilePathSegment, SpecialNotFilePathSegments,
+    NonSpecialPath    , NonSpecialPathSegment    , NonSpecialPathSegments,
 
     SpecialQuery   , SpecialQuerySegment,
     NonSpecialQuery, NonSpecialQuerySegment,
@@ -40,8 +37,7 @@ try_from_cow_impls!(
     Scheme,
     FileHost, SpecialNotFileHost, NonSpecialHost,
     DomainHost, DomainSegment, DomainSegments,
-    IpHost, Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost,
-    NonSpecialEmptyPath
+    Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost
 );
 
 from_option_cow_impls!(MaybeSpecialQuery, MaybeNonSpecialQuery, MaybeFragmentQuery, MaybeFragment);
@@ -55,13 +51,13 @@ as_str_impls!(Username, Password);
 as_str_impls!(
     Host, FileHost, SpecialNotFileHost, NonSpecialHost,
     DomainHost, DomainSegment, DomainSegments,
-    IpHost, Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost
+    Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost
 );
 
 as_str_impls!(
     Path,
     OpaquePath, SegmentedPath,
-    SpecialNotFileSegmentedPath, FileSegmentedPath, NonSpecialPath, NonSpecialSegmentedPath, NonSpecialEmptyPath
+    SpecialNotFilePath, FilePath, NonSpecialPath
 );
 
 as_str_impls!(
@@ -78,7 +74,9 @@ as_str_impls!(
 
     Fragment, ?MaybeFragment,
 
-    FragmentQuery, ?MaybeFragmentQuery, FragmentQuerySegment
+    FragmentQuery, ?MaybeFragmentQuery, FragmentQuerySegment,
+
+    QueryLike, ?MaybeQueryLike
 );
 
 borrowed_impls!(
@@ -89,13 +87,12 @@ borrowed_impls!(
 
     Host, FileHost, SpecialNotFileHost, NonSpecialHost,
     DomainHost, DomainSegment, DomainSegments,
-    IpHost, Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost,
+    Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost,
 
     Port, MaybePort,
 
     Path, SegmentedPath, OpaquePath,
-    FileSegmentedPath, SpecialNotFileSegmentedPath,
-    NonSpecialPath, NonSpecialSegmentedPath, NonSpecialEmptyPath,
+    FilePath, SpecialNotFilePath, NonSpecialPath,
 
     PathSegment              , PathSegments              ,
     SpecialNotFilePathSegment, SpecialNotFilePathSegments,

@@ -44,7 +44,7 @@ impl Args {
                     cmd.arg("--separate-threads=yes");
                 }
 
-                cmd.args(["target/release/url-cleaner-site", "--port", "9148"]);
+                cmd.args(["target/release/url-cleaner-site", "run", "--port", "9148"]);
 
                 if protocol.tls() {
                     cmd.args([

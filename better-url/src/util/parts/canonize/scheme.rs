@@ -7,8 +7,10 @@ pub fn canonize_scheme_setter<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow
     let mut value = value.into();
     let mut changed = false;
 
-    if let Some(i) = value.bytes().position(|b| b == b':') {
-        value.retain_range(..i);
+    if let Some(i) = value.memchr(b':') {
+        unsafe {
+            value.retain_range_unchecked(..i);
+        }
         changed = true;
     }
 

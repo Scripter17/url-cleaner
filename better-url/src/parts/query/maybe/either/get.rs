@@ -3,14 +3,22 @@
 use crate::prelude::*;
 
 impl MaybeQuery<'_> {
+    /// The [`QueryType`].
+    pub fn r#type(&self) -> QueryType {
+        match self {
+            Self::Special   (_) => QueryType::Special   ,
+            Self::NonSpecial(_) => QueryType::NonSpecial,
+        }
+    }
+
     /// A [`DoubleEndedIterator`] of the [`QuerySegment`]s.
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = QuerySegment<'_>> {
-        let is_special = self.is_special();
+        let r#type = self.r#type();
 
         SplitAmpersands(self.as_str()).map(move |x| {
-            match is_special {
-                true  => unsafe {SpecialQuerySegment   ::new_unchecked(x)}.into(),
-                false => unsafe {NonSpecialQuerySegment::new_unchecked(x)}.into(),
+            match r#type {
+                QueryType::Special    => unsafe {SpecialQuerySegment   ::new_unchecked(x)}.into(),
+                QueryType::NonSpecial => unsafe {NonSpecialQuerySegment::new_unchecked(x)}.into(),
             }
         })
     }

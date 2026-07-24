@@ -10,11 +10,7 @@ use crate::prelude::*;
 /// use better_url::prelude::*;
 ///
 /// assert_eq!(Host::new_special_not_file("example.com"  ).unwrap().domain().unwrap(), "example.com");
-///
-/// // Accepts percent encoded domain/IPv4 hosts.
 /// assert_eq!(Host::new_special_not_file("example%2Ecom").unwrap().domain().unwrap(), "example.com");
-///
-/// // Accepts the stupid bullshit the IPv4 host parser accepts.
 /// assert_eq!(Host::new_special_not_file("0x12.034"     ).unwrap().ipv4  ().unwrap(), "18.0.0.28"  );
 /// ```
 #[derive(Debug, Clone)]
@@ -100,13 +96,6 @@ impl<'a> Host<'a> {
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_ipv6<T: TryInto<Ipv6Host<'a>>>(value: T) -> Result<Self, T::Error> {
-        value.try_into().map(Into::into)
-    }
-
-    /// Make a new [`Self::Ipv4`] or [`Self::Ipv6`].
-    /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
-    pub fn new_ip<T: TryInto<IpHost<'a>>>(value: T) -> Result<Self, T::Error> {
         value.try_into().map(Into::into)
     }
 
@@ -206,12 +195,12 @@ impl<'a> Host<'a> {
     /** The [`EmptyHost`].  **/ pub fn empty (self) -> Option<EmptyHost <'a>> {self.try_into().ok()}
 
 
-    /** The [`DomainHost::prefix_str`]. **/ pub fn domain_prefix_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().prefix_range()?])}
-    /** The [`DomainHost::middle_str`]. **/ pub fn domain_middle_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().middle_range()?])}
-    /** The [`DomainHost::suffix_str`]. **/ pub fn domain_suffix_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().suffix_range() ])}
-    /** The [`DomainHost::labels_str`]. **/ pub fn domain_labels_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().labels_range() ])}
-    /** The [`DomainHost::origin_str`]. **/ pub fn domain_origin_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().origin_range()?])}
-    /** The [`DomainHost::normal_str`]. **/ pub fn domain_normal_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.details().normal_range() ])}
+    /** The [`DomainHost::prefix_str`]. **/ pub fn domain_prefix_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.prefix_thing()?])}
+    /** The [`DomainHost::middle_str`]. **/ pub fn domain_middle_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.middle_thing()?])}
+    /** The [`DomainHost::suffix_str`]. **/ pub fn domain_suffix_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.suffix_thing() ])}
+    /** The [`DomainHost::labels_str`]. **/ pub fn domain_labels_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.labels_thing() ])}
+    /** The [`DomainHost::origin_str`]. **/ pub fn domain_origin_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.origin_thing()?])}
+    /** The [`DomainHost::normal_str`]. **/ pub fn domain_normal_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.normal_thing() ])}
 
     /** The [`DomainHost::prefix`]. **/ pub fn domain_prefix(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_prefix_str()?.into()))}
     /** The [`DomainHost::middle`]. **/ pub fn domain_middle(&self) -> Option<DomainSegment <'_>> {Some(DomainSegment (self.domain_middle_str()?.into()))}
@@ -226,15 +215,6 @@ impl<'a> From<Ipv4Host  <'a>> for Host<'a> {fn from(value: Ipv4Host  <'a>) -> Se
 impl<'a> From<Ipv6Host  <'a>> for Host<'a> {fn from(value: Ipv6Host  <'a>) -> Self {Self::Ipv6  (value)}}
 impl<'a> From<OpaqueHost<'a>> for Host<'a> {fn from(value: OpaqueHost<'a>) -> Self {Self::Opaque(value)}}
 impl<'a> From<EmptyHost <'a>> for Host<'a> {fn from(value: EmptyHost <'a>) -> Self {Self::Empty (value)}}
-
-impl<'a> From<IpHost<'a>> for Host<'a> {
-    fn from(value: IpHost<'a>) -> Self {
-        match value {
-            IpHost::V4(x) => x.into(),
-            IpHost::V6(x) => x.into(),
-        }
-    }
-}
 
 impl<'a> From<FileHost<'a>> for Host<'a> {
     fn from(value: FileHost<'a>) -> Self {

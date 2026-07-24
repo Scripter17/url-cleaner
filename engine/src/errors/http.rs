@@ -4,6 +4,21 @@ use http::StatusCode;
 
 use crate::prelude::*;
 
+/// Returned when attempting to use HTTP in a [`Job`] without an [`HttpClient`].
+#[derive(Debug, Error)]
+#[error("Attempted to use HTTP in a job without an HttpClient")]
+pub struct NoHttpClient;
+
+/// [`HttpClient::do`]/[`HttpClient::do_async`].
+#[derive(Debug, Error)]
+pub enum DoHttpRequestError {
+    /** [`NoHttpClient`].             **/ #[error(transparent)] NoHttpClient            (#[from] NoHttpClient            ),
+    /** [`reqwest::Error`].           **/ #[error(transparent)] ReqwestError            (#[from] reqwest::Error          ),
+    /** [`StringSourceError`].        **/ #[error(transparent)] StringSourceError       (#[from] StringSourceError       ),
+    /** [`HttpRequestSourceError`].   **/ #[error(transparent)] HttpRequestSourceError  (#[from] HttpRequestSourceError  ),
+    /** [`HttpResponseHandlerError`]. **/ #[error(transparent)] HttpResponseHandlerError(#[from] HttpResponseHandlerError),
+}
+
 /// [`HttpRequestSource::get`].
 #[derive(Debug, Error)]
 pub enum HttpRequestSourceError {
@@ -49,17 +64,23 @@ pub enum HttpResponseHandlerError {
     /** [`TryElseError`].               **/ #[error(transparent)] TryElseError           (#[from] Box<TryElseError<Self>>     ),
     /** [`std::string::FromUtf8Error`]. **/ #[error(transparent)] FromUtf8Error          (#[from] std::string::FromUtf8Error  ),
     /** [`std::str::Utf8Error`].        **/ #[error(transparent)] Utf8Error              (#[from] std::str::Utf8Error         ),
-    /** [`std::io::Error`].             **/ #[error(transparent)] IoError                (#[from] std::io::Error              ),
     /** [`reqwest::Error`].             **/ #[error(transparent)] ReqwestError           (#[from] reqwest::Error              ),
-    /** [`StringSourceError`].          **/ #[error(transparent)] StringSourceError      (#[from] Box<StringSourceError>      ),
+    /** [`StringSourceError`].          **/ #[error(transparent)] StringSourceError      (#[from] StringSourceError           ),
     /** [`StringNotFound`].             **/ #[error(transparent)] StringNotFound         (#[from] StringNotFound              ),
     /** [`FlagSourceError`].            **/ #[error(transparent)] FlagSourceError        (#[from] FlagSourceError             ),
-    /** [`StringModificationError`].    **/ #[error(transparent)] StringModificationError(#[from] Box<StringModificationError>),
+    /** [`StringModificationError`].    **/ #[error(transparent)] StringModificationError(#[from] StringModificationError     ),
 
-    /// Returned when no [`BodyExtractor::prefix`] is found within [`HttpResponseHandler::ExtractFromBody::limit`] bytes.
+    /// Returned when no [`BodyExtractor::prefix`] isn't found in the entire body.
+    #[error("No BodyExtractor::prefix was found in the entire body.")]
+    PrefixNotFound,
+    /// Returned when the [`BodyExtractor::suffix`] isn't found in the entire body.
+    #[error("The BodyExtractor::suffix wasn't found in the entire body.")]
+    SuffixNotFound,
+
+    /// Returned when no [`BodyExtractor::prefix`] isn't found within [`HttpResponseHandler::ExtractFromBody::limit`] bytes.
     #[error("No BodyExtractor::prefix was found within HttpResponseHandler::ExtractFromBody::limit bytes.")]
     PrefixNotFoundWithinLimit,
-    /// Returned when the [`BodyExtractor::suffix`] is found within [`HttpResponseHandler::ExtractFromBody::limit`] bytes.
+    /// Returned when the [`BodyExtractor::suffix`] isn;t found within [`HttpResponseHandler::ExtractFromBody::limit`] bytes.
     #[error("The BodyExtractor::suffix wasn't found within HttpResponseHandler::ExtractFromBody::limit bytes.")]
     SuffixNotFoundWithinLimit,
     /// Returned when [`HttpResponseHandler::ExtractFromBody`] is used with zero extractors.
@@ -83,6 +104,4 @@ pub enum HttpResponseHandlerError {
     Required5xx(StatusCode)
 }
 
-impl From<StringModificationError> for HttpResponseHandlerError {fn from(value: StringModificationError) -> Self {Box::new(value).into()}}
-impl From<StringSourceError      > for HttpResponseHandlerError {fn from(value: StringSourceError      ) -> Self {Box::new(value).into()}}
-impl From<TryElseError<Self>     > for HttpResponseHandlerError {fn from(value: TryElseError<Self>     ) -> Self {Box::new(value).into()}}
+impl From<TryElseError<Self>> for HttpResponseHandlerError {fn from(value: TryElseError<Self>) -> Self {Box::new(value).into()}}

@@ -1,4 +1,4 @@
-//! [`Ipv4Details`].
+//! [`Ipv4HostDetails`].
 
 use std::net::Ipv4Addr;
 
@@ -6,12 +6,13 @@ use crate::prelude::*;
 
 /// Details for an [`Ipv4Host`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Ipv4Details {
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Ipv4HostDetails {
     /// The parsed [`Ipv4Addr`].
     pub parsed: Ipv4Addr
 }
 
-impl Ipv4Details {
+impl Ipv4HostDetails {
     /// Parse a raw IPv4 host.
     /// # Errors
     /// If the call to [`Ipv4Addr::from_str`] returns an error, returns the error [`InvalidIpv4Host`].
@@ -19,8 +20,8 @@ impl Ipv4Details {
     /// ```
     /// use better_url::prelude::*;
     ///
-    /// Ipv4Details::from_raw("127.0.0.1").unwrap    ();
-    /// Ipv4Details::from_raw("0x12.034" ).unwrap_err();
+    /// Ipv4HostDetails::from_raw("127.0.0.1").unwrap    ();
+    /// Ipv4HostDetails::from_raw("0x12.034" ).unwrap_err();
     /// ```
     pub fn from_raw(s: &str) -> Result<Self, InvalidIpv4Host> {
         Ok(Self {
@@ -35,8 +36,8 @@ impl Ipv4Details {
     /// ```
     /// use better_url::prelude::*;
     ///
-    /// Ipv4Details::parse("127.0.0.1").unwrap();
-    /// Ipv4Details::parse("0x12.034" ).unwrap();
+    /// Ipv4HostDetails::parse("127.0.0.1").unwrap();
+    /// Ipv4HostDetails::parse("0x12.034" ).unwrap();
     /// ```
     pub fn parse(s: &str) -> Result<Self, InvalidIpv4Host> {
         Ok(Self {
@@ -80,48 +81,61 @@ impl Ipv4Details {
     }
 }
 
-impl FromStr for Ipv4Details {
+
+
+impl FromStr for Ipv4HostDetails {
     type Err = InvalidIpv4Host;
 
-    /// [`Self::parse`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s)
     }
 }
 
-impl TryFrom<&str> for Ipv4Details {
+impl TryFrom<&str> for Ipv4HostDetails {
     type Error = InvalidIpv4Host;
 
-    /// [`Self::parse`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::parse(value)
     }
 }
 
-impl From<Ipv4Addr> for Ipv4Details {
+impl From<Ipv4Addr> for Ipv4HostDetails {
     fn from(value: Ipv4Addr) -> Self {
         Self {parsed: value}
     }
 }
 
-impl TryFrom<IpDetails> for Ipv4Details {
-    type Error = Ipv6Details;
 
-    fn try_from(value: IpDetails) -> Result<Self, Self::Error> {
-        match value {
-            IpDetails::V4(x) => Ok(x),
-            IpDetails::V6(x) => Err(x),
-        }
-    }
-}
 
-impl TryFrom<HostDetails> for Ipv4Details {
+impl TryFrom<HostDetails> for Ipv4HostDetails {
     type Error = HostDetails;
 
     fn try_from(value: HostDetails) -> Result<Self, Self::Error> {
         match value {
-            HostDetails::Ipv4(details) => Ok(details),
-            details => Err(details),
+            HostDetails::Ipv4(details) => Ok (details),
+            details                    => Err(details),
+        }
+    }
+}
+
+impl TryFrom<FileHostDetails> for Ipv4HostDetails {
+    type Error = FileHostDetails;
+
+    fn try_from(value: FileHostDetails) -> Result<Self, Self::Error> {
+        match value {
+            FileHostDetails::Ipv4(details) => Ok (details),
+            details                        => Err(details),
+        }
+    }
+}
+
+impl TryFrom<SpecialNotFileHostDetails> for Ipv4HostDetails {
+    type Error = SpecialNotFileHostDetails;
+
+    fn try_from(value: SpecialNotFileHostDetails) -> Result<Self, Self::Error> {
+        match value {
+            SpecialNotFileHostDetails::Ipv4(details) => Ok (details),
+            details                                  => Err(details),
         }
     }
 }

@@ -22,6 +22,11 @@ impl<'a> NonSpecialQuery<'a> {
         &self.0
     }
 
+    /// [`Self::len`] + 1 for the `?`.
+    pub fn search_len(&self) -> usize {
+        self.len() + 1
+    }
+
 
 
     /// Make a borrowing [`Self`].

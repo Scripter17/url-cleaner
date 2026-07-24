@@ -1,4 +1,4 @@
-//! [`Ipv6Details`].
+//! [`Ipv6HostDetails`].
 
 use std::net::Ipv6Addr;
 
@@ -6,12 +6,13 @@ use crate::prelude::*;
 
 /// Details for an [`Ipv6Host`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Ipv6Details {
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Ipv6HostDetails {
     /// The parsed [`Ipv6Addr`].
     pub parsed: Ipv6Addr
 }
 
-impl Ipv6Details {
+impl Ipv6HostDetails {
     /// Parse an IPv6 host.
     /// # Errors
     /// If the call to [`Ipv6Addr::from_str`] returns an error, returns the error [`InvalidIpv6Host`].
@@ -50,48 +51,72 @@ impl Ipv6Details {
     }
 }
 
-impl FromStr for Ipv6Details {
+
+
+impl FromStr for Ipv6HostDetails {
     type Err = InvalidIpv6Host;
 
-    /// [`Self::parse`].
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s)
     }
 }
 
-impl TryFrom<&str> for Ipv6Details {
+impl TryFrom<&str> for Ipv6HostDetails {
     type Error = InvalidIpv6Host;
 
-    /// [`Self::parse`].
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         Self::parse(value)
     }
 }
 
-impl From<Ipv6Addr> for Ipv6Details {
+impl From<Ipv6Addr> for Ipv6HostDetails {
     fn from(value: Ipv6Addr) -> Self {
         Self {parsed: value}
     }
 }
 
-impl TryFrom<IpDetails> for Ipv6Details {
-    type Error = Ipv4Details;
 
-    fn try_from(value: IpDetails) -> Result<Self, Self::Error> {
-        match value {
-            IpDetails::V4(x) => Err(x),
-            IpDetails::V6(x) => Ok(x),
-        }
-    }
-}
 
-impl TryFrom<HostDetails> for Ipv6Details {
+impl TryFrom<HostDetails> for Ipv6HostDetails {
     type Error = HostDetails;
 
     fn try_from(value: HostDetails) -> Result<Self, Self::Error> {
         match value {
-            HostDetails::Ipv6(details) => Ok(details),
-            details => Err(details),
+            HostDetails::Ipv6(details) => Ok (details),
+            details                    => Err(details),
+        }
+    }
+}
+
+impl TryFrom<FileHostDetails> for Ipv6HostDetails {
+    type Error = FileHostDetails;
+
+    fn try_from(value: FileHostDetails) -> Result<Self, Self::Error> {
+        match value {
+            FileHostDetails::Ipv6(details) => Ok (details),
+            details                        => Err(details),
+        }
+    }
+}
+
+impl TryFrom<SpecialNotFileHostDetails> for Ipv6HostDetails {
+    type Error = SpecialNotFileHostDetails;
+
+    fn try_from(value: SpecialNotFileHostDetails) -> Result<Self, Self::Error> {
+        match value {
+            SpecialNotFileHostDetails::Ipv6(details) => Ok (details),
+            details                                  => Err(details),
+        }
+    }
+}
+
+impl TryFrom<NonSpecialHostDetails> for Ipv6HostDetails {
+    type Error = NonSpecialHostDetails;
+
+    fn try_from(value: NonSpecialHostDetails) -> Result<Self, Self::Error> {
+        match value {
+            NonSpecialHostDetails::Ipv6(details) => Ok (details),
+            details                              => Err(details),
         }
     }
 }

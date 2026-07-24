@@ -7,7 +7,7 @@ impl BetterUrl {
     ///
     /// Basically only used by [`Self::canon_get_host`].
     pub fn host_port_str(&self) -> Option<&str> {
-        Some(&self.serialization[self.host_start?.get() as usize .. self.path_start as usize])
+        Some(&self.serialization[self.details.host_start?.get() as usize .. self.details.path_start as usize])
     }
 
     /// Set the host and, if `port` is [`Some`], the port.

@@ -3,13 +3,13 @@
 use crate::prelude::*;
 
 impl SegmentedPath<'_> {
-    /// Either [`SpecialNotFileSegmentedPath::pop`], [`FileSegmentedPath::pop`], or [`NonSpecialSegmentedPath::pop`].
+    /// Either [`SpecialNotFilePath::pop`], [`FilePath::pop`], or [`NonSpecialPath::pop`].
     /// # Errors
-    /// If the call to [`SpecialNotFileSegmentedPath::pop`] returns an error, that error is returned.
+    /// If the call to [`SpecialNotFilePath::pop`] returns an error, that error is returned.
     ///
-    /// If the call to [`FileSegmentedPath::pop`] returns an error, that error is returned.
+    /// If the call to [`FilePath::pop`] returns an error, that error is returned.
     ///
-    /// If the call to [`NonSpecialSegmentedPath::pop`] returns an error, that error is returned.
+    /// If the call to [`NonSpecialPath::pop`] returns an error, that error is returned.
     pub fn pop(&mut self) -> Result<(), SetPathError> {
         match self {
             Self::SpecialNotFile(x) => x.pop(),
@@ -18,13 +18,13 @@ impl SegmentedPath<'_> {
         }
     }
 
-    /// Either [`SpecialNotFileSegmentedPath::pop_if_empty`], [`FileSegmentedPath::pop_if_empty`], or [`NonSpecialSegmentedPath::pop_if_empty`].
+    /// Either [`SpecialNotFilePath::pop_if_empty`], [`FilePath::pop_if_empty`], or [`NonSpecialPath::pop_if_empty`].
     /// # Errors
-    /// If the call to [`SpecialNotFileSegmentedPath::pop_if_empty`] returns an error, that error is returned.
+    /// If the call to [`SpecialNotFilePath::pop_if_empty`] returns an error, that error is returned.
     ///
-    /// If the call to [`FileSegmentedPath::pop_if_empty`] returns an error, that error is returned.
+    /// If the call to [`FilePath::pop_if_empty`] returns an error, that error is returned.
     ///
-    /// If the call to [`NonSpecialSegmentedPath::pop_if_empty`] returns an error, that error is returned.
+    /// If the call to [`NonSpecialPath::pop_if_empty`] returns an error, that error is returned.
     pub fn pop_if_empty(&mut self) -> Result<bool, SetPathError> {
         match self {
             Self::SpecialNotFile(x) => x.pop_if_empty(),
@@ -33,13 +33,13 @@ impl SegmentedPath<'_> {
         }
     }
 
-    /// Either [`SpecialNotFileSegmentedPath::remove`], [`FileSegmentedPath::remove`], or [`NonSpecialSegmentedPath::remove`].
+    /// Either [`SpecialNotFilePath::remove`], [`FilePath::remove`], or [`NonSpecialPath::remove`].
     /// # Errors
-    /// If the call to [`SpecialNotFileSegmentedPath::remove`] returns an error, that error is returned.
+    /// If the call to [`SpecialNotFilePath::remove`] returns an error, that error is returned.
     ///
-    /// If the call to [`FileSegmentedPath::remove`] returns an error, that error is returned.
+    /// If the call to [`FilePath::remove`] returns an error, that error is returned.
     ///
-    /// If the call to [`NonSpecialSegmentedPath::remove`] returns an error, that error is returned.
+    /// If the call to [`NonSpecialPath::remove`] returns an error, that error is returned.
     pub fn remove(&mut self, index: isize) -> Result<(), SetPathError> {
         match self {
             Self::SpecialNotFile(x) => x.remove(index),

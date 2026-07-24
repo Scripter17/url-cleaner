@@ -6,10 +6,11 @@ use crate::prelude::*;
 
 /// Details for a [`Host`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum HostDetails {
-    /** [`DomainDetails`].     **/ Domain(DomainDetails    ),
-    /** [`Ipv4Details`].       **/ Ipv4  (Ipv4Details      ),
-    /** [`Ipv6Details`].       **/ Ipv6  (Ipv6Details      ),
+    /** [`DomainHostDetails`]. **/ Domain(DomainHostDetails),
+    /** [`Ipv4HostDetails`].   **/ Ipv4  (Ipv4HostDetails  ),
+    /** [`Ipv6HostDetails`].   **/ Ipv6  (Ipv6HostDetails  ),
     /** [`OpaqueHostDetails`]. **/ Opaque(OpaqueHostDetails),
     /** [`EmptyHostDetails`].  **/ Empty (EmptyHostDetails ),
 }
@@ -47,23 +48,18 @@ impl HostDetails {
 
 
 
-    /// The [`DomainDetails`].
-    pub fn domain(self) -> Option<DomainDetails> {
+    /// The [`DomainHostDetails`].
+    pub fn domain(self) -> Option<DomainHostDetails> {
         self.try_into().ok()
     }
 
-    /// The [`Ipv4Details`].
-    pub fn ipv4(self) -> Option<Ipv4Details> {
+    /// The [`Ipv4HostDetails`].
+    pub fn ipv4(self) -> Option<Ipv4HostDetails> {
         self.try_into().ok()
     }
 
-    /// The [`Ipv6Details`].
-    pub fn ipv6(self) -> Option<Ipv6Details> {
-        self.try_into().ok()
-    }
-
-    /// The [`IpDetails`].
-    pub fn ip(self) -> Option<IpDetails> {
+    /// The [`Ipv6HostDetails`].
+    pub fn ipv6(self) -> Option<Ipv6HostDetails> {
         self.try_into().ok()
     }
 
@@ -78,20 +74,42 @@ impl HostDetails {
     }
 }
 
-impl From<DomainDetails    > for HostDetails {fn from(value: DomainDetails    ) -> Self {Self::Domain(value)}}
-impl From<Ipv4Details      > for HostDetails {fn from(value: Ipv4Details      ) -> Self {Self::Ipv4  (value)}}
-impl From<Ipv6Details      > for HostDetails {fn from(value: Ipv6Details      ) -> Self {Self::Ipv6  (value)}}
-impl From<OpaqueHostDetails> for HostDetails {fn from(value: OpaqueHostDetails) -> Self {Self::Opaque(value)}}
-impl From<EmptyHostDetails > for HostDetails {fn from(value: EmptyHostDetails ) -> Self {Self::Empty (value)}}
-
-impl From<IpDetails> for HostDetails {
-    fn from(value: IpDetails) -> Self {
+impl From<FileHostDetails> for HostDetails {
+    fn from(value: FileHostDetails) -> Self {
         match value {
-            IpDetails::V4(x) => x.into(),
-            IpDetails::V6(x) => x.into(),
+            FileHostDetails::Domain(x) => x.into(),
+            FileHostDetails::Ipv4  (x) => x.into(),
+            FileHostDetails::Ipv6  (x) => x.into(),
+            FileHostDetails::Empty (x) => x.into(),
         }
     }
 }
+
+impl From<SpecialNotFileHostDetails> for HostDetails {
+    fn from(value: SpecialNotFileHostDetails) -> Self {
+        match value {
+            SpecialNotFileHostDetails::Domain(x) => x.into(),
+            SpecialNotFileHostDetails::Ipv4  (x) => x.into(),
+            SpecialNotFileHostDetails::Ipv6  (x) => x.into(),
+        }
+    }
+}
+
+impl From<NonSpecialHostDetails> for HostDetails {
+    fn from(value: NonSpecialHostDetails) -> Self {
+        match value {
+            NonSpecialHostDetails::Ipv6  (x) => x.into(),
+            NonSpecialHostDetails::Opaque(x) => x.into(),
+            NonSpecialHostDetails::Empty (x) => x.into(),
+        }
+    }
+}
+
+impl From<DomainHostDetails> for HostDetails {fn from(value: DomainHostDetails) -> Self {Self::Domain(value)}}
+impl From<Ipv4HostDetails  > for HostDetails {fn from(value: Ipv4HostDetails  ) -> Self {Self::Ipv4  (value)}}
+impl From<Ipv6HostDetails  > for HostDetails {fn from(value: Ipv6HostDetails  ) -> Self {Self::Ipv6  (value)}}
+impl From<OpaqueHostDetails> for HostDetails {fn from(value: OpaqueHostDetails) -> Self {Self::Opaque(value)}}
+impl From<EmptyHostDetails > for HostDetails {fn from(value: EmptyHostDetails ) -> Self {Self::Empty (value)}}
 
 impl From<Ipv4Addr> for HostDetails {fn from(value: Ipv4Addr) -> Self {Self::Ipv4(value.into())}}
 impl From<Ipv6Addr> for HostDetails {fn from(value: Ipv6Addr) -> Self {Self::Ipv6(value.into())}}

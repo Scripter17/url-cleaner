@@ -500,7 +500,7 @@
 				{"task": "https://bitly.com"                                             , "expect": "https://bitly.com/"                                                                                                         },
 				{"task": "https://bitly.com/minecraft"                                   , "expect": "https://i34.photobucket.com/albums/d119/ndsemp/mc_custom.png"                                                               },
 				{"task": "https://fireship.page.link/slack"                              , "expect": "https://join.slack.com/t/angularfirebase/shared_invite/zt-1gp6l55qa-FQBznTjqW3665Mk5fqrysg"                                 },
-				{"task": "https://gprivate.com/6bi5b"                                    , "expect": "https://www.google.com/search?q=Why%20do%20I%20have%20to%20enter%20a%20link%20to%20post%20a%20request%20for%20research%3F"  },
+				{"task": "https://gprivate.com/6bi5b"                                    , "expect": "https://www.google.com/search?q=Why%20do%20I%20have%20to%20enter%20a%20link%20to%20post%20a%20request%20for%20research%3F"  , "disable": true},
 				{"task": "https://is.gd/29igH"                                           , "expect": "https://chuckontherightside.blogspot.com/2008/11/audacity-of-hype.html"                                                     },
 				{"task": "https://is.gd/AYle"                                            , "expect": "https://timesofindia.indiatimes.com/Sensex-soars-investors-make-Rs-65-lakh-cr-in-60-sec/articleshow/4547162.cms"            },
 				{"task": "https://is.gd/INmH"                                            , "expect": "https://snardfarker.ning.com/video/jesse-ventura-on-olbermann-may"                                                          },

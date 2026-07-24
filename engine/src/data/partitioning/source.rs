@@ -34,7 +34,7 @@ impl PartitioningSource {
     /// See each variant of [`Self`] for when each variant returns an error.
     pub fn get<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<&'j Partitioning>, PartitioningSourceError> {
         debug!(PartitioningSource::get, self; match self {
-            Self::Params(StringSource::String(x)) => Ok(task_state.job.cleaner.params.partitionings.get(x)),
+            Self::Params(StringSource::String(x)) => Ok(task_state.job.cleaner.params.partitionings.get(&**x)),
             _ => self._get(task_state, args),
         })
     }

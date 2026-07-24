@@ -5,7 +5,7 @@ use serde::Deserialize;
 use super::prelude::*;
 
 /// Do tests.
-#[derive(Debug, Parser)]
+#[derive(Debug, Default, Parser)]
 pub struct Args {
     /// The Cleaner to test.
     #[arg(long)]
@@ -22,6 +22,20 @@ pub struct Args {
     /// The filter to decide which jobs to do.
     #[arg(long)]
     pub filter: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cleaner_test() {
+        Args {
+            assert_suitability: true,
+            filter: Some("offline".into()),
+            ..Default::default()
+        }.r#do()
+    }
 }
 
 /// The bundled test suite.
@@ -55,7 +69,12 @@ pub struct Test {
     /// The task.
     pub task: Task,
     /// The expected result.
-    pub expect: BetterUrl
+    pub expect: BetterUrl,
+    /// Disable the test.
+    ///
+    /// Added because google was shitting one of its many beds.
+    #[serde(default)]
+    pub disable: bool,
 }
 
 impl Args {
@@ -89,7 +108,10 @@ impl Args {
                 delay: false
             }
         };
-        let http_client = &HttpClient::default();
+
+        let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
+
+        let http_client = &MaybeHttpClient::new(Some(runtime.handle().clone()));
 
         for test_job in test_suite.jobs {
             if filter.find(&test_job.name).is_none() {
@@ -117,6 +139,11 @@ impl Args {
 
             for test in test_job.tests {
                 println!("    {}", test.task);
+
+                if test.disable {
+                    println!("      Disabled");
+                    continue;
+                }
 
                 let (_, cleaned) = job.r#do(test.task).unwrap();
                 assert_eq!(cleaned.to_string(), test.expect.to_string(), "Expectation failed.");

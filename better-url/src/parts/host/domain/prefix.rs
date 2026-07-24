@@ -3,16 +3,39 @@
 use crate::prelude::*;
 
 impl DomainHost<'_> {
-    /// [`DomainDetails::has_prefix`].
+    /// If it has a prefix.
     pub fn has_prefix(&self) -> bool {
-        self.details.has_prefix()
+        self.details.ms != 0
+    }
+
+
+
+    /// The [`Range::start`] of the prefix.
+    fn prefix_start(&self) -> Option<usize> {
+        match self.details.ms {
+            0 => None,
+            _ => Some(0)
+        }
+    }
+
+    /// The [`Range::end`] of the prefix.
+    fn prefix_after(&self) -> Option<usize> {
+        match self.details.ms {
+            0 => None,
+            x => Some(x as usize - 1)
+        }
+    }
+
+    /// The [`Range`] of the prefix.
+    pub(crate) fn prefix_thing(&self) -> Option<Range<usize>> {
+        Some(self.prefix_start()? .. self.prefix_after()?)
     }
 
 
 
     /// The prefix as a [`str`].
     pub fn prefix_str(&self) -> Option<&str> {
-        self.details.prefix_range().map(|r| &self.host[r])
+        Some(unsafe {self.as_str().get_unchecked(self.prefix_thing()?)})
     }
 
     /// The prefix as a [`DomainSegments`].
@@ -48,14 +71,12 @@ impl DomainHost<'_> {
 
     /// The range of prefix segments as a [`str`].
     pub fn prefix_range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&str> {
-        domain_range_thing(self.prefix_str()?, range)
+        self.prefix_segments()?.range_str(range)
     }
 
     /// The range of prefix segments as a [`DomainSegments`].
     pub fn prefix_range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'_>> {
-        let range = (range.start_bound().cloned(), range.end_bound().cloned());
-
-        Some(DomainSegments(self.prefix_range_str(range)?.into()))
+        self.prefix_segments()?.range(range)
     }
 
 
@@ -74,11 +95,10 @@ impl DomainHost<'_> {
             (Some(old), Some(new)) if self.len() - old.len() + new.len()     > u32::MAX as usize => Err(TooLong)?,
 
             (None, Some(new)) => {
-                self.host.to_mut().insert_with(0, &[new.as_str(), "."]);
+                self.host.insert_with(0, [new.as_str(), "."]);
 
                 self.details.ms += new.len() as u32 + 1;
                 self.details.ss += new.len() as u32 + 1;
-                self.details.sa += new.len() as u32 + 1;
                 self.details.wp  = new == "www";
             },
 
@@ -89,7 +109,6 @@ impl DomainHost<'_> {
 
                 self.details.ms -= ol as u32 + 1;
                 self.details.ss -= ol as u32 + 1;
-                self.details.sa -= ol as u32 + 1;
                 self.details.wp  = false;
             },
 
@@ -100,7 +119,6 @@ impl DomainHost<'_> {
 
                 self.details.ms = self.details.ms - ol as u32 + new.len() as u32;
                 self.details.ss = self.details.ss - ol as u32 + new.len() as u32;
-                self.details.sa = self.details.sa - ol as u32 + new.len() as u32;
                 self.details.wp = new == "www";
             }
         }
@@ -145,7 +163,6 @@ impl DomainHost<'_> {
 
                 self.details.ms = self.details.ms - range.len() as u32 + new.len() as u32;
                 self.details.ss = self.details.ss - range.len() as u32 + new.len() as u32;
-                self.details.sa = self.details.sa - range.len() as u32 + new.len() as u32;
             },
 
             (Ok(old), None) => {
@@ -156,20 +173,18 @@ impl DomainHost<'_> {
 
                 self.details.ms -= range.len() as u32;
                 self.details.ss -= range.len() as u32;
-                self.details.sa -= range.len() as u32;
             },
 
             (Err(0), Some(new)) => {
-                let ms = self.details.middle_start().ok_or(InsertNotFound)?;
+                let ms = self.middle_start().ok_or(InsertNotFound)?;
 
                 match index {
-                    0.. => self.host.to_mut().insert_with(ms, &[new.as_str(), "."]),
-                    ..0 => self.host.to_mut().insert_with(0 , &[new.as_str(), "."]),
+                    0.. => self.host.insert_with(ms, [new.as_str(), "."]),
+                    ..0 => self.host.insert_with(0 , [new.as_str(), "."]),
                 }
 
                 self.details.ms = self.details.ms + new.len() as u32 + 1;
                 self.details.ss = self.details.ss + new.len() as u32 + 1;
-                self.details.sa = self.details.sa + new.len() as u32 + 1;
             },
         }
 
@@ -197,7 +212,6 @@ impl DomainHost<'_> {
 
                 self.details.ms = self.details.ms - range.len() as u32 + new.len() as u32;
                 self.details.ss = self.details.ss - range.len() as u32 + new.len() as u32;
-                self.details.sa = self.details.sa - range.len() as u32 + new.len() as u32;
             },
             None => {
                 let mut range = self.as_str().my_substr_range(old.as_str());
@@ -207,7 +221,6 @@ impl DomainHost<'_> {
 
                 self.details.ms -= range.len() as u32;
                 self.details.ss -= range.len() as u32;
-                self.details.sa -= range.len() as u32;
             }
         }
 
@@ -232,7 +245,7 @@ impl DomainHost<'_> {
     /// domain.insert_prefix_segment(-4, "jkl").unwrap(); assert_eq!(domain, "ghi.jkl.abc.www.def.example.com");
     /// ```
     pub fn insert_prefix_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
-        let ms = self.details.middle_start().ok_or(InsertNotFound)?;
+        let ms = self.middle_start().ok_or(InsertNotFound)?;
 
         let new = value.try_into()?;
 
@@ -243,18 +256,17 @@ impl DomainHost<'_> {
         let temp = self.prefix_segments().into_iter().flatten().try_neg_nth(index).map(|x| self.as_str().my_substr_range(x.as_str()));
 
         match (temp, index) {
-            (Ok(Range {start, ..}), 0..) => self.host.to_mut().insert_with(start, &[new.as_str(), "."]),
-            (Ok(Range {end  , ..}), ..0) => self.host.to_mut().insert_with(end  , &[".", new.as_str()]),
-            (Err(0)               , 0..) => self.host.to_mut().insert_with(ms   , &[new.as_str(), "."]),
-            (Err(0)               , ..0) => self.host.to_mut().insert_with(0    , &[new.as_str(), "."]),
+            (Ok(Range {start, ..}), 0..) => self.host.insert_with(start, [new.as_str(), "."]),
+            (Ok(Range {end  , ..}), ..0) => self.host.insert_with(end  , [".", new.as_str()]),
+            (Err(0)               , 0..) => self.host.insert_with(ms   , [new.as_str(), "."]),
+            (Err(0)               , ..0) => self.host.insert_with(0    , [new.as_str(), "."]),
             _ => Err(InsertNotFound)?
         }
 
         self.details.ms += new.len() as u32 + 1;
         self.details.ss += new.len() as u32 + 1;
-        self.details.sa += new.len() as u32 + 1;
 
-        self.details.wp = &self.host[..ms] == "www.";
+        self.details.wp = unsafe {self.host.get_unchecked(..ms)} == "www.";
 
         Ok(())
     }

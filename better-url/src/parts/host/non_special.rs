@@ -11,6 +11,19 @@ pub enum NonSpecialHost<'a> {
 }
 
 impl<'a> NonSpecialHost<'a> {
+    /// Make a new [`Self`] without doing any validity checks.
+    /// # Safety
+    /// `value` must be a valid [`Self`] literal and `details` must be its details.
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: NonSpecialHostDetails) -> Self {
+        unsafe {
+            match details {
+                NonSpecialHostDetails::Ipv6  (x) => Ipv6Host  ::new_unchecked(value, x).into(),
+                NonSpecialHostDetails::Opaque(x) => OpaqueHost::new_unchecked(value, x).into(),
+                NonSpecialHostDetails::Empty (x) => EmptyHost ::new_unchecked(value, x).into(),
+            }
+        }
+    }
+
     /// Make a new [`Self::Opaque`] from a [`DomainHost`].
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
@@ -29,13 +42,6 @@ impl<'a> NonSpecialHost<'a> {
     /// # Errors
     /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_ipv6<T: TryInto<Ipv6Host<'a>>>(value: T) -> Result<Self, T::Error> {
-        Ok(value.try_into()?.into())
-    }
-
-    /// Make a new [`Self::Ipv6`] or [`Self::Opaque`] from an [`IpHost`].
-    /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
-    pub fn new_ip<T: TryInto<IpHost<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }
 
@@ -65,7 +71,7 @@ impl<'a> NonSpecialHost<'a> {
     }
 
     /// The [`HostDetails`].
-    pub fn details(&self) -> HostDetails {
+    pub fn details(&self) -> NonSpecialHostDetails {
         match self {
             Self::Ipv6  (x) => x.details().into(),
             Self::Opaque(x) => x.details().into(),
@@ -94,7 +100,7 @@ impl<'a> NonSpecialHost<'a> {
     }
 
     /// turn into the inner [`Cow`] and [`HostDetails`].
-    pub fn into_parts(self) -> (Cow<'a, str>, HostDetails) {
+    pub fn into_parts(self) -> (Cow<'a, str>, NonSpecialHostDetails) {
         match self {
             Self::Ipv6  (x) => {let (host, details) = x.into_parts(); (host, details.into())}
             Self::Opaque(x) => {let (host, details) = x.into_parts(); (host, details.into())}
@@ -106,7 +112,7 @@ impl<'a> NonSpecialHost<'a> {
 
 
 impl<'a> TryFrom<Cow<'a, str>> for NonSpecialHost<'a> {
-    type Error = InvalidHost;
+    type Error = InvalidNonSpecialHost;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
         Ok(match value.as_bytes() {
@@ -151,16 +157,6 @@ impl<'a> From<SpecialNotFileHost<'a>> for NonSpecialHost<'a> {
         }
     }
 }
-
-impl<'a> From<IpHost<'a>> for NonSpecialHost<'a> {
-    fn from(value: IpHost<'a>) -> Self {
-        match value {
-            IpHost::V4(x) => x.into(),
-            IpHost::V6(x) => x.into(),
-        }
-    }
-}
-
 
 impl<'a> From<DomainHost<'a>> for NonSpecialHost<'a> {fn from(value: DomainHost<'a>) -> Self {Self::Opaque(value.into())}}
 impl<'a> From<Ipv4Host  <'a>> for NonSpecialHost<'a> {fn from(value: Ipv4Host  <'a>) -> Self {Self::Opaque(value.into())}}

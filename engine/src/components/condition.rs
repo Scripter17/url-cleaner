@@ -299,66 +299,34 @@ pub enum Condition {
 
     // Misc. host
 
-    /// [`BetterUrl::has_host`].
-    UrlHasHost,
-    /// [`BetterUrl::host_is_domain`].
-    HostIsDomain,
-    /// [`BetterUrl::host_is_ip`].
-    HostIsIp,
-    /// [`BetterUrl::host_is_ipv4`].
-    HostIsIpv4,
-    /// [`BetterUrl::host_is_ipv6`].
-    HostIsIpv6,
-    /// [`BetterUrl::host_is_opaque`].
-    HostIsOpaque,
-    /// [`BetterUrl::host_is_empty`].
-    HostIsEmpty,
+    /** [`BetterUrl::has_host`].       **/ UrlHasHost,
+    /** [`BetterUrl::host_is_domain`]. **/ HostIsDomain,
+    /** [`BetterUrl::host_is_ip`].     **/ HostIsIp,
+    /** [`BetterUrl::host_is_ipv4`].   **/ HostIsIpv4,
+    /** [`BetterUrl::host_is_ipv6`].   **/ HostIsIpv6,
+    /** [`BetterUrl::host_is_opaque`]. **/ HostIsOpaque,
+    /** [`BetterUrl::host_is_empty`].  **/ HostIsEmpty,
 
-    /// [`BetterUrl::has_domain_prefix`].
-    UrlHasDomainPrefix,
-    /// [`BetterUrl::has_domain_middle`].
-    UrlHasDomainMiddle,
-    /// [`BetterUrl::has_domain_suffix`].
-    UrlHasDomainSuffix,
-    /// [`BetterUrl::has_domain_origin`].
-    UrlHasDomainOrigin,
-    /// [`BetterUrl::has_domain_labels`].
-    UrlHasDomainLabels,
-    /// [`BetterUrl::has_domain_normal`].
-    UrlHasDomainNormal,
+    /** [`BetterUrl::has_domain_prefix`]. **/ UrlHasDomainPrefix,
+    /** [`BetterUrl::has_domain_middle`]. **/ UrlHasDomainMiddle,
+    /** [`BetterUrl::has_domain_suffix`]. **/ UrlHasDomainSuffix,
+    /** [`BetterUrl::has_domain_origin`]. **/ UrlHasDomainOrigin,
+    /** [`BetterUrl::has_domain_labels`]. **/ UrlHasDomainLabels,
+    /** [`BetterUrl::has_domain_normal`]. **/ UrlHasDomainNormal,
 
-    /// [`IpDetails::is_loopback`].
-    HostIsLoopbackIp,
-    /// [`IpDetails::is_multicast`].
-    HostIsMulticastIp,
-    /// [`IpDetails::is_unspecified`].
-    HostIsUnspecifiedIp,
+    /** [`Ipv4HostDetails::is_broadcast`].     **/ HostIsBroadcastIpv4,
+    /** [`Ipv4HostDetails::is_documentation`]. **/ HostIsDocumentationIpv4,
+    /** [`Ipv4HostDetails::is_link_local`].    **/ HostIsLinkLocalIpv4,
+    /** [`Ipv4HostDetails::is_loopback`].      **/ HostIsLoopbackIpv4,
+    /** [`Ipv4HostDetails::is_multicast`].     **/ HostIsMulticastIpv4,
+    /** [`Ipv4HostDetails::is_private`].       **/ HostIsPrivateIpv4,
+    /** [`Ipv4HostDetails::is_unspecified`].   **/ HostIsUnspecifiedIpv4,
 
-    /// [`Ipv4Details::is_broadcast`].
-    HostIsBroadcastIpv4,
-    /// [`Ipv4Details::is_documentation`].
-    HostIsDocumentationIpv4,
-    /// [`Ipv4Details::is_link_local`].
-    HostIsLinkLocalIpv4,
-    /// [`Ipv4Details::is_loopback`].
-    HostIsLoopbackIpv4,
-    /// [`Ipv4Details::is_multicast`].
-    HostIsMulticastIpv4,
-    /// [`Ipv4Details::is_private`].
-    HostIsPrivateIpv4,
-    /// [`Ipv4Details::is_unspecified`].
-    HostIsUnspecifiedIpv4,
-
-    /// [`Ipv6Details::is_loopback`].
-    HostIsLoopbackIpv6,
-    /// [`Ipv6Details::is_unicast_link_local`].
-    HostIsUnicastLinkLocalIpv6,
-    /// [`Ipv6Details::is_multicast`].
-    HostIsMulticastIpv6,
-    /// [`Ipv6Details::is_unique_local`].
-    HostIsUniqueLocalIpv6,
-    /// [`Ipv6Details::is_unspecified`].
-    HostIsUnspecifiedIpv6,
+    /** [`Ipv6HostDetails::is_loopback`].           **/ HostIsLoopbackIpv6,
+    /** [`Ipv6HostDetails::is_unicast_link_local`]. **/ HostIsUnicastLinkLocalIpv6,
+    /** [`Ipv6HostDetails::is_multicast`].          **/ HostIsMulticastIpv6,
+    /** [`Ipv6HostDetails::is_unique_local`].       **/ HostIsUniqueLocalIpv6,
+    /** [`Ipv6HostDetails::is_unspecified`].        **/ HostIsUnspecifiedIpv6,
 
     // Path
 
@@ -858,11 +826,11 @@ impl Condition {
             // Host is
 
             Self::HostIs        (x) => task_state.url.host_str() == get!(?&x),
-            Self::DomainPrefixIs(x) => task_state.url.domain_prefix().map(DomainSegments::into_inner) == get!(?x),
-            Self::DomainMiddleIs(x) => task_state.url.domain_middle().map(DomainSegment ::into_inner) == get!(?x),
-            Self::DomainSuffixIs(x) => task_state.url.domain_suffix().map(DomainSegments::into_inner) == get!(?x),
-            Self::DomainOriginIs(x) => task_state.url.domain_origin().map(DomainSegments::into_inner) == get!(?x),
-            Self::DomainNormalIs(x) => task_state.url.domain_normal().map(DomainSegments::into_inner) == get!(?x),
+            Self::DomainPrefixIs(x) => task_state.url.domain_prefix_str() == get!(?&x),
+            Self::DomainMiddleIs(x) => task_state.url.domain_middle_str() == get!(?&x),
+            Self::DomainSuffixIs(x) => task_state.url.domain_suffix_str() == get!(?&x),
+            Self::DomainOriginIs(x) => task_state.url.domain_origin_str() == get!(?&x),
+            Self::DomainNormalIs(x) => task_state.url.domain_normal_str() == get!(?&x),
 
             Self::DomainSegmentIs       {index, value} => task_state.url.domain_segment       (*index).map(DomainSegment::into_inner) == get!(?value),
             Self::DomainPrefixSegmentIs {index, value} => task_state.url.domain_prefix_segment(*index).map(DomainSegment::into_inner) == get!(?value),
@@ -872,16 +840,16 @@ impl Condition {
             // Host is in set
 
             Self::HostIsInSet        (set) => get!(set).contains(task_state.url.host_str()),
-            Self::DomainPrefixIsInSet(set) => get!(set).contains(task_state.url.domain_prefix().map(DomainSegments::into_inner).as_deref()),
-            Self::DomainMiddleIsInSet(set) => get!(set).contains(task_state.url.domain_middle().map(DomainSegment ::into_inner).as_deref()),
-            Self::DomainSuffixIsInSet(set) => get!(set).contains(task_state.url.domain_suffix().map(DomainSegments::into_inner).as_deref()),
-            Self::DomainOriginIsInSet(set) => get!(set).contains(task_state.url.domain_origin().map(DomainSegments::into_inner).as_deref()),
-            Self::DomainNormalIsInSet(set) => get!(set).contains(task_state.url.domain_normal().map(DomainSegments::into_inner).as_deref()),
+            Self::DomainPrefixIsInSet(set) => get!(set).contains(task_state.url.domain_prefix_str()),
+            Self::DomainMiddleIsInSet(set) => get!(set).contains(task_state.url.domain_middle_str()),
+            Self::DomainSuffixIsInSet(set) => get!(set).contains(task_state.url.domain_suffix_str()),
+            Self::DomainOriginIsInSet(set) => get!(set).contains(task_state.url.domain_origin_str()),
+            Self::DomainNormalIsInSet(set) => get!(set).contains(task_state.url.domain_normal_str()),
 
-            Self::DomainSegmentIsInSet       {index, set} => get!(set).contains(task_state.url.domain_segment       (*index).map(DomainSegment::into_inner).as_deref()),
-            Self::DomainPrefixSegmentIsInSet {index, set} => get!(set).contains(task_state.url.domain_prefix_segment(*index).map(DomainSegment::into_inner).as_deref()),
-            Self::DomainSuffixSegmentIsInSet {index, set} => get!(set).contains(task_state.url.domain_suffix_segment(*index).map(DomainSegment::into_inner).as_deref()),
-            Self::DomainOriginSegmentIsInSet {index, set} => get!(set).contains(task_state.url.domain_origin_segment(*index).map(DomainSegment::into_inner).as_deref()),
+            Self::DomainSegmentIsInSet       {index, set} => get!(set).contains(task_state.url.domain_segment_str       (*index)),
+            Self::DomainPrefixSegmentIsInSet {index, set} => get!(set).contains(task_state.url.domain_prefix_segment_str(*index)),
+            Self::DomainSuffixSegmentIsInSet {index, set} => get!(set).contains(task_state.url.domain_suffix_segment_str(*index)),
+            Self::DomainOriginSegmentIsInSet {index, set} => get!(set).contains(task_state.url.domain_origin_segment_str(*index)),
 
             // Misc. host
 
@@ -900,23 +868,19 @@ impl Condition {
             Self::UrlHasDomainLabels => task_state.url.has_domain_labels(),
             Self::UrlHasDomainNormal => task_state.url.has_domain_normal(),
 
-            Self::HostIsLoopbackIp    => task_state.url.ip_details().is_some_and(IpDetails::is_loopback   ),
-            Self::HostIsMulticastIp   => task_state.url.ip_details().is_some_and(IpDetails::is_multicast  ),
-            Self::HostIsUnspecifiedIp => task_state.url.ip_details().is_some_and(IpDetails::is_unspecified),
+            Self::HostIsBroadcastIpv4     => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_broadcast    ),
+            Self::HostIsDocumentationIpv4 => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_documentation),
+            Self::HostIsLinkLocalIpv4     => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_link_local   ),
+            Self::HostIsLoopbackIpv4      => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_loopback     ),
+            Self::HostIsMulticastIpv4     => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_multicast    ),
+            Self::HostIsPrivateIpv4       => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_private      ),
+            Self::HostIsUnspecifiedIpv4   => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_unspecified  ),
 
-            Self::HostIsBroadcastIpv4     => task_state.url.ipv4_details().is_some_and(Ipv4Details::is_broadcast    ),
-            Self::HostIsDocumentationIpv4 => task_state.url.ipv4_details().is_some_and(Ipv4Details::is_documentation),
-            Self::HostIsLinkLocalIpv4     => task_state.url.ipv4_details().is_some_and(Ipv4Details::is_link_local   ),
-            Self::HostIsLoopbackIpv4      => task_state.url.ipv4_details().is_some_and(Ipv4Details::is_loopback     ),
-            Self::HostIsMulticastIpv4     => task_state.url.ipv4_details().is_some_and(Ipv4Details::is_multicast    ),
-            Self::HostIsPrivateIpv4       => task_state.url.ipv4_details().is_some_and(Ipv4Details::is_private      ),
-            Self::HostIsUnspecifiedIpv4   => task_state.url.ipv4_details().is_some_and(Ipv4Details::is_unspecified  ),
-
-            Self::HostIsLoopbackIpv6         => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_loopback          ),
-            Self::HostIsUnicastLinkLocalIpv6 => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_unicast_link_local),
-            Self::HostIsMulticastIpv6        => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_multicast         ),
-            Self::HostIsUniqueLocalIpv6      => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_unique_local      ),
-            Self::HostIsUnspecifiedIpv6      => task_state.url.ipv6_details().is_some_and(Ipv6Details::is_unspecified       ),
+            Self::HostIsLoopbackIpv6         => task_state.url.ipv6_details().is_some_and(Ipv6HostDetails::is_loopback          ),
+            Self::HostIsUnicastLinkLocalIpv6 => task_state.url.ipv6_details().is_some_and(Ipv6HostDetails::is_unicast_link_local),
+            Self::HostIsMulticastIpv6        => task_state.url.ipv6_details().is_some_and(Ipv6HostDetails::is_multicast         ),
+            Self::HostIsUniqueLocalIpv6      => task_state.url.ipv6_details().is_some_and(Ipv6HostDetails::is_unique_local      ),
+            Self::HostIsUnspecifiedIpv6      => task_state.url.ipv6_details().is_some_and(Ipv6HostDetails::is_unspecified       ),
 
             // Path
 
@@ -938,12 +902,12 @@ impl Condition {
             Self::PathSegmentIsInSet   {index, set       } => get!(set).contains(             task_state.url.path_segment(*index).map(PathSegment::decode).as_deref()),
             Self::PathSegmentMatches   {index, matcher   } => matcher.check(task_state, args, task_state.url.path_segment(*index).map(PathSegment::decode).as_deref())?,
 
-            Self::RawPathSegmentIs        {index, value     } =>                                 task_state.url.path_segment(*index).map(PathSegment::into_inner) == get!(?value),
-            Self::RawPathSegmentStartsWith{index, prefix    } =>                                 task_state.url.path_segment(*index).map(PathSegment::into_inner).ok_or(PathSegmentNotFound)?.starts_with(get!(&prefix)),
-            Self::RawPathSegmentEndsWith  {index, suffix    } =>                                 task_state.url.path_segment(*index).map(PathSegment::into_inner).ok_or(PathSegmentNotFound)?.ends_with  (get!(&suffix)),
-            Self::RawPathSegmentContains  {index, substr, at} => at.check(                      &task_state.url.path_segment(*index).map(PathSegment::into_inner).ok_or(PathSegmentNotFound)?,            get!(&substr))?,
-            Self::RawPathSegmentIsInSet   {index, set       } => get!(set).contains(             task_state.url.path_segment(*index).map(PathSegment::into_inner).as_deref()),
-            Self::RawPathSegmentMatches   {index, matcher   } => matcher.check(task_state, args, task_state.url.path_segment(*index).map(PathSegment::into_inner).as_deref())?,
+            Self::RawPathSegmentIs        {index, value     } =>                                 task_state.url.path_segment_str(*index) == get!(?&value),
+            Self::RawPathSegmentStartsWith{index, prefix    } =>                                 task_state.url.path_segment_str(*index).ok_or(PathSegmentNotFound)?.starts_with(get!(&prefix)),
+            Self::RawPathSegmentEndsWith  {index, suffix    } =>                                 task_state.url.path_segment_str(*index).ok_or(PathSegmentNotFound)?.ends_with  (get!(&suffix)),
+            Self::RawPathSegmentContains  {index, substr, at} => at.check(                       task_state.url.path_segment_str(*index).ok_or(PathSegmentNotFound)?,            get!(&substr))?,
+            Self::RawPathSegmentIsInSet   {index, set       } => get!(set).contains(             task_state.url.path_segment_str(*index)),
+            Self::RawPathSegmentMatches   {index, matcher   } => matcher.check(task_state, args, task_state.url.path_segment_str(*index))?,
 
             // Query
 

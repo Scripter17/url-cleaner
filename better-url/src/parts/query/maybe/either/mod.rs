@@ -9,10 +9,8 @@ mod filter;
 /// Either [`MaybeSpecialQuery`] or [`MaybeNonSpecialQuery`].
 #[derive(Debug, Clone)]
 pub enum MaybeQuery<'a> {
-    /// [`MaybeSpecialQuery`].
-    Special(MaybeSpecialQuery<'a>),
-    /// [`MaybeNonSpecialQuery`].
-    NonSpecial(MaybeNonSpecialQuery<'a>)
+    /** [`MaybeSpecialQuery`].    **/ Special   (MaybeSpecialQuery   <'a>),
+    /** [`MaybeNonSpecialQuery`]. **/ NonSpecial(MaybeNonSpecialQuery<'a>),
 }
 
 impl<'a> MaybeQuery<'a> {
@@ -24,56 +22,50 @@ impl<'a> MaybeQuery<'a> {
         }
     }
 
+    /// The length of the [`BetterUrl::canon_get_search`] for this value.
+    pub fn search_len(&self) -> usize {
+        self.len().map_or(0, |x| x + 1)
+    }
 
 
-    /// Make a new [`Self`].
-    pub fn new<T: Into<MaybeSpecialQuery<'a>> + Into<MaybeNonSpecialQuery<'a>>>(value: T, special: bool) -> Self {
-        match special {
-            true  => Self::new_special    (value),
-            false => Self::new_non_special(value),
+
+    /// Either [`Self::new_special`] or [`Self::new_non_special`].
+    pub fn new<T: Into<MaybeSpecialQuery<'a>> + Into<MaybeNonSpecialQuery<'a>>>(value: T, r#type: QueryType) -> Self {
+        match r#type {
+            QueryType::Special    => Self::new_special    (value),
+            QueryType::NonSpecial => Self::new_non_special(value),
         }
     }
 
-    /// Make a new [`Self::Special`].
-    pub fn new_special<T: Into<MaybeSpecialQuery<'a>>>(query: T) -> Self {
-        query.into().into()
-    }
-
-    /// Make a new [`Self::NonSpecial`].
-    pub fn new_non_special<T: Into<MaybeNonSpecialQuery<'a>>>(query: T) -> Self {
-        query.into().into()
-    }
+    /** [`MaybeSpecialQuery::new`].    **/ pub fn new_special    <T: Into<MaybeSpecialQuery   <'a>>>(query: T) -> Self {MaybeSpecialQuery   ::new(query).into()}
+    /** [`MaybeNonSpecialQuery::new`]. **/ pub fn new_non_special<T: Into<MaybeNonSpecialQuery<'a>>>(query: T) -> Self {MaybeNonSpecialQuery::new(query).into()}
 
 
 
-    /// Make a new [`Self`] without doing any validity checks.
+    /// Either [`Self::new_special_unchecked`] or [`Self::new_non_special_unchecked`].
     /// # Safety
-    /// `value` must be a valid [`Self`] literal.
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: Option<T>, special: bool) -> Self {
+    /// Either [`Self::new_special_unchecked`] or [`Self::new_non_special_unchecked`].
+    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: Option<T>, r#type: QueryType) -> Self {
         unsafe {
-            match special {
-                true  => Self::new_special_unchecked    (value),
-                false => Self::new_non_special_unchecked(value),
+            match r#type {
+                QueryType::Special    => Self::new_special_unchecked    (value),
+                QueryType::NonSpecial => Self::new_non_special_unchecked(value),
             }
         }
     }
 
-    /// Make a new [`Self::Special`] without doing any validity checks.
+    /// [`MaybeSpecialQuery::new_unchecked`].
     /// # Safety
-    /// `value` must be a valid [`Self::Special`] literal.
+    /// [`MaybeSpecialQuery::new_unchecked`].
     pub unsafe fn new_special_unchecked<T: Into<Cow<'a, str>>>(value: Option<T>) -> Self {
-        unsafe {
-            MaybeSpecialQuery::new_unchecked(value).into()
-        }
+        unsafe {MaybeSpecialQuery::new_unchecked(value).into()}
     }
 
-    /// Make a new [`Self::NonSpecial`] without doing any validity checks.
+    /// [`MaybeNonSpecialQuery::new_unchecked`].
     /// # Safety
-    /// `value` must be a valid [`Self::NonSpecial`] literal.
+    /// [`MaybeNonSpecialQuery::new_unchecked`].
     pub unsafe fn new_non_special_unchecked<T: Into<Cow<'a, str>>>(value: Option<T>) -> Self {
-        unsafe {
-            MaybeNonSpecialQuery::new_unchecked(value).into()
-        }
+        unsafe {MaybeNonSpecialQuery::new_unchecked(value).into()}
     }
 
 

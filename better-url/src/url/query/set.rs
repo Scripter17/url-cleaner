@@ -7,7 +7,7 @@ impl BetterUrl {
     /// # Errors
     /// If the URL would become too long, returns the error [`TooLong`].
     pub fn set_query<'a, T: Into<MaybeSpecialQuery<'a>> + Into<MaybeNonSpecialQuery<'a>>>(&mut self, value: T) -> Result<(), SetQueryError> {
-        let new = MaybeQuery::new(value, self.is_special());
+        let new = MaybeQuery::new(value, self.query_type());
 
         match (self.query_range(), new.as_str()) {
             (None, None) => {},
@@ -17,16 +17,16 @@ impl BetterUrl {
                     Err(TooLong)?
                 }
 
-                match self.fragment_mark {
+                match self.details.fragment_mark {
                     Some(x) => {
-                        self.query_mark    = Some(x);
-                        self.fragment_mark = NonZero::new(x.get() + new.len() as u32 + 1);
+                        self.details.query_mark    = Some(x);
+                        self.details.fragment_mark = NonZero::new(x.get() + new.len() as u32 + 1);
 
                         self.serialization.insert_str(x.get() as usize, new);
                         self.serialization.insert    (x.get() as usize, '?');
                     },
                     None => {
-                        self.query_mark = NonZero::new(self.len() as u32);
+                        self.details.query_mark = NonZero::new(self.len() as u32);
                         self.serialization.extend(["?", new]);
                     }
                 }
@@ -35,11 +35,11 @@ impl BetterUrl {
             (Some(range), None     ) => {
                 self.serialization.replace_range(range.start - 1 .. range.end, "");
 
-                if self.fragment_mark.is_some() {
-                    self.fragment_mark = self.query_mark;
+                if self.details.fragment_mark.is_some() {
+                    self.details.fragment_mark = self.details.query_mark;
                 }
 
-                self.query_mark = None;
+                self.details.query_mark = None;
             },
 
             (Some(range), Some(new)) => {
@@ -49,8 +49,8 @@ impl BetterUrl {
 
                 self.serialization.replace_range(range.clone(), new);
 
-                if let Some(x) = self.fragment_mark {
-                    self.fragment_mark = NonZero::new(x.get() - range.len() as u32 + new.len() as u32)
+                if let Some(x) = self.details.fragment_mark {
+                    self.details.fragment_mark = NonZero::new(x.get() - range.len() as u32 + new.len() as u32)
                 }
             },
         }

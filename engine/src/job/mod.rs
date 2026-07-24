@@ -34,7 +34,7 @@ pub struct Job<'j> {
     pub cache: Cache<'j>,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
-    pub http_client: &'j HttpClient
+    pub http_client: &'j MaybeHttpClient
 }
 
 impl<'j> Job<'j> {
