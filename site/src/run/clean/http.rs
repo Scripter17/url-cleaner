@@ -17,35 +17,44 @@ pub async fn clean_http(state: &'static State, job: Job<'static>, brief_unchange
         let mut isi = (0..iss.len()).cycle();
         let mut buf = Vec::new();
 
-        while let Some(data) = body.next().await.map(Result::unwrap) {
-            let mut x = data.split_inclusive(|b| *b == b'\n');
+        while let Some(mut bytes) = body.next().await.map(Result::unwrap) {
+            match memchr::memchr(b'\n', &bytes) {
+                Some(i) => {
+                    buf.extend_from_slice(&bytes.split_to(i + 1));
 
-            if !buf.is_empty() && let Some(y) = x.next() {
-                buf.extend_from_slice(y);
-                if buf.ends_with(b"\n") {
                     buf.pop();
                     buf.pop_if(|b| *b == b'\r');
+
                     if !buf.is_empty() {
-                        iss.get(isi.next().expect("???")).expect("???").send(buf.into()).await.expect("The in receiver to still exist");
+                        iss.get(isi.next().expect("???")).expect("???").send(buf.into()).await.expect("The in receiver to still exist.");
                         buf = Vec::new();
                     }
+                },
+                None => {
+                    buf.extend_from_slice(&bytes);
+                    continue
                 }
             }
 
-            for y in x {
-                match y.strip_suffix(b"\n").map(|z| z.strip_suffix(b"\r").unwrap_or(z)) {
-                    Some(line) => if !line.is_empty() {
-                        iss.get(isi.next().expect("???")).expect("???").send(data.slice_ref(line)).await.expect("The in receiver to still exist");
-                    },
-                    None => buf = y.into()
+            if let Some(i) = memchr::memrchr(b'\n', &bytes) && i + 1 != bytes.len() {
+                buf = bytes.split_off(i + 1).into();
+            }
+
+            let mut next_start = 0;
+
+            for i in memchr::memchr_iter(b'\n', &bytes) {
+                let line = unsafe {bytes.get_unchecked(next_start..i)};
+
+                next_start = i + 1;
+
+                match line {
+                    b"" | b"\r" => continue,
+                    [line @ .., b'\r'] | line => iss.get(isi.next().expect("???")).expect("???").send(bytes.slice_ref(line)).await.expect("The in receiver to still exist.")
                 }
             }
         }
 
-        if buf.ends_with(b"\n") {
-            buf.pop();
-            buf.pop_if(|b| *b == b'\r');
-        }
+        buf.pop_if(|b| *b == b'\r');
 
         if !buf.is_empty() {
             iss.get(isi.next().expect("???")).expect("???").send(buf.into()).await.expect("The in receiver to still exist");

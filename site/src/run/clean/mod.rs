@@ -59,7 +59,7 @@ pub async fn clean(state: &'static State, job_config: JobConfig, clean_payload: 
             }
         },
         #[cfg(feature = "http")]
-        http_client: &state.http_client
+        http_client: Some(&state.http_client),
     };
 
     Ok(match clean_payload {

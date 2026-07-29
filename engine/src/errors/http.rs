@@ -22,40 +22,14 @@ pub enum DoHttpRequestError {
 /// [`HttpRequestSource::get`].
 #[derive(Debug, Error)]
 pub enum HttpRequestSourceError {
-    /** [`reqwest::Error`].              **/ #[error(transparent)] RequestError        (#[from] reqwest::Error              ),
-    /** [`StringSourceError`].           **/ #[error(transparent)] StringSourceError   (#[from] StringSourceError           ),
-    /** [`StringNotFound`].              **/ #[error(transparent)] StringNotFound      (#[from] StringNotFound              ),
-    /** [`MapSourceError`].              **/ #[error(transparent)] MapSourceError      (#[from] MapSourceError              ),
-    /** [`http::method::InvalidMethod`]. **/ #[error(transparent)] HttpInvalidMethod   (#[from] http::method::InvalidMethod ),
-    /** [`HttpBodyConfigError`].         **/ #[error(transparent)] HttpBodyConfigError (#[from] HttpBodyConfigError         ),
-}
-
-/// [`HttpBodyConfig::apply`].
-#[derive(Debug, Error)]
-pub enum HttpBodyConfigError {
-    /** [`HttpTextBodySourceError`]. **/ #[error(transparent)] HttpTextBodySourceError(#[from] HttpTextBodySourceError),
-    /** [`HttpFormBodySourceError`]. **/ #[error(transparent)] HttpFormBodySourceError(#[from] HttpFormBodySourceError),
-    /** [`HttpJsonBodySourceError`]. **/ #[error(transparent)] HttpJsonBodySourceError(#[from] HttpJsonBodySourceError),
-}
-
-/// [`HttpJsonBodySource::get`].
-#[derive(Debug, Error)]
-pub enum HttpJsonBodySourceError {
-    /** [`StringSourceError`]. **/ #[error(transparent)] StringSourceError(#[from] StringSourceError),
-    /** [`StringNotFound`].    **/ #[error(transparent)] StringNotFound   (#[from] StringNotFound   ),
-}
-
-/// [`HttpFormBodySource::get`].
-#[derive(Debug, Error)]
-pub enum HttpFormBodySourceError {
-    /** [`StringSourceError`]. **/ #[error(transparent)] StringSourceError(#[from] StringSourceError),
-}
-
-/// [`HttpTextBodySource::get`].
-#[derive(Debug, Error)]
-pub enum HttpTextBodySourceError {
-    /** [`StringSourceError`]. **/ #[error(transparent)] StringSourceError(#[from] StringSourceError),
-    /** [`StringNotFound`].    **/ #[error(transparent)] StringNotFound   (#[from] StringNotFound   ),
+    /** [`reqwest::Error`].                      **/ #[error(transparent)] RequestError        (#[from] reqwest::Error                     ),
+    /** [`StringSourceError`].                   **/ #[error(transparent)] StringSourceError   (#[from] StringSourceError                  ),
+    /** [`StringNotFound`].                      **/ #[error(transparent)] StringNotFound      (#[from] StringNotFound                     ),
+    /** [`MapSourceError`].                      **/ #[error(transparent)] MapSourceError      (#[from] MapSourceError                     ),
+    /** [`http::method::InvalidMethod`].         **/ #[error(transparent)] HttpInvalidMethod   (#[from] http::method::InvalidMethod        ),
+    /** [`reqwest::header::InvalidHeaderName`].  **/ #[error(transparent)] InvalidHeaderName   (#[from] reqwest::header::InvalidHeaderName ),
+    /** [`reqwest::header::InvalidHeaderValue`]. **/ #[error(transparent)] InvalidHeaderValue  (#[from] reqwest::header::InvalidHeaderValue),
+    /** [`url::ParseError`]                      **/ #[error(transparent)] UrlParseError       (#[from] url::ParseError                    ),
 }
 
 /// [`HttpResponseHandler::handle`].

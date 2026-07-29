@@ -3,9 +3,9 @@
 use crate::prelude::*;
 
 impl MaybeSpecialQuery<'_> {
-    /// [`SpecialQuery::iter`].
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = SpecialQuerySegment<'_>> {
-        self.0.iter().flat_map(SpecialQuery::iter)
+    /// The [`SpecialQueryIter`].
+    pub fn iter(&self) -> SpecialQueryIter<'_> {
+        self.into_iter()
     }
 
     /// [`SpecialQuery::find_iter`].

@@ -40,7 +40,6 @@ pub mod prelude {
     pub(crate) use super::debug::debug;
 
     pub(crate) use std::borrow::{Borrow, Cow};
-    pub(crate) use std::collections::{HashMap, HashSet};
     pub(crate) use std::str::FromStr;
     pub(crate) use std::ops::{RangeBounds, Bound, Range, Deref, DerefMut};
     pub(crate) use std::hash::Hash;
@@ -49,4 +48,6 @@ pub mod prelude {
 
     pub(crate) use serde::{Serialize, Deserialize, ser::{Serializer, SerializeSeq, SerializeMap}, de::{self, Deserializer, Visitor, MapAccess, SeqAccess, Error as _}};
     pub(crate) use thiserror::Error;
+
+    pub(crate) use rustc_hash::{FxHashMap, FxHashSet};
 }

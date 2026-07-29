@@ -38,25 +38,26 @@ impl BetterUrl {
 
 
     /// The query segments as [`str`]s.
-    pub fn query_segment_strs(&self) -> Option<SplitAmpersands<'_>> {
-        Some(SplitAmpersands(Some(self.query_str()?)))
+    pub fn query_segment_strs(&self) -> SplitAmpersands<'_> {
+        SplitAmpersands(self.query_str())
     }
 
-    /// The query segments as [`QuerySegment`]s.
-    pub fn query_segments(&self) -> Option<impl DoubleEndedIterator<Item = QuerySegment<'_>>> {
-        let r#type = self.query_type();
-
-        Some(self.query_segment_strs()?.map(move |x| unsafe {QuerySegment::new_unchecked(x, r#type)}))
+    /// The [`QueryIter`].
+    pub fn query_segments(&self) -> QueryIter<'_> {
+        QueryIter {
+            iter: self.query_segment_strs(),
+            r#type: self.query_type(),
+        }
     }
 
     /// The `index`th query segment as a [`str`].
     pub fn query_segment_str(&self, index: isize) -> Option<&str> {
-        self.query_segment_strs()?.neg_nth(index)
+        self.query_segment_strs().neg_nth(index)
     }
 
     /// The `index`th query segment as a [`QuerySegment`].
     pub fn query_segment(&self, index: isize) -> Option<QuerySegment<'_>> {
-        self.query_segments()?.neg_nth(index)
+        self.query_segments().neg_nth(index)
     }
 
     /// If [`Self::query_segment`] is [`Some`].
@@ -67,23 +68,23 @@ impl BetterUrl {
 
 
     /// The query segments named `name` as [`str`]s.
-    pub fn query_param_strs<'a>(&'a self, name: &str) -> Option<impl DoubleEndedIterator<Item = &'a str>> {
-        Some(self.query_segment_strs()?.filter(move |&x| lossy_decode_query_part(x.split_once('=').map_or(x, |(x, _)| x)).1 == name))
+    pub fn query_param_strs<'a>(&'a self, name: &str) -> impl DoubleEndedIterator<Item = &'a str> {
+        self.query_segment_strs().filter(move |&x| lossy_decode_query_part(x.split_once('=').map_or(x, |(x, _)| x)).1 == name)
     }
 
     /// The query segments named `name` as [`str`]s.
-    pub fn query_params<'a>(&'a self, name: &str) -> Option<impl DoubleEndedIterator<Item = QuerySegment<'a>>> {
-        Some(self.query_segments()?.filter(move |x| x.name() == name))
+    pub fn query_params<'a>(&'a self, name: &str) -> impl DoubleEndedIterator<Item = QuerySegment<'a>> {
+        self.query_segments().filter(move |x| x.name() == name)
     }
 
     /// The `index`th query segment named `name` as a [`str`].
     pub fn query_param_str<'a>(&'a self, name: &str, index: isize) -> Option<&'a str> {
-        self.query_param_strs(name)?.neg_nth(index)
+        self.query_param_strs(name).neg_nth(index)
     }
 
     /// The `index`th query segment named `name`.
     pub fn query_param<'a>(&'a self, name: &str, index: isize) -> Option<QuerySegment<'a>> {
-        self.query_params(name)?.neg_nth(index)
+        self.query_params(name).neg_nth(index)
     }
 
     /// If [`Self::query_param_str`] is [`Some`].

@@ -28,20 +28,33 @@ pub async fn clean_ws(state: &'static State, job: Job<'static>, brief_unchanged:
         while let Some(message) = socket.next().await {
             let message = match message.expect("Receiving messages to always work.") {
                 Message::Binary(bytes) => bytes,
-                Message::Text(text) => text.into(),
+                Message::Text  (text ) => text.into(),
                 _ => continue
             };
 
             let mut tasks = 0;
+            let mut next_start = 0;
 
-            let lines = message.split_inclusive(|b| *b == b'\n')
-                .map(|x| x.strip_suffix(b"\n").map(|y| y.strip_suffix(b"\r").unwrap_or(y)).unwrap_or(x))
-                .filter(|line| !line.is_empty())
-                .map(|line| message.slice_ref(line));
+            for i in memchr::memchr_iter(b'\n', &message) {
+                let line = unsafe {message.get_unchecked(next_start .. i)};
 
-            for line in lines {
-                iss.get(tasks % iss.len()).expect("???").send(line).expect("The in receiver to still be open.");
-                tasks += 1;
+                next_start = i + 1;
+
+                match line {
+                    b"" | b"\r" => continue,
+                    [line @ .., b'\r'] | line => {
+                        iss.get(tasks % iss.len()).expect("???").send(message.slice_ref(line)).expect("The in receiver to still be open.");
+                        tasks += 1;
+                    }
+                }
+            }
+
+            match unsafe {message.get_unchecked(next_start ..)} {
+                b"" | b"\r" => {},
+                [line @ .., b'\r'] | line => {
+                    iss.get(tasks % iss.len()).expect("???").send(message.slice_ref(line)).expect("The in receiver to still be open.");
+                    tasks += 1;
+                }
             }
 
             let mut buf = String::new();

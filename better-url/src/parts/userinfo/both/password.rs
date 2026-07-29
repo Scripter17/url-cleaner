@@ -68,7 +68,9 @@ impl<'a> Userinfo<'a> {
                 self.userinfo.extend([":", new]);
             },
             (Some(x), "") => {
-                self.userinfo.retain_range(..x - 1);
+                unsafe {
+                    self.userinfo.truncate_unchecked(x - 1);
+                }
                 self.password_start = None;
             },
             (Some(x), new) => {

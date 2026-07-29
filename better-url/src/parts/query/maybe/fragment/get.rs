@@ -3,9 +3,9 @@
 use crate::prelude::*;
 
 impl MaybeFragmentQuery<'_> {
-    /// [`FragmentQuery::iter`].
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = FragmentQuerySegment<'_>> {
-        self.0.iter().flat_map(FragmentQuery::iter)
+    /// The [`FragmentQueryIter`].
+    pub fn iter(&self) -> FragmentQueryIter<'_> {
+        self.into_iter()
     }
 
     /// [`FragmentQuery::find_iter`].

@@ -168,8 +168,17 @@ impl HttpResponseHandler {
 
                             let suffix = get!(extractor.suffix);
 
+                            if suffix.is_empty() {
+                                let mut ret = Some(String::try_from(buf)?.into());
+
+                                extractor.parser.apply(task_state, args, &mut ret)?;
+
+                                return Ok(ret);
+                            }
+
                             loop {
                                 for byte in bytes {
+                                    buf.push(byte);
                                     if buf[middle_start..].ends_with(suffix.as_bytes()) {
                                         if get!(?extractor.strip_suffix) {
                                             buf.truncate(buf.len() - suffix.len());
@@ -181,7 +190,6 @@ impl HttpResponseHandler {
 
                                         return Ok(ret);
                                     }
-                                    buf.push(byte);
                                 }
 
                                 if read >= *limit {

@@ -21,13 +21,20 @@ pub async fn r#do(instance: Url) {
         let mut tasks = 0;
 
         while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(18)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
-            // `i` is the index of the last `\n` plus one.
-            if let Some(i) = buf.iter().rev().position(|b| *b == b'\n').map(|i| buf.len() - i) {
-                let temp = buf.split_off(i);
-                buf.pop();
-                buf.pop_if(|b| *b == b'\r');
-                tasks += buf.split(|b| *b == b'\n').map(|x| x.strip_suffix(b"\r").unwrap_or(x)).filter(|line| !line.is_empty()).count();
+            if let Some(i) = memchr::memrchr(b'\n', &buf) {
+                let temp = buf.split_off(i + 1);
+
+                let mut rest = &*buf;
+
+                while let Some(i) = memchr::memchr(b'\n', rest) {
+                    if !matches!(unsafe {rest.get_unchecked(..i)}, b"" | b"\r") {
+                        tasks += 1;
+                    }
+                    rest = unsafe {rest.get_unchecked(i+1..)};
+                }
+
                 sink.send(Bytes::from_owner(buf).into()).await.unwrap();
+
                 buf = temp;
             }
         }
@@ -44,15 +51,15 @@ pub async fn r#do(instance: Url) {
     });
 
     let mut results = 0;
+
     while let Some(msg) = stream.next().await {
         match msg {
             Err(tungstenite::error::Error::Protocol(tungstenite::error::ProtocolError::ResetWithoutClosingHandshake)) => break,
             msg => if let Message::Text(x) = msg.unwrap() {
-                results += x.lines().count();
                 println!("{x}");
+                results += memchr::memchr_iter(b'\n', x.as_bytes()).count() + 1;
             }
         }
-        
     }
 
     assert_eq!(tasks.await.unwrap(), results);

@@ -11,16 +11,9 @@ impl MaybeQuery<'_> {
         }
     }
 
-    /// A [`DoubleEndedIterator`] of the [`QuerySegment`]s.
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = QuerySegment<'_>> {
-        let r#type = self.r#type();
-
-        SplitAmpersands(self.as_str()).map(move |x| {
-            match r#type {
-                QueryType::Special    => unsafe {SpecialQuerySegment   ::new_unchecked(x)}.into(),
-                QueryType::NonSpecial => unsafe {NonSpecialQuerySegment::new_unchecked(x)}.into(),
-            }
-        })
+    /// The [`QueryIter`].
+    pub fn iter(&self) -> QueryIter<'_> {
+        self.into_iter()
     }
 
     /// [`Query::find_iter`].

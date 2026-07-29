@@ -1,22 +1,22 @@
 [package]
-name = "url-cleaner-macros"
-version = "0.12.0-beta"
-edition = "2024"
-description = "Macros for URL Cleaner"
-repository = "https://github.com/Scripter17/url-cleaner"
-keywords = ["url-cleaner"]
-categories = []
-license = "AGPL-3.0-or-later"
-readme = "README.md"
-rust-version = "1.88.0"
+name         = "url-cleaner-macros"
+version      = "0.12.0-beta"
+edition      = "2024"
+description  = "Macros for URL Cleaner."
+repository   = "https://github.com/Scripter17/url-cleaner"
+keywords     = ["url-cleaner"]
+categories   = []
+license      = "AGPL-3.0-or-later"
+readme       = "README.md"
+rust-version = "1.96.1"
 
 [lib]
 proc-macro = true
 
 [dependencies]
+syn         = { version = "2.0.119", features = ["extra-traits"] }
 proc-macro2 = "1.0.107"
-quote = "1.0.47"
-syn = { version = "2.0.119", features = ["extra-traits"] }
+quote       = "1.0.47"
 
 [lints]
 workspace = true

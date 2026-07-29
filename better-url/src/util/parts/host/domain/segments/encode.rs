@@ -30,7 +30,7 @@ pub fn encode_percent_decoded_domain_segments<'a, T: Into<Cow<'a, str>>>(value: 
 
 /// Encode percent decoded and UTS46 mapped and normalized domain segments.
 /// # Errors
-/// If `value` contains any ASCII bytes in [`FORBIDDEN_DOMAIN_SEGMENTS`], returns the error [`InvalidDomainSegments`].
+/// If `value` contains any ASCII bytes in [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`], returns the error [`InvalidDomainSegments`].
 ///
 /// If `value` is not ASCII:
 ///
@@ -42,7 +42,7 @@ pub fn encode_percent_decoded_domain_segments<'a, T: Into<Cow<'a, str>>>(value: 
 pub fn encode_normalized_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
     let mut value = value.into();
 
-    if value.bytes().any(|b| b.is_ascii() && FORBIDDEN_DOMAIN_SEGMENTS.contains(b)) {
+    if value.bytes().any(|b| FORBIDDEN_DOMAIN_SEGMENTS_INPUT.contains(b)) {
         Err(InvalidDomainSegments)?;
     }
 
@@ -80,7 +80,9 @@ pub fn encode_normalized_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) ->
     Ok(match ret.done() {
         (changed, Cow::Owned   (x)) => (changed, x.into()),
         (changed, Cow::Borrowed(x)) => {
-            value.retain_substr(x);
+            unsafe {
+                value.truncate_unchecked(x.len());
+            }
             (changed, value)
         }
     })

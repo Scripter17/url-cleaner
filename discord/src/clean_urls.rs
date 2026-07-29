@@ -17,7 +17,7 @@ impl Bot {
                 #[cfg(feature = "cache")]
                 cache      : self.cache,
                 #[cfg(feature = "http")]
-                http_client: &self.http_client,
+                http_client: Some(&self.http_client),
             };
 
             let mut ret = String::new();

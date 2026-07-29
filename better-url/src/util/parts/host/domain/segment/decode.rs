@@ -12,11 +12,11 @@ static NFC: ComposingNormalizerBorrowed = ComposingNormalizerBorrowed::new_nfc()
 
 /// Decode an encoded domain segment literal.
 /// # Errors
-/// If `value` contains any byte in [`FORBIDDEN_DOMAIN_SEGMENT`], returns the error [`InvalidDomainSegment`].
+/// If `value` contains any byte in [`FORBIDDEN_DOMAIN_SEGMENT_LITERAL`], returns the error [`InvalidDomainSegment`].
 pub fn decode_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, BidiDetail), InvalidDomainSegment> {
     let value = value.into();
 
-    if value.bytes().any(|b| FORBIDDEN_DOMAIN_SEGMENT.contains(b)) {
+    if value.bytes().any(|b| FORBIDDEN_DOMAIN_SEGMENT_LITERAL.contains(b)) {
         Err(InvalidDomainSegment)?;
     }
 

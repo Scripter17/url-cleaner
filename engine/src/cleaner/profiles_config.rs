@@ -6,7 +6,7 @@ use std::fs::read_to_string;
 use crate::prelude::*;
 
 /// A config to turn a [`Cleaner`] into a [`ProfiledCleaner`].
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub struct ProfilesConfig {
     /// The base [`ParamsDiff`].
@@ -18,7 +18,7 @@ pub struct ProfilesConfig {
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub named: HashMap<String, ParamsDiff>,
+    pub named: FxHashMap<String, ParamsDiff>,
 }
 
 impl ProfilesConfig {
@@ -48,7 +48,7 @@ impl ProfilesConfig {
 
     /// Make a [`ProfiledCleaner`].
     pub fn make<'a>(self, cleaner: &'a Cleaner<'_>) -> ProfiledCleaner<'a> {
-        let mut named = HashMap::with_capacity(self.named.len());
+        let mut named = FxHashMap::with_capacity_and_hasher(self.named.len(), Default::default());
 
         let mut base = cleaner.borrowed();
         self.base.apply(&mut base.params);

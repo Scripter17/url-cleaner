@@ -6,6 +6,7 @@ pub mod suite;
 pub mod cli;
 pub mod site;
 pub mod site_client;
+pub mod url;
 
 pub mod util;
 
@@ -20,12 +21,14 @@ pub mod prelude {
 
 /// Benchmarking.
 #[derive(Debug, Parser)]
-#[allow(missing_docs, reason = "Makes clap inherit the docs.")]
+#[expect(missing_docs, reason = "Makes clap inherit the docs.")]
 pub enum Args {
     Suite     (suite      ::Args),
     Cli       (cli        ::Args),
     Site      (site       ::Args),
     SiteClient(site_client::Args),
+    #[command(subcommand)]
+    Url       (url        ::Args),
 }
 
 impl Args {
@@ -36,6 +39,7 @@ impl Args {
             Self::Cli       (args) => println!("{}", args.r#do()),
             Self::Site      (args) => println!("{}", args.r#do()),
             Self::SiteClient(args) => println!("{}", args.r#do()),
+            Self::Url       (args) => args.r#do(),
         }
     }
 }

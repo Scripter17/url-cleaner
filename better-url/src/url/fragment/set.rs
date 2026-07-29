@@ -51,7 +51,7 @@ impl BetterUrl {
 
     /// Remove the fragment if it's empty.
     pub fn remove_empty_fragment(&mut self) -> bool {
-        if let Some(x) = self.details.fragment_mark && x.get() as usize == self.len() - 1 {
+        if let Some(x) = self.details.fragment_mark && x.get() as usize + 1 == self.len() {
             self.serialization.truncate(x.get() as usize);
             self.details.fragment_mark = None;
             true
@@ -77,7 +77,7 @@ impl BetterUrl {
     }
 
     /// [`MaybeFragmentQuery::filtered`].
-    #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
+    #[expect(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn filter_fragment_query<F: FnMut(FragmentQuerySegment<'_>) -> bool>(&mut self, f: F) -> bool {
         if let (true, fragment) = self.fragment_query().filtered(f) {
             self.set_fragment(fragment.into_owned()).expect("To be at most u32::MAX.");
@@ -90,7 +90,7 @@ impl BetterUrl {
     /// [`MaybeFragmentQuery::try_filtered`].
     /// # Errors
     /// If the call to [`MaybeFragmentQuery::try_filtered`] returns an error, that error is returned.
-    #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
+    #[expect(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn try_filter_fragment_query<F: FnMut(FragmentQuerySegment<'_>) -> Result<bool, E>, E>(&mut self, f: F) -> Result<bool, E> {
         if let (true, fragment) = self.fragment_query().try_filtered(f)? {
             self.set_fragment(fragment.into_owned()).expect("To be at most u32::MAX.");

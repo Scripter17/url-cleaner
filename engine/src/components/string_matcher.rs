@@ -140,10 +140,10 @@ pub enum StringMatcher {
     AllUppercase,
     /// Passes if [`None`] or every character is [`char::is_whitespace`].
     AllWhitespace,
-    /// Passes if [`None`] or all [`char`]s in the string are in the specified [`HashSet`].
-    AllCharsAreOneOf(HashSet<char>),
-    /// Passes if [`None`] or any of the [`char`]s in the string are in the specified [`HashSet`].
-    AnyCharIsOneOf(HashSet<char>),
+    /// Passes if [`None`] or all [`char`]s in the string are in the specified [`FxHashSet`].
+    AllCharsAreOneOf(FxHashSet<char>),
+    /// Passes if [`None`] or any of the [`char`]s in the string are in the specified [`FxHashSet`].
+    AnyCharIsOneOf(FxHashSet<char>),
     /// Passes if [`None`] or all [`char`]s in the string satisfy the specified [`CharMatcher`].
     AllCharsMatch(CharMatcher),
     /// Passes if [`None`] or any [`char`]s in the string satisfy the specified [`CharMatcher`].

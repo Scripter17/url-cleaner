@@ -15,16 +15,18 @@ use tokio::io::AsyncReadExt;
 
 use url_cleaner_engine::prelude::*;
 
-#[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
+#[expect(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner CLI - Explicit non-consent to URL spytext.
+///
 /// Licensed under the Aferro GNU Public License version 3.0 or later.
+///
 /// https://github.com/Scripter17/url-cleaner
 ///
 /// Enabled features:
 #[cfg_attr(feature = "bundled-cleaner", doc = "bundled-cleaner")]
 #[cfg_attr(feature = "http"           , doc = "http"           )]
 #[cfg_attr(feature = "cache"          , doc = "cache"          )]
-/// 
+///
 /// Disabled features:
 #[cfg_attr(not(feature = "bundled-cleaner"), doc = "bundled-cleaner")]
 #[cfg_attr(not(feature = "http"           ), doc = "http"           )]
@@ -32,7 +34,6 @@ use url_cleaner_engine::prelude::*;
 #[derive(Debug, Parser)]
 struct Args {
     /// Unvalidated task lines to do before STDIN.
-    #[arg(verbatim_doc_comment)]
     tasks: Vec<String>,
     /// Enable brief unchanged mode.
     #[arg(long)]
@@ -41,74 +42,64 @@ struct Args {
     #[arg(long)]
     brief_error: bool,
 
-    /// The Cleaner file to use.
-    /// Omit to use the built in bundled cleaner.
+    /// The Cleaner to use.
     #[cfg(feature = "bundled-cleaner")]
-    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
+    #[arg(long, value_name = "PATH")]
     cleaner: Option<PathBuf>,
-    /// The Cleaner file to use.
+    /// The Cleaner to use.
     #[cfg(not(feature = "bundled-cleaner"))]
-    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
+    #[arg(long, value_name = "PATH")]
     cleaner: PathBuf,
 
-    /// The Secrets file to use.
+    /// The Secrets to use.
     #[arg(long, value_name = "PATH")]
     secrets: Option<PathBuf>,
 
-    /// The ProfilesConfig file.
-    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
+    /// The ProfilesConfig to use.
+    #[arg(long, value_name = "PATH")]
     profiles: Option<PathBuf>,
     /// The profile to use.
-    /// Applied before ParamsDiffs and --flag/--var.
-    #[arg(long, verbatim_doc_comment, value_name = "NAME", requires = "profiles")]
+    #[arg(long, value_name = "NAME", requires = "profiles")]
     profile: Option<String>,
 
-    /// A standalone ParamsDiff file.
-    /// Applied after profiles and before --flag/--var.
-    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
+    /// The ParamsDiff to apply to the profile.
+    #[arg(long, value_name = "PATH")]
     params_diff: Option<PathBuf>,
 
-    /// Flags to insert into the params.
-    /// Applied after profiles and ParamsDiff.
-    #[arg(short, long, verbatim_doc_comment)]
+    /// Flags to set after ParamsDiff.
+    #[arg(short, long)]
     flag: Vec<String>,
-    /// Vars to insert into the params.
-    /// Applied after profiles and ParamsDiff.
-    #[arg(short, long, verbatim_doc_comment, value_names = ["NAME", "VALUE"], num_args = 2)]
+    /// Vars to set after ParamsDiff.
+    #[arg(short, long, value_names = ["NAME", "VALUE"], num_args = 2)]
     var: Vec<Vec<String>>,
 
     /// The JobContext.
-    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
+    #[arg(long, value_name = "PATH")]
     job_context: Option<PathBuf>,
 
     /// The path of the cache to use.
     #[cfg(feature = "cache")]
-    #[arg(long, verbatim_doc_comment, default_value = "url-cleaner-cache.sqlite", value_name = "PATH")]
+    #[arg(long, default_value = "url-cleaner-cache.sqlite", value_name = "PATH")]
     cache: PathBuf,
-    /// Disables reading from the cache.
-    /// Useful for overwriting stale entries.
+    /// Disable reading from the cache.
     #[cfg(feature = "cache")]
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long)]
     no_read_cache: bool,
-    /// Disables writing to the cache.
-    /// Useful for not leaving records.
+    /// Disable writing to the cache.
     #[cfg(feature = "cache")]
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long)]
     no_write_cache: bool,
-    /// Make cache reads wait about as long as the cached operation originally took.
-    /// Useful for not leaking what is and is not in the cache.
+    /// Enable cache delay.
     #[cfg(feature = "cache")]
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long)]
     cache_delay: bool,
 
-    /// Make HTTP requests and cache reads happen one after another instead of in parallel.
-    /// Useful for not leaking the thread count.
-    #[arg(long, verbatim_doc_comment)]
+    /// Enable unthreading.
+    #[arg(long)]
     unthread: bool,
     /// The number of worker threads to use.
-    /// Zero uses the CPU's thread count.
-    #[arg(long, verbatim_doc_comment, default_value_t = 0)]
-    workers: usize
+    #[arg(long, default_value_t = 0)]
+    workers: usize,
 }
 
 /// The enum of errors [`main`] can return.
@@ -124,11 +115,11 @@ pub enum CliError {
     ProfileNotFound
 }
 
-/** The [`Job`].             **/ static JOB       : OnceLock<Job       > = OnceLock::new();
-/** The [`Unthreader`].      **/ static UNTHREADER: OnceLock<Unthreader> = OnceLock::new();
-/** The [`Secrets`].         **/ static SECRETS   : OnceLock<Secrets   > = OnceLock::new();
-/** The [`InnerCache`].      **/ #[cfg(feature = "cache")] static INNER_CACHE: OnceLock<InnerCache> = OnceLock::new();
-/** The [`MaybeHttpClient`]. **/ #[cfg(feature = "http" )] static HTTP_CLIENT: OnceLock<MaybeHttpClient> = OnceLock::new();
+/** The [`Job`].        **/ static JOB       : OnceLock<Job       > = OnceLock::new();
+/** The [`Unthreader`]. **/ static UNTHREADER: OnceLock<Unthreader> = OnceLock::new();
+/** The [`Secrets`].    **/ static SECRETS   : OnceLock<Secrets   > = OnceLock::new();
+/** The [`InnerCache`]. **/ #[cfg(feature = "cache")] static INNER_CACHE: OnceLock<InnerCache> = OnceLock::new();
+/** The [`HttpClient`]. **/ #[cfg(feature = "http" )] static HTTP_CLIENT: OnceLock<HttpClient> = OnceLock::new();
 
 #[tokio::main]
 async fn main() -> Result<(), CliError> {
@@ -181,10 +172,8 @@ async fn main() -> Result<(), CliError> {
             }
         },
         #[cfg(feature = "http")]
-        http_client: HTTP_CLIENT.get_or_init(|| MaybeHttpClient::new(Some(tokio::runtime::Handle::current()))),
+        http_client: Some(HTTP_CLIENT.get_or_init(|| HttpClient::new(tokio::runtime::Handle::current()))),
     });
-
-    // Do the job.
 
     let threads = match args.workers {
         0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").get(),

@@ -1,8 +1,8 @@
 //! A tool to for developing URL Cleaner.
 
-#![allow(clippy::unwrap_used       , reason = "Internal tool. I can fix it when it breads.")]
-#![allow(clippy::indexing_slicing  , reason = "Internal tool. I can fix it when it breads.")]
-#![allow(clippy::missing_panics_doc, reason = "Internal tool. I can fix it when it breads.")]
+#![expect(clippy::unwrap_used       , reason = "Internal tool. I can fix it when it breads.")]
+#![expect(clippy::indexing_slicing  , reason = "Internal tool. I can fix it when it breads.")]
+#![expect(clippy::missing_panics_doc, reason = "Internal tool. I can fix it when it breads.")]
 
 pub mod build;
 pub mod cleaner;
@@ -36,7 +36,7 @@ pub mod prelude {
 use prelude::*;
 
 /// Internal tool to develop URL Cleaner.
-#[allow(missing_docs, reason = "Makes clap inherit the docs.")]
+#[expect(missing_docs, reason = "Makes clap inherit the docs.")]
 #[derive(Debug, Parser)]
 pub enum Args {
     Build(build::Args),

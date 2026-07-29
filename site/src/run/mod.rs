@@ -101,9 +101,9 @@ pub struct State {
     /// The [`InnerCache`].
     #[cfg(feature = "cache")]
     inner_cache: InnerCache,
-    /// The [`MaybeHttpClient`].
+    /// The [`HttpClient`].
     #[cfg(feature = "http")]
-    http_client: MaybeHttpClient,
+    http_client: HttpClient,
 }
 
 /// [`Args::do`].
@@ -162,7 +162,7 @@ impl Args {
             #[cfg(feature = "cache")]
             inner_cache: self.cache.into(),
             #[cfg(feature = "http")]
-            http_client: MaybeHttpClient::new(Some(tokio::runtime::Handle::current())),
+            http_client: HttpClient::new(tokio::runtime::Handle::current()),
         });
 
         let app = Router::new()

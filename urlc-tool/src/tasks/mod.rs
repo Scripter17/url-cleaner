@@ -12,7 +12,7 @@ pub mod prelude {
 }
 
 /// Tasks.
-#[allow(missing_docs, reason = "Makes clap inherit the docs.")]
+#[expect(missing_docs, reason = "Makes clap inherit the docs.")]
 #[derive(Debug, Parser)]
 pub enum Args {
     Www(www::Args),

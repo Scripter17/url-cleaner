@@ -1,7 +1,5 @@
 //! [`UrlPart`].
 
-#![allow(unused_assignments, reason = "False positive.")]
-
 use std::ops::Bound;
 
 use crate::prelude::*;
@@ -10,29 +8,17 @@ use crate::prelude::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum UrlPart {
-    /// [`BetterUrl::as_str`].
-    Whole,
+    /** [`BetterUrl::as_str`].       **/ Whole,
+
+    /** [`BetterUrl::scheme_str`].   **/ Scheme,
+
+    /** [`BetterUrl::userinfo_str`]. **/ Userinfo,
+    /** [`BetterUrl::username_str`]. **/ Username,
+    /** [`BetterUrl::password_str`]. **/ Password,
 
 
 
-    /// [`BetterUrl::scheme_str`].
-    Scheme,
-
-
-
-    /// [`BetterUrl::userinfo_str`].
-    Userinfo,
-    /// [`BetterUrl::username_str`].
-    Username,
-    /// [`BetterUrl::password_str`].
-    Password,
-
-
-
-    /// [`BetterUrl::host_str`].
-    Host,
-
-
+    /** [`BetterUrl::host_str`].     **/ Host,
 
     /** [`BetterUrl::domain_prefix_str`]. **/ DomainPrefix,
     /** [`BetterUrl::domain_middle_str`]. **/ DomainMiddle,
@@ -40,6 +26,8 @@ pub enum UrlPart {
     /** [`BetterUrl::domain_origin_str`]. **/ DomainOrigin,
     /** [`BetterUrl::domain_labels_str`]. **/ DomainLabels,
     /** [`BetterUrl::domain_normal_str`]. **/ DomainNormal,
+
+
 
     /** [`BetterUrl::domain_segment_str`].        **/ DomainSegment(isize),
     /** [`BetterUrl::domain_prefix_segment_str`]. **/ DomainPrefixSegment(isize),
@@ -49,48 +37,28 @@ pub enum UrlPart {
 
     /// [`BetterUrl::domain_range_str`].
     DomainSegmentRange {
-        /// The start of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        start: Bound<isize>,
-        /// The end of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        /** The start of the range. **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
+        /** The end of the range.   **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
     /// [`BetterUrl::domain_prefix_range_str`].
     DomainPrefixSegmentRange {
-        /// The start of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        start: Bound<isize>,
-        /// The end of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        /** The start of the range. **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
+        /** The end of the range.   **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
     /// [`BetterUrl::domain_suffix_range_str`].
     DomainSuffixSegmentRange {
-        /// The start of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        start: Bound<isize>,
-        /// The end of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        /** The start of the range. **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
+        /** The end of the range.   **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
     /// [`BetterUrl::domain_origin_range_str`].
     DomainOriginSegmentRange {
-        /// The start of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        start: Bound<isize>,
-        /// The end of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        /** The start of the range. **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
+        /** The end of the range.   **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
     /// [`BetterUrl::domain_normal_range_str`].
     DomainNormalSegmentRange {
-        /// The start of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        start: Bound<isize>,
-        /// The end of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        /** The start of the range. **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
+        /** The end of the range.   **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
 
 
@@ -110,90 +78,53 @@ pub enum UrlPart {
 
     /// [`BetterUrl::domain_range`] + [`DomainSegments::decode`].
     DecodedDomainSegmentRange {
-        /// The start of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        start: Bound<isize>,
-        /// The end of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        /** The start of the range. **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
+        /** The end of the range.   **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
     /// [`BetterUrl::domain_prefix_range`] + [`DomainSegments::decode`].
     DecodedDomainPrefixSegmentRange {
-        /// The start of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        start: Bound<isize>,
-        /// The end of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        /** The start of the range. **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
+        /** The end of the range.   **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
     /// [`BetterUrl::domain_suffix_range`] + [`DomainSegments::decode`].
     DecodedDomainSuffixSegmentRange {
-        /// The start of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        start: Bound<isize>,
-        /// The end of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        /** The start of the range. **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
+        /** The end of the range.   **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
     /// [`BetterUrl::domain_origin_range`] + [`DomainSegments::decode`].
     DecodedDomainOriginSegmentRange {
-        /// The start of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        start: Bound<isize>,
-        /// The end of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        /** The start of the range. **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
+        /** The end of the range.   **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
     /// [`BetterUrl::domain_normal_range`] + [`DomainSegments::decode`].
     DecodedDomainNormalSegmentRange {
-        /// The start of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        start: Bound<isize>,
-        /// The end of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        /** The start of the range. **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
+        /** The end of the range.   **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
 
 
 
-    /// [`BetterUrl::port_str`].
-    Port,
+    /** [`BetterUrl::port_str`]. **/ Port,
 
 
 
-    /// [`BetterUrl::path_str`].
-    Path,
-    /// [`BetterUrl::path_segment`].
-    PathSegment(isize),
-    /// [`BetterUrl::path_segment_str`]
-    RawPathSegment(isize),
+    /** [`BetterUrl::path_str`].         **/ Path,
+    /** [`BetterUrl::path_segment`].     **/ PathSegment(isize),
+    /** [`BetterUrl::path_segment_str`]. **/ RawPathSegment(isize),
+
     /// [`BetterUrl::path_segment_range_str`].
     RawPathSegmentRange {
-        /// The start of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        start: Bound<isize>,
-        /// The end of the range.
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        /** The start of the range. **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
+        /** The end of the range.   **/ #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
 
+    /** [`BetterUrl::query_str`].            **/ Query,
+    /** [`BetterUrl::query_param`].          **/ QueryParam(QueryParamSelector),
+    /** [`BetterUrl::query_param`].          **/ RawQueryParam(QueryParamSelector),
 
-
-    /// [`BetterUrl::query_str`].
-    Query,
-    /// [`BetterUrl::query_param`].
-    QueryParam(QueryParamSelector),
-    /// [`BetterUrl::query_param`].
-    RawQueryParam(QueryParamSelector),
-
-
-
-    /// [`BetterUrl::fragment_str`].
-    Fragment,
-    /// [`BetterUrl::fragment_query_param`].
-    FragmentParam(QueryParamSelector),
-    /// [`BetterUrl::fragment_query_param`].
-    RawFragmentParam(QueryParamSelector),
+    /** [`BetterUrl::fragment_str`].         **/ Fragment,
+    /** [`BetterUrl::fragment_query_param`]. **/ FragmentParam(QueryParamSelector),
+    /** [`BetterUrl::fragment_query_param`]. **/ RawFragmentParam(QueryParamSelector),
 }
 
 impl UrlPart {

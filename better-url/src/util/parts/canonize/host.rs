@@ -17,7 +17,7 @@ pub fn canonize_non_special_hostname_setter<'a, T: Into<Cow<'a, str>>>(value: T)
 
     if let Some(i) = value.memchr3(b'/', b'?', b'#') {
         unsafe {
-            value.retain_range_unchecked(..i);
+            value.truncate_unchecked(i);
         }
         changed = true;
     }
@@ -36,7 +36,7 @@ pub fn canonize_special_hostname_setter<'a, T: Into<Cow<'a, str>>>(value: T) -> 
 
     if let Some(i) = value.bytes().position(|b| b == b'/' || b == b'\\' || b == b'?' || b == b'#') {
         unsafe {
-            value.retain_range_unchecked(..i);
+            value.truncate_unchecked(i);
         }
         changed = true;
     }

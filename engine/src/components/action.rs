@@ -344,9 +344,9 @@ pub enum Action {
     /// [`MaybeQuery::filter`], keeping only params whose names are the specified value.
     AllowQueryParam(StringSource),
     /// [`MaybeQuery::filter`], keeping only params whose names are not in the set.
-    RemoveQueryParams(HashSet<String>),
+    RemoveQueryParams(FxHashSet<String>),
     /// [`MaybeQuery::filter`], keeping only params whose names are in the set.
-    AllowQueryParams(HashSet<String>),
+    AllowQueryParams(FxHashSet<String>),
     /// [`MaybeQuery::filter`], keeping only params whose names satisfy the [`StringMatcher`].
     RemoveQueryParamsMatching(StringMatcher),
     /// [`MaybeQuery::filter`], keeping only params whose names don't satisfy the [`StringMatcher`].
@@ -379,9 +379,9 @@ pub enum Action {
     /// [`MaybeQuery::filter`], keeping only params whose names are the specified value.
     AllowFragmentParam(StringSource),
     /// [`MaybeQuery::filter`], keeping only params whose names are not in the set.
-    RemoveFragmentParams(HashSet<String>),
+    RemoveFragmentParams(FxHashSet<String>),
     /// [`MaybeQuery::filter`], keeping only params whose names are in the set.
-    AllowFragmentParams(HashSet<String>),
+    AllowFragmentParams(FxHashSet<String>),
     /// [`MaybeQuery::filter`], keeping only params whose names satisfy the [`StringMatcher`].
     RemoveFragmentParamsMatching(StringMatcher),
     /// [`MaybeQuery::filter`], keeping only params whose names don't satisfy the [`StringMatcher`].
@@ -765,7 +765,7 @@ impl Action {
             // Misc.
 
             Self::HandleParams {mode, query, fragment, names, prefixes, except_names, except_prefixes} => {
-                if !(*fragment && task_state.url.fragment().is_some() || *query && task_state.url.query().is_some()) {
+                if !(*fragment && task_state.url.fragment_str().is_some() || *query && task_state.url.query_str().is_some()) {
                     return Ok(false);
                 }
 

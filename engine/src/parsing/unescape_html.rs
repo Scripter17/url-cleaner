@@ -15,18 +15,33 @@ use crate::prelude::*;
 /// assert_eq!(unescape_html("a&#65;b" ).unwrap(), "aAb");
 /// assert_eq!(unescape_html("a&#x41;b").unwrap(), "aAb");
 /// ```
-pub fn unescape_html(s: &str) -> Result<String, UnescapeHtmlError> {
-    let mut ret = String::new();
+pub fn unescape_html<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<Cow<'a, str>, UnescapeHtmlError> {
+    let value = value.into();
 
-    let mut first = true;
-
-    for segment in s.split('&') {
-        match (first, segment.split_once(';')) {
-            (true , _                     ) => {ret.push_str(segment); first=false;}
-            (false, Some((char_ref, rest))) => {ret.push_str(&get_html_char_ref(char_ref)?); ret.push_str(rest);},
-            (false, None                  ) => Err(UnescapeHtmlError::SyntaxError)?
-        }
+    if memchr::memchr(b'&', value.as_bytes()).is_none() {
+        return Ok(value);
     }
 
-    Ok(ret)
+    let mut ret = String::with_capacity(value.len());
+    let mut rest = &*value;
+
+    while let Some(i) = memchr::memchr(b'&', rest.as_bytes()) {
+        let a = unsafe {rest.get_unchecked(..i)};
+        let b = unsafe {rest.get_unchecked(i+1..)};
+
+        ret.push_str(a);
+
+        let j = memchr::memchr(b';', b.as_bytes()).ok_or(SyntaxError)?;
+
+        let c = unsafe {b.get_unchecked(..j)};
+        let d = unsafe {b.get_unchecked(j+1..)};
+
+        ret.push_str(&get_html_char_ref(c)?);
+
+        rest = d;
+    }
+
+    ret.push_str(rest);
+
+    Ok(ret.into())
 }

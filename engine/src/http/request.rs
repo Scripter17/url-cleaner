@@ -1,5 +1,7 @@
 //! [`HttpRequestSource`].
 
+use reqwest::header::{HeaderName, HeaderValue};
+
 use crate::prelude::*;
 
 /// Rules for making an HTTP request.
@@ -31,12 +33,12 @@ pub struct HttpRequestSource {
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub dynamic_headers: HashMap<String, StringSource>,
+    pub dynamic_headers: FxHashMap<String, StringSource>,
     /// The body to send.
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub body: Option<HttpBodyConfig>
+    pub body: StringSource,
 }
 
 impl Default for HttpRequestSource {
@@ -46,7 +48,7 @@ impl Default for HttpRequestSource {
             method         : get_default_method(),
             const_headers  : Default::default(),
             dynamic_headers: Default::default(),
-            body           : None
+            body           : Default::default(),
         }
     }
 }
@@ -59,36 +61,36 @@ impl Default for HttpRequestSource {
 impl HttpRequestSource {
     /// Get a [`reqwest::RequestBuilder`].
     /// # Errors
-    /// If the call to [`HttpClient::get_inner`] returns an error, that error is returned.
+    /// If the call to [`reqwest::Method::from_str`] returns an error, that error is returned.
+    ///
+    /// If the call to [`url::Url::parse`] returns an error, that error is returned.
+    ///
+    /// If any call to [`HeaderName::from_str`] returns an error, that error is returned.
+    ///
+    /// If any call to [`HeaderValue::from_str`] returns an error, that error is returned.
     ///
     /// If any call to [`StringSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`MapSource::get`] returns an error, that error is returned.
-    ///
-    /// If the call to [`HttpBodyConfig::apply`] returns an error, that error is returned.
-    pub fn get(&self, client: &HttpClient, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::RequestBuilder, HttpRequestSourceError> {
-        debug!(HttpRequestSource::get, self; self._get(client, task_state, args))
+    pub fn get(&self, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::Request, HttpRequestSourceError> {
+        debug!(HttpRequestSource::get, self; self._get(task_state, args))
     }
 
     /// [`Self::get`].
-    fn _get(&self, client: &HttpClient, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::RequestBuilder, HttpRequestSourceError> {
-        let mut ret = client.get_inner()?.request(get!(self.method).parse()?, get!(&self.url));
+    fn _get(&self, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::Request, HttpRequestSourceError> {
+        let mut ret = reqwest::Request::new(get!(self.method).parse()?, get!(&self.url).parse()?);
 
         if let Some(map) = get!(?self.const_headers) {
             for (key, value) in map.map.iter() {
-                ret = ret.header(key, value);
+                ret.headers_mut().append(HeaderName::from_str(key)?, HeaderValue::from_str(value)?);
             }
         }
 
         for (key, value) in self.dynamic_headers.iter() {
             if let Some(value) = get!(?&value) {
-                ret = ret.header(key, value);
+                ret.headers_mut().append(HeaderName::from_str(key)?, HeaderValue::from_str(value)?);
             }
         }
 
-        if let Some(body) = &self.body {
-            ret = body.apply(ret, task_state, args)?;
-        }
+        *ret.body_mut() = get!(?*self.body).map(Into::into);
 
         Ok(ret)
     }

@@ -6,29 +6,29 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub struct Functions {
-    /// [`Condition`]s.
+    /// The [`Condition`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub conditions: HashMap<String, Condition>,
-    /// [`Action`]s.
+    pub conditions: FxHashMap<String, Condition>,
+    /// The [`Action`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub actions: HashMap<String, Action>,
-    /// [`StringSource`]s.
+    pub actions: FxHashMap<String, Action>,
+    /// The [`StringSource`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub string_sources: HashMap<String, StringSource>,
-    /// [`StringModification`]s.
+    pub string_sources: FxHashMap<String, StringSource>,
+    /// The [`StringModification`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub string_modifications: HashMap<String, StringModification>,
-    /// [`StringMatcher`]s.
+    pub string_modifications: FxHashMap<String, StringModification>,
+    /// The [`StringMatcher`]s.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub string_matchers: HashMap<String, StringMatcher>
+    pub string_matchers: FxHashMap<String, StringMatcher>,
 }

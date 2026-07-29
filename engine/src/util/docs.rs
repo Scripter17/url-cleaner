@@ -18,7 +18,7 @@ macro_rules! job {
                 config: Default::default(),
             },
             #[cfg(feature = "http")]
-            http_client: &$crate::prelude::MaybeHttpClient(None),
+            http_client: None,
         }
     }
 }

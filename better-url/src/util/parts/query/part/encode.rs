@@ -5,8 +5,6 @@ use crate::prelude::*;
 /// [`QUERY_PART`] without space, allowing a cleaner "check each byte" loop.
 const THING: AsciiSet = QUERY_PART.remove(b' ');
 
-// TODO: Do percent and space encoding in two separate passes?
-
 /// [`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) encoding.
 pub fn encode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     encode_query_part_bytes(cow_str_to_bytes(value))
@@ -14,45 +12,30 @@ pub fn encode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, 
 
 /// [`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) encoding.
 pub fn encode_query_part_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    let value = value.into();
+    let (a, value) = percent_encode_bytes(value, THING);
+    let (b, value) = space_to_plus(value);
 
-    let mut to_reserve = 0;
+    (a || b, value)
+}
 
-    for &b in value.iter() {
-        if THING.contains(b) {
-            to_reserve += 2;
-        }
-    }
+/// Replace spaces with `+`.
+pub fn space_to_plus<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    let mut value = value.into();
 
-    if to_reserve == 0 && value.memchr(b' ').is_none() {
-        return (false, unsafe {cow_bytes_to_str_unchecked(value)});
-    }
+    match value.memchr(b' ') {
+        Some(mut i) => unsafe {
+            let x = value.to_mut().as_mut_vec();
 
-    let mut ret = Vec::<u8>::with_capacity(value.len() + to_reserve);
+            *x.get_unchecked_mut(i) = b'+';
 
-    let mut i = value.len();
-    let mut j = value.len() + to_reserve;
+            while let Some(j) = x.get_unchecked(i + 1..).memchr(b' ') {
+                i += j + 1;
 
-    unsafe {
-        while i > 0 {
-            i -= 1;
-            j -= 1;
-
-            match *value.get_unchecked(i) {
-                b' ' => *ret.as_mut_ptr().add(j) = b'+',
-                b if THING.contains(b) => {
-                    *ret.as_mut_ptr().add(j - 2) = b'%';
-                    *ret.as_mut_ptr().add(j - 1) = NIBBLES[b as usize >> 4];
-                    *ret.as_mut_ptr().add(j    ) = NIBBLES[b as usize & 15];
-
-                    j -= 2;
-                },
-                b => *ret.as_mut_ptr().add(j) = b
+                *x.get_unchecked_mut(i) = b'+';
             }
-        }
 
-        ret.set_len(value.len() + to_reserve);
+            (true, value)
+        },
+        None => (false, value)
     }
-
-    (true, unsafe {cow_bytes_to_str_unchecked(ret)})
 }

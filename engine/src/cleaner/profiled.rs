@@ -15,7 +15,7 @@ pub struct ProfiledCleaner<'a> {
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub named: HashMap<String, Params<'a>>,
+    pub named: FxHashMap<String, Params<'a>>,
 }
 
 impl<'a> ProfiledCleaner<'a> {

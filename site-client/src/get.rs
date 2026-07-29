@@ -11,7 +11,7 @@ use futures_util::StreamExt;
 
 /// Get information from URL Cleaner Site.
 #[derive(Debug, Parser)]
-#[allow(missing_docs, reason = "Makes clap inherit the docs.")]
+#[expect(missing_docs, reason = "Makes clap inherit the docs.")]
 pub struct Args {
     pub thing: Thing,
     /// The instance (HTTP or HTTPS)

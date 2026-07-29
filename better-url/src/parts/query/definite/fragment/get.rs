@@ -3,9 +3,9 @@
 use crate::prelude::*;
 
 impl FragmentQuery<'_> {
-    /// A [`DoubleEndedIterator`] of [`FragmentQuerySegment`]s.
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = FragmentQuerySegment<'_>> {
-        SplitAmpersands(Some(self.as_str())).map(|x| unsafe {FragmentQuerySegment::new_unchecked(x)})
+    /// The [`FragmentQueryIter`].
+    pub fn iter(&self) -> FragmentQueryIter<'_> {
+        self.into_iter()
     }
 
     /// A [`DoubleEndedIterator`] of [`FragmentQuerySegment`]s whose [`FragmentQuerySegment::name`]s are `name`.

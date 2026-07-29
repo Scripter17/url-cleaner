@@ -9,7 +9,7 @@ pub fn canonize_scheme_setter<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow
 
     if let Some(i) = value.memchr(b':') {
         unsafe {
-            value.retain_range_unchecked(..i);
+            value.truncate_unchecked(i);
         }
         changed = true;
     }

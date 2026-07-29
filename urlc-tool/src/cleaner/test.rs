@@ -111,7 +111,7 @@ impl Args {
 
         let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
 
-        let http_client = &MaybeHttpClient::new(Some(runtime.handle().clone()));
+        let http_client = HttpClient::new(runtime.handle().clone());
 
         for test_job in test_suite.jobs {
             if filter.find(&test_job.name).is_none() {
@@ -134,7 +134,7 @@ impl Args {
                 unthreader: &Unthreader::Off,
                 secrets: &Default::default(),
                 cache,
-                http_client,
+                http_client: Some(&http_client),
             };
 
             for test in test_job.tests {

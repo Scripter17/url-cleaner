@@ -13,7 +13,9 @@ pub fn canonize_port_setter<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Optio
     let (mut changed, mut value) = canonize_part_setter(value);
 
     if let Some(i) = value.bytes().position(|b| !b.is_ascii_digit()) {
-        value.retain_range(..i);
+        unsafe {
+            value.truncate_unchecked(i);
+        }
         changed = true;
     }
 

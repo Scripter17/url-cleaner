@@ -49,7 +49,7 @@ impl HttpClient {
     ///
     /// If the call to [`HttpResponseHandler::handle`] returns an error, that error is returned.
     pub async fn do_async<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
-        Ok(response.handle(task_state, args, &mut request.get(self, task_state, args)?.send().await?).await?)
+        Ok(response.handle(task_state, args, &mut self.get_inner()?.execute(request.get(task_state, args)?).await?).await?)
     }
 
     /// Gets [`Self::client`] or, if it's uninitialized, creates the default client.

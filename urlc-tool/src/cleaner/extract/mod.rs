@@ -10,7 +10,7 @@ pub mod prelude {
 }
 
 /// Extract.
-#[allow(missing_docs, reason = "Makes clap inherit the docs.")]
+#[expect(missing_docs, reason = "Makes clap inherit the docs.")]
 #[derive(Debug, Parser)]
 pub enum Args {
     Hosts(hosts::Args),

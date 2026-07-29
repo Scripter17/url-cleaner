@@ -10,39 +10,17 @@ pub use source::*;
 pub use iter::*;
 pub use into_iter::*;
 
-/// A `HashMap<Option<T>>` that allows indexing with `Option<&Q>` where `T: Borrow<Q>`.
-///
-/// Mainly used to allow indexing `Set<String>` with `Option<&str>`, where a [`HashSet`] would require `&Option<String>`.
-/// # Examples
-/// ```
-/// use url_cleaner_engine::prelude::*;
-///
-/// assert_eq!(
-///     serde_json::from_str::<Set<String>>(r#"["abc"]"#).unwrap(),
-///     Set {
-///         set: ["abc".into()].into(),
-///         if_none: false
-///     }
-/// );
-///
-/// assert_eq!(
-///     serde_json::from_str::<Set<String>>(r#"["abc", null]"#).unwrap(),
-///     Set {
-///         set: ["abc".into()].into(),
-///         if_none: true
-///     }
-/// );
-/// ```
+/// A `FxHashSet<Option<T>>` that allows indexing with `Option<&Q>` where `T: Borrow<Q>`.
 #[derive(Debug, Clone, Suitability)]
 pub struct Set<T> {
     /// The set of `T`.
-    pub set: HashSet<T>,
+    pub set: FxHashSet<T>,
     /// If [`true`], act like [`None`] is in [`Self::set`].
     pub if_none: bool
 }
 
 impl<T: Hash + Eq> Set<T> {
-    /// If [`Some`], [`HashSet::contains`], otherwise [`Self::if_none`].
+    /// If [`Some`], [`FxHashSet::contains`], otherwise [`Self::if_none`].
     pub fn contains<Q>(&self, value: Option<&Q>) -> bool where T: Borrow<Q>, Q: Hash + Eq + ?Sized {
         match value {
             Some(x) => self.set.contains(x),
@@ -55,7 +33,7 @@ impl<T: Hash + Eq> Set<T> {
         self.set.contains(value)
     }
 
-    /// [`HashSet::insert`].
+    /// [`FxHashSet::insert`].
     pub fn insert(&mut self, value: Option<T>) -> bool {
         match value {
             Some(value) => self.set.insert(value),
@@ -63,7 +41,7 @@ impl<T: Hash + Eq> Set<T> {
         }
     }
 
-    /// [`HashSet::remove`].
+    /// [`FxHashSet::remove`].
     pub fn remove<Q>(&mut self, value: Option<&Q>) -> bool where T: Borrow<Q>, Q: Hash + Eq + ?Sized {
         match value {
             Some(value) => self.set.remove(value),

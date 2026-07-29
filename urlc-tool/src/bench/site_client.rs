@@ -14,6 +14,9 @@ pub struct Args {
     /// The num.
     #[arg(long)]
     pub num: u64,
+    /// The ParamsDiff.
+    #[arg(long)]
+    pub params_diff: Option<String>,
     /// The protocol.
     #[arg(long)]
     pub protocol: Protocol,
@@ -25,9 +28,9 @@ pub struct Args {
 impl Args {
     /// Do the command.
     pub fn r#do(self) -> String {
-        let Self {name, task, num, protocol, tool} = self;
+        let Self {name, task, num, params_diff, protocol, tool} = self;
 
-        let out_dir = format!("bench/site/{protocol}/{tool}/{name}/{num}");
+        let out_dir = format!("bench/site-client/{protocol}/{tool}/{name}/{num}");
         let out = format!("{out_dir}/{tool}.out");
 
         write_stdin(&task, num);
@@ -43,7 +46,10 @@ impl Args {
                     "--style", "none",
                     "--input", STDIN,
                     "--export-json", &out,
-                    &format!("target/release/url-cleaner-site-client clean {}", protocol.endpoint())
+                    &match params_diff {
+                        Some(params_diff) => format!("target/release/url-cleaner-site-client clean {} --params-diff '{params_diff}'", protocol.endpoint()),
+                        None              => format!("target/release/url-cleaner-site-client clean {}"                              , protocol.endpoint()),
+                    }
                 ]);
 
                 cmd
@@ -59,6 +65,10 @@ impl Args {
                 }
 
                 cmd.args(["target/release/url-cleaner-site-client", "clean", protocol.endpoint()]);
+
+                if let Some(params_diff) = params_diff {
+                    cmd.args(["--params-diff", &params_diff]);
+                }
 
                 cmd.stdin(File::open(STDIN).unwrap());
 

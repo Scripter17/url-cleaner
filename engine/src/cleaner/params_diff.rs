@@ -13,45 +13,45 @@ pub struct ParamsDiff {
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub flags: HashSet<String>,
+    pub flags: FxHashSet<String>,
     /// [`Params::flags`] to disable.
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub unflags: HashSet<String>,
+    pub unflags: FxHashSet<String>,
 
     /// [`Params::vars`] to set.
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub vars: HashMap<String, String>,
+    pub vars: FxHashMap<String, String>,
     /// [`Params::vars`] to unset.
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub unvars: HashSet<String>,
+    pub unvars: FxHashSet<String>,
 
     /// Values to insert into [`Params::sets`].
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub insert_into_sets: HashMap<String, Set<String>>,
+    pub insert_into_sets: FxHashMap<String, Set<String>>,
     /// Values to remove from [`Params::sets`].
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub remove_from_sets: HashMap<String, Set<String>>,
+    pub remove_from_sets: FxHashMap<String, Set<String>>,
 
     /// Entries to insert into [`Params::maps`].
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub insert_into_maps: HashMap<String, Map<String>>,
+    pub insert_into_maps: FxHashMap<String, Map<String>>,
     /// Entries to remove from [`Params::maps`].
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub remove_from_maps: HashMap<String, Set<String>>,
+    pub remove_from_maps: FxHashMap<String, Set<String>>,
 }
 
 impl ParamsDiff {

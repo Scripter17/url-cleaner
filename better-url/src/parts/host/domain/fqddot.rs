@@ -43,7 +43,7 @@ impl DomainHost<'_> {
 
             (false, false) => return Ok(false),
             (false, true ) => self.host.extend(["."]),
-            (true , false) => self.host.retain_range(..self.suffix_after()),
+            (true , false) => unsafe {self.host.truncate_unchecked(self.suffix_after())},
             (true , true ) => return Ok(false),
         }
 

@@ -2,36 +2,17 @@
 
 use crate::prelude::*;
 
-/// The last state of the state machine in parsing a number character reference.
-#[derive(Debug, Clone, Copy)]
-enum ParseHtmlNumCharRefLastState {
-    /// Just started.
-    Start,
-    /// Doing a decimal number (`^#\d+$`).
-    DecDigit,
-    /// Just saw the hexadecimal x.
-    Hex,
-    /// Doing a hexadecimal number (`^#[xX][\da-fA-F]+$`).
-    HexDigit
-}
-
-/// Convert character references to strings.
-///
-/// Because this has to handle multi-[`char`] character references *and* numeric character references, the only value this can return is a [`Cow`].
+/// Convert the inside of an HTML character reference to the string it represents.
 /// # Errors
-/// If `char_ref` doesn't start with `#` and isn't a known character reference, returns [`GetHtmlCharRefError::UnknownCharName`]
+/// If the call to [`u32::from_str_radix`] returns an error, that error is returned.
 ///
-/// If the character after the `#` is not a decimal digit, `x`, or `X`, returns the error [`GetHtmlCharRefError::InvalidDec`].
+/// If the call to [`u32::from_str`] returns an error, that error is returned.
 ///
-/// If the ref starts with `#x` or `#X` and an invalid hexadecimal digit is found after it, returns the error [`GetHtmlCharRefError::InvalidHex`].
+/// If the call to [`char::try_from`] returns an error, that error is returned.
 ///
-/// If parsing a decimal character code overflows a [`u32`], returns the error [`GetHtmlCharRefError::DecOverflow`].
+/// If either [`char::is_control`] or [`char::is_whitespace`] return [`true`], returns the error [`GetHtmlCharRefError::InvalidCharRef`].
 ///
-/// If parsing a hexadecimal character code overflows a [`u32`], returns the error [`GetHtmlCharRefError::HexOverflow`].
-///
-/// If the call to [`char::from_u32`] returns [`None`], returns the error [`GetHtmlCharRefError::InvalidCharCode`] with the number.
-///
-/// If the character is [`char::is_control`] or [`char::is_whitespace`], returns the error [`GetHtmlCharRefError::DisallowedCharCode`] with the character.
+/// If `value` is not a known named char ref, returns the error [`GetHtmlCharRefError::UnknownCharName`].
 /// # Examples
 /// ```
 /// use url_cleaner_engine::prelude::*;
@@ -47,31 +28,27 @@ enum ParseHtmlNumCharRefLastState {
 ///
 /// get_html_char_ref("#10").unwrap_err();
 /// ```
-#[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible")]
-pub fn get_html_char_ref(char_ref: &str) -> Result<Cow<'static, str>, GetHtmlCharRefError> {
-    if let Some(num) = char_ref.strip_prefix('#') {
-        let mut scratchspace: u32 = 0;
+pub fn get_html_char_ref(value: &str) -> Result<Cow<'static, str>, GetHtmlCharRefError> {
+    Ok(match value.as_bytes() {
+        &[b'#', ref x @ ..] => {
+            let c = char::try_from(match x {
+                [b'x' | b'X', ..] => u32::from_str_radix(unsafe {value.get_unchecked(2..)}, 16)?,
+                _                 => u32::from_str      (unsafe {value.get_unchecked(1..)}    )?,
+            })?;
 
-        let mut last_state = ParseHtmlNumCharRefLastState::Start;
-
-        for c in num.chars() {
-            match (last_state, c) {
-                (ParseHtmlNumCharRefLastState::Start | ParseHtmlNumCharRefLastState::DecDigit, '0'..='9'                        ) => {last_state = ParseHtmlNumCharRefLastState::DecDigit; scratchspace = scratchspace.checked_mul(10).and_then(|x| x.checked_add(c.to_digit(10).expect("The digit to be valid"))).ok_or(GetHtmlCharRefError::DecOverflow)?;},
-                (ParseHtmlNumCharRefLastState::Start                                         , 'x' | 'X'                        ) => {last_state = ParseHtmlNumCharRefLastState::Hex;},
-                (ParseHtmlNumCharRefLastState::Start | ParseHtmlNumCharRefLastState::DecDigit, _                                ) => Err(GetHtmlCharRefError::InvalidDec)?,
-                (ParseHtmlNumCharRefLastState::Hex   | ParseHtmlNumCharRefLastState::HexDigit, '0'..='9' | 'a'..='f' | 'A'..='F') => {last_state = ParseHtmlNumCharRefLastState::HexDigit; scratchspace = scratchspace.checked_mul(16).and_then(|x| x.checked_add(c.to_digit(16).expect("The digit to be valid"))).ok_or(GetHtmlCharRefError::HexOverflow)?;},
-                (ParseHtmlNumCharRefLastState::Hex   | ParseHtmlNumCharRefLastState::HexDigit, _                                ) => Err(GetHtmlCharRefError::InvalidHex)?
+            if c.is_control() || c.is_whitespace() {
+                Err(GetHtmlCharRefError::InvalidCharRef)?;
             }
-        }
 
-        let ret = char::from_u32(scratchspace).ok_or(GetHtmlCharRefError::InvalidCharCode(scratchspace))?;
+            c.to_string().into()
+        },
+        _ => named_char_ref(value).ok_or(GetHtmlCharRefError::UnknownCharName)?.into()
+    })
+}
 
-        if ret.is_control() || ret.is_whitespace() {Err(GetHtmlCharRefError::DisallowedCharCode(ret))?;}
-
-        return Ok(Cow::Owned(ret.to_string()))
-    }
-
-    Ok(Cow::Borrowed(match char_ref {
+/// Get a named character reference.
+fn named_char_ref(name: &str) -> Option<&'static str> {
+    Some(match name {
         "AElig"                           => "\u{000C6}",
         "AMP"                             => "\u{00026}",
         "Aacute"                          => "\u{000C1}",
@@ -2197,6 +2174,6 @@ pub fn get_html_char_ref(char_ref: &str) -> Result<Cow<'static, str>, GetHtmlCha
         "zscr"                            => "\u{1D4CF}",
         "zwj"                             => "\u{0200D}",
         "zwnj"                            => "\u{0200C}",
-        _                                 => Err(GetHtmlCharRefError::UnknownCharName)?
-    }))
+        _                                 => None?,
+    })
 }

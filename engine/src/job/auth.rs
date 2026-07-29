@@ -15,9 +15,9 @@ pub enum AuthInfo {
     #[default]
     None,
     /// Requires the user provide no username and a password in the set.
-    Password(HashSet<String>),
+    Password(FxHashSet<String>),
     /// Requires the user provide a username whose value in the map is the password.
-    Userinfo(HashMap<String, String>),
+    Userinfo(FxHashMap<String, String>),
 }
 
 /// The type of [`AuthInfo`] being used in a format that can be sent to users.

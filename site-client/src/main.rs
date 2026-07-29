@@ -1,7 +1,7 @@
 //! URL Cleaner Site CLIent.
 
-#![allow(clippy::unwrap_used       , reason = "It's fiiiiine.")]
-#![allow(clippy::missing_panics_doc, reason = "It's fiiiiine.")]
+#![expect(clippy::unwrap_used       , reason = "It's fiiiiine.")]
+#![expect(clippy::missing_panics_doc, reason = "It's fiiiiine.")]
 
 /// Prelude module for importing everything here better.
 pub mod prelude {
@@ -13,12 +13,14 @@ use prelude::*;
 pub mod get;
 pub mod clean;
 
-#[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
+#[expect(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner Site CLIent.
+///
 /// Licensed under the Aferro GNU Public License version 3.0 or later.
+///
 /// https://github.com/Scripter17/url-cleaner
 #[derive(Debug, Parser)]
-#[allow(missing_docs, reason = "Makes clap inherit the docs.")]
+#[expect(missing_docs, reason = "Makes clap inherit the docs.")]
 pub enum Args {
     Get  (get  ::Args),
     Clean(clean::Args)

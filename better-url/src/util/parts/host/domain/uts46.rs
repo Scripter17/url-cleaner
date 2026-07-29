@@ -65,7 +65,9 @@ pub fn uts46_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a
                 },
                 (Some((i, _)), None) => {
                     drop(b);
-                    value.retain_range(..i);
+                    unsafe {
+                        value.truncate_unchecked(i);
+                    }
                     return (true, value);
                 },
                 (Some((i, x)), Some(y)) => if x != y {

@@ -7,12 +7,6 @@ pub(crate) trait CowStrExt {
     /// Retrain the range without checking for validity.
     unsafe fn retain_range_unchecked<B: RangeBounds<usize>>(&mut self, range: B);
 
-    /// Retain a substring using pointer arithmetic and no allocations.
-    fn retain_substr(&mut self, substr: *const str);
-
-    /// Retain a subslice with no allocations.
-    fn retain_range<B: RangeBounds<usize>>(&mut self, range: B);
-
     /// Replace a range, trying to not allocate.
     fn replace_range<B: RangeBounds<usize>>(&mut self, range: B, with: &str);
 
@@ -27,6 +21,9 @@ pub(crate) trait CowStrExt {
 
     /// Insert a string at `idx` without unnecessary allocations.
     fn with_insert_str(self, idx: usize, string: &str) -> Cow<'static, str>;
+
+    /// Truncate without any validity checks.
+    unsafe fn truncate_unchecked(&mut self, len: usize);
 }
 
 impl CowStrExt for Cow<'_, str> {
@@ -47,28 +44,6 @@ impl CowStrExt for Cow<'_, str> {
                 },
                 Cow::Borrowed(x) => *x = x.get_unchecked((range.start_bound().cloned(), range.end_bound().cloned()))
             }
-        }
-    }
-
-    fn retain_substr(&mut self, substr: *const str) {
-        self.retain_range(self.my_substr_range(substr));
-    }
-
-    fn retain_range<B: RangeBounds<usize>>(&mut self, range: B) {
-        match self {
-            Cow::Owned(x) => {
-                match range.end_bound() {
-                    Bound::Unbounded => {},
-                    Bound::Excluded(&y) => x.truncate(y),
-                    Bound::Included(&y) => x.truncate(y + 1),
-                }
-                match range.start_bound() {
-                    Bound::Unbounded => {},
-                    Bound::Excluded(&y) => {x.drain(..=y);},
-                    Bound::Included(&y) => {x.drain(.. y);},
-                }
-            },
-            Cow::Borrowed(x) => *x = &x[(range.start_bound().cloned(), range.end_bound().cloned())]
         }
     }
 
@@ -138,5 +113,12 @@ impl CowStrExt for Cow<'_, str> {
         ret.push_str(&self[idx..]);
 
         ret.into()
+    }
+
+    unsafe fn truncate_unchecked(&mut self, len: usize) {
+        match self {
+            Cow::Owned   (x) =>      unsafe {x.as_mut_vec().set_len(len);},
+            Cow::Borrowed(x) => *x = unsafe {x.get_unchecked(..len)},
+        }
     }
 }

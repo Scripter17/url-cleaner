@@ -12,10 +12,8 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum SchemeDetails {
-    /// [`SpecialSchemeDetails`].
-    Special(SpecialSchemeDetails),
-    /// [`NonSpecialSchemeDetails`].
-    NonSpecial(NonSpecialSchemeDetails),
+    /** [`SpecialSchemeDetails`].    **/ Special   (SpecialSchemeDetails   ),
+    /** [`NonSpecialSchemeDetails`]. **/ NonSpecial(NonSpecialSchemeDetails),
 }
 
 impl SchemeDetails {
@@ -34,7 +32,7 @@ impl SchemeDetails {
     }
 
     /// Make a new [`Self`] without case or validity checks.
-    pub(crate) fn new_unchecked(value: &str) -> Self {
+    pub fn new_unchecked(value: &str) -> Self {
         match value {
             "http"  => SpecialNotFileSchemeDetails::Http .into(),
             "https" => SpecialNotFileSchemeDetails::Https.into(),

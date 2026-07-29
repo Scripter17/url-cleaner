@@ -2,6 +2,9 @@
 
 use crate::prelude::*;
 
+mod iter;
+pub use iter::*;
+
 /// Encode a [`NonSpecialQuery`].
 pub fn encode_non_special_query<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     percent_encode(value, NON_SPECIAL_QUERY)
@@ -18,5 +21,7 @@ pub fn encode_non_special_query_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> 
 
 /// Turn a [`Fragment`]/[`FragmentQuery`] into a [`NonSpecialQuery`].
 pub fn fragment_to_non_special_query<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode(value, FRAGMENT_TO_NON_SPECIAL_QUERY)
+    unsafe {
+        percent_encode_one(value, b'#')
+    }
 }

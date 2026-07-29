@@ -3,17 +3,9 @@
 use crate::prelude::*;
 
 impl<'a> QueryLike<'a> {
-    /// A [`DoubleEndedIterator`] of the [`QueryLikeSegment`]s.
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = QueryLikeSegment<'_>> {
-        let r#type = self.r#type();
-
-        SplitAmpersands(Some(self.as_str())).map(move |x| {
-            match r#type {
-                QueryLikeType::Query(QueryType::Special   ) => unsafe {SpecialQuerySegment   ::new_unchecked(x)}.into(),
-                QueryLikeType::Query(QueryType::NonSpecial) => unsafe {NonSpecialQuerySegment::new_unchecked(x)}.into(),
-                QueryLikeType::Fragment                     => unsafe {FragmentQuerySegment  ::new_unchecked(x)}.into(),
-            }
-        })
+    /// The [`QueryLikeIter`].
+    pub fn iter(&self) -> QueryLikeIter<'_> {
+        self.into_iter()
     }
 
     /// A [`DoubleEndedIterator`] of the [`QueryLikeSegment`]s named `name`.

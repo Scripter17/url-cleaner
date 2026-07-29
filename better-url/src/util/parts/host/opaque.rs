@@ -12,7 +12,7 @@ pub fn encode_opaque_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, 
         Err(InvalidOpaqueHost)?;
     }
 
-    if value.bytes().any(|b| b.is_ascii() && FORBIDDEN_HOST.contains(b)) {
+    if value.bytes().any(|b| FORBIDDEN_HOST_INPUT.contains(b)) {
         Err(InvalidOpaqueHost)?;
     }
 

@@ -6,11 +6,11 @@ impl FilePath<'_> {
     /// Remove the last segment.
     /// # Errors
     /// If there's only one segment, returns the error [`CantBeEmpty`].
-    #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
+    #[expect(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn pop(&mut self) -> Result<(), SetPathError> {
         match self.0.memrchr(b'/').expect("???") {
             0 => Err(CantBeEmpty)?,
-            x => self.0.retain_range(..x)
+            x => unsafe {self.0.truncate_unchecked(x)}
         }
 
         Ok(())
@@ -20,10 +20,10 @@ impl FilePath<'_> {
     /// # Errors
     /// If there is only one segment and it's empty, returns the error [`CantBeNone`].
     pub fn pop_if_empty(&mut self) -> Result<bool, SetPathError> {
-        match self.0.strip_suffix("/") {
-            Some("") => Err(CantBeEmpty)?,
-            Some(x ) => {self.0.retain_substr(x); Ok(true)},
-            None     => Ok(false)
+        match self.as_str().as_bytes() {
+            [        b'/'] => Err(CantBeEmpty)?,
+            [x @ .., b'/'] => {unsafe {self.0.truncate_unchecked(x.len())}; Ok(true)},
+            _ => Ok(false)
         }
     }
 

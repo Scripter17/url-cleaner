@@ -16,7 +16,7 @@ impl MaybeFragmentQuery<'_> {
     }
 
     /// Keeps only [`FragmentQuerySegment`]s matching the predicate `f`.
-    #[allow(clippy::missing_panics_doc, reason = "Can't happen.")]
+    #[expect(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn filter<F: FnMut(FragmentQuerySegment<'_>) -> bool>(&mut self, mut f: F) -> bool {
         self.try_filter(|x| Ok::<_, std::convert::Infallible>(f(x))).expect("???")
     }
@@ -44,7 +44,7 @@ impl MaybeFragmentQuery<'_> {
 
             match &*ranges {
                 [] => self.0 = None,
-                [range] => query.0.retain_range(range.clone()),
+                [range] => unsafe {query.0.retain_range_unchecked(range.clone())},
                 [first, ranges @ ..] => {
                     let mut ret = query.as_str()[first.clone()].to_string();
                     for range in ranges {

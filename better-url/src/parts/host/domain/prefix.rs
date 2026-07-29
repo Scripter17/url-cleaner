@@ -105,7 +105,9 @@ impl DomainHost<'_> {
             (Some(old), None) => {
                 let ol = old.len();
 
-                self.host.retain_range(ol + 1..);
+                unsafe {
+                    self.host.retain_range_unchecked(ol + 1..);
+                }
 
                 self.details.ms -= ol as u32 + 1;
                 self.details.ss -= ol as u32 + 1;

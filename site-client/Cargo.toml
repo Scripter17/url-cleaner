@@ -1,21 +1,36 @@
 [package]
-name = "url-cleaner-site-client"
-version = "0.12.0-beta"
-edition = "2024"
+name         = "url-cleaner-site-client"
+version      = "0.12.0-beta"
+edition      = "2024"
+description  = "A client for URL Cleaner Site."
+repository   = "https://github.com/Scripter17/url-cleaner"
+keywords     = ["url-cleaner"]
+categories   = []
+license      = "AGPL-3.0-or-later"
+readme       = "README.md"
+rust-version = "1.96.1"
 
 [dependencies]
+# Async.
+tokio        = { version = "1.53.1", features = ["io-std", "macros", "rt-multi-thread"] }
 async-stream = "0.3.6"
-bytes = "1.12.1"
-clap = { version = "4.6.4", features = ["derive"] }
 futures-util = "0.3.33"
-http-body-util = "0.1.4"
-hyper = { version = "1.11.0", features = ["client", "http1"] }
-hyper-tls = "0.6.0"
-hyper-util = { version = "0.1.20", features = ["client-legacy", "http1"] }
-serde_json = "1.0.151"
-tokio = { version = "1.53.1", features = ["io-std", "macros", "rt-multi-thread"] }
+
+# Websockets.
 tokio-tungstenite = { version = "0.28.0", features = ["native-tls", "url"] }
-url = "2.5.8"
+
+# HTTP.
+hyper          = { version = "1.11.0", features = ["http1", "client"       ] }
+hyper-util     = { version = "0.1.20", features = ["http1", "client-legacy"] }
+hyper-tls      = "0.6.0"
+http-body-util = "0.1.4"
+
+# Other.
+clap       = { version = "4.6.4", features = ["derive"] }
+bytes      = "1.12.1"
+memchr     = "2.8.3"
+serde_json = "1.0.151"
+url        = "2.5.8"
 
 [lints]
 workspace = true

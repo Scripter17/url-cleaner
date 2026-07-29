@@ -3,7 +3,6 @@
 use crate::prelude::*;
 
 /// The enum of errors [`StringMatcher::check`] can return.
-#[allow(clippy::enum_variant_names, reason = "I disagree.")]
 #[derive(Debug, Error)]
 pub enum StringMatcherError {
     /** [`ExplicitError`].               **/ #[error(transparent)] ExplicitError              (#[from] ExplicitError              ),

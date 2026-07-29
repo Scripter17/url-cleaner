@@ -58,8 +58,8 @@ pub enum CharMatcher {
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
         end: Bound<char>,
     },
-    /// Satisfied if the [`char`] is in the specified [`HashSet`].
-    IsOneOf(HashSet<char>),
+    /// Satisfied if the [`char`] is in the specified [`FxHashSet`].
+    IsOneOf(FxHashSet<char>),
 
     /** [`char::is_alphabetic`].                **/ IsAlphabetic,
     /** [`char::is_alphanumeric`].              **/ IsAlphanumeric,

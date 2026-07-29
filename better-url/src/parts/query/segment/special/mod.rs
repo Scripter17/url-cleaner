@@ -11,7 +11,7 @@ pub struct SpecialQuerySegment<'a> {
     /// The raw segment.
     pub(crate) raw: Cow<'a, str>,
     /// If non-zero, the start of the value.
-    pub(crate) vs: Option<NonZero<usize>>,
+    pub(crate) value_start: Option<NonZero<usize>>,
 }
 
 impl<'a> SpecialQuerySegment<'a> {
@@ -27,7 +27,7 @@ impl<'a> SpecialQuerySegment<'a> {
         let raw = segment.into();
 
         Self {
-            vs: raw.memchr(b'=').and_then(|x| NonZero::new(x + 1)),
+            value_start: raw.memchr(b'=').and_then(|x| NonZero::new(x + 1)),
             raw
         }
     }
@@ -38,11 +38,11 @@ impl<'a> SpecialQuerySegment<'a> {
 
         match value {
             Some(value) => {
-                let vs = raw.len() + 1;
+                let value_start = raw.len() + 1;
                 raw.extend(["=", &encode_query_part(value).1]);
-                Self {raw, vs: NonZero::new(vs)}
+                Self {raw, value_start: NonZero::new(value_start)}
             },
-            None => Self {raw, vs: None}
+            None => Self {raw, value_start: None}
         }
     }
 
@@ -52,7 +52,7 @@ impl<'a> SpecialQuerySegment<'a> {
     pub fn borrowed(&self) -> SpecialQuerySegment<'_> {
         SpecialQuerySegment {
             raw: Cow::Borrowed(&self.raw),
-            vs: self.vs
+            value_start: self.value_start
         }
     }
 
@@ -60,7 +60,7 @@ impl<'a> SpecialQuerySegment<'a> {
     pub fn into_owned(self) -> SpecialQuerySegment<'static> {
         SpecialQuerySegment {
             raw: self.raw.into_owned().into(),
-            vs: self.vs
+            value_start: self.value_start
         }
     }
 
@@ -74,9 +74,9 @@ impl<'a> SpecialQuerySegment<'a> {
 
 impl<'a> From<Cow<'a, str>> for SpecialQuerySegment<'a> {
     fn from(value: Cow<'a, str>) -> Self {
-        let (_, raw, vs) = encode_special_query_segment(value);
+        let (_, raw, value_start) = encode_special_query_segment(value);
 
-        Self {raw, vs}
+        Self {raw, value_start}
     }
 }
 
@@ -100,22 +100,22 @@ impl<'a> From<QuerySegment<'a>> for SpecialQuerySegment<'a> {
 
 impl<'a> From<NonSpecialQuerySegment<'a>> for SpecialQuerySegment<'a> {
     fn from(value: NonSpecialQuerySegment<'a>) -> Self {
-        let old_vs = value.vs;
+        let old_vs = value.value_start;
 
         match non_special_query_to_special_query(value.into_inner()) {
-            (true , raw) => Self {vs: raw.memchr(b'=').and_then(|x| NonZero::new(x + 1)), raw},
-            (false, raw) => Self {vs: old_vs, raw}
+            (true , raw) => Self {value_start: raw.memchr(b'=').and_then(|x| NonZero::new(x + 1)), raw},
+            (false, raw) => Self {value_start: old_vs, raw}
         }
     }
 }
 
 impl<'a> From<FragmentQuerySegment<'a>> for SpecialQuerySegment<'a> {
     fn from(value: FragmentQuerySegment<'a>) -> Self {
-        let old_vs = value.vs;
+        let old_vs = value.value_start;
 
         match fragment_to_special_query(value.into_inner()) {
-            (true , raw) => Self {vs: raw.memchr(b'=').and_then(|x| NonZero::new(x + 1)), raw},
-            (false, raw) => Self {vs: old_vs, raw}
+            (true , raw) => Self {value_start: raw.memchr(b'=').and_then(|x| NonZero::new(x + 1)), raw},
+            (false, raw) => Self {value_start: old_vs, raw}
         }
     }
 }

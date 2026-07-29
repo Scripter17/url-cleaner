@@ -499,7 +499,7 @@ impl StringSource {
             #[cfg(feature = "http")]
             Self::HttpRequest {request, response} => {
                 let _unthread_handle = task_state.job.unthreader.unthread();
-                task_state.job.http_client.r#do(request, response, task_state, args)?
+                task_state.job.http_client.ok_or(NoHttpClient)?.r#do(request, response, task_state, args)?
             },
 
 

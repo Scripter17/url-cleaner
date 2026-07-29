@@ -10,14 +10,14 @@ pub use source::*;
 pub use iter::*;
 pub use into_iter::*;
 
-/// A `HashMap<Option<String>, T>` that allows indexing with `Option<&str>`.
+/// A `FxHashMap<Option<String>, T>` that allows indexing with `Option<&str>`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub struct Map<T> {
     /// The map from [`Some`] to `T`.
     ///
     /// Defaulted.
-    pub map: HashMap<String, T>,
+    pub map: FxHashMap<String, T>,
     /// The map from [`None`] to `T`.
     ///
     /// Defaulted.
@@ -26,7 +26,7 @@ pub struct Map<T> {
 }
 
 impl<T> Map<T> {
-    /// [`HashMap::get`].
+    /// [`FxHashMap::get`].
     ///
     /// If [`Some`], returns the corresponding value from [`Self::map`].
     ///
@@ -38,7 +38,7 @@ impl<T> Map<T> {
         }
     }
 
-    /// [`HashMap::remove`].
+    /// [`FxHashMap::remove`].
     pub fn remove(&mut self, key: Option<&str>) -> Option<T> {
         match key {
             Some(key) => self.map.remove(key),

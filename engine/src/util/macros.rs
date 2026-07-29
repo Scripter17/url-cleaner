@@ -2,7 +2,7 @@
 
 #[expect(unused_imports, reason = "Used in a doc comment.")]
 use std::str::FromStr;
-#[allow(unused_imports, reason = "Used in a doc comment.")]
+#[expect(unused_imports, reason = "Used in a doc comment.")]
 use crate::prelude::*;
 
 pub(crate) use url_cleaner_macros::*;

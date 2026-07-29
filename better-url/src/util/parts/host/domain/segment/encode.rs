@@ -28,7 +28,7 @@ pub fn encode_percent_decoded_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T
 
 /// Encode a percent decoded and UTS46 mapped and normalized domain segment.
 /// # Errors
-/// If `value` contains any ASCII byte in [`FORBIDDEN_DOMAIN_SEGMENT`], returns the error [`InvalidDomainSegment`].
+/// If `value` contains any ASCII byte in [`FORBIDDEN_DOMAIN_SEGMENT_INPUT`], returns the error [`InvalidDomainSegment`].
 ///
 /// If `value` is not ASCII:
 ///
@@ -40,7 +40,7 @@ pub fn encode_percent_decoded_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T
 pub fn encode_normalized_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
     let value = value.into();
 
-    if value.bytes().any(|b| b.is_ascii() && FORBIDDEN_DOMAIN_SEGMENT.contains(b)) {
+    if value.bytes().any(|b| FORBIDDEN_DOMAIN_SEGMENT_INPUT.contains(b)) {
         Err(InvalidDomainSegment)?;
     }
 

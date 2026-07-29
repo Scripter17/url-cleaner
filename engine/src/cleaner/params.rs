@@ -10,32 +10,32 @@ pub struct Params<'a> {
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub flags: Cow<'a, HashSet<String>>,
+    pub flags: Cow<'a, FxHashSet<String>>,
     /// The vars.
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub vars: Cow<'a, HashMap<String, String>>,
+    pub vars: Cow<'a, FxHashMap<String, String>>,
     /// The [`Set`]s.
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub sets: Cow<'a, HashMap<String, Set<String>>>,
+    pub sets: Cow<'a, FxHashMap<String, Set<String>>>,
     /// The [`List`]s.
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub lists: Cow<'a, HashMap<String, List<String>>>,
+    pub lists: Cow<'a, FxHashMap<String, List<String>>>,
     /// The [`Map`]s.
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub maps: Cow<'a, HashMap<String, Map<String>>>,
+    pub maps: Cow<'a, FxHashMap<String, Map<String>>>,
     /// The [`Partitioning`]s.
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub partitionings: Cow<'a, HashMap<String, Partitioning>>
+    pub partitionings: Cow<'a, FxHashMap<String, Partitioning>>
 }
 
 impl<'a> Params<'a> {

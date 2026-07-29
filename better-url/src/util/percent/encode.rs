@@ -7,50 +7,66 @@ pub(crate) const NIBBLES: &[u8; 16] = b"0123456789ABCDEF";
 
 /// Percent encode a string.
 pub fn percent_encode<'a, T: Into<Cow<'a, str>>>(value: T, set: AsciiSet) -> (bool, Cow<'a, str>) {
-    percent_encode_bytes(cow_str_to_bytes(value), set)
-}
-
-/// Percent encode a bytes.
-pub fn percent_encode_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T, set: AsciiSet) -> (bool, Cow<'a, str>) {
     let value = value.into();
 
     let mut to_reserve = 0;
 
-    for &b in value.iter() {
+    for &b in value.as_bytes() {
         if set.contains(b) {
             to_reserve += 2;
         }
     }
 
     if to_reserve == 0 {
-        // AsciiSet::get always triggers on non-ASCII bytes, so if it found no matches then it's ASCII.
+        return (false, value);
+    }
+
+    (true, _percent_encode_bytes(value.as_bytes(), set, to_reserve).into())
+}
+
+/// Percent encode bytes.
+pub fn percent_encode_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T, set: AsciiSet) -> (bool, Cow<'a, str>) {
+    let value = value.into();
+
+    let mut to_reserve = 0;
+
+    for &b in &*value {
+        if set.contains(b) {
+            to_reserve += 2;
+        }
+    }
+
+    if to_reserve == 0 {
+        // SAFETY: AsciiSet::get always triggers on non-ASCII bytes, so if it found no matches then it's ASCII.
         return (false, unsafe {cow_bytes_to_str_unchecked(value)});
     }
 
-    let mut ret = Vec::<u8>::with_capacity(value.len() + to_reserve);
+    (true, _percent_encode_bytes(&value, set, to_reserve).into())
+}
 
-    let mut i = value.len();
-    let mut j = value.len() + to_reserve;
+/// Percent encode bytes.
+fn _percent_encode_bytes(value: &[u8], set: AsciiSet, to_reserve: usize) -> String {
+    let mut ret = String::with_capacity(value.len() + to_reserve);
+
+    let mut w = 0;
 
     unsafe {
-        while i > 0 {
-            i -= 1;
-            j -= 1;
+        for &b in value {
+            if set.contains(b) {
+                *ret.as_mut_ptr().add(w    ) = b'%';
+                *ret.as_mut_ptr().add(w + 1) = NIBBLES[b as usize >> 4];
+                *ret.as_mut_ptr().add(w + 2) = NIBBLES[b as usize & 15];
 
-            match *value.get_unchecked(i) {
-                b if set.contains(b) => {
-                    *ret.as_mut_ptr().add(j - 2) = b'%';
-                    *ret.as_mut_ptr().add(j - 1) = NIBBLES[b as usize >> 4];
-                    *ret.as_mut_ptr().add(j    ) = NIBBLES[b as usize & 15];
+                w += 3;
+            } else {
+                *ret.as_mut_ptr().add(w) = b;
 
-                    j -= 2;
-                },
-                b => *ret.as_mut_ptr().add(j) = b
+                w += 1;
             }
         }
 
-        ret.set_len(value.len() + to_reserve);
+        ret.as_mut_vec().set_len(value.len() + to_reserve);
     }
 
-    (true, unsafe {cow_bytes_to_str_unchecked(ret)})
+    ret
 }

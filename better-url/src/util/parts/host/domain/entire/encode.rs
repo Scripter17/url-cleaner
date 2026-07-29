@@ -21,7 +21,6 @@ pub fn encode_domain_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, 
 /// # Errors
 /// If the call to [`encode_normalized_domain_segments`] returns an error, that error is returned.
 pub fn encode_percent_decoded_domain_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainHost> {
-    let value = value.into();
     let (a, value) = uts46_map_normalize(value);
     let (b, value) = encode_normalized_domain_host(value)?;
     Ok((a || b, value))

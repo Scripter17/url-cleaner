@@ -190,9 +190,9 @@ pub enum StringModification {
 
 
 
-    /** [`get_js_string_literal_prefix`]. **/ GetJsStringLiteralPrefix,
-    /** [`unescape_html`].                **/ UnescapeHtml,
-    /** [`get_html_attribute`].           **/ GetHtmlAttribute(StringSource),
+    /** [`get_js_string`].      **/ GetJsString,
+    /** [`unescape_html`].      **/ UnescapeHtml,
+    /** [`get_html_attribute`]. **/ GetHtmlAttribute(StringSource),
 
 
 
@@ -233,7 +233,7 @@ pub enum StringModification {
 
     /// Parses the string as JSON and uses [`serde_json::Value::pointer_mut`] with the specified pointer.
     ///
-    /// When extracting values from javascript, it's often faster to find the start of the desired string and use [`Self::GetJsStringLiteralPrefix`].
+    /// When extracting values from javascript, it's often faster to find the start of the desired string and use [`Self::GetJsString`].
     JsonPointer(StringSource),
 
 
@@ -387,14 +387,16 @@ impl StringModification {
 
 
 
-            Self::GetJsStringLiteralPrefix => {*to = Some(Cow::Owned(get_js_string_literal_prefix(to.as_ref().ok_or(SubjectIsNone)?)?)); true},
-            Self::UnescapeHtml             => {*to = Some(Cow::Owned(unescape_html               (to.as_ref().ok_or(SubjectIsNone)?)?)); true},
-            Self::GetHtmlAttribute(name)   => {
-                *to = Some(Cow::Owned(
+            Self::GetJsString  => {*to = Some(get_js_string(to.as_deref().ok_or(SubjectIsNone)?)?.into_owned().into()); true},
+            Self::UnescapeHtml => {*to = Some(unescape_html(to.as_deref().ok_or(SubjectIsNone)?)?.into_owned().into()); true},
+            Self::GetHtmlAttribute(name) => {
+                *to = Some(
                     get_html_attribute(to.as_ref().ok_or(SubjectIsNone)?, get!(&name))?
                     .ok_or(StringModificationError::HtmlAttributeNotFound)?
                     .ok_or(StringModificationError::HtmlAttributeHasNoValue)?
-                ));
+                    .into_owned()
+                    .into()
+                );
                 true
             }
 

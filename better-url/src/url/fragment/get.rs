@@ -42,9 +42,9 @@ impl BetterUrl {
         }
     }
 
-    /// The fragment's [`FragmentQuerySegment`]s.
-    pub fn fragment_query_segments(&self) -> impl DoubleEndedIterator<Item = FragmentQuerySegment<'_>> {
-        SplitAmpersands(self.fragment_str()).map(|x| unsafe {FragmentQuerySegment::new_unchecked(x)})
+    /// [`FragmentQueryIter`].
+    pub fn fragment_query_segments(&self) -> FragmentQueryIter<'_> {
+        FragmentQueryIter(SplitAmpersands(self.fragment_str()))
     }
 
     /// The `index`th fragment [`FragmentQuerySegment`] named `name`.

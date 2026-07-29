@@ -50,7 +50,7 @@ pub enum Table {
 impl std::fmt::Display for Table {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Cli        {tool          } => write!(formatter, "CLI - {tool}"                     ),
+            Self::Cli        {          tool} => write!(formatter, "CLI - {tool}"                     ),
             Self::Site       {protocol, tool} => write!(formatter, "Site - {protocol} - {tool}"       ),
             Self::SiteClient {protocol, tool} => write!(formatter, "Site CLIent - {protocol} - {tool}"),
         }
@@ -80,8 +80,6 @@ impl Args {
 
         tables.retain(|table| self.table_filter.is_match(&table.to_string()));
 
-        let tasks = BUNDLED_TASKS.lines().map(|x| x.split_once('\t').unwrap()).filter(|(name, _)| self.task_filter.is_match(name)).collect::<Vec<_>>();
-
         if !self.no_build && !tables.is_empty() {
             let mut bins = Vec::new();
 
@@ -96,10 +94,28 @@ impl Args {
             crate::build::Args {bins}.r#do();
         }
 
+        let mut tasks = Vec::new();
+
+        let mut name_width = 0;
+
+        for line in BUNDLED_TASKS.lines() {
+            let mut x = line.split('\t');
+
+            let name = x.next().unwrap();
+            let task = x.next().unwrap();
+            let params_diff = x.next();
+
+            name_width = name_width.max(name.len());
+
+            if self.task_filter.is_match(name) {
+                tasks.push((name, task, params_diff));
+            }
+        }
+
         println!("# Benchmarks");
         println!();
 
-        println!("## Runner");
+        println!("## As seen on");
         println!();
 
         println!("```");
@@ -112,10 +128,14 @@ impl Args {
         println!("## Tasks");
         println!();
 
-        println!("|Nmae|Task|");
-        println!("|:--|:--|");
-        for (name, task) in &tasks {
-            println!("|{name}|`{task}`|");
+        println!("|Name|Task|ParamsDiff|");
+        println!("|:--|:--|:--|");
+        for (name, task, params_diff) in &tasks {
+            print!("|{name:<name_width$}|`{task}`|");
+            match params_diff {
+                Some(params_diff) => println!("`{params_diff}`|"),
+                None              => println!("None|"),
+            }
         }
         println!();
 
@@ -139,17 +159,17 @@ impl Args {
             }
             println!();
 
-            for (name, task) in tasks.iter().copied() {
+            for (name, task, params_diff) in tasks.iter().copied() {
                 let line_start = std::time::Instant::now();
-                
-                print!("|{name}|");
+
+                print!("|{name:<name_width$}|");
                 std::io::stdout().flush().unwrap();
 
                 for num in self.nums.iter().copied() {
                     print!("`{}`|", match table {
-                        Table::Cli        {tool          } => tool.get_entry(cli        ::Args {name: name.into(), task: task.into(), num, tool          }.r#do()),
-                        Table::Site       {tool, protocol} => tool.get_entry(site       ::Args {name: name.into(), task: task.into(), num, tool, protocol}.r#do()),
-                        Table::SiteClient {tool, protocol} => tool.get_entry(site_client::Args {name: name.into(), task: task.into(), num, tool, protocol}.r#do()),
+                        Table::Cli        {tool          } => tool.get_entry(cli        ::Args {name: name.into(), task: task.into(), num, params_diff: params_diff.map(Into::into), tool          }.r#do()),
+                        Table::Site       {tool, protocol} => tool.get_entry(site       ::Args {name: name.into(), task: task.into(), num, params_diff: params_diff.map(Into::into), tool, protocol}.r#do()),
+                        Table::SiteClient {tool, protocol} => tool.get_entry(site_client::Args {name: name.into(), task: task.into(), num, params_diff: params_diff.map(Into::into), tool, protocol}.r#do()),
                     });
                     std::io::stdout().flush().unwrap();
                 }
@@ -157,7 +177,7 @@ impl Args {
                 let line_time = line_start.elapsed();
                 lines_time += line_time;
 
-                println!(" <!-- + {line_time:?} -> {lines_time:?} -->");
+                println!(" <!-- + {line_time:.2?} -> {lines_time:.2?} -->");
             }
 
             println!();

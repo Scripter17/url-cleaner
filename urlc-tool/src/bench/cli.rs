@@ -14,6 +14,9 @@ pub struct Args {
     /// The num.
     #[arg(long)]
     pub num: u64,
+    /// The ParamsDiff.
+    #[arg(long)]
+    pub params_diff: Option<String>,
     /// The tool.
     #[arg(long)]
     pub tool: ClientTool,
@@ -22,12 +25,15 @@ pub struct Args {
 impl Args {
     /// Do the command.
     pub fn r#do(self) -> String {
-        let Self {name, task, num, tool} = self;
+        let Self {name, task, num, params_diff, tool} = self;
 
         let out_dir = format!("bench/cli/{tool}/{name}/{num}");
         let out = format!("{out_dir}/{tool}.out");
 
         write_stdin(&task, num);
+        if let Some(params_diff) = params_diff.as_ref() {
+            write_params_diff(params_diff);
+        }
         fresh_dir(&out_dir);
 
         let mut cmd = match tool {
@@ -38,7 +44,10 @@ impl Args {
                     "--style", "none",
                     "--input", STDIN,
                     "--export-json", &out,
-                    "target/release/url-cleaner"
+                    match params_diff.is_some() {
+                        true  => "target/release/url-cleaner --params-diff urlc-tool/tmp/bench/params_diff.json",
+                        false => "target/release/url-cleaner"
+                    }
                 ]);
 
                 cmd
@@ -54,6 +63,10 @@ impl Args {
                 }
 
                 cmd.arg("target/release/url-cleaner");
+
+                if params_diff.is_some() {
+                    cmd.args(["--params-diff", PARAMS_DIFF]);
+                }
 
                 cmd.stdin(File::open(STDIN).unwrap());
 

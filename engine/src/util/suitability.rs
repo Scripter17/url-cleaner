@@ -42,7 +42,7 @@ macro_rules! suitable_tuple {
     ($($t:ident),+) => {
         impl<$($t: Suitability, )+> Suitability for ($($t, )+) {
             fn assert_suitability(&self, cleaner: &Cleaner) {
-                #[allow(non_snake_case, reason = "Declarative macros can't fix it.")]
+                #[expect(non_snake_case, reason = "Declarative macros can't fix it.")]
                 let ($($t, )+) = self;
                 $($t.assert_suitability(cleaner);)+
             }
@@ -92,7 +92,7 @@ pub(crate) fn map_source_params(name: &StringSource, cleaner: &Cleaner) {
     }
 }
 
-impl<K: Suitability, V: Suitability> Suitability for HashMap<K, V> {
+impl<K: Suitability, V: Suitability, S> Suitability for HashMap<K, V, S> {
     fn assert_suitability(&self, cleaner: &Cleaner) {
         for (k, v) in self.iter() {
             k.assert_suitability(cleaner);
@@ -101,7 +101,7 @@ impl<K: Suitability, V: Suitability> Suitability for HashMap<K, V> {
     }
 }
 
-impl<T: Suitability> Suitability for HashSet<T> {
+impl<T: Suitability, S> Suitability for HashSet<T, S> {
     fn assert_suitability(&self, cleaner: &Cleaner) {
         for x in self.iter() {
             x.assert_suitability(cleaner)
@@ -109,7 +109,7 @@ impl<T: Suitability> Suitability for HashSet<T> {
     }
 }
 
-impl<K: Suitability, V: Suitability> Suitability for IndexMap<K, V> {
+impl<K: Suitability, V: Suitability, S> Suitability for IndexMap<K, V, S> {
     fn assert_suitability(&self, cleaner: &Cleaner) {
         for (k, v) in self.iter() {
             k.assert_suitability(cleaner);
@@ -118,7 +118,7 @@ impl<K: Suitability, V: Suitability> Suitability for IndexMap<K, V> {
     }
 }
 
-impl<T: Suitability> Suitability for IndexSet<T> {
+impl<T: Suitability, S> Suitability for IndexSet<T, S> {
     fn assert_suitability(&self, cleaner: &Cleaner) {
         for x in self.iter() {
             x.assert_suitability(cleaner)

@@ -22,13 +22,13 @@ impl OpaqueHostDetails {
     ///
     /// Therefore, empty opaque hosts are rejected.
     ///
-    /// See and [whatwg/url#908](https://github.com/whatwg/url/issues/908) for discussion.
+    /// See [whatwg/url#908](https://github.com/whatwg/url/issues/908) for discussion.
     pub fn parse(s: &str) -> Result<Self, InvalidOpaqueHost> {
         if s.is_empty() {
             Err(InvalidOpaqueHost)?;
         }
 
-        if s.bytes().any(|b| b.is_ascii() && FORBIDDEN_HOST.contains(b)) {
+        if s.bytes().any(|b| FORBIDDEN_HOST_LITERAL.contains(b)) {
             Err(InvalidOpaqueHost)?;
         }
 

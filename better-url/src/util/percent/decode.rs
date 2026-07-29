@@ -22,7 +22,13 @@ pub(crate) fn decode_hex_nibble(x: u8) -> Option<u8> {
 /// If the call to [`try_cow_bytes_to_str`] returns an error, that error is returned.
 #[expect(clippy::type_complexity, reason = "It's fine.")]
 pub fn try_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), (std::str::Utf8Error, Cow<'a, [u8]>)> {
-    Ok(match percent_decode(value) {
+    let value = value.into();
+
+    if value.memchr(b'%').is_none() {
+        return Ok((false, value));
+    }
+
+    Ok(match _percent_decode(value) {
         (false, value) => (false, unsafe {cow_bytes_to_str_unchecked(value) }),
         (true , value) => (true ,         try_cow_bytes_to_str      (value)? ),
     })
@@ -30,7 +36,13 @@ pub fn try_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, 
 
 /// Lossily percent decode.
 pub fn lossy_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    match percent_decode(value) {
+    let value = value.into();
+
+    if value.memchr(b'%').is_none() {
+        return (false, value);
+    }
+
+    match _percent_decode(value) {
         (false, value) => (false, unsafe {cow_bytes_to_str_unchecked(value)}),
         (true , value) => (true ,         lossy_cow_bytes_to_str    (value) ),
     }
@@ -38,7 +50,15 @@ pub fn lossy_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'
 
 /// [`percent_decode_bytes`] but accepting a string.
 pub fn percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, [u8]>) {
-    percent_decode_bytes(cow_str_to_bytes(value))
+    let mut value = cow_str_to_bytes(value);
+
+    if value.memchr(b'%').is_none() {
+        return (false, value);
+    }
+
+    _percent_decode_bytes(value.to_mut());
+
+    (true, value)
 }
 
 /// Percent decode bytes.
@@ -57,6 +77,15 @@ pub fn percent_decode_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<
     if value.memchr(b'%').is_none() {
         return (false, value);
     }
+
+    _percent_decode_bytes(value.to_mut());
+
+    (true, value)
+}
+
+/// [`percent_decode`] without a fast path for not containing a `%`.
+fn _percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, [u8]>) {
+    let mut value = cow_str_to_bytes(value);
 
     _percent_decode_bytes(value.to_mut());
 

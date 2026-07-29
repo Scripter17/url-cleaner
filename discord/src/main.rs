@@ -22,9 +22,11 @@ Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-
 https://www.gnu.org/licenses/agpl-3.0.html
 "#, env!("CARGO_PKG_REPOSITORY"));
 
-#[allow(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
+#[expect(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner Discord - Explicit non-consent to URL spytext.
+///
 /// Licensed under the Aferro GNU Public License version 3.0 or later.
+///
 /// https://github.com/Scripter17/url-cleaner
 ///
 /// Enabled features:
@@ -88,9 +90,9 @@ pub struct Bot {
     /// The [`Cache`] to use.
     #[cfg(feature = "cache")]
     cache: url_cleaner_engine::prelude::Cache<'static>,
-    /// The [`MaybeHttpClient`].
+    /// The [`HttpClient`].
     #[cfg(feature = "http")]
-    http_client: MaybeHttpClient,
+    http_client: HttpClient,
 }
 
 /// [`main`].
@@ -140,7 +142,7 @@ async fn main() -> Result<(), DiscordError> {
             },
         },
         #[cfg(feature = "http")]
-        http_client: MaybeHttpClient::new(Some(tokio::runtime::Handle::current())),
+        http_client: HttpClient::new(tokio::runtime::Handle::current()),
     };
 
     let intents = GatewayIntents::non_privileged();

@@ -3,14 +3,9 @@
 use crate::prelude::*;
 
 impl SpecialQuery<'_> {
-    /// [`SplitAmpersands`].
-    pub fn iter_strs(&self) -> SplitAmpersands<'_> {
-        SplitAmpersands(Some(&self.0))
-    }
-
-    /// A [`DoubleEndedIterator`] of [`SpecialQuerySegment`]s.
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = SpecialQuerySegment<'_>> {
-        self.iter_strs().map(|x| unsafe {SpecialQuerySegment::new_unchecked(x)})
+    /// The [`SpecialQueryIter`].
+    pub fn iter(&self) -> SpecialQueryIter<'_> {
+        self.into_iter()
     }
 
     /// A [`DoubleEndedIterator`] of [`SpecialQuerySegment`]s whose [`SpecialQuerySegment::name`]s are `name`.

@@ -6,11 +6,11 @@ use crate::prelude::*;
 
 /// Decode an encoded domain segments literal.
 /// # Errors
-/// If `value` contains any byte in [`FORBIDDEN_DOMAIN_SEGMENTS`], returns the error [`InvalidDomainSegments`].
+/// If `value` contains any byte in [`FORBIDDEN_DOMAIN_SEGMENTS_LITERAL`], returns the error [`InvalidDomainSegments`].
 pub fn decode_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
     let value = value.into();
 
-    if value.bytes().any(|b| FORBIDDEN_DOMAIN_SEGMENTS.contains(b)) {
+    if value.bytes().any(|b| FORBIDDEN_DOMAIN_SEGMENTS_LITERAL.contains(b)) {
         Err(InvalidDomainSegment)?;
     }
 
@@ -51,7 +51,9 @@ pub fn unchecked_decode_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> 
     match ret.done() {
         (changed, Cow::Owned   (x)) => (changed, x.into()),
         (changed, Cow::Borrowed(x)) => {
-            value.retain_substr(x);
+            unsafe {
+                value.truncate_unchecked(x.len());
+            }
             (changed, value)
         }
     }

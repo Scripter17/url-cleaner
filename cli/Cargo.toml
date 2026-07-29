@@ -1,22 +1,25 @@
 [package]
-name = "url-cleaner"
-version = "0.12.0-beta"
-edition = "2024"
-description = "URL Cleaner's official CLI frontend"
-repository = "https://github.com/Scripter17/url-cleaner"
-keywords = ["url", "url-tracking", "privacy", "url-cleaner"]
-categories = ["command-line-utilities"]
-license = "AGPL-3.0-or-later"
-readme = "README.md"
-rust-version = "1.88.0"
+name         = "url-cleaner"
+version      = "0.12.0-beta"
+edition      = "2024"
+description  = "URL Cleaner's official CLI frontend."
+repository   = "https://github.com/Scripter17/url-cleaner"
+keywords     = ["url", "url-tracking", "privacy", "url-cleaner"]
+categories   = ["command-line-utilities"]
+license      = "AGPL-3.0-or-later"
+readme       = "README.md"
+rust-version = "1.96.1"
 
 [dependencies]
-bytes = "1.12.1"
-clap = { version = "4.6.4", features = ["derive", "unstable-v5"] }
-memchr = "2.8.3"
+# URL Cleaner.
+url-cleaner-engine = { version = "0.12.0-beta", path = "../engine", default-features = false }
+
+# Other.
+clap      = { version = "4.6.4" , features = ["derive", "unstable-v5"] }
+tokio     = { version = "1.53.1", features = ["sync", "io-util", "io-std", "macros", "rt-multi-thread", "time"] }
+bytes     = "1.12.1"
+memchr    = "2.8.3"
 thiserror = "2.0.19"
-tokio = { version = "1.53.1", features = ["sync", "io-util", "io-std", "macros", "rt-multi-thread", "time"] }
-url-cleaner-engine = { path = "../engine", version = "0.12.0-beta", default-features = false }
 
 [features]
 default = ["bundled-cleaner"]
@@ -27,8 +30,8 @@ bundled-cleaner = [
   "cache"
 ]
 
-http    = ["url-cleaner-engine/http"]
-cache   = ["url-cleaner-engine/cache"]
+http  = ["url-cleaner-engine/http"]
+cache = ["url-cleaner-engine/cache"]
 
 [lints]
 workspace = true

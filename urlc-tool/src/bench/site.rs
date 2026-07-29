@@ -14,6 +14,9 @@ pub struct Args {
     /// The num.
     #[arg(long)]
     pub num: u64,
+    /// The ParamsDiff.
+    #[arg(long)]
+    pub params_diff: Option<String>,
     /// The protocol.
     #[arg(long)]
     pub protocol: Protocol,
@@ -25,7 +28,7 @@ pub struct Args {
 impl Args {
     /// Do the command.
     pub fn r#do(self) -> String {
-        let Self {name, task, num, protocol, tool} = self;
+        let Self {name, task, num, params_diff, protocol, tool} = self;
 
         let out_dir = format!("bench/site/{protocol}/{tool}/{name}/{num}");
         let out = format!("{out_dir}/{tool}.out");
@@ -69,6 +72,10 @@ impl Args {
         let mut cmd = Command::new("target/release/url-cleaner-site-client");
 
         cmd.args(["clean", protocol.endpoint()]);
+
+        if let Some(params_diff) = params_diff {
+            cmd.args(["--params-diff", &params_diff]);
+        }
 
         cmd.stdin(File::open(STDIN).unwrap());
         cmd.stdout(std::process::Stdio::null());

@@ -117,7 +117,7 @@ pub(crate) fn suitability_derive(input: TokenStream) -> TokenStream {
     let types = input.generics.type_params().map(|TypeParam {ident, ..}| ident);
 
     let expanded = quote! {
-        #[allow(unused_variables)]
+        #[expect(unused_variables)]
         impl #impl_generics Suitability for #name #ty_generics #where_clause where #(#types: ::std::fmt::Debug + Suitability),* {
             fn assert_suitability(&self, config: &crate::prelude::Cleaner) {
                 #logic

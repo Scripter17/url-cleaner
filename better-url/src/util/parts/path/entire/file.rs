@@ -130,7 +130,7 @@ pub fn resolve_file_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<usize>>
 
     while i < after {
         let left = unsafe {value.get_unchecked(..i)};
-        let rest = unsafe {value.get_unchecked(i..)};
+        let rest = unsafe {value.get_unchecked(i + 1..)};
 
         debug_assert_eq!(value[i], b'/');
         debug_assert!(after == value.len() || value[after] == b'/');
@@ -144,7 +144,7 @@ pub fn resolve_file_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<usize>>
                 }
                 break;
             } else {
-                let l = rest.len() - x.len();
+                let l = rest.len() + 1 - x.len();
 
                 value.to_mut().drain(i .. i + l);
 
@@ -164,7 +164,7 @@ pub fn resolve_file_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<usize>>
                 }
                 break;
             } else {
-                let l = rest.len() - x.len();
+                let l = rest.len() + 1 - x.len();
 
                 value.to_mut().drain(j .. i + l);
 

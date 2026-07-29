@@ -24,6 +24,7 @@ pub enum StringSourceError {
     /** [`MapSourceError`].              **/                           #[error(transparent)] MapSourceError             (#[from] Box<MapSourceError>          ),
     /** [`regex::Error`].                **/                           #[error(transparent)] RegexError                 (#[from] regex::Error                 ),
 
+    /** [`NoHttpClient`].                **/ #[cfg(feature = "http" )] #[error(transparent)] NoHttpClient               (#[from] NoHttpClient                 ),
     /** [`DoHttpRequestError`].          **/ #[cfg(feature = "http" )] #[error(transparent)] DoHttpRequestError         (#[from] Box<DoHttpRequestError>      ),
 
     /** [`ReadFromCacheError`].          **/ #[cfg(feature = "cache")] #[error(transparent)] ReadFromCacheError         (#[from] ReadFromCacheError           ),

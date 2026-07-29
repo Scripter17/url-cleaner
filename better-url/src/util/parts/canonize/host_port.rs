@@ -33,13 +33,15 @@ pub fn canonize_host_setter<'a, T: Into<Cow<'a, str>>>(value: T, scheme_type: Sc
                 let (_, p) = canonize_port_setter(&value[i+1..]);
 
                 let p = p.and_then(|x| x.parse().ok()).map(Some);
-                value.retain_range(..i);
+                unsafe {
+                    value.truncate_unchecked(i);
+                }
 
                 return Ok((value, p));
             },
 
-            b'/' | b'?' | b'#'                             => {value.retain_range(..i); return Ok((value, None));}
-            b'\\'              if scheme_type.is_special() => {value.retain_range(..i); return Ok((value, None));}
+            b'/' | b'?' | b'#'                             => {unsafe {value.truncate_unchecked(i);} return Ok((value, None));}
+            b'\\'              if scheme_type.is_special() => {unsafe {value.truncate_unchecked(i);} return Ok((value, None));}
 
             _ => {}
         }

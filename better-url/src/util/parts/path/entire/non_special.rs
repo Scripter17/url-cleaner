@@ -54,6 +54,8 @@ pub fn opaque_path_to_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (
 
     value.to_mut().insert(0, '/');
 
+    let (_, value) = resolve_non_special_path_range(value, ..);
+
     (true, value)
 }
 
@@ -84,7 +86,8 @@ pub fn resolve_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, C
 /// # Panics
 /// May or may not panic if the range does not begin with a `/` and/or does not end after the end of a segment.
 pub fn resolve_non_special_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<usize>>(value: T, range: B) -> (bool, Cow<'a, str>) {
-    let mut value = cow_str_to_bytes(value.into());
+    let value = value.into();
+
     let mut changed = false;
 
     let start = match range.start_bound() {
@@ -101,14 +104,20 @@ pub fn resolve_non_special_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<
 
     assert!(start <= after && after <= value.len());
 
-    debug_assert_eq!(value[start], b'/');
-    debug_assert!(after == value.len() || value[after] == b'/');
+    debug_assert_eq!(value.as_bytes()[start], b'/');
+    debug_assert!(after == value.len() || value.as_bytes()[after] == b'/');
+
+    if unsafe {value.get_unchecked(start .. after)}.memchr2(b'.', b'%').is_none() {
+        return (false, value);
+    }
+
+    let mut value = cow_str_to_bytes(value);
 
     let mut i = start;
 
     while i < after {
         let left = unsafe {value.get_unchecked(..i)};
-        let rest = unsafe {value.get_unchecked(i..)};
+        let rest = unsafe {value.get_unchecked(i + 1..)};
 
         debug_assert_eq!(value[i], b'/');
         debug_assert!(after == value.len() || value[after] == b'/');
@@ -122,7 +131,7 @@ pub fn resolve_non_special_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<
                 }
                 break;
             } else {
-                let l = rest.len() - x.len();
+                let l = rest.len() + 1 - x.len();
 
                 value.to_mut().drain(i .. i + l);
 
@@ -139,7 +148,7 @@ pub fn resolve_non_special_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<
                 }
                 break;
             } else {
-                let l = rest.len() - x.len();
+                let l = rest.len() + 1 - x.len();
 
                 value.to_mut().drain(j .. i + l);
 

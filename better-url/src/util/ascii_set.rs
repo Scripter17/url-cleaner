@@ -2,64 +2,65 @@
 
 use crate::prelude::*;
 
-/// A set of ASCII codepoints for use in [`percent_encode`].
+/// A [`ByteSet`] with all non-ASCII bytes always set.
 ///
-/// Please note that, for performance reasons, this is implemented as a `[bool; 256]` where the last 128 [`bool`]s are always [`true`].
-///
-/// This is extremely stupid, but it is faster.
+/// Mainly for use in [`percent_encode`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct AsciiSet([bool; 256]);
+pub struct AsciiSet(ByteSet);
 
 impl AsciiSet {
     /// Make a new [`Self`].
     pub const fn new() -> Self {
-        let mut ret = [false; 256];
-        let mut i = 128;
-        while i < 256 {
-            ret[i] = true;
-            i += 1
-        }
-        Self(ret)
+        Self(ByteSet::new().add_non_ascii())
     }
 
     /// If it contains `b`.
-    pub fn contains(self, b: u8) -> bool {
-        self.0[b as usize]
+    pub const fn contains(self, b: u8) -> bool {
+        self.0.contains(b)
     }
+
+
 
     /// Add `b` to the set.
-    pub const fn add(mut self, b: u8) -> Self {
-        self.0[b as usize] = true;
-        self
-    }
-
-    /// Remove `b` from the set.
-    /// # Panics
-    /// If `b` is not ASCII, panics.
-    pub const fn remove(mut self, b: u8) -> Self {
-        assert!(b.is_ascii());
-
-        self.0[b as usize] = false;
-
-        self
+    pub const fn add(self, b: u8) -> Self {
+        Self(self.0.add(b))
     }
 
     /// [`Self::add`] each byte.
     pub const fn add_many(self, bs: &[u8]) -> Self {
-        match bs.split_first() {
-            Some((&b, bs)) => self.add(b).add_many(bs),
-            None => self
-        }
+        Self(self.0.add_many(bs))
     }
 
+
+
+    /// Remove `b` from the set.
+    /// # Panics
+    /// If `b` is not ASCII, panics.
+    pub const fn remove(self, b: u8) -> Self {
+        assert!(b.is_ascii());
+
+        Self(self.0.remove(b))
+    }
+
+    /// [`Self::remove`] each byte.
+    /// # Panics
+    /// If `bs` is not ASCII, panics.
+    pub const fn remove_many(self, bs: &[u8]) -> Self {
+        assert!(bs.is_ascii());
+
+        Self(self.0.remove_many(bs))
+    }
+
+
+
     /// Merge `self` and `other`.
-    pub const fn merge(mut self, other: Self) -> Self {
-        let mut i = 0;
-        while i < 256 {
-            self.0[i] |= other.0[i];
-            i += 1;
-        }
-        self
+    pub const fn merge(self, other: Self) -> Self {
+        Self(self.0.merge(other.0))
+    }
+
+    /// Get the inner [`ByteSet`].
+    pub const fn to_byte_set(self) -> ByteSet {
+        self.0
     }
 }
 
@@ -77,15 +78,6 @@ pub const COMPONENT: AsciiSet = USERINFO.add_many(b"$&+,");
 
 /// [The userinfo percent-encode set](https://url.spec.whatwg.org/#userinfo-percent-encode-set).
 pub const USERINFO                          : AsciiSet = PATH.add_many(b"/:;=@[\\]|");
-
-/// The ASCII part of [The forbidden host code point set](https://url.spec.whatwg.org/#forbidden-host-code-point).
-pub const FORBIDDEN_HOST                    : AsciiSet = AsciiSet::new().add_many(b"\x00\t\n\r #/:<>?@[\\]^|");
-/// [`FORBIDDEN_DOMAIN_SEGMENTS`] plus `.`.
-pub const FORBIDDEN_DOMAIN_SEGMENT          : AsciiSet = FORBIDDEN_DOMAIN_SEGMENTS.add(b'.');
-/// [`FORBIDDEN_HOST`] plus [`C0`] and `%`.
-pub const FORBIDDEN_DOMAIN_SEGMENTS         : AsciiSet = FORBIDDEN_HOST.merge(C0).add(b'%');
-/// The ASCII part of [the forbidden domain code point set](https://url.spec.whatwg.org/#application-x-www-form-urlencoded-percent-encode-set).
-pub const FORBIDDEN_DOMAIN_HOST             : AsciiSet = FORBIDDEN_DOMAIN_SEGMENTS;
 /// The opaque host percent-encode set. Equal to [`C0`].
 pub const OPAQUE_HOST                       : AsciiSet = C0;
 
@@ -103,23 +95,13 @@ pub const QUERY_PART                        : AsciiSet = COMPONENT.add_many(b"!'
 pub const NON_SPECIAL_QUERY                 : AsciiSet = C0.add_many(b" \"#<>");
 /// [`NON_SPECIAL_QUERY`] + `&`.
 pub const NON_SPECIAL_QUERY_SEGMENT         : AsciiSet = NON_SPECIAL_QUERY.add(b'&');
-/// The set of characters to percent-encode when converting a [`NonSpecialQuery`] into a [`SpecialQuery`].
-pub const NON_SPECIAL_QUERY_TO_SPECIAL_QUERY: AsciiSet = AsciiSet::new().add_many(b"'");
-/// The set of characters to percent-encode when converting a [`NonSpecialQuery`] into a [`FragmentQuery`].
-pub const NON_SPECIAL_QUERY_TO_FRAGMENT     : AsciiSet = AsciiSet::new().add_many(b"`");
 
 /// [The special query percent-encode set](https://url.spec.whatwg.org/#special-query-percent-encode-set).
 pub const SPECIAL_QUERY                     : AsciiSet = NON_SPECIAL_QUERY.add_many(b"'");
 /// [`SPECIAL_QUERY`] + `&`.
 pub const SPECIAL_QUERY_SEGMENT             : AsciiSet = SPECIAL_QUERY.add(b'&');
-/// The set of characters to percent-encode when converting a [`SpecialQuery`] into a [`FragmentQuery`].
-pub const SPECIAL_QUERY_TO_FRAGMENT         : AsciiSet = AsciiSet::new().add_many(b"`");
 
 /// [The fragment percent-encode set](https://url.spec.whatwg.org/#application-x-www-form-urlencoded-percent-encode-set)
 pub const FRAGMENT                          : AsciiSet = C0.add_many(b" \"<>`");
 /// [`FRAGMENT`] + `&`.
 pub const FRAGMENT_QUERY_SEGMENT            : AsciiSet = FRAGMENT.add(b'&');
-/// The set of characters to percent-encode when converting a [`FragmentQuery`] into a [`NonSpecialQuery`].
-pub const FRAGMENT_TO_NON_SPECIAL_QUERY     : AsciiSet = AsciiSet::new().add_many(b"#");
-/// The set of characters to percent-encode when converting a [`FragmentQuery`] into a [`SpecialQuery`].
-pub const FRAGMENT_TO_SPECIAL_QUERY         : AsciiSet = AsciiSet::new().add_many(b"#'");

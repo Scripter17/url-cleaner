@@ -6,7 +6,7 @@ use crate::prelude::*;
 #[derive(Debug)]
 pub struct SetIter<'a, T> {
     /// [`Set::set`].
-    somes: <&'a HashSet<T> as IntoIterator>::IntoIter,
+    somes: <&'a FxHashSet<T> as IntoIterator>::IntoIter,
     /// [`Set::if_none`].
     has_none: bool,
 }

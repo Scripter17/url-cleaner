@@ -14,14 +14,14 @@ pub struct JobContext {
     pub source_host: Option<Host<'static>>,
     /// The flags to use.
     ///
-    /// Defaults to an empty [`HashSet`].
+    /// Defaults to an empty [`FxHashSet`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub flags: HashSet<String>,
+    pub flags: FxHashSet<String>,
     /// The vars to use.
     ///
-    /// Defaults to an empty [`HashMap`].
+    /// Defaults to an empty [`FxHashMap`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub vars: HashMap<String, String>
+    pub vars: FxHashMap<String, String>
 }
 
 /// Deserialize an owned [`Host`].

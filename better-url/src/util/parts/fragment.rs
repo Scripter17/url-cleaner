@@ -18,10 +18,14 @@ pub fn encode_fragment_query_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> (bo
 
 /// Turn a [`SpecialQuery`] into a [`Fragment`]/[`FragmentQuery`].
 pub fn special_query_to_fragment<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode(value, SPECIAL_QUERY_TO_FRAGMENT)
+    unsafe {
+        percent_encode_one(value, b'`')
+    }
 }
 
 /// Turn a [`NonSpecialQuery`] into a [`Fragment`]/[`FragmentQuery`].
 pub fn non_special_query_to_fragment<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode(value, NON_SPECIAL_QUERY_TO_FRAGMENT)
+    unsafe {
+        percent_encode_one(value, b'`')
+    }
 }

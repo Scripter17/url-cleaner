@@ -10,12 +10,12 @@ pub struct TaskContext {
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub flags: HashSet<String>,
+    pub flags: FxHashSet<String>,
     /// The vars.
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub vars: HashMap<String, String>
+    pub vars: FxHashMap<String, String>
 }
 
 impl TaskContext {

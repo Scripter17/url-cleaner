@@ -5,45 +5,35 @@ use crate::prelude::*;
 impl<'a> SpecialQuerySegment<'a> {
     /// If it has a value.
     pub fn has_value(&self) -> bool {
-        self.vs.is_some()
-    }
-
-    /// The [`Range::start`] of the value.
-    fn value_start(&self) -> Option<usize> {
-        self.vs.map(NonZero::get)
-    }
-
-    /// The [`Range::end`] of the value.
-    fn value_after(&self) -> Option<usize> {
-        self.vs.map(|_| self.len())
-    }
-
-    /// The [`Range`] of the value.
-    fn value_range(&self) -> Option<Range<usize>> {
-        Some(self.value_start()? .. self.value_after()?)
+        self.value_start.is_some()
     }
 
     /// The raw value.
     pub fn raw_value(&self) -> Option<&str> {
-        self.value_range().map(|r| &self.as_str()[r])
+        Some(unsafe {self.as_str().get_unchecked(self.value_start?.get() ..)})
     }
 
     /// Consume and keep only the raw value.
     pub fn into_raw_value(self) -> Option<Cow<'a, str>> {
-        let range = self.value_range()?;
         let mut ret = self.raw;
-        ret.retain_range(range);
+        unsafe {
+            ret.retain_range_unchecked(self.value_start?.get() ..);
+        }
         Some(ret)
     }
 
     /// The decoded value.
     pub fn value(&self) -> Option<Cow<'_, str>> {
-        Some(lossy_decode_query_part(self.raw_value()?).1)
+        let (_, value) = lossy_decode_query_part(self.raw_value()?);
+
+        Some(value)
     }
 
     /// Consume and keep only the value.
     pub fn into_value(self) -> Option<Cow<'a, str>> {
-        Some(lossy_decode_query_part(self.into_raw_value()?).1)
+        let (_, value) = lossy_decode_query_part(self.into_raw_value()?);
+
+        Some(value)
     }
 
     /// Set the value.
@@ -52,16 +42,18 @@ impl<'a> SpecialQuerySegment<'a> {
             Some(value) => {
                 let (_, value) = encode_query_part(value);
 
-                match self.value_range() {
-                    Some(range) => self.raw.replace_range(range, &value),
+                match self.value_start {
+                    Some(i) => self.raw.replace_range(i.get() .., &value),
                     None => {
-                        self.vs = NonZero::new(self.len() + 1);
+                        self.value_start = NonZero::new(self.len() + 1);
                         self.raw.extend(["=", &value]);
                     }
                 }
             },
-            None => if let Some(vs) = self.vs {
-                self.raw.retain_range(..vs.get() - 1);
+            None => if let Some(i) = self.value_start {
+                unsafe {
+                    self.raw.truncate_unchecked(i.get() - 1);
+                }
             }
         }
     }

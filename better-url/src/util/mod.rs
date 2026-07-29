@@ -5,6 +5,7 @@ mod split;
 mod parts;
 mod percent;
 mod ascii_set;
+mod byte_set;
 mod normalizer;
 mod macros;
 mod ext_traits;
@@ -14,6 +15,7 @@ pub use split::*;
 pub use parts::*;
 pub use percent::*;
 pub use ascii_set::*;
+pub use byte_set::*;
 pub use normalizer::*;
 
 pub(crate) use macros::*;

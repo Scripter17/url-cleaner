@@ -41,7 +41,7 @@ pub use source::*;
 #[derive(Debug, Default, Clone, PartialEq, Eq, Suitability)]
 pub struct Partitioning {
     /// The map from values to their partitions.
-    pub map: HashMap<String, Arc<str>>,
+    pub map: FxHashMap<String, Arc<str>>,
     /// The partition to put [`None`] into.
     pub if_none: Option<Arc<str>>
 }
@@ -110,7 +110,7 @@ impl<'de> Deserialize<'de> for Partitioning {
 
 impl Serialize for Partitioning {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let mut x = HashMap::<&str, Vec<Option<&str>>>::new();
+        let mut x = FxHashMap::<&str, Vec<Option<&str>>>::with_hasher(Default::default());
 
         for (element, partition) in self.map.iter() {
             x.entry(partition).or_default().push(Some(element));
