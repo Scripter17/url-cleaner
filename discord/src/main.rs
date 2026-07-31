@@ -41,38 +41,42 @@ https://www.gnu.org/licenses/agpl-3.0.html
 #[derive(Debug, Parser)]
 struct Args {
     /// The cleaner file to use.
-    /// Omit to use the built in bundled cleaner.
     #[cfg(feature = "bundled-cleaner")]
-    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
+    #[arg(long, short = 'c', value_name = "PATH")]
     cleaner: Option<PathBuf>,
     /// The cleaner file to use.
     #[cfg(not(feature = "bundled-cleaner"))]
-    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
+    #[arg(long, short = 'c', value_name = "PATH")]
     cleaner: PathBuf,
+
+    /// The ProfilesConfig file.
+    #[arg(long, value_name = "PATH")]
+    profiles: Option<PathBuf>,
 
     /// The secrets file to use.
     #[arg(long, value_name = "PATH")]
     secrets: Option<PathBuf>,
 
-    /// The ProfilesConfig file.
-    #[arg(long, verbatim_doc_comment, value_name = "PATH")]
-    profiles: Option<PathBuf>,
+    /// Disable the HTTP client.
+    #[cfg(feature = "http")]
+    #[arg(long, short = 'H')]
+    no_http: bool,
 
     /// The path cache to use.
     #[cfg(feature = "cache")]
-    #[arg(long, verbatim_doc_comment, value_name = "PATH", default_value = "url-cleaner-discord-app-cache.sqlite")]
-    cache: PathBuf,
+    #[arg(long, default_value = "url-cleaner-discord.sqlite")]
+    cache: CacheTarget,
     /// If true, read from the cache.
     #[cfg(feature = "cache")]
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long, short = 'R')]
     no_read_cache: bool,
     /// If true, write to the cache.
     #[cfg(feature = "cache")]
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long, short = 'W')]
     no_write_cache: bool,
     /// If true, artificially delay cache reads.
     #[cfg(feature = "cache")]
-    #[arg(long, verbatim_doc_comment)]
+    #[arg(long, short = 'd')]
     cache_delay: bool
 }
 
@@ -87,12 +91,15 @@ pub struct Bot {
     profiled_cleaner: ProfiledCleaner<'static>,
     /// The [`Secrets`].
     secrets: Secrets,
-    /// The [`Cache`] to use.
-    #[cfg(feature = "cache")]
-    cache: url_cleaner_engine::prelude::Cache<'static>,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
-    http_client: HttpClient,
+    http_client: Option<HttpClient>,
+    /// The [`CacheClient`].
+    #[cfg(feature = "cache")]
+    cache_client: CacheClient,
+    /// The [`CacheConfig`].
+    #[cfg(feature = "cache")]
+    cache_config: CacheConfig,
 }
 
 /// [`main`].
@@ -127,22 +134,24 @@ async fn main() -> Result<(), DiscordError> {
         Cow::Borrowed(x) => Bytes::from(x),
     };
 
+    #[cfg(feature = "http" )] let http_client  = HttpClient ::new(          ).await;
+    #[cfg(feature = "cache")] let cache_client = CacheClient::new(args.cache).await;
+
     let bot = Bot {
         cleaner_file : CreateAttachment::bytes(cleaner_bytes , "cleaner.json" ).description("The Cleaner"       ),
         profiles_file: CreateAttachment::bytes(profiles_bytes, "profiles.json").description("The ProfilesConfig"),
         profiled_cleaner: profiles.make(Box::leak(Box::new(cleaner))),
         secrets: Secrets::load_or_default(args.secrets)?,
-        #[cfg(feature = "cache")]
-        cache: url_cleaner_engine::prelude::Cache {
-            inner: Box::leak(Box::new(args.cache.into())),
-            config: CacheConfig {
-                read : !args.no_read_cache ,
-                write: !args.no_write_cache,
-                delay:  args.cache_delay   ,
-            },
-        },
         #[cfg(feature = "http")]
-        http_client: HttpClient::new(tokio::runtime::Handle::current()),
+        http_client: (!args.no_http).then_some(http_client),
+        #[cfg(feature = "cache")]
+        cache_client,
+        #[cfg(feature = "cache")]
+        cache_config: CacheConfig {
+            read : !args.no_read_cache ,
+            write: !args.no_write_cache,
+            delay:  args.cache_delay,
+        },
     };
 
     let intents = GatewayIntents::non_privileged();
@@ -183,7 +192,7 @@ impl EventHandler for Bot {
                 for name in self.profiled_cleaner.named.keys() {
                     context.http.create_global_command(&CreateCommand::new(format!("Clean URLs ({name})"))
                         .kind(CommandType::Message)
-                    ).await.expect("Creating ever clean_urls command to work.");
+                    ).await.expect("Creating every Clean URLs command to work.");
                 }
 
                 context.http.create_global_command(&CreateCommand::new("help").description("Help").kind(CommandType::ChatInput)).await.expect("Creating the help command to work.");

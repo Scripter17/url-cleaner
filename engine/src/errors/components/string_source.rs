@@ -17,12 +17,12 @@ pub enum StringSourceError {
     /** [`RegexExpansionError`].         **/                           #[error(transparent)] RegexExpansionError        (#[from] Box<RegexExpansionError>     ),
 
     /** [`InvalidUrl`].                  **/                           #[error(transparent)] InvalidUrl                 (#[from] InvalidUrl                   ),
-    /** [`PartitioningNotFound`]         **/                           #[error(transparent)] PartitioningNotFound       (#[from] PartitioningNotFound         ),
-    /** [`MapNotFound`]                  **/                           #[error(transparent)] MapNotFound                (#[from] MapNotFound                  ),
-    /** [`FlagSourceError`].             **/                           #[error(transparent)] FlagSourceError            (#[from] FlagSourceError              ),
-    /** [`VarSourceError`].              **/                           #[error(transparent)] VarSourceError             (#[from] VarSourceError               ),
+    /** [`PartitioningNotFound`]         **/                           #[error(transparent)] PartitioningNotFound       (#[from] Box<PartitioningNotFound>    ),
+    /** [`MapNotFound`]                  **/                           #[error(transparent)] MapNotFound                (#[from] Box<MapNotFound>             ),
+    /** [`FlagSourceError`].             **/                           #[error(transparent)] FlagSourceError            (#[from] Box<FlagSourceError>         ),
+    /** [`VarSourceError`].              **/                           #[error(transparent)] VarSourceError             (#[from] Box<VarSourceError>          ),
     /** [`MapSourceError`].              **/                           #[error(transparent)] MapSourceError             (#[from] Box<MapSourceError>          ),
-    /** [`regex::Error`].                **/                           #[error(transparent)] RegexError                 (#[from] regex::Error                 ),
+    /** [`regex::Error`].                **/                           #[error(transparent)] RegexError                 (#[from] Box<regex::Error>            ),
 
     /** [`NoHttpClient`].                **/ #[cfg(feature = "http" )] #[error(transparent)] NoHttpClient               (#[from] NoHttpClient                 ),
     /** [`DoHttpRequestError`].          **/ #[cfg(feature = "http" )] #[error(transparent)] DoHttpRequestError         (#[from] Box<DoHttpRequestError>      ),
@@ -42,6 +42,12 @@ impl From<TryElseError<Self>> for StringSourceError {fn from(value: TryElseError
 impl From<StringMatcherError     > for StringSourceError {fn from(value: StringMatcherError     ) -> Self {Box::new(value).into()}}
 impl From<PartitioningSourceError> for StringSourceError {fn from(value: PartitioningSourceError) -> Self {Box::new(value).into()}}
 impl From<RegexExpansionError    > for StringSourceError {fn from(value: RegexExpansionError    ) -> Self {Box::new(value).into()}}
+
+impl From<PartitioningNotFound   > for StringSourceError {fn from(value: PartitioningNotFound   ) -> Self {Box::new(value).into()}}
+impl From<MapNotFound            > for StringSourceError {fn from(value: MapNotFound            ) -> Self {Box::new(value).into()}}
+impl From<FlagSourceError        > for StringSourceError {fn from(value: FlagSourceError        ) -> Self {Box::new(value).into()}}
+impl From<VarSourceError         > for StringSourceError {fn from(value: VarSourceError         ) -> Self {Box::new(value).into()}}
 impl From<MapSourceError         > for StringSourceError {fn from(value: MapSourceError         ) -> Self {Box::new(value).into()}}
+impl From<regex::Error           > for StringSourceError {fn from(value: regex::Error           ) -> Self {Box::new(value).into()}}
 
 #[cfg(feature = "http")] impl From<DoHttpRequestError> for StringSourceError {fn from(value: DoHttpRequestError) -> Self {Box::new(value).into()}}

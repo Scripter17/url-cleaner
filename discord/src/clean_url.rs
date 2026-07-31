@@ -29,12 +29,14 @@ impl Bot {
         let job = Job {
             cleaner,
             context    : Default::default(),
-            unthreader : &Default::default(),
+            unthreader : None,
             secrets    : &self.secrets,
-            #[cfg(feature = "cache")]
-            cache      : self.cache,
             #[cfg(feature = "http")]
-            http_client: Some(&self.http_client),
+            http_client: self.http_client.as_ref(),
+            #[cfg(feature = "cache")]
+            cache_client: &self.cache_client,
+            #[cfg(feature = "cache")]
+            cache_config:  self.cache_config,
         };
 
         let response = match job.r#do(url) {

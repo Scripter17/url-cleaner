@@ -16,62 +16,33 @@ pub enum HostDetails {
 }
 
 impl HostDetails {
-    /// If it's [`Self::Domain`].
-    pub fn is_domain(self) -> bool {
-        matches!(self, Self::Domain(_))
+    /// Parse from a literal for the specified [`SchemeType`].
+    /// # Errors
+    /// If the call to [`FileHostDetails::parse`] returns an error, that error is returned.
+    ///
+    /// If the call to [`SpecialNotFileHostDetails::parse`] returns an error, that error is returned.
+    ///
+    /// If the call to [`NonSpecialHostDetails::parse`] returns an error, that error is returned.
+    pub fn parse(value: &str, r#type: SchemeType) -> Result<Self, InvalidHost> {
+        Ok(match r#type {
+            SchemeType::File           => FileHostDetails          ::parse(value)?.into(),
+            SchemeType::SpecialNotFile => SpecialNotFileHostDetails::parse(value)?.into(),
+            SchemeType::NonSpecial     => NonSpecialHostDetails    ::parse(value)?.into(),
+        })
     }
 
-    /// If it's [`Self::Ipv4`].
-    pub fn is_ipv4(self) -> bool {
-        matches!(self, Self::Ipv4(_))
-    }
+    /** If it's [`Self::Domain`]. **/                 pub fn is_domain(self) -> bool {matches!(self, Self::Domain(_)                )}
+    /** If it's [`Self::Ipv4`]. **/                   pub fn is_ipv4  (self) -> bool {matches!(self, Self::Ipv4  (_)                )}
+    /** If it's [`Self::ipv6`]. **/                   pub fn is_ipv6  (self) -> bool {matches!(self, Self::Ipv6  (_)                )}
+    /** If it's [`Self::Ipv4`] or [`Self::Ipv6`]. **/ pub fn is_ip    (self) -> bool {matches!(self, Self::Ipv4  (_) | Self::Ipv6(_))}
+    /** If it's [`Self::Opaque`]. **/                 pub fn is_opaque(self) -> bool {matches!(self, Self::Opaque(_)                )}
+    /** If it's [`Self::Empty`]. **/                  pub fn is_empty (self) -> bool {matches!(self, Self::Empty (_)                )}
 
-    /// If it's [`Self::ipv6`].
-    pub fn is_ipv6(self) -> bool {
-        matches!(self, Self::Ipv6(_))
-    }
-
-    /// If it's [`Self::Ipv4`] or [`Self::Ipv6`].
-    pub fn is_ip(self) -> bool {
-        matches!(self, Self::Ipv4(_) | Self::Ipv6(_))
-    }
-
-    /// If it's [`Self::Opaque`].
-    pub fn is_opaque(self) -> bool {
-        matches!(self, Self::Opaque(_))
-    }
-
-    /// If it's [`Self::Empty`].
-    pub fn is_empty(self) -> bool {
-        matches!(self, Self::Empty(_))
-    }
-
-
-
-    /// The [`DomainHostDetails`].
-    pub fn domain(self) -> Option<DomainHostDetails> {
-        self.try_into().ok()
-    }
-
-    /// The [`Ipv4HostDetails`].
-    pub fn ipv4(self) -> Option<Ipv4HostDetails> {
-        self.try_into().ok()
-    }
-
-    /// The [`Ipv6HostDetails`].
-    pub fn ipv6(self) -> Option<Ipv6HostDetails> {
-        self.try_into().ok()
-    }
-
-    /// The [`OpaqueHostDetails`].
-    pub fn opaque(self) -> Option<OpaqueHostDetails> {
-        self.try_into().ok()
-    }
-
-    /// The [`EmptyHostDetails`].
-    pub fn empty(self) -> Option<EmptyHostDetails> {
-        self.try_into().ok()
-    }
+    /** The [`DomainHostDetails`]. **/ pub fn domain(self) -> Option<DomainHostDetails> {self.try_into().ok()}
+    /** The [`Ipv4HostDetails`].   **/ pub fn ipv4  (self) -> Option<Ipv4HostDetails  > {self.try_into().ok()}
+    /** The [`Ipv6HostDetails`].   **/ pub fn ipv6  (self) -> Option<Ipv6HostDetails  > {self.try_into().ok()}
+    /** The [`OpaqueHostDetails`]. **/ pub fn opaque(self) -> Option<OpaqueHostDetails> {self.try_into().ok()}
+    /** The [`EmptyHostDetails`].  **/ pub fn empty (self) -> Option<EmptyHostDetails > {self.try_into().ok()}
 }
 
 impl From<FileHostDetails> for HostDetails {

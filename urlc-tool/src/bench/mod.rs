@@ -16,7 +16,7 @@ pub mod prelude {
 
     pub use super::{cli, site, site_client};
 
-    pub use super::util::prelude::*;
+    pub use super::util::*;
 }
 
 /// Benchmarking.

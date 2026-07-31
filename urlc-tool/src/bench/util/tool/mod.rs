@@ -1,12 +1,11 @@
 //! Tools.
 
-pub mod client;
-pub mod server;
-pub mod valgrind;
+mod client;
+mod server;
+mod hyperfine;
+mod valgrind;
 
-/// Prelude module for importing everything here better.
-pub mod prelude {
-    pub use super::client::*;
-    pub use super::server::*;
-    pub use super::valgrind::*;
-}
+pub use client::*;
+pub use server::*;
+pub use hyperfine::*;
+pub use valgrind::*;

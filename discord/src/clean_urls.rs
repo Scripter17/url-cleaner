@@ -12,12 +12,14 @@ impl Bot {
             let job = Job {
                 cleaner    : self.profiled_cleaner.get(profile).expect("To only be given valid profiles."),
                 context    : Default::default(),
-                unthreader : &Default::default(),
                 secrets    : &self.secrets,
-                #[cfg(feature = "cache")]
-                cache      : self.cache,
+                unthreader : None,
                 #[cfg(feature = "http")]
-                http_client: Some(&self.http_client),
+                http_client: self.http_client.as_ref(),
+                #[cfg(feature = "cache")]
+                cache_client: &self.cache_client,
+                #[cfg(feature = "cache")]
+                cache_config:  self.cache_config,
             };
 
             let mut ret = String::new();

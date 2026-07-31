@@ -24,19 +24,25 @@ URL Cleaner Site Userscript is tested specifically on the latest release of Mull
 [Userscripts]: https://github.com/quoid/userscripts
 [us-s]: https://apps.apple.com/us/app/userscripts/id1463298887
 
-### Install URL Cleaner Site Userscript
+### Get URL Cleaner Site Userscript
 
-Using your extension's method of adding userscripts, add [url-cleaner-site-userscript.js](url-cleaner-site-userscript.js).
+To get URL Cleaner Site Userscript, you can either:
 
-### Configure URL Cleaner Site Userscript
+- See [src/userscript.js](src/userscript.js).
 
-Near the start of the userscript is an object called `window.config` with various settings you should at least check if you care about.
+  - With this, you need to fill out the instance info manually (if applicable).
+
+- GET the `/userscript` endpoint of some URL Cleaner Site instance.
+
+  - Can be done with URL Cleaner Site CLIent using the `get` subcommand.
+
+- Use URL Cleaner Site's `userscript` subcommand.
+
+Afterwards, add the userscript you your userscript manager.
 
 ### TLS/HTTPS
 
 When using TLS, please see [here](server.md#installing-the-certificate) for instructions on making your OS/browser accept your certificate.
-
-Additionally, in the `instance` field of the `window.config`, change `ws://` to `wss://`.
 
 ## Known problems
 
@@ -50,18 +56,21 @@ The solution is to make URL Cleaner Site use HTTPS. Sorry.
 
 Please note that websites will be able to tell you're using URL Cleaner Site as well as which version of the Bundled Cleaner and what ParamsDiff you're using.
 
-Additionally, URL Cleaner Site Userscript currently will clean every link on every webpage you visit.
+Additionally, URL Cleaner Site Userscript currently cleans every link on every webpage you visit.
+
 Coupled with the Bundled Cleaner expanding all known redirects, **unless the `no_network` flag is enabled, every website is able to send HTTP requests to bit.ly, t.co, etc. from your IP address**.
 
 If this is a concern, there are several things you can do:
 
-1. Make URL Cleaner Site use a proxy by setting the `ALL_PROXY` environment variable.
+- Make URL Cleaner Site use a proxy by setting the `ALL_PROXY` environment variable.
 
-2. Enable the `no_network` flag in a named profile and set URL Cleaner Site Userscript to use that profile.
+- When using specifically the Bundled Cleaner or any custom Cleaner with an equivalent feature:
 
-3. Enable the `no_network` flag in the base profile, which makes it apply to all profiles.
+  - Enable the `no_network` flag in the base profile, which makes it apply to all profiles.
 
-4. Enable the `no_network` flag in the ParamsDiff URL Cleaner Site Userscript sends to URL Cleaner Site. This shouldn't be *that* bad but you should almost always prefer using profiles.
+  - Enable the `no_network` flag in a named profile and set URL Cleaner Site Userscript to use that profile.
+
+  - Enable the `no_network` flag in the ParamsDiff URL Cleaner Site Userscript sends to URL Cleaner Site. Please consider this a last resort because it adds a ponderable amount of work for Site to do at the start of each connection.
 
 Beyond this, there are two major privacy preserving features that most frontends disable by default but URL Cleaner Site Userscript specifically tells URL Cleaner Site to enable.
 

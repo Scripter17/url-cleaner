@@ -4,14 +4,14 @@ use crate::prelude::*;
 
 /// The valgrind tool to use.
 #[derive(Debug, Clone, Copy, ValueEnum)]
-pub enum ValgrindTool {
+pub enum Valgrind {
     /// Massif.
     Massif,
     /// Callgrind.
     Callgrind
 }
 
-impl ValgrindTool {
+impl Valgrind {
     /// Get a table entry.
     pub fn get_entry<P: AsRef<Path>>(self, path: P) -> String {
         match self {
@@ -29,7 +29,7 @@ impl ValgrindTool {
     }
 }
 
-impl std::fmt::Display for ValgrindTool {
+impl std::fmt::Display for Valgrind {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Massif    => write!(formatter, "massif"),

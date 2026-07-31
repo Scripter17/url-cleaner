@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 
 use clap::Parser;
+use serde::Serialize;
 use axum::{
     routing::{get, any},
     Router,
@@ -22,27 +23,28 @@ use thiserror::Error;
 use async_stream::stream;
 
 use url_cleaner_engine::prelude::*;
-use url_cleaner_site_types::prelude::*;
 
 mod clean;
+mod userscript;
 
-/// The verson.
-const VERSION   : &str = env!("CARGO_PKG_VERSION");
-/// The repository.
-const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
+/** The verson.     **/ const VERSION   : &str = env!("CARGO_PKG_VERSION"   );
+/** The repository. **/ const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 
 /// The welcome message.
 const WELCOME: &str = const_str::format!(
 r#"URL Cleaner Site {VERSION}
 
+GET /info       to get the Info.
+GET /cleaner    to get the Cleaner.
+GET /profiles   to get the ProfilesConfig.
+GET /userscript to get the userscript.
+
+POST/PUT/WebSocket /clean to clean URLs.
+
 Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
 https://www.gnu.org/licenses/agpl-3.0.html
 
 {REPOSITORY}
-
-GET /info     to get the Info.
-GET /cleaner  to get the Cleaner.
-GET /profiles to get the ProfilesConfig.
 "#);
 
 /// Run URL Cleaner Site.
@@ -50,25 +52,35 @@ GET /profiles to get the ProfilesConfig.
 pub struct Args {
     /// The Cleaner to use.
     #[cfg(feature = "bundled-cleaner")]
-    #[arg(long)]
+    #[arg(long, short = 'c')]
     cleaner: Option<PathBuf>,
     /// The Cleaner to use.
     #[cfg(not(feature = "bundled-cleaner"))]
-    #[arg(long)]
+    #[arg(long, short = 'c')]
     cleaner: PathBuf,
-    /// The Secrets to use.
-    #[arg(long)]
-    secrets: Option<PathBuf>,
+
     /// The ProfilesConfig to use.
     #[arg(long)]
     profiles: Option<PathBuf>,
+
+    /// The Secrets to use.
+    #[arg(long)]
+    secrets: Option<PathBuf>,
+
+    /// Disable the HTTP client.
+    #[cfg(feature = "http")]
+    #[arg(long, short = 'H')]
+    no_http: bool,
+
     /// The CacheLocation to use.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "url-cleaner-site-cache.sqlite")]
-    cache: PathBuf,
-    /// The number of threads to use per job. 0 = CPU thread count.
+    #[arg(long, default_value = "url-cleaner-site.sqlite")]
+    cache: CacheTarget,
+
+    /// The number of worker threads to use per job. 0 = CPU thread count.
     #[arg(long, default_value_t = 0)]
-    threads_per_job: usize,
+    workers: usize,
+
     /// The IP to bind to.
     #[arg(long, default_value = "127.0.0.1")]
     ip: IpAddr,
@@ -86,24 +98,26 @@ pub struct Args {
 /// The state of the server.
 #[derive(Debug)]
 pub struct State {
+    /// The [`Info`].
+    info: Info,
     /// The number of worker threads to use.
-    threads_per_job: usize,
+    workers: usize,
     /// The [`ProfiledCleaner`].
     profiled_cleaner: ProfiledCleaner<'static>,
     /// The [`Cleaner`] string.
     cleaner_string: Cow<'static, str>,
     /// The [`ProfilesConfig`] string.
     profiles_string: Cow<'static, str>,
-    /// The [`Unthreader`].
-    unthreader: Unthreader,
     /// The [`Secrets`].
     secrets: Secrets,
-    /// The [`InnerCache`].
-    #[cfg(feature = "cache")]
-    inner_cache: InnerCache,
+    /// If TLS is being used.
+    tls: bool,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
-    http_client: HttpClient,
+    http_client: Option<HttpClient>,
+    /// The [`CacheClient`].
+    #[cfg(feature = "cache")]
+    cache_client: CacheClient,
 }
 
 /// [`Args::do`].
@@ -122,17 +136,25 @@ pub enum RunError {
 /** The [`Cleaner`]. **/ static CLEANER: OnceLock<Cleaner<'static>> = OnceLock::new();
 /** The [`State`].   **/ static STATE  : OnceLock<State           > = OnceLock::new();
 
+/// Info about the instance.
+#[derive(Debug, Serialize)]
+struct Info {
+    /// The version.
+    version       : &'static str,
+    /// The link to the source code.
+    source_code   : &'static str,
+    /// The [`AuthMode`].
+    auth_mode     : AuthMode,
+    /// If the `http` feature is enabled.
+    supports_http : bool,
+    /// If the `cache` feature is enabled.
+    supports_cache: bool,
+}
+
 impl Args {
     /// Do the command.
     pub async fn r#do(self) -> Result<(), RunError> {
         let addr = std::net::SocketAddr::new(self.ip, self.port);
-
-        println!("{WELCOME}");
-        println!();
-        match self.key.is_some() {
-            true  => println!("https://{addr}"),
-            false => println!("http://{addr}" ),
-        }
 
         let (cleaner_string, cleaner) = cfg_select! {
             feature = "bundled-cleaner" => Cleaner::load_or_new_bundled(self.cleaner)?,
@@ -147,35 +169,47 @@ impl Args {
 
         let secrets = Secrets::load_or_default(self.secrets)?;
 
-        let threads_per_job = match self.threads_per_job {
+        let workers = match self.workers {
             0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").into(),
             x => x,
         };
 
+        #[cfg(feature = "http" )] let http_client  = HttpClient ::new(          ).await;
+        #[cfg(feature = "cache")] let cache_client = CacheClient::new(self.cache).await;
+
         let state = STATE.get_or_init(|| State {
-            threads_per_job,
+            info: Info {
+                version       : VERSION,
+                source_code   : REPOSITORY,
+                auth_mode     : secrets.auth_info.mode(),
+                supports_http : cfg_select!(feature = "http"  => true, _ => false),
+                supports_cache: cfg_select!(feature = "cache" => true, _ => false),
+            },
+            workers,
             profiled_cleaner,
             cleaner_string,
             profiles_string,
-            unthreader: Unthreader::on(),
             secrets,
-            #[cfg(feature = "cache")]
-            inner_cache: self.cache.into(),
-            #[cfg(feature = "http")]
-            http_client: HttpClient::new(tokio::runtime::Handle::current()),
+            tls: self.key.is_some(),
+            #[cfg(feature = "http" )] http_client: (!self.no_http).then_some(http_client),
+            #[cfg(feature = "cache")] cache_client,
         });
 
         let app = Router::new()
-            .route("/"    , get(async || WELCOME))
-            .route("/info", get(async || Json(Info {
-                source_code: env!("CARGO_PKG_REPOSITORY").into(),
-                version    : env!("CARGO_PKG_VERSION"   ).into(),
-                auth_mode  : state.secrets.auth_info.mode(),
-            })))
-            .route("/cleaner" , get(async || &*state.cleaner_string ))
-            .route("/profiles", get(async || &*state.profiles_string))
-            .route("/clean"   , any(clean::clean))
+            .route("/"          , get(async || WELCOME))
+            .route("/info"      , get(async |state: &'static State| Json(&state.info)))
+            .route("/cleaner"   , get(async |state: &'static State| &*state.cleaner_string ))
+            .route("/profiles"  , get(async |state: &'static State| &*state.profiles_string))
+            .route("/clean"     , any(clean::clean))
+            .route("/userscript", get(userscript::userscript))
             .with_state(state).into_make_service();
+
+        println!("{WELCOME}");
+
+        match state.tls {
+            true  => println!("https://{addr}"),
+            false => println!("http://{addr}" ),
+        }
 
         match self.key.zip(self.cert) {
             Some((key, cert)) => axum_server::bind_rustls(addr, RustlsConfig::from_pem_file(cert, key).await.map_err(RunError::LoadTlsError)?).serve(app).await.map_err(RunError::ServeError)?,

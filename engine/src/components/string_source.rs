@@ -498,29 +498,30 @@ impl StringSource {
 
             #[cfg(feature = "http")]
             Self::HttpRequest {request, response} => {
-                let _unthread_handle = task_state.job.unthreader.unthread();
-                task_state.job.http_client.ok_or(NoHttpClient)?.r#do(request, response, task_state, args)?
+                let _unthread_handle = task_state.job.unthreader.as_ref().map(|x| x.lock());
+
+                task_state.job.http_client.ok_or(NoHttpClient)?.do_sync(request, response, task_state, args)?
             },
 
 
 
             #[cfg(feature = "cache")]
             Self::Cache {subject, key, value} => {
-                let _unthreader_lock = task_state.job.unthreader.unthread();
+                let _unthreader_lock = task_state.job.unthreader.as_ref().map(|x| x.lock());
+
                 let subject = get!(subject);
                 let key = get!(key);
-                if let Some(entry) = task_state.job.cache.read(CacheEntryKeys {subject: &subject, key: &key})? {
-                    return Ok(entry.value.map(Cow::Owned));
+
+                if let Some(value) = task_state.job.cache_client.read_sync(&subject, &key, task_state.job.cache_config)? {
+                    return Ok(value.map(Cow::Owned));
                 }
+
                 let start = std::time::Instant::now();
                 let ret = get!(?value);
                 let duration = start.elapsed();
-                task_state.job.cache.write(NewCacheEntry {
-                    subject: &subject,
-                    key: &key,
-                    value: ret.as_deref(),
-                    duration
-                })?;
+
+                task_state.job.cache_client.write_sync(&subject, &key, ret.as_deref(), duration, task_state.job.cache_config)?;
+
                 ret
             },
 

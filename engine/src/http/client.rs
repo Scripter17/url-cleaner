@@ -10,7 +10,7 @@ use crate::prelude::*;
 ///
 /// PLEASE note that this uses [`tokio::runtime::Handle::block_on`] and thus can only be used in multithreaded runtimes.
 ///
-/// Specifically:
+/// The default constructor is as follows:
 ///
 /// 1. Header `User-Agent` set to `Firefox`.
 /// 2. Header `Sec-Gpc` set to `1`.
@@ -26,19 +26,37 @@ pub struct HttpClient {
 }
 
 impl HttpClient {
-    /// Make a new [`Self`] with the default config.
-    pub fn new(handle: tokio::runtime::Handle) -> Self {
-        Self {
-            client: OnceLock::new(),
-            handle
-        }
+    /// Make a new [`Self`].
+    /// # Panics
+    /// If the call to [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    pub fn new_sync(handle: tokio::runtime::Handle) -> Self {
+        handle.block_on(Self::new())
     }
 
-    /// [`Self::do_async`] + [`tokio::runtime::Handle::block_on`].
+    /// [`Self::do`] + [`tokio::runtime::Handle::block_on`].
     /// # Errors
-    /// If the call to [`Self::do_async`] returns an error, that error is returned.
-    pub fn r#do<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
-        self.handle.block_on(self.do_async(request, response, task_state, args))
+    /// If the call to [`Self::do`] returns an error, that error is returned.
+    /// # Panics
+    /// If the call to [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    pub fn do_sync<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
+        debug!(HttpClient::do_sync, self, request, response; self._do_sync(request, response, task_state, args))
+    }
+
+    /// [`Self::do_sync`] without debug logging.
+    fn _do_sync<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
+        self.handle.block_on(self._do(request, response, task_state, args))
+    }
+
+
+
+    /// Make a new [`Self`] using the current runtime's [`tokio::runtime::Handle`].
+    /// # Panics
+    /// If called outside a Tokio runtime, panics.
+    pub async fn new() -> Self {
+        Self {
+            client: OnceLock::new(),
+            handle: tokio::runtime::Handle::current(),
+        }
     }
 
     /// [`HttpRequestSource::get`] + [`HttpResponseHandler::handle`].
@@ -48,14 +66,21 @@ impl HttpClient {
     /// If the call to [`reqwest::RequestBuilder::send`] returns an error, that error is returned.
     ///
     /// If the call to [`HttpResponseHandler::handle`] returns an error, that error is returned.
-    pub async fn do_async<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
-        Ok(response.handle(task_state, args, &mut self.get_inner()?.execute(request.get(task_state, args)?).await?).await?)
+    pub async fn r#do<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
+        debug!(HttpClient::r#do, self, request, response; self._do(request, response, task_state, args).await)
     }
+
+    /// [`Self::do`] without debug logging.
+    async fn _do<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
+        Ok(response.handle(task_state, args, &mut self.init_get()?.execute(request.get(task_state, args)?).await?).await?)
+    }
+
+
 
     /// Gets [`Self::client`] or, if it's uninitialized, creates the default client.
     /// # Errors
     /// If the call to [`reqwest::ClientBuilder::build`] returns an error, that error is returned.
-    pub fn get_inner(&self) -> Result<&reqwest::Client, reqwest::Error> {
+    pub fn init_get(&self) -> Result<&reqwest::Client, reqwest::Error> {
         if let Some(client) = self.client.get() {
             Ok(client)
         } else {

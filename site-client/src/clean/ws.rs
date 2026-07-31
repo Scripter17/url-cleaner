@@ -1,15 +1,16 @@
 //! WebSockets.
 
-use url::Url;
 use tokio_tungstenite::tungstenite;
 use tungstenite::Message;
 use futures_util::{StreamExt, SinkExt};
 use tokio::io::AsyncReadExt;
 use bytes::Bytes;
 
+use better_url::prelude::*;
+
 /// Do a WebSocket connection.
-pub async fn r#do(instance: Url) {
-    let (websocket, response) = tokio_tungstenite::connect_async(instance).await.unwrap();
+pub async fn r#do(instance: BetterUrl) {
+    let (websocket, response) = tokio_tungstenite::connect_async(instance.as_str()).await.unwrap();
 
     assert_eq!(response.status(), 101);
 

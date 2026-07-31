@@ -3,15 +3,11 @@
 use crate::prelude::*;
 
 mod source;
-mod iter;
-mod into_iter;
 
 pub use source::*;
-pub use iter::*;
-pub use into_iter::*;
 
 /// A [`Vec`] of [`String`]s.
-#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Suitability)]
 pub struct List<T>(pub Vec<T>);
 
 impl<T> Deref for List<T> {
@@ -43,5 +39,23 @@ impl<T> From<Vec<T>> for List<T> {
 impl<T> From<List<T>> for Vec<T> {
     fn from(value: List<T>) -> Self {
         value.0
+    }
+}
+
+impl<T> IntoIterator for List<T> {
+    type IntoIter = std::vec::IntoIter<T>;
+    type Item = T;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a List<T> {
+    type IntoIter = std::slice::Iter<'a, T>;
+    type Item = &'a T;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter()
     }
 }

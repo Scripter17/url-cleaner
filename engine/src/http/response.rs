@@ -12,19 +12,19 @@ pub enum HttpResponseHandler {
     Require1xx(Box<Self>),
     /// If the status is 200-299, the inner [`Self`].
     /// # Errors
-    /// If the status is not 100-199, returns the error [`HttpResponseHandlerError::Required2xx`].
+    /// If the status is not 200-299, returns the error [`HttpResponseHandlerError::Required2xx`].
     Require2xx(Box<Self>),
     /// If the status is 300-399, the inner [`Self`].
     /// # Errors
-    /// If the status is not 100-199, returns the error [`HttpResponseHandlerError::Required3xx`].
+    /// If the status is not 300-399, returns the error [`HttpResponseHandlerError::Required3xx`].
     Require3xx(Box<Self>),
     /// If the status is 400-499, the inner [`Self`].
     /// # Errors
-    /// If the status is not 100-199, returns the error [`HttpResponseHandlerError::Required4xx`].
+    /// If the status is not 400-499, returns the error [`HttpResponseHandlerError::Required4xx`].
     Require4xx(Box<Self>),
     /// If the status is 500-599, the inner [`Self`].
     /// # Errors
-    /// If the status is not 100-199, returns the error [`HttpResponseHandlerError::Required5xx`].
+    /// If the status is not 500-599, returns the error [`HttpResponseHandlerError::Required5xx`].
     Require5xx(Box<Self>),
 
     /// [`Self::TryElse::try`], or [`Self::TryElse::else`] if it returns [`Err`].
@@ -66,7 +66,7 @@ pub enum HttpResponseHandler {
     /// If the suffix is found within [`Self::ExtractFromBody::limit`], returns the error [`HttpResponseHandlerError::SuffixNotFoundWithinLimit`].
     ExtractFromBody {
         /// The [`BodyExtractor`]s.
-        extractors: Vec<BodyExtractor>,
+        extractors: NonEmptyList<BodyExtractor>,
         /// The max amount of bytes to read.
         ///
         /// Defaults to 8MiB.
@@ -112,15 +112,20 @@ impl HttpResponseHandler {
     /// # Errors
     /// See each variant of [`Self`] for details.
     pub async fn handle<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>, response: &mut reqwest::Response) -> Result<Option<Cow<'t, str>>, HttpResponseHandlerError> {
+        debug!(HttpResponseHandler::handle, self; self._handle(task_state, args, response).await)
+    }
+
+    /// [`Self::handle`].
+    async fn _handle<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>, response: &mut reqwest::Response) -> Result<Option<Cow<'t, str>>, HttpResponseHandlerError> {
         Ok(match self {
             Self::NoneTo {handler, if_none} => match Box::pin(handler.handle(task_state, args, response)).await? {
                 Some(x) => Some(x),
                 None    => Box::pin(if_none.handle(task_state, args, response)).await?,
             },
             Self::Modified {handler, modification} => {
-                let mut temp = Box::pin(handler.handle(task_state, args, response)).await?;
-                modification.apply(task_state, args, &mut temp)?;
-                temp
+                let mut ret = Box::pin(handler.handle(task_state, args, response)).await?;
+                modification.apply(task_state, args, &mut ret)?;
+                ret
             },
             Self::TryElse {r#try, r#else} => match Box::pin(r#try.handle(task_state, args, response)).await {
                 Ok(x) => x,
@@ -152,12 +157,12 @@ impl HttpResponseHandler {
             Self::ExtractFromBody {extractors, limit} => {
                 let prefixes = extractors.iter().map(|x| x.prefix.get_some(task_state, args)).collect::<Result<Result<Vec<_>, _>, _>>()??;
 
-                let mut buf = Vec::with_capacity(prefixes.iter().map(|x| x.len()).max().ok_or(HttpResponseHandlerError::NoExtractors)?);
+                let mut buf   = Vec::with_capacity(1024);
                 let mut bytes = bytes::Bytes::new().into_iter();
-                let mut read = 0;
+                let mut read  = 0;
 
                 loop {
-                    for (prefix, extractor) in prefixes.iter().zip(extractors) {
+                    for (prefix, extractor) in prefixes.iter().zip(extractors.iter()) {
                         if buf.ends_with(prefix.as_bytes()) {
                             match get!(?extractor.strip_prefix) {
                                 false => {buf.drain(..buf.len() - prefix.len());},

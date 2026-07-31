@@ -444,7 +444,7 @@ pub enum Action {
 
 
 
-    /// Get the [`Cache`] entry with a subject of [`Self::Cache::subject`] and a key of the current URL.
+    /// Get the [`CacheClient`] entry with a subject of [`Self::Cache::subject`] and a key of the current URL.
     ///
     /// - If an entry is found, set the URL to its value.
     ///
@@ -769,21 +769,20 @@ impl Action {
                     return Ok(false);
                 }
 
-                let ds = Default::default();
-                let dl = Default::default();
-
-                let names           = get!(?names          ).unwrap_or(&ds);
-                let prefixes        = get!(?prefixes       ).unwrap_or(&dl);
-                let except_names    = get!(?except_names   ).unwrap_or(&ds);
-                let except_prefixes = get!(?except_prefixes).unwrap_or(&dl);
-
-                let excepts = !except_names.is_empty() || !except_prefixes.is_empty();
+                let mn = get!(?names          );
+                let mp = get!(?prefixes       );
+                let en = get!(?except_names   );
+                let ep = get!(?except_prefixes);
 
                 let filter = |segment: QueryLikeSegment<'_>| -> bool {
                     let name = segment.into_name();
 
-                    let matches = (names.contains_some(&*name) || prefixes.iter().any(|prefix| name.starts_with(prefix)))
-                        && !(excepts && (except_names.contains_some(&*name) || except_prefixes.iter().any(|prefix| name.starts_with(prefix))));
+                    let mn = || {mn.is_some_and(|x| x.contains_some(&*name))};
+                    let mp = || {mp.is_some_and(|x| x.iter().any(|prefix| name.starts_with(prefix)))};
+                    let en = || {en.is_some_and(|x| x.contains_some(&*name))};
+                    let ep = || {ep.is_some_and(|x| x.iter().any(|prefix| name.starts_with(prefix)))};
+
+                    let matches = (mn() || mp()) && !(en() || ep());
 
                     matches!((mode, matches), (HandleParamsMode::Keep, true) | (HandleParamsMode::Remove, false))
                 };
@@ -801,34 +800,28 @@ impl Action {
                 changed
             },
 
-
-
             #[cfg(feature = "cache")]
             Self::Cache {subject, action} => {
-                let _unthread_handle = task_state.job.unthreader.unthread();
-                let subject = get!(&!subject);
+                let _unthread_handle = task_state.job.unthreader.as_ref().map(|x| x.lock());
 
-                if let Some(entry) = task_state.job.cache.read(CacheEntryKeys {subject, key: task_state.url.as_str()})? {
-                    task_state.url = BetterUrl::new(entry.value.ok_or(StringNotFound)?)?;
+                let subject = get!(&!subject);
+                let key = task_state.url.as_str();
+
+                if let Some(value) = task_state.job.cache_client.read_sync(subject, key, task_state.job.cache_config)? {
+                    task_state.url = BetterUrl::new(value.ok_or(StringNotFound)?)?;
                     return Ok(true);
                 }
 
-                let key = &task_state.url.to_string();
+                let key = key.to_string();
+
                 let start = std::time::Instant::now();
-
                 let ret = action.apply(task_state, args)?;
+                let duration = start.elapsed();
 
-                task_state.job.cache.write(NewCacheEntry {
-                    subject,
-                    key,
-                    value: Some(task_state.url.as_str()),
-                    duration: start.elapsed()
-                })?;
+                task_state.job.cache_client.write_sync(subject, &key, Some(task_state.url.as_str()), duration, task_state.job.cache_config)?;
 
                 ret
             },
-
-            // Misc
 
             Self::Function   (call    ) => task_state.job.cleaner.functions.actions.get(&call.name ).ok_or(FunctionNotFound           )?.apply(task_state, Some(&call.args))?,
             Self::FunctionArg(name    ) => args.ok_or(NotInFunction)?      .actions.get(get!(&name)).ok_or(FunctionArgFunctionNotFound)?.apply(task_state, args            )?,

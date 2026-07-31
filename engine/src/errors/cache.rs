@@ -1,28 +1,23 @@
-//! Cache.
+//! [`CacheClient`].
 
 use crate::prelude::*;
 
-/// [`Cache::read`]/[`InnerCache::read`].
+/// [`CacheClient::read`].
 #[derive(Debug, Error)]
 pub enum ReadFromCacheError {
-    /** [`rusqlite::Error`]. **/ #[error(transparent)] RusqliteError (#[from] Box<rusqlite::Error>),
-    /** [`LockCacheError`].  **/ #[error(transparent)] LockCacheError(#[from] LockCacheError      ),
+    /** [`sqlx::Error`].           **/ #[error(transparent)] SqlxError            (#[from] sqlx::Error          ),
+    /** [`InitAcquireCacheError`]. **/ #[error(transparent)] InitAcquireCacheError(#[from] InitAcquireCacheError),
 }
 
-/// [`Cache::write`]/[`InnerCache::write`].
+/// [`CacheClient::write`].
 #[derive(Debug, Error)]
 pub enum WriteToCacheError {
-    /** [`rusqlite::Error`]. **/ #[error(transparent)] RusqliteError (#[from] Box<rusqlite::Error>),
-    /** [`LockCacheError`].  **/ #[error(transparent)] LockCacheError(#[from] LockCacheError      ),
+    /** [`sqlx::Error`].           **/ #[error(transparent)] SqlxError            (#[from] sqlx::Error          ),
+    /** [`InitAcquireCacheError`]. **/ #[error(transparent)] InitAcquireCacheError(#[from] InitAcquireCacheError),
 }
 
-/// [`InnerCache::lock`].
+/// [`CacheClient::init_acquire`].
 #[derive(Debug, Error)]
-pub enum LockCacheError {
-    /** [`rusqlite::Error`]. **/ #[error(transparent)] RusqliteError (#[from] Box<rusqlite::Error>),
-    /** [`io::Error`].       **/ #[error(transparent)] IoError       (#[from] io::Error           ),
+pub enum InitAcquireCacheError {
+    /** [`sqlx::Error`]. **/ #[error(transparent)] SqlxError(#[from] sqlx::Error),
 }
-
-impl From<rusqlite::Error> for ReadFromCacheError {fn from(value: rusqlite::Error) -> Self {Box::new(value).into()}}
-impl From<rusqlite::Error> for WriteToCacheError  {fn from(value: rusqlite::Error) -> Self {Box::new(value).into()}}
-impl From<rusqlite::Error> for LockCacheError     {fn from(value: rusqlite::Error) -> Self {Box::new(value).into()}}

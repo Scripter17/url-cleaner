@@ -14,8 +14,8 @@ fn test_setters() {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Tests {
-    /** The comment.        **/ comment : Vec<String>,
-    /** The href tests.     **/ href    : Vec<Test>,
+    /** The comment.        **/ #[expect(dead_code, reason = "Allows the deny_unknown_fields to be useful.")] comment : Vec<String>,
+    /** The href tests.     **/ #[expect(dead_code, reason = "Allows the deny_unknown_fields to be useful.")] href    : Vec<Test>,
     /** The protocol tests. **/ protocol: Vec<Test>,
     /** The username tests. **/ username: Vec<Test>,
     /** The password tests. **/ password: Vec<Test>,

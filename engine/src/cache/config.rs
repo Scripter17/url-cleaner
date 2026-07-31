@@ -2,31 +2,31 @@
 
 use crate::prelude::*;
 
-/// Configuration for a [`Cache`].
+/// Configuration for a [`CacheClient`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CacheConfig {
-    /// If true, read from the cache. If false, always return [`None`].
+    /// If [`false`], make all reads do nothing and return [`None`].
     ///
-    /// Defaults to true.
+    /// Defaulted to [`true`].
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub read: bool,
-    /// If true, write to the cache. If false, always succeed without doing anything.
+    /// If [`false`], make all writes do nothing and return [`Ok`].
     ///
-    /// Defaults to true.
+    /// Defaulted to [`true`].
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub write: bool,
-    /// If true, artificailly delays [`Cache::read`] to take about as long as the original cached operation.
+    /// If [`true`], make all reads take at least as long as the entry's duration column.
     ///
-    /// Defaults to false.
-    #[serde(default = "get_false", skip_serializing_if = "is_false")]
-    pub delay: bool
+    /// Defaulted.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub delay: bool,
 }
 
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
-            read : true,
-            write: true,
+            read : true ,
+            write: true ,
             delay: false,
         }
     }

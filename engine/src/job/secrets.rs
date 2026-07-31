@@ -15,6 +15,8 @@ pub struct Secrets {
     #[serde(default, skip_serializing_if = "is_default")]
     pub vars: FxHashMap<String, String>,
     /// The [`AuthInfo`].
+    ///
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub auth_info: AuthInfo,
 }

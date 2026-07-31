@@ -4,6 +4,9 @@ use super::*;
 
 mod ws;
 mod http;
+mod job_config;
+
+use job_config::*;
 
 /// Unified API for the WebSocket and HTTP APIs.
 #[derive(Debug)]
@@ -47,19 +50,18 @@ pub async fn clean(state: &'static State, job_config: JobConfig, clean_payload: 
     let job = Job {
         context: job_config.context,
         cleaner,
-        unthreader: state.unthreader.filter(job_config.unthread),
         secrets: &state.secrets,
-        #[cfg(feature = "cache")]
-        cache: Cache {
-            inner: &state.inner_cache,
-            config: CacheConfig {
-                read : job_config.read_cache ,
-                write: job_config.write_cache,
-                delay: job_config.cache_delay,
-            }
-        },
+        unthreader: job_config.unthread.then(Default::default),
         #[cfg(feature = "http")]
-        http_client: Some(&state.http_client),
+        http_client: state.http_client.as_ref().filter(|_| job_config.http),
+        #[cfg(feature = "cache")]
+        cache_client: &state.cache_client,
+        #[cfg(feature = "cache")]
+        cache_config: CacheConfig {
+            read : job_config.read_cache,
+            write: job_config.write_cache,
+            delay: job_config.cache_delay,
+        }
     };
 
     Ok(match clean_payload {

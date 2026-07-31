@@ -8,6 +8,8 @@ Where applicable, other frontends should try to mimic this format.
 
 Both `\r\n` and `\n` are valid line separators.
 
+Whether or not the empty string contains zero lines or one empty line is explicitly avoided by having empty input and output lines be ignored.
+
 ## Chunks
 
 A stream of chunks is a stream of each chunk's lines, as defined above.
@@ -34,12 +36,14 @@ For each line:
 
 - If it is empty, it is ignored.
 
-- If "brief unchanged" is enabled and it begins with an `=`, it is a success result whose input was already clean.
+- If it starts with an ASCII letter, it is a success result containing its task's cleaned URL.
 
-- If it begins with an ASCII letter, it is a success result containing its task's cleaned URL.
+- If "brief unchanged" is enabled and it starts with `=`, it is a success result whose input was already clean.
 
-- If it begins with `-`, it is an error result.
+- If "brief unchanged" is disabled, it will never start with `=`.
 
-  - If "brief error" is disabled, the rest of the line is a non-empty string detailing the error.
+- If it starts with `-`, it is an error result.
 
   - If "brief error" is enabeld, the rest of the line is empty.
+
+  - If "brief error" is disabled, the rest of the line is a non-empty string detailing the error.

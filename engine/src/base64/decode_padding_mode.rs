@@ -12,7 +12,7 @@ use crate::prelude::*;
 pub enum Base64DecodePaddingMode {
     /// Don't care whether or not the canonical padding is present.
     ///
-    /// The default value.
+    /// The default.
     #[default]
     Indifferent,
     /// Require that the canonical padding is present.

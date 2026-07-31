@@ -14,13 +14,13 @@ impl Args {
     /// Do the command.
     pub fn r#do(self) {
         for line in std::io::stdin().lock().lines().map(Result::unwrap) {
-            let a = std::time::Instant::now();
+            let timer = std::time::Instant::now();
 
             for _ in 0..self.num {
                 let _ = BetterUrl::new(&*line);
             }
 
-            println!("{:?}", a.elapsed());
+            println!("{:?}", timer.elapsed());
         }
     }
 }

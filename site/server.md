@@ -14,6 +14,14 @@ If a password file is provided, users must provided a password.
 
 ## TLS
 
+### Generate the keys
+
+#### `url-cleaner-site keygen`
+
+Site has a subcommand, `keygen`, that uses the host's installed `openssl` binary to generate the keys required for TLS.
+
+#### Manual
+
 1. Find your local IP address (usually `10.0.0.X`, `172.16.X.Y`, or `192.168.X.Y`)
 
 2. Add `,IP:` followed by that IP address to the end of the second command below.
@@ -26,11 +34,13 @@ openssl req -newkey rsa:2048 -keyout urlcs.key -quiet -noenc -out urlcs.csr -sub
 openssl x509 -req -in urlcs.csr -CA urlcs-ca.crt -CAkey urlcs-ca.key -out urlcs.crt -days 365 -copy_extensions copy
 ```
 
-4. Install `urlcs-ca.crt` on the device(s) connecting to URL Cleaner Site. See below for explanations.
+### Use the keys
 
-5. Change URL Cleaner Site to start with `--key urlcs.key --cert urlcs.crt`. Be sure to not use the `-ca` files.
+1. Install `urlcs-ca.crt` on the device(s) connecting to URL Cleaner Site. See below for explanations.
 
-6. Change clients from using `http://`/`ws://` to `https://`/`wss://`.
+2. Change URL Cleaner Site to start with `--key urlcs.key --cert urlcs.crt`. Be sure to not use the `-ca` files.
+
+3. Change clients from using `http`/`ws` to `https`/`wss`.
 
 ### Installing the certificate
 

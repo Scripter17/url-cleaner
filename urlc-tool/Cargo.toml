@@ -19,6 +19,7 @@ libc       = "0.2.189"
 num-format = "0.4.4"
 regex      = "1.13.1"
 indexmap   = "2.14.0"
+url = "2.5.8"
 
 [lints]
 workspace = true

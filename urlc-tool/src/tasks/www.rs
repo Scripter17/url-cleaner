@@ -37,41 +37,29 @@ impl Args {
             let with    = format!("https://www.{domain}/");
 
             let a = match client.get(&without).send() {
-                Ok(res) => if let Some(location) = res.headers().get("location") {
-                    if location.as_bytes() == with.as_bytes() {
-                        Thing::Swap
-                    } else {
-                        Thing::Other
-                    }
-                } else if res.status().is_success() {
-                    Thing::Stay
-                } else {
-                    Thing::Error
+                Ok(res) if res.status().is_success() => match res.headers().get("location") {
+                    Some(location) if *location == *without => Thing::Swap,
+                    Some(_)                                 => Thing::Other,
+                    None                                    => Thing::Stay,
                 },
-                Err(_) => Thing::Error
+                _ => Thing::Error
             };
 
             let b = match client.get(&with).send() {
-                Ok(res) => if let Some(location) = res.headers().get("location") {
-                    if location.as_bytes() == without.as_bytes() {
-                        Thing::Swap
-                    } else {
-                        Thing::Other
-                    }
-                } else if res.status().is_success() {
-                    Thing::Stay
-                } else {
-                    Thing::Error
+                Ok(res) if res.status().is_success() => match res.headers().get("location") {
+                    Some(location) if *location == *without => Thing::Swap,
+                    Some(_)                                 => Thing::Other,
+                    None                                    => Thing::Stay,
                 },
-                Err(_) => Thing::Error
+                _ => Thing::Error
             };
 
             match (a, b) {
                 (Thing::Stay               , Thing::Stay               ) => {},
-                (Thing::Stay               , Thing::Swap | Thing::Error) => {removes.insert(domain);},
-                (Thing::Swap | Thing::Error, Thing::Stay               ) => {adds.insert(domain);},
+                (Thing::Stay               , Thing::Swap | Thing::Error) => {removes .insert(domain);},
+                (Thing::Swap | Thing::Error, Thing::Stay               ) => {adds    .insert(domain);},
                 (Thing::Swap | Thing::Error, Thing::Swap | Thing::Error) => {invalids.insert(domain);},
-                (Thing::Other, _) | (_, Thing::Other) => {others.insert(domain);}
+                _                                                        => {others  .insert(domain);},
             }
         }
         println!();

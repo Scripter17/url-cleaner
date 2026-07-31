@@ -25,6 +25,17 @@ impl FileHostDetails {
             }
         })
     }
+
+    /** If it's [`Self::Domain`]. **/                 pub fn is_domain(self) -> bool {matches!(self, Self::Domain(_)                )}
+    /** If it's [`Self::Ipv4`]. **/                   pub fn is_ipv4  (self) -> bool {matches!(self, Self::Ipv4  (_)                )}
+    /** If it's [`Self::ipv6`]. **/                   pub fn is_ipv6  (self) -> bool {matches!(self, Self::Ipv6  (_)                )}
+    /** If it's [`Self::Ipv4`] or [`Self::Ipv6`]. **/ pub fn is_ip    (self) -> bool {matches!(self, Self::Ipv4  (_) | Self::Ipv6(_))}
+    /** If it's [`Self::Empty`]. **/                  pub fn is_empty (self) -> bool {matches!(self, Self::Empty (_)                )}
+
+    /** The [`DomainHostDetails`]. **/ pub fn domain(self) -> Option<DomainHostDetails> {self.try_into().ok()}
+    /** The [`Ipv4HostDetails`].   **/ pub fn ipv4  (self) -> Option<Ipv4HostDetails  > {self.try_into().ok()}
+    /** The [`Ipv6HostDetails`].   **/ pub fn ipv6  (self) -> Option<Ipv6HostDetails  > {self.try_into().ok()}
+    /** The [`EmptyHostDetails`].  **/ pub fn empty (self) -> Option<EmptyHostDetails > {self.try_into().ok()}
 }
 
 impl From<DomainHostDetails> for FileHostDetails {fn from(value: DomainHostDetails) -> Self {Self::Domain(value)}}

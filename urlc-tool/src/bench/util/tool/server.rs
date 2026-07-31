@@ -6,8 +6,8 @@ use super::valgrind::*;
 /// The tool to measure with.
 #[derive(Debug, Clone, Copy)]
 pub enum ServerTool {
-    /// [`ValgrindTool`].
-    Valgrind(ValgrindTool)
+    /// [`Valgrind`].
+    Valgrind(Valgrind)
 }
 
 impl ServerTool {
@@ -22,8 +22,8 @@ impl ServerTool {
 impl ValueEnum for ServerTool {
     fn value_variants<'a>() -> &'a [Self] {
         &[
-            Self::Valgrind(ValgrindTool::Massif),
-            Self::Valgrind(ValgrindTool::Callgrind),
+            Self::Valgrind(Valgrind::Massif),
+            Self::Valgrind(Valgrind::Callgrind),
         ]
     }
 

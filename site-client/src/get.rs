@@ -5,46 +5,45 @@ use super::prelude::*;
 use hyper_util::{client::legacy::{Client, connect::HttpConnector}, rt::TokioExecutor};
 use hyper_tls::HttpsConnector;
 use http_body_util::BodyExt;
-use url::Url;
 use tokio::io::AsyncWriteExt;
 use futures_util::StreamExt;
 
+use better_url::prelude::*;
+
 /// Get information from URL Cleaner Site.
 #[derive(Debug, Parser)]
-#[expect(missing_docs, reason = "Makes clap inherit the docs.")]
 pub struct Args {
-    pub thing: Thing,
-    /// The instance (HTTP or HTTPS)
+    /// The instance.
     #[arg(default_value = "http://127.0.0.1:9149")]
-    pub instance: String,
+    pub instance: BetterUrl,
+    /// The thing to get.
+    pub thing: Thing,
 }
 
 /// What to get.
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Thing {
-    /// The Index.
-    Index,
-    /// The Info.
-    Info,
-    /// The Cleaner.
-    Cleaner,
-    /// The ProfilesConfig.
-    Profiles
+    /** `/`           **/ Index     ,
+    /** `/info`       **/ Info      ,
+    /** `/cleaner`    **/ Cleaner   ,
+    /** `/profiles`   **/ Profiles  ,
+    /** `/userscript` **/ Userscript,
 }
 
 impl Args {
     /// Do the command.
     pub async fn r#do(self) {
-        let mut instance = Url::parse(&self.instance).unwrap();
+        let mut instance = self.instance;
 
         instance.set_path(match self.thing {
-            Thing::Index    => "/",
-            Thing::Info     => "/info",
-            Thing::Cleaner  => "/cleaner",
-            Thing::Profiles => "/profiles",
-        });
+            Thing::Index      => "/",
+            Thing::Info       => "/info",
+            Thing::Cleaner    => "/cleaner",
+            Thing::Profiles   => "/profiles",
+            Thing::Userscript => "/userscript",
+        }).unwrap();
 
-        let res = match instance.scheme() {
+        let res = match instance.scheme_str() {
             "http"  => Client::builder(TokioExecutor::new()).build::<_, String>(HttpConnector ::new()).get(instance.as_str().parse().unwrap()),
             "https" => Client::builder(TokioExecutor::new()).build::<_, String>(HttpsConnector::new()).get(instance.as_str().parse().unwrap()),
             scheme => panic!("Invalid scheme {scheme}")

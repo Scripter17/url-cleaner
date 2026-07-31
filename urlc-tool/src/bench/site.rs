@@ -5,24 +5,12 @@ use super::prelude::*;
 /// Site.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// The name
-    #[arg(long)]
-    pub name: String,
-    /// The task.
-    #[arg(long)]
-    pub task: String,
-    /// The num.
-    #[arg(long)]
-    pub num: u64,
-    /// The ParamsDiff.
-    #[arg(long)]
-    pub params_diff: Option<String>,
-    /// The protocol.
-    #[arg(long)]
-    pub protocol: Protocol,
-    /// The tool.
-    #[arg(long)]
-    pub tool: ServerTool,
+    /** The name.       **/ #[arg(long)] pub name       : String,
+    /** The task.       **/ #[arg(long)] pub task       : String,
+    /** The num.        **/ #[arg(long)] pub num        : u64,
+    /** The ParamsDiff. **/ #[arg(long)] pub params_diff: Option<String>,
+    /** The protocol.   **/ #[arg(long)] pub protocol   : Protocol,
+    /** The tool.       **/ #[arg(long)] pub tool       : ServerTool,
 }
 
 impl Args {
@@ -43,7 +31,7 @@ impl Args {
                 cmd.arg(format!("--tool={tool}"));
                 cmd.arg(format!("--{tool}-out-file={out}"));
 
-                if matches!(tool, ValgrindTool::Callgrind) {
+                if matches!(tool, Valgrind::Callgrind) {
                     cmd.arg("--separate-threads=yes");
                 }
 

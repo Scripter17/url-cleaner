@@ -27,8 +27,8 @@ impl Args {
             }
 
             match Task::new(&*buf) {
-                Ok(task) => println!("{task}"),
-                Err(e) => println!("-{e:?}")
+                Ok (task) => println!("{task}"),
+                Err(e   ) => println!("-{e:?}"),
             }
 
             buf.clear();

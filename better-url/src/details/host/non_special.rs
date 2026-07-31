@@ -21,6 +21,14 @@ impl NonSpecialHostDetails {
             _          => OpaqueHostDetails::parse  (value)?.into(),
         })
     }
+
+    /** If it's [`Self::ipv6`]. **/                   pub fn is_ipv6  (self) -> bool {matches!(self, Self::Ipv6  (_)                )}
+    /** If it's [`Self::Opaque`]. **/                 pub fn is_opaque(self) -> bool {matches!(self, Self::Opaque(_)                )}
+    /** If it's [`Self::Empty`]. **/                  pub fn is_empty (self) -> bool {matches!(self, Self::Empty (_)                )}
+
+    /** The [`Ipv6HostDetails`].   **/ pub fn ipv6  (self) -> Option<Ipv6HostDetails  > {self.try_into().ok()}
+    /** The [`OpaqueHostDetails`]. **/ pub fn opaque(self) -> Option<OpaqueHostDetails> {self.try_into().ok()}
+    /** The [`EmptyHostDetails`].  **/ pub fn empty (self) -> Option<EmptyHostDetails > {self.try_into().ok()}
 }
 
 impl From<Ipv6HostDetails  > for NonSpecialHostDetails {fn from(value: Ipv6HostDetails  ) -> Self {Self::Ipv6  (value)}}

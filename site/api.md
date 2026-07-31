@@ -15,8 +15,18 @@ pub struct Info {
     pub source_code: String,
     /// The version.
     pub version: String,
-    /// Whether or not you need a password to clean URLs.
-    pub password_required: bool
+    /// The [`AuthMode`].
+    pub auth_mode: AuthMode,
+}
+
+/// The type of [`AuthInfo`] being used in a format that can be sent to users.
+pub enum AuthMode {
+    /// [`AuthInfo::None`].
+    None,
+    /// [`AuthInfo::Password`].
+    Password,
+    /// [`AuthInfo::Userinfo`].
+    Userinfo,
 }
 ```
 
@@ -34,6 +44,10 @@ Either a WebSocket or HTTP POST/PUT duplex.
 
 - The `JobConfig` is sent in the `config` query parameter XOR the `X-Config` header.
 
+## `/userscript`
+
+A GET endpoint that returns a copy of URL Cleaner Site Userscript with instance info pre-filled using the request's `Host` header.
+
 ### WebSocket
 
 - Task and result messages contain only full lines.
@@ -44,8 +58,6 @@ Either a WebSocket or HTTP POST/PUT duplex.
 
 - Result messages are text.
 
-- There are no empty result messages.
-
 - Result messages contain only result lines.
 
 - Every result line, except the last, is succeeded by a `\n`.
@@ -53,6 +65,8 @@ Either a WebSocket or HTTP POST/PUT duplex.
 - Every `\n` is preceeded by a result line.
 
 - Consequently, result messages have no empty lines.
+
+- Consequently, there are no empty result messages.
 
 - Providing a task line, waiting for its result line, then providing another task line will never deadlock.
 

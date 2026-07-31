@@ -5,21 +5,11 @@ use super::prelude::*;
 /// CLI.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// The name
-    #[arg(long)]
-    pub name: String,
-    /// The task.
-    #[arg(long)]
-    pub task: String,
-    /// The num.
-    #[arg(long)]
-    pub num: u64,
-    /// The ParamsDiff.
-    #[arg(long)]
-    pub params_diff: Option<String>,
-    /// The tool.
-    #[arg(long)]
-    pub tool: ClientTool,
+    /** The name.       **/ #[arg(long)] pub name       : String,
+    /** The task.       **/ #[arg(long)] pub task       : String,
+    /** The num.        **/ #[arg(long)] pub num        : u64,
+    /** The ParamsDiff. **/ #[arg(long)] pub params_diff: Option<String>,
+    /** The tool.       **/ #[arg(long)] pub tool       : ClientTool,
 }
 
 impl Args {
@@ -37,7 +27,7 @@ impl Args {
         fresh_dir(&out_dir);
 
         let mut cmd = match tool {
-            ClientTool::Hyperfine => {
+            ClientTool::Hyperfine(Hyperfine) => {
                 let mut cmd = Command::new("hyperfine");
 
                 cmd.args([
@@ -58,7 +48,7 @@ impl Args {
                 cmd.arg(format!("--tool={tool}"));
                 cmd.arg(format!("--{tool}-out-file={out}"));
 
-                if matches!(tool, ValgrindTool::Callgrind) {
+                if matches!(tool, Valgrind::Callgrind) {
                     cmd.arg("--separate-threads=yes");
                 }
 

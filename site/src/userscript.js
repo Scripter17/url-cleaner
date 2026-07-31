@@ -27,6 +27,7 @@ ${GM.info.script.namespace}`);
 			context: {
 				source_host: window.location.hostname // Used for per-site processing.
 			},
+			// username   : null, // The password        (Site default: null                           )
 			// password   : null, // The password        (Site default: null                           )
 			// profile    : null, // The Profile name    (Site default: null                           )
 			// params_diff: null, // The ParamsDiff      (Site default: null                           )

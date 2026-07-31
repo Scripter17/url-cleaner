@@ -13,7 +13,10 @@ use super::prelude::*;
 pub struct Args {
     /// The number of pages to get.
     #[arg(long)]
-    pub pages: usize
+    pub pages: usize,
+    /// The cookie to bypass anti-bot stuff.
+    #[arg(long)]
+    pub cookie: String,
 }
 
 impl Args {
@@ -23,15 +26,18 @@ impl Args {
 		    ("user-agent".try_into().unwrap(), "Firefox".try_into().unwrap()),
 		    ("sec-gpc"   .try_into().unwrap(), "1"      .try_into().unwrap()),
 		    ("dnt"       .try_into().unwrap(), "1"      .try_into().unwrap()),
+		    ("cookie"    .try_into().unwrap(), self.cookie.try_into().unwrap()),
         ].into_iter().collect())
             .redirect(reqwest::redirect::Policy::none())
             .referer(false).build().unwrap();
+
+        let mut url = BetterUrl::new("https://old.reddit.com/domain/example.com/.json?limit=100").unwrap();
 
         for host in std::io::stdin().lock().lines().map(Result::unwrap) {
             eprint!("{host}:");
             std::io::stderr().flush().unwrap();
 
-            let mut after = String::new();
+            url.set_path_segment(1, Some(&*host)).unwrap();
 
             for page in 1..=self.pages {
                 eprint!(" {page}");
@@ -40,7 +46,7 @@ impl Args {
                 let mut sleep = std::time::Duration::from_secs(10);
 
                 let data = loop {
-                    match client.get(format!("https://old.reddit.com/domain/{host}/.json?{after}limit=100")).send() {
+                    match client.get(url.as_str()).send() {
                         Ok(res) if res.status() == 200 => break res.bytes().unwrap(),
                         _ => {
                             eprint!(" ...");
@@ -53,28 +59,12 @@ impl Args {
 
                 new_file(format!("urlc-tool/tmp/get/reddit/{host}/{page}.json")).write_all(&data).unwrap();
 
-                let data = serde_json::from_slice::<serde_json::Value>(&data).unwrap();
+                let response = serde_json::from_slice::<Response>(&data).unwrap();
 
                 let mut out = new_file(format!("urlc-tool/out/get/reddit/{host}/{page}.txt"));
 
-                for child in data["data"]["children"].as_array().unwrap() {
-                    let mut url = String::new();
-                    let mut segments = child["data"]["url"].as_str().unwrap().split('&');
-
-                    url.push_str(segments.next().unwrap());
-
-                    for segment in segments {
-                        let (code, rest) = segment.split_once(';').unwrap();
-                        url.push(match code {
-                            "amp"  => '&' ,
-                            "quot" => '"' ,
-                            "gt"   => '>' ,
-                            "lt"   => '<' ,
-                            "apos" => '\'',
-                            x => panic!("Unknown escape: {x}")
-                        });
-                        url.push_str(rest);
-                    }
+                for child in response.data.children {
+                    let url = unescape_html(child.data.url).unwrap();
 
                     writeln!(out, "{url}").unwrap();
                     println!("{url}");
@@ -82,8 +72,8 @@ impl Args {
 
                 out.flush().unwrap();
 
-                match data["data"]["after"].as_str() {
-                    Some(x) => after = format!("after={x}&"),
+                match response.data.after {
+                    Some(after) => {url.set_query_param("after", 0, Some(Some(&after))).unwrap();},
                     None => break
                 }
             }
@@ -91,4 +81,34 @@ impl Args {
             eprintln!();
         }
     }
+}
+
+/// A response.
+#[derive(Debug, Deserialize)]
+pub struct Response {
+    /// The [`Data`].
+    pub data: Data
+}
+
+/// A [`Response`]'s data.
+#[derive(Debug, Deserialize)]
+pub struct Data {
+    /// The [`Child`]ren.
+    pub children: Vec<Child>,
+    /// The value to put in the `after` query param for the next page.
+    pub after: Option<String>,
+}
+
+/// A child.
+#[derive(Debug, Deserialize)]
+pub struct Child {
+    /// The [`ChildData`].
+    pub data: ChildData,
+}
+
+/// A [`Child`]'s data.
+#[derive(Debug, Deserialize)]
+pub struct ChildData {
+    /// The URL.
+    pub url: String,
 }

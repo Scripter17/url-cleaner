@@ -100,18 +100,9 @@ impl Args {
 
         let filter = Regex::new(&self.filter.unwrap_or_default()).unwrap();
 
-        let cache = Cache {
-            inner: &CacheLocation::Memory.into(),
-            config: CacheConfig {
-                read : false,
-                write: false,
-                delay: false
-            }
-        };
-
-        let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
-
-        let http_client = HttpClient::new(runtime.handle().clone());
+        let runtime      = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
+        let cache_client = CacheClient::new_sync(CacheTarget::Memory, runtime.handle().clone());
+        let http_client  = HttpClient ::new_sync(                     runtime.handle().clone());
 
         for test_job in test_suite.jobs {
             if filter.find(&test_job.name).is_none() {
@@ -131,10 +122,11 @@ impl Args {
             let job = Job {
                 context: test_job.job_context,
                 cleaner,
-                unthreader: &Unthreader::Off,
                 secrets: &Default::default(),
-                cache,
+                unthreader: None,
                 http_client: Some(&http_client),
+                cache_client: &cache_client,
+                cache_config: CacheConfig {read: false, write: false, delay: false},
             };
 
             for test in test_job.tests {

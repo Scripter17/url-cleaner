@@ -35,25 +35,15 @@ use url_cleaner_engine::prelude::*;
 struct Args {
     /// Unvalidated task lines to do before STDIN.
     tasks: Vec<String>,
-    /// Enable brief unchanged mode.
-    #[arg(long)]
-    brief_unchanged: bool,
-    /// Enable brief error mode.
-    #[arg(long)]
-    brief_error: bool,
 
     /// The Cleaner to use.
     #[cfg(feature = "bundled-cleaner")]
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, short = 'c', value_name = "PATH")]
     cleaner: Option<PathBuf>,
     /// The Cleaner to use.
     #[cfg(not(feature = "bundled-cleaner"))]
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, short = 'c', value_name = "PATH")]
     cleaner: PathBuf,
-
-    /// The Secrets to use.
-    #[arg(long, value_name = "PATH")]
-    secrets: Option<PathBuf>,
 
     /// The ProfilesConfig to use.
     #[arg(long, value_name = "PATH")]
@@ -67,38 +57,54 @@ struct Args {
     params_diff: Option<PathBuf>,
 
     /// Flags to set after ParamsDiff.
-    #[arg(short, long)]
+    #[arg(long, short = 'f')]
     flag: Vec<String>,
     /// Vars to set after ParamsDiff.
-    #[arg(short, long, value_names = ["NAME", "VALUE"], num_args = 2)]
+    #[arg(long, short = 'v', value_names = ["NAME", "VALUE"], num_args = 2)]
     var: Vec<Vec<String>>,
 
     /// The JobContext.
     #[arg(long, value_name = "PATH")]
     job_context: Option<PathBuf>,
 
+    /// The Secrets to use.
+    #[arg(long, value_name = "PATH")]
+    secrets: Option<PathBuf>,
+
+    /// Enable brief unchanged mode.
+    #[arg(long, short = 'U')]
+    brief_unchanged: bool,
+    /// Enable brief error mode.
+    #[arg(long, short = 'E')]
+    brief_error: bool,
+
+    /// Disable the HTTP client.
+    #[cfg(feature = "http")]
+    #[arg(long, short = 'H')]
+    no_http: bool,
+
     /// The path of the cache to use.
     #[cfg(feature = "cache")]
-    #[arg(long, default_value = "url-cleaner-cache.sqlite", value_name = "PATH")]
-    cache: PathBuf,
+    #[arg(long, default_value = "url-cleaner.sqlite")]
+    cache: CacheTarget,
     /// Disable reading from the cache.
     #[cfg(feature = "cache")]
-    #[arg(long)]
+    #[arg(long, short = 'R')]
     no_read_cache: bool,
     /// Disable writing to the cache.
     #[cfg(feature = "cache")]
-    #[arg(long)]
+    #[arg(long, short = 'W')]
     no_write_cache: bool,
     /// Enable cache delay.
     #[cfg(feature = "cache")]
-    #[arg(long)]
+    #[arg(long, short = 'd')]
     cache_delay: bool,
 
     /// Enable unthreading.
     #[arg(long)]
     unthread: bool,
     /// The number of worker threads to use.
-    #[arg(long, default_value_t = 0)]
+    #[arg(long, short = 'w', default_value_t = 0)]
     workers: usize,
 }
 
@@ -115,11 +121,10 @@ pub enum CliError {
     ProfileNotFound
 }
 
-/** The [`Job`].        **/ static JOB       : OnceLock<Job       > = OnceLock::new();
-/** The [`Unthreader`]. **/ static UNTHREADER: OnceLock<Unthreader> = OnceLock::new();
-/** The [`Secrets`].    **/ static SECRETS   : OnceLock<Secrets   > = OnceLock::new();
-/** The [`InnerCache`]. **/ #[cfg(feature = "cache")] static INNER_CACHE: OnceLock<InnerCache> = OnceLock::new();
-/** The [`HttpClient`]. **/ #[cfg(feature = "http" )] static HTTP_CLIENT: OnceLock<HttpClient> = OnceLock::new();
+/** The [`Job`].         **/ static JOB       : OnceLock<Job    > = OnceLock::new();
+/** The [`Secrets`].     **/ static SECRETS   : OnceLock<Secrets> = OnceLock::new();
+/** The [`CacheClient`]. **/ #[cfg(feature = "cache")] static CACHE_CLIENT: OnceLock<CacheClient> = OnceLock::new();
+/** The [`HttpClient`].  **/ #[cfg(feature = "http" )] static HTTP_CLIENT : OnceLock<HttpClient > = OnceLock::new();
 
 #[tokio::main]
 async fn main() -> Result<(), CliError> {
@@ -157,22 +162,24 @@ async fn main() -> Result<(), CliError> {
 
     let (_, context) = JobContext::load_or_default(args.job_context)?;
 
+    #[cfg(feature = "http" )] let http_client  = HttpClient ::new(          ).await;
+    #[cfg(feature = "cache")] let cache_client = CacheClient::new(args.cache).await;
+
     let job = JOB.get_or_init(|| Job {
         context,
         cleaner,
-        unthreader: UNTHREADER.get_or_init(|| Unthreader::r#if(args.unthread)),
         secrets: SECRETS.get_or_init(|| secrets),
-        #[cfg(feature = "cache")]
-        cache: Cache {
-            inner: INNER_CACHE.get_or_init(|| args.cache.into()),
-            config: CacheConfig {
-                read : !args.no_read_cache,
-                write: !args.no_write_cache,
-                delay:  args.cache_delay,
-            }
-        },
+        unthreader: args.unthread.then(Default::default),
         #[cfg(feature = "http")]
-        http_client: Some(HTTP_CLIENT.get_or_init(|| HttpClient::new(tokio::runtime::Handle::current()))),
+        http_client: (!args.no_http).then(|| HTTP_CLIENT.get_or_init(|| http_client)),
+        #[cfg(feature = "cache")]
+        cache_client: CACHE_CLIENT.get_or_init(|| cache_client),
+        #[cfg(feature = "cache")]
+        cache_config: CacheConfig {
+            read : !args.no_read_cache ,
+            write: !args.no_write_cache,
+            delay:  args.cache_delay   ,
+        },
     });
 
     let threads = match args.workers {
@@ -234,7 +241,7 @@ async fn main() -> Result<(), CliError> {
                     Ok((false, _  )) if args.brief_unchanged => "=".into(),
                     Ok((_    , url))                         => url.into(),
 
-                    Err(_) if args.brief_error => "-".into(),
+                    Err(_) if args.brief_error => "-"              .into(),
                     Err(e)                     => format!("-{e:?}").into(),
                 }).expect("The out receiver to still exist.");
             }

@@ -7,6 +7,10 @@ use thiserror::Error;
 
 mod run;
 mod keygen;
+mod userscript;
+
+/// The userscript.
+const USERSCRIPT: &str = include_str!("userscript.js");
 
 #[expect(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner Site - Explicit non-consent to URL spytext.
@@ -27,8 +31,9 @@ mod keygen;
 #[derive(Debug, Parser)]
 #[expect(clippy::missing_docs_in_private_items, reason = "Makes Clap propogate docs.")]
 enum Args {
-    Run   (run   ::Args),
-    Keygen(keygen::Args),
+    Run       (run       ::Args),
+    Keygen    (keygen    ::Args),
+    Userscript(userscript::Args),
 }
 
 /// [`main`]
@@ -41,8 +46,9 @@ enum SiteError {
 #[tokio::main]
 async fn main() -> Result<(), SiteError> {
     match Args::parse() {
-        Args::Run   (args) => args.r#do().await?,
-        Args::Keygen(args) => args.r#do().await?,
+        Args::Run       (args) => args.r#do().await?,
+        Args::Keygen    (args) => args.r#do().await?,
+        Args::Userscript(args) => args.r#do().await ,
     }
 
     Ok(())

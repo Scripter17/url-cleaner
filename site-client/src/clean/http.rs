@@ -2,7 +2,6 @@
 
 use std::convert::Infallible;
 
-use url::Url;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use hyper::{Request, body::Frame};
 use http_body_util::{StreamBody, BodyExt};
@@ -13,8 +12,10 @@ use bytes::Bytes;
 use hyper_util::{client::legacy::{Client, connect::HttpConnector}, rt::TokioExecutor};
 use hyper_tls::HttpsConnector;
 
+use better_url::prelude::*;
+
 /// Do an HTTP connection.
-pub async fn r#do(instance: Url) {
+pub async fn r#do(instance: BetterUrl) {
     let body = Box::pin(StreamBody::new(stream!(
         let stdin = &mut tokio::io::stdin();
         let mut buf = Vec::new();
@@ -29,7 +30,7 @@ pub async fn r#do(instance: Url) {
 
     // Building an HttpsConnector is very expensive, and so should only be done when needed.
 
-    let res = match instance.scheme() {
+    let res = match instance.scheme_str() {
         "http"  => Client::builder(TokioExecutor::new()).build(HttpConnector ::new()).request(Request::builder().uri(instance.as_str()).method("POST").body(body).unwrap()),
         "https" => Client::builder(TokioExecutor::new()).build(HttpsConnector::new()).request(Request::builder().uri(instance.as_str()).method("POST").body(body).unwrap()),
         _ => unreachable!()
