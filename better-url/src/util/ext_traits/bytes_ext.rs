@@ -36,6 +36,7 @@ impl BytesExt for [u8] {
     }
 
     fn memrchr(&self, b: u8) -> Option<usize> {
+        #[cfg(target_os = "linux")]
         unsafe {
             let a = libc::memrchr(
                 self as *const [u8] as *const libc::c_void,
@@ -48,6 +49,8 @@ impl BytesExt for [u8] {
                 x => Some(x - self.as_ptr().addr())
             }
         }
+        #[cfg(not(target_os = "linux"))]
+        self.iter().rposition(|&byte| byte == b)
     }
 
     fn memchrn<const N: usize>(&self, bs: [u8; N]) -> Option<usize> {
