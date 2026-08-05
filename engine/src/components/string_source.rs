@@ -202,6 +202,9 @@ pub enum StringSource {
         modification: Box<StringModification>
     },
 
+    /** [`try_percent_decode`].    **/ TryPercentDecode  (Box<Self>),
+    /** [`try_decode_query_part`]. **/ TryDecodeQueryPart(Box<Self>),
+
 
 
     /// [`regex::Regex::captures`] + [`RegexExpansion::expand`].
@@ -486,6 +489,26 @@ impl StringSource {
                 let mut ret = get!(?value);
                 modification.apply(task_state, args, &mut ret)?;
                 ret
+            },
+
+
+
+            Self::TryPercentDecode(value) => match get!(?value) {
+                Some(value) => {
+                    let (_, value) = try_percent_decode(value).map_err(|(e, _)| e)?;
+
+                    Some(value)
+                },
+                None => None
+            },
+
+            Self::TryDecodeQueryPart(value) => match get!(?value) {
+                Some(value) => {
+                    let (_, value) = try_decode_query_part(value).map_err(|(e, _)| e)?;
+
+                    Some(value)
+                },
+                None => None
             },
 
 

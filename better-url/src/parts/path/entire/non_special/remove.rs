@@ -3,45 +3,46 @@
 use crate::prelude::*;
 
 impl NonSpecialPath<'_> {
-    /// Remove the last segment.
-    /// # Errors
-    /// If there's only one segment, returns the error [`CantBeEmpty`].
-    #[expect(clippy::missing_panics_doc, reason = "Can't happen.")]
-    pub fn pop(&mut self) -> Result<(), SetPathError> {
-        match self.0.memrchr(b'/').expect("???") {
-            0 => Err(CantBeEmpty)?,
-            x => unsafe {self.0.truncate_unchecked(x)}
-        }
+    /// Remove the last segment if it exists.
+    pub fn pop(&mut self) -> bool {
+        match self.0.memrchr(b'/') {
+            Some(i) => {
+                unsafe {
+                    self.0.truncate_unchecked(i);
+                }
 
-        Ok(())
+                true
+            },
+            None => false
+        }
     }
 
-    /// Remove the last segment if it's empty.
-    /// # Errors
-    /// If there is only one segment and it's empty, returns the error [`CantBeNone`].
-    pub fn pop_if_empty(&mut self) -> Result<bool, SetPathError> {
+    /// Remove the last segment if it exists and is empty.
+    pub fn pop_if_empty(&mut self) -> bool {
         match self.as_str().as_bytes() {
-            [        b'/'] => Err(CantBeEmpty)?,
-            [x @ .., b'/'] => {unsafe {self.0.truncate_unchecked(x.len())}; Ok(true)},
-            _ => Ok(false)
+            [x @ .., b'/'] => {
+                unsafe {
+                    self.0.truncate_unchecked(x.len())
+                };
+
+                true
+            },
+            _ => false
         }
     }
 
-    /// Remove the `index`th segment.
-    /// # Errors
-    /// If the segment isn't found, returns the error [`SegmentNotFound`].
-    ///
-    /// If there is only one segment, returns the error [`CantBeEmpty`].
-    pub fn remove(&mut self, index: isize) -> Result<(), SetPathError> {
-        let mut range = self.as_str().my_substr_range(self.get(index).ok_or(SegmentNotFound)?.as_str());
-        range.start -= 1;
+    /// Remove the `index`th segment if it exists.
+    pub fn remove(&mut self, index: isize) -> bool {
+        match self.get_str(index) {
+            Some(temp) => {
+                let mut range = self.as_str().my_substr_range(temp);
+                range.start -= 1;
 
-        if range.len() == self.len() {
-            Err(CantBeEmpty)?;
+                self.0.replace_range(range, "");
+
+                true
+            },
+            None => false
         }
-
-        self.0.replace_range(range, "");
-
-        Ok(())
     }
 }

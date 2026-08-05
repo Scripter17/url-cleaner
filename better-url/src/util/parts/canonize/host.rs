@@ -15,7 +15,7 @@ pub fn canonize_non_special_hostname_setter<'a, T: Into<Cow<'a, str>>>(value: T)
     let mut value = value.into();
     let mut changed = false;
 
-    if let Some(i) = value.memchr3(b'/', b'?', b'#') {
+    if let Some(i) = value.memchrn(*b"/?#") {
         unsafe {
             value.truncate_unchecked(i);
         }

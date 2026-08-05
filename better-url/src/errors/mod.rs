@@ -42,7 +42,7 @@ from_infallible!(
     InvalidHost, SetHostError,
     InvalidDomainSegment, InvalidDomainSegments, SetDomainError,
     InvalidPort, SetPortError,
-    InvalidEmptyPath, SetPathError,
+    SetPathError,
     SetQueryError,
     SetFragmentError
 );

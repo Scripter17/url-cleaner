@@ -61,12 +61,12 @@ impl FilePath<'_> {
     }
 
     /// Set, insert, or remove the `index`th segment.
+    ///
+    /// If `value` is [`None`] and `index` is out of bounds, does nothing.
     /// # Errors
     /// If `value` is [`Some`] and `index` is more than 1 out of bounds, returns the error [`InsertNotFound`].
     ///
-    /// If `value` is [`None`] and `index` is out of bounds, returns the error [`SegmentNotFound`].
-    ///
-    /// If `value` is [`None`] and `index` is the only segment, returns the error [`CantBeNone`].
+    /// If `value` is [`None`] and `index` is the only segment, returns the error [`CantBeEmpty`].
     /// # Examples
     /// ```
     /// use better_url::prelude::*;
@@ -97,21 +97,28 @@ impl FilePath<'_> {
 
                 (Err(_), _) => Err(InsertNotFound)?,
             },
-            None => {
-                let Range {start, end} = self.0.my_substr_range(self.iter_strs().neg_nth(index).ok_or(SegmentNotFound)?);
+            None => match self.iter_strs().neg_nth(index) {
+                Some(temp) => {
+                    if temp.len() + 1 == self.len() {
+                        Err(CantBeEmpty)?;
+                    }
 
-                self.0.replace_range(start - 1 .. end, "");
+                    let range = self.0.my_substr_range(temp);
 
-                true
+                    self.0.replace_range(range.start - 1 .. range.end, "");
+
+                    true
+                },
+                None => false
             }
         })
     }
 
     /// Set the range of segments.
     /// # Errors
-    /// If the call to [`Self::range`] returns [`None`], returns the error [`RangeNotFound`].
+    /// If the call to [`Self::range_str`] returns [`None`], returns the error [`RangeNotFound`].
     ///
-    /// If the iterator is empty and all segments are set to be replaced, returns the error [`CantBeEmpty`].
+    /// If `value` is [`None`] and `range` contains all segments, returns the error [`CantBeEmpty`].
     /// # Examples
     /// ```
     /// use better_url::prelude::*;
@@ -135,6 +142,10 @@ impl FilePath<'_> {
             },
             None => {
                 let old = self.range_str(range).ok_or(RangeNotFound)?;
+
+                if old.len() + 1 == self.len() {
+                    Err(CantBeEmpty)?;
+                }
 
                 let Range {start, end} = self.0.my_substr_range(old);
 

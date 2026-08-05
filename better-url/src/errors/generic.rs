@@ -7,11 +7,6 @@ use thiserror::Error;
 #[error("Failed to find an insert.")]
 pub struct InsertNotFound;
 
-/// Returned when failing to find a segment.
-#[derive(Debug, Error)]
-#[error("Failed to find a segment.")]
-pub struct SegmentNotFound;
-
 /// Returned when failing to find a range.
 #[derive(Debug, Error)]
 #[error("Failed to find a range.")]

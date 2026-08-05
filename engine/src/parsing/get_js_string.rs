@@ -27,7 +27,7 @@ pub fn get_js_string<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<Cow<'a, str>
 
             let mut ret = Vec::<u8>::new();
 
-            while let Some(i) = memchr::memchr2(b'\\', q, rest) {
+            while let Some(i) = rest.memchrn([b'\\', q]) {
                 match rest[i] {
                     b'\\' => {
                         let before = unsafe {rest.get_unchecked(..i)};
@@ -79,7 +79,7 @@ fn munch_escape(x: &[u8]) -> Option<(Option<char>, &[u8])> {
         [b'x', h, l, ref x @ ..] => (Some(thing(&[h, l])?), x),
 
         [b'u', b'{', ref x @ ..] => {
-            let i = memchr::memchr(b'}', x)?;
+            let i = x.memchr(b'}')?;
 
             let a = unsafe {x.get_unchecked(      .. i)};
             let b = unsafe {x.get_unchecked(i + 1 ..  )};

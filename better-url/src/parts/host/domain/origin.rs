@@ -117,7 +117,7 @@ impl DomainHost<'_> {
         Ok(true)
     }
 
-    /// Set or insert the `index`th origin segment.
+    /// Set, insert, or remove the `index`th origin segment.
     /// # Errors
     /// See [`Self`]'s documentation.
     pub fn set_origin_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
@@ -133,7 +133,7 @@ impl DomainHost<'_> {
             (Err(_  ), Some(new)) if self.len()             + new.len() + 1 > u32::MAX as usize => Err(TooLong)?,
 
             (Err(1..), Some(_)) => Err(InsertNotFound )?,
-            (Err(_  ), None   ) => Err(SegmentNotFound)?,
+            (Err(_  ), None   ) => return Ok(false),
 
             (Ok(old), Some(new)) => match self.host.split_around_substr(old) {
                 ("", "" ) if new.is_empty()         => Err(CantBeEmpty)?,

@@ -20,7 +20,7 @@ impl Args {
                 let _ = BetterUrl::new(&*line);
             }
 
-            println!("{:?}", timer.elapsed());
+            println!("{:.2?}", timer.elapsed());
         }
     }
 }

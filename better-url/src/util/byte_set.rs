@@ -74,6 +74,16 @@ impl ByteSet {
         self
     }
 
+    /// Invert the set.
+    pub const fn invert(mut self) -> Self {
+        let mut i = 0;
+        while i < 256 {
+            self.0[i] = !self.0[i];
+            i += 1;
+        }
+        self
+    }
+
 
 
     /// Add all non-ASCII bytes.
@@ -108,7 +118,7 @@ impl Default for ByteSet {
 /** [`FORBIDDEN_HOST_INPUT`] plus [`C0`] and `%`.                                                                             **/ pub const FORBIDDEN_DOMAIN_SEGMENTS_INPUT: ByteSet = FORBIDDEN_HOST_INPUT.merge(C0.to_byte_set().remove_non_ascii()).add(b'%');
 /** [the forbidden domain code point set](https://url.spec.whatwg.org/#application-x-www-form-urlencoded-percent-encode-set). **/ pub const FORBIDDEN_DOMAIN_HOST_INPUT    : ByteSet = FORBIDDEN_DOMAIN_SEGMENTS_INPUT;
 
-/** [`FORBIDDEN_HOST_INPUT`] with non-ASCII.            **/ pub const FORBIDDEN_HOST_LITERAL           : ByteSet = FORBIDDEN_HOST_INPUT           .add_non_ascii();
-/** [`FORBIDDEN_DOMAIN_SEGMENT_INPUT`] with non-ASCII.  **/ pub const FORBIDDEN_DOMAIN_SEGMENT_LITERAL : ByteSet = FORBIDDEN_DOMAIN_SEGMENT_INPUT .add_non_ascii();
-/** [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] with non-ASCII. **/ pub const FORBIDDEN_DOMAIN_SEGMENTS_LITERAL: ByteSet = FORBIDDEN_DOMAIN_SEGMENTS_INPUT.add_non_ascii();
-/** [`FORBIDDEN_DOMAIN_HOST_INPUT`] with non-ASCII.     **/ pub const FORBIDDEN_DOMAIN_HOST_LITERAL    : ByteSet = FORBIDDEN_DOMAIN_HOST_INPUT    .add_non_ascii();
+/** [`FORBIDDEN_HOST_INPUT`] with non-ASCII.            **/ pub const FORBIDDEN_HOST_LITERAL           : ByteSet = FORBIDDEN_HOST_INPUT           .add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+/** [`FORBIDDEN_DOMAIN_SEGMENT_INPUT`] with non-ASCII.  **/ pub const FORBIDDEN_DOMAIN_SEGMENT_LITERAL : ByteSet = FORBIDDEN_DOMAIN_SEGMENT_INPUT .add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+/** [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] with non-ASCII. **/ pub const FORBIDDEN_DOMAIN_SEGMENTS_LITERAL: ByteSet = FORBIDDEN_DOMAIN_SEGMENTS_INPUT.add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+/** [`FORBIDDEN_DOMAIN_HOST_INPUT`] with non-ASCII.     **/ pub const FORBIDDEN_DOMAIN_HOST_LITERAL    : ByteSet = FORBIDDEN_DOMAIN_HOST_INPUT    .add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");

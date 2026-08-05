@@ -43,7 +43,6 @@ pub struct NonFqdnCantEndInEmpty;
 pub enum SetDomainError {
     /** [`InvalidDomainSegments`]. **/ #[error(transparent)] InvalidDomainSegments(#[from] InvalidDomainSegments),
     /** [`TooLong`].               **/ #[error(transparent)] TooLong              (#[from] TooLong              ),
-    /** [`SegmentNotFound`].       **/ #[error(transparent)] SegmentNotFound      (#[from] SegmentNotFound      ),
     /** [`InsertNotFound`].        **/ #[error(transparent)] InsertNotFound       (#[from] InsertNotFound       ),
     /** [`RangeNotFound`].         **/ #[error(transparent)] RangeNotFound        (#[from] RangeNotFound        ),
     /** [`CantEndInANumber`].      **/ #[error(transparent)] CantEndInANumber     (#[from] CantEndInANumber     ),

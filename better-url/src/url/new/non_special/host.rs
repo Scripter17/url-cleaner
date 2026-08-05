@@ -5,7 +5,7 @@ use crate::prelude::*;
 impl BetterUrl {
     /// `non_special://...`
     pub(super) fn new_ns_host(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
-        let (auth, pqf) = match rest.memchr3(b'/', b'?', b'#') {
+        let (auth, pqf) = match rest.memchrn(*b"/?#") {
             Some(i) => unsafe {(rest.get_unchecked(..i), rest.get_unchecked(i..))},
             None    =>         (rest                   , ""                      ),
         };

@@ -7,7 +7,7 @@ impl BetterUrl {
     pub(super) fn new_special_not_file(scheme: Scheme<'_>, mut rest: &str) -> Result<Self, InvalidUrl> {
         rest = rest.trim_start_matches(['/', '\\']);
 
-        let ((userinfo, host, port), (path, query, fragment)) = match rest.find(['/', '\\', '?', '#']) {
+        let ((userinfo, host, port), (path, query, fragment)) = match rest.memchrn(*b"/?#\\") {
             Some(i) => unsafe {(split_auth(rest.get_unchecked(..i)), split_pqf(rest.get_unchecked(i..)))},
             None    =>         (split_auth(rest                   ), ("/", None, None                 )) ,
         };

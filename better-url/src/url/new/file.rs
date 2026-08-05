@@ -12,7 +12,7 @@ impl BetterUrl {
                 match x {
                     [b'a'..=b'z' | b'A'..=b'Z', b':' | b'|'                                ] => ("", rest),
                     [b'a'..=b'z' | b'A'..=b'Z', b':' | b'|', b'/' | b'\\' | b'?' | b'#', ..] => ("", rest),
-                    x => rest.split_at(x.iter().position(|&b| b == b'/' || b == b'\\' || b == b'?' || b == b'#').unwrap_or(x.len()))
+                    x => rest.split_at(x.memchrn(*b"/?#\\").unwrap_or(x.len()))
                 }
             },
             _ => ("", rest)

@@ -11,7 +11,7 @@ use super::*;
 /// Config for a `/clean` job.
 ///
 /// Given as JSON text in either the `config` query parameter XOR the `X-Config` header.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct JobConfig {
     /// The username to use.
@@ -78,6 +78,30 @@ pub struct JobConfig {
     #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")]
     pub cache_delay: bool,
+}
+
+#[allow(clippy::derivable_impls, reason = "Can't be derived with http/cache feature.")]
+impl Default for JobConfig {
+    fn default() -> Self {
+        Self {
+            username: None,
+            password: None,
+            context: Default::default(),
+            profile: None,
+            params_diff: Default::default(),
+            brief_unchanged: false,
+            brief_error: false,
+            unthread: false,
+            #[cfg(feature = "http")]
+            http: true,
+            #[cfg(feature = "cache")]
+            read_cache: true,
+            #[cfg(feature = "cache")]
+            write_cache: true,
+            #[cfg(feature = "cache")]
+            cache_delay: false,
+        }
+    }
 }
 
 /// The error from failing to get a [`JobConfig`].

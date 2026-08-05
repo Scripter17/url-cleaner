@@ -73,8 +73,8 @@ pub fn decode_domain_segment_punycode(value: &str) -> Result<String, InvalidDoma
 /// 9 is handled by [`BidiDetail`].
 pub fn mostly_validate_domain_segment_unicode(value: &str) -> bool {
     NFC.is_normalized(value)
-        && !matches!(value.as_bytes(), [b'x', b'n', b'-', b'-', ..])
-        && value.memchr(b'.').is_none()
+        && !value.starts_with("xn--")
+        && !value.contains('.')
         && !value.starts_with(mark)
         && !value.contains(idna_invalid)
         && validate_domain_segment_joiners(value)

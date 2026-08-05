@@ -97,7 +97,7 @@ impl DomainHost<'_> {
         Ok(true)
     }
 
-    /// Set or insert the `index`th labels segment.
+    /// Set, insert, or remove the `index`th labels segment.
     /// # Errors
     /// See [`Self`]'s documentation.
     /// # Examples
@@ -128,7 +128,7 @@ impl DomainHost<'_> {
             (Err(0  ), Some(new)) if self.len()             + new.len() + 1 > u32::MAX as usize => Err(TooLong)?,
 
             (Err(1..), Some(_)) => Err(InsertNotFound )?,
-            (Err(_  ), None   ) => Err(SegmentNotFound)?,
+            (Err(_  ), None   ) => return Ok(false),
 
             (Ok(old), Some(new)) => match self.host.split_around_substr(old.as_str()) {
                 ("", "" ) if new.is_empty()         => Err(CantBeEmpty)?,

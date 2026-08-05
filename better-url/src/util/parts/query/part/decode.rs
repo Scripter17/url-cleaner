@@ -2,7 +2,7 @@
 
 use crate::prelude::*;
 
-// Note: The memchr2 calls are in each of the top level functions because apparently [`cow_bytes_to_str_unchecked`] is pretty expensive.
+// Note: The memchrn calls are in each of the top level functions because apparently [`cow_bytes_to_str_unchecked`] is pretty expensive.
 
 /// Try to decode a [`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) encoded string.
 /// # Errors
@@ -11,28 +11,22 @@ use crate::prelude::*;
 pub fn try_decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), (std::str::Utf8Error, Cow<'a, [u8]>)> {
     let value = value.into();
 
-    if value.memchr2(b'%', b'+').is_none() {
+    if value.memchrn(*b"%+").is_none() {
         return Ok((false, value));
     }
 
-    Ok(match _decode_query_part(value) {
-        (true , value) => (true , try_cow_bytes_to_str(value)?),
-        (false, value) => (false, unsafe {cow_bytes_to_str_unchecked(value)}),
-    })
+    Ok((true, try_cow_bytes_to_str(_decode_query_part(value))?))
 }
 
 /// Lossily decode a [`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) encoded string.
 pub fn lossy_decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let value = value.into();
 
-    if value.memchr2(b'%', b'+').is_none() {
+    if value.memchrn(*b"%+").is_none() {
         return (false, value);
     }
 
-    match _decode_query_part(value) {
-        (true , value) => (true , lossy_cow_bytes_to_str(value)),
-        (false, value) => (false, unsafe {cow_bytes_to_str_unchecked(value)}),
-    }
+    (true, lossy_cow_bytes_to_str(_decode_query_part(value)))
 }
 
 /// [`decode_query_part_bytes`] but accepting a string.
@@ -49,11 +43,11 @@ pub fn lossy_decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Co
 pub fn decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, [u8]>) {
     let value = value.into();
 
-    if value.memchr2(b'%', b'+').is_none() {
+    if value.memchrn(*b"%+").is_none() {
         return (false, cow_str_to_bytes(value));
     }
 
-    _decode_query_part(value)
+    (true, _decode_query_part(value))
 }
 
 /// Decode [`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) encoded bytes to bytes.
@@ -70,20 +64,20 @@ pub fn decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, 
 pub fn decode_query_part_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, [u8]>) {
     let value = value.into();
 
-    if value.memchr2(b'%', b'+').is_none() {
+    if value.memchrn(*b"%+").is_none() {
         return (false, value);
     }
 
-    _decode_query_part_bytes(value)
+    (true, _decode_query_part_bytes(value))
 }
 
 /// Decode a query part str without a fast path.
-fn _decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, [u8]>) {
+fn _decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> Cow<'a, [u8]> {
     _decode_query_part_bytes(cow_str_to_bytes(value))
 }
 
 /// Decode a query part bytes without a fast path.
-fn _decode_query_part_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, [u8]>) {
+fn _decode_query_part_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Cow<'a, [u8]> {
     let mut value = value.into();
 
     let x = value.to_mut();
@@ -97,7 +91,7 @@ fn _decode_query_part_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<
                 [b'%', h, l, ..] if let Some(b) = decode_hex_byte(h, l) => {
                     *x.get_unchecked_mut(w) = b;
                     r += 3;
-                    w += 1
+                    w += 1;
                 },
                 [b'+', ..] => {*x.get_unchecked_mut(w) = b' '; r += 1; w += 1;},
                 [b   , ..] => {*x.get_unchecked_mut(w) = b   ; r += 1; w += 1;},
@@ -108,5 +102,5 @@ fn _decode_query_part_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<
         x.set_len(w);
     }
 
-    (true, value)
+    value
 }

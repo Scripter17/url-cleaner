@@ -18,20 +18,20 @@ use crate::prelude::*;
 pub fn unescape_html<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<Cow<'a, str>, UnescapeHtmlError> {
     let value = value.into();
 
-    if memchr::memchr(b'&', value.as_bytes()).is_none() {
+    if value.memchr(b'&').is_none() {
         return Ok(value);
     }
 
     let mut ret = String::with_capacity(value.len());
     let mut rest = &*value;
 
-    while let Some(i) = memchr::memchr(b'&', rest.as_bytes()) {
+    while let Some(i) = rest.memchr(b'&') {
         let a = unsafe {rest.get_unchecked(..i)};
         let b = unsafe {rest.get_unchecked(i+1..)};
 
         ret.push_str(a);
 
-        let j = memchr::memchr(b';', b.as_bytes()).ok_or(SyntaxError)?;
+        let j = b.memchr(b';').ok_or(SyntaxError)?;
 
         let c = unsafe {b.get_unchecked(..j)};
         let d = unsafe {b.get_unchecked(j+1..)};

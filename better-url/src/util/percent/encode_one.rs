@@ -19,7 +19,8 @@ pub unsafe fn percent_encode_one<'a, T: Into<Cow<'a, str>>>(value: T, byte: u8) 
 
     let value = value.into();
 
-    let to_reserve = memchr::memchr_iter(byte, value.as_bytes()).count() * 2;
+    // TODO: Make faster.
+    let to_reserve = value.bytes().filter(|&b| b == byte).count() * 2;
 
     match to_reserve {
         0 => (false, value),
@@ -40,7 +41,8 @@ pub unsafe fn percent_encode_one<'a, T: Into<Cow<'a, str>>>(value: T, byte: u8) 
 pub fn percent_encode_one_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T, byte: u8) -> (bool, Cow<'a, [u8]>) {
     let value = value.into();
 
-    let to_reserve = memchr::memchr_iter(byte, &value).count() * 2;
+    // TODO: Make faster.
+    let to_reserve = value.iter().filter(|&&b| b == byte).count() * 2;
 
     match to_reserve {
         0 => (false, value),

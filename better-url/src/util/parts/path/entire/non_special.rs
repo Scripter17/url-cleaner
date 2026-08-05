@@ -107,7 +107,7 @@ pub fn resolve_non_special_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<
     debug_assert_eq!(value.as_bytes()[start], b'/');
     debug_assert!(after == value.len() || value.as_bytes()[after] == b'/');
 
-    if unsafe {value.get_unchecked(start .. after)}.memchr2(b'.', b'%').is_none() {
+    if unsafe {value.get_unchecked(start .. after)}.memchrn(*b".%").is_none() {
         return (false, value);
     }
 

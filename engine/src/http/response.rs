@@ -66,7 +66,7 @@ pub enum HttpResponseHandler {
     /// If the suffix is found within [`Self::ExtractFromBody::limit`], returns the error [`HttpResponseHandlerError::SuffixNotFoundWithinLimit`].
     ExtractFromBody {
         /// The [`BodyExtractor`]s.
-        extractors: NonEmptyList<BodyExtractor>,
+        extractors: Vec<BodyExtractor>,
         /// The max amount of bytes to read.
         ///
         /// Defaults to 8MiB.
@@ -84,6 +84,8 @@ const fn is_default_limit(x: &usize) -> bool {*x == default_limit()}
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 pub struct BodyExtractor {
     /// The prefix to look for.
+    ///
+    /// If [`None`], this variant is ignored.
     pub prefix      : StringSource,
     /// The suffix to look for.
     ///
@@ -155,9 +157,11 @@ impl HttpResponseHandler {
             Self::Url => Some(response.url().to_string().into()),
 
             Self::ExtractFromBody {extractors, limit} => {
-                let prefixes = extractors.iter().map(|x| x.prefix.get_some(task_state, args)).collect::<Result<Result<Vec<_>, _>, _>>()??;
+                let prefixes = extractors.iter().filter_map(|x| x.prefix.get(task_state, args).transpose()).collect::<Result<Vec<_>, _>>()?;
 
-                let mut buf   = Vec::with_capacity(1024);
+                let max_prefix_len = prefixes.iter().map(|x| x.len()).max().ok_or(HttpResponseHandlerError::NoSomeExtractors)?;
+
+                let mut buf   = Vec::with_capacity(1024.max(max_prefix_len));
                 let mut bytes = bytes::Bytes::new().into_iter();
                 let mut read  = 0;
 

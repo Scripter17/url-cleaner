@@ -20,13 +20,7 @@ impl Args {
         cmd.args(["build", "-r", "--config", "profile.release.strip=false", "--config", "profile.release.debug=2"]);
 
         for bin in self.bins {
-            cmd.args(["--bin", match bin {
-                Bin::Cli        => "url-cleaner",
-                Bin::Site       => "url-cleaner-site",
-                Bin::SiteClient => "url-cleaner-site-client",
-                Bin::Discord    => "url-cleaner-discord",
-                Bin::MyUrlTest  => "my-url-test",
-            }]);
+            cmd.args(["--bin", bin.file_name()]);
         }
 
         assert_eq!(cmd.spawn().unwrap().wait().unwrap().code(), Some(0));

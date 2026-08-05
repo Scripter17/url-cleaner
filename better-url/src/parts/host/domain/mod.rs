@@ -18,15 +18,58 @@ mod normal;
 
 /// A domain host.
 ///
-/// # Segments
+/// # Setters
 ///
-/// A domain host segments is a `.` delimited list of substrings of [`Self::as_str`] with any single trailing `.` removed.
+/// Please note that setters work by taking the domain as a list of segments, extracting a sublist, modifying that sublist, and then replacing the original sublist with the modified sublist.
 ///
-/// For example, `example.com` and `example.com.` both have the segments `["example", "com"]`, but `example.com..` has segments `["example", "com", ""]`.
+/// Additionally, domains without middles can have [`Self::set_middle`] insert them and domains with middles but no prefixes can have [`Self::set_prefix`] insert them.
 ///
-/// There is always at least one segment. That is, the domain host `.` has segments `[""]`. The empty domain host, were it valid, would probably also have segments `[""]`.
+/// In general this should be fine, but this does have surprising effects you need to remember:
 ///
-/// When a setter returns [`CantBeEmpty`], such as by setting `example.com.`'s labels to [`None`], it refers to making this list contain zero elements.
+/// ```
+/// use better_url::prelude::*;
+///
+/// let mut domain = DomainHost::new("example.com").unwrap();
+///
+/// domain.set_suffix(Some("co.uk")).unwrap();
+///
+/// assert_eq!(domain         , "example.co.uk");
+/// assert_eq!(domain.suffix(),         "co.uk");
+///
+/// domain.set_suffix(Some("middle.co.uk")).unwrap();
+///
+/// assert_eq!(domain         , "example.middle.co.uk");
+/// assert_eq!(domain.suffix(),                "co.uk");
+///
+/// domain.set_suffix_segment(0, Some("new-middle")).unwrap();
+///
+/// assert_eq!(domain             , "example.middle.new-middle.uk");
+/// assert_eq!(domain.suffix    (),                           "uk");
+/// assert_eq!(domain.middle_str(),           Some("new-middle")  );
+///
+/// domain.set_middle(None::<&str>).unwrap();
+///
+/// assert_eq!(domain             , "example.middle.uk");
+/// assert_eq!(domain.middle_str(),    Some("middle")  );
+///
+/// domain.set_prefix_segment(1, None::<&str>).unwrap();
+///
+/// assert_eq!(domain, "example.middle.uk");
+///
+/// domain.set_prefix_segment(1000, None::<&str>).unwrap();
+///
+/// assert_eq!(domain, "example.middle.uk");
+///
+/// domain.set_middle(Some("co")).unwrap();
+///
+/// assert_eq!(domain, "example.co.uk");
+/// assert_eq!(domain.prefix(), None);
+///
+/// domain.set_prefix(Some("www")).unwrap();
+///
+/// assert_eq!(domain             ,      "www.example.co.uk");
+/// assert_eq!(domain.prefix_str(), Some("www")             );
+/// ```
 ///
 /// # Parts
 ///

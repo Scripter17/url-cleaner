@@ -55,8 +55,8 @@ pub enum Bin {
     SiteClient,
     /// Discord
     Discord,
-    /// My URL Test.
-    MyUrlTest,
+    /// URLC Tool.
+    UrlcTool,
 }
 
 impl Bin {
@@ -67,7 +67,7 @@ impl Bin {
             Self::Site       => "url-cleaner-site",
             Self::SiteClient => "url-cleaner-site-client",
             Self::Discord    => "url-cleaner-discord",
-            Self::MyUrlTest  => "my-url-test",
+            Self::UrlcTool   => "urlc-tool",
         }
     }
 
@@ -78,7 +78,7 @@ impl Bin {
             Self::Site       => "target/release/url-cleaner-site",
             Self::SiteClient => "target/release/url-cleaner-site-client",
             Self::Discord    => "target/release/url-cleaner-discord",
-            Self::MyUrlTest  => "target/release/my-url-test",
+            Self::UrlcTool   => "target/release/urlc-tool",
         }
     }
 
@@ -89,7 +89,7 @@ impl Bin {
             Self::Site       => "target/debug/url-cleaner-site",
             Self::SiteClient => "target/debug/url-cleaner-site-client",
             Self::Discord    => "target/debug/url-cleaner-discord",
-            Self::MyUrlTest  => "target/debug/my-url-test",
+            Self::UrlcTool   => "target/debug/urlc-tool",
         }
     }
 }

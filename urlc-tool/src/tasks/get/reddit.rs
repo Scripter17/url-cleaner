@@ -38,6 +38,7 @@ impl Args {
             std::io::stderr().flush().unwrap();
 
             url.set_path_segment(1, Some(&*host)).unwrap();
+            url.set_query_param("after", 0, None).unwrap();
 
             for page in 1..=self.pages {
                 eprint!(" {page}");
@@ -48,8 +49,8 @@ impl Args {
                 let data = loop {
                     match client.get(url.as_str()).send() {
                         Ok(res) if res.status() == 200 => break res.bytes().unwrap(),
-                        _ => {
-                            eprint!(" ...");
+                        e => {
+                            eprint!(" ... {e:?}");
                             std::io::stderr().flush().unwrap();
                             std::thread::sleep(sleep);
                             sleep *= 2

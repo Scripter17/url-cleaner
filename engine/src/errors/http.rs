@@ -55,6 +55,10 @@ pub enum HttpResponseHandlerError {
     /** Returned when a 3xx status code is required but got [`Self::Required3xx::0`]. **/ #[error("A 3xx status code was required but got {0}.")] Required3xx(StatusCode),
     /** Returned when a 4xx status code is required but got [`Self::Required4xx::0`]. **/ #[error("A 4xx status code was required but got {0}.")] Required4xx(StatusCode),
     /** Returned when a 5xx status code is required but got [`Self::Required5xx::0`]. **/ #[error("A 5xx status code was required but got {0}.")] Required5xx(StatusCode),
+
+    /// Returned when [`HttpResponseHandler::ExtractFromBody::extractors`] has zero [`BodyExtractor::prefix`] return [`Some`].
+    #[error("HttpResponseHandler::ExtractFromBody::extractors had zero BodyExtractor::prefix return Some.")]
+    NoSomeExtractors,
 }
 
 impl From<TryElseError<Self>> for HttpResponseHandlerError {fn from(value: TryElseError<Self>) -> Self {Box::new(value).into()}}

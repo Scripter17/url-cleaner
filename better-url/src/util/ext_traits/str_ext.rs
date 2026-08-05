@@ -19,13 +19,9 @@ pub(crate) trait StrExt {
     /// [`str::trim_suffix`] but stable.
     fn my_trim_suffix(&self, suffix: &str) -> &str;
 
-    /** [`[u8]::memchr`]. **/ fn memchr  (&self, b : u8                ) -> Option<usize>;
-    /** [`[u8]::memchr2`]. **/ fn memchr2 (&self, b1: u8, b2: u8        ) -> Option<usize>;
-    /** [`[u8]::memchr3`]. **/ fn memchr3 (&self, b1: u8, b2: u8, b3: u8) -> Option<usize>;
-
-    /** [`[u8]::memrchr`]. **/ fn memrchr (&self, b : u8                ) -> Option<usize>;
-    // /** [`[u8]::memrchr2`]. **/ fn memrchr2(&self, b1: u8, b2: u8        ) -> Option<usize>;
-    // /** [`[u8]::memrchr3`]. **/ fn memrchr3(&self, b1: u8, b2: u8, b3: u8) -> Option<usize>;
+    /** [`[u8]::memchr`].  **/ fn memchr                 (&self, b :  u8    ) -> Option<usize>;
+    /** [`[u8]::memrchr`]. **/ fn memrchr                (&self, b :  u8    ) -> Option<usize>;
+    /** [`[u8]::memchrn`]. **/ fn memchrn<const N: usize>(&self, bs: [u8; N]) -> Option<usize>;
 }
 
 impl StrExt for str {
@@ -54,11 +50,9 @@ impl StrExt for str {
         self.strip_suffix(suffix).unwrap_or(self)
     }
 
-    fn memchr  (&self, b : u8                ) -> Option<usize> {self.as_bytes().memchr  (b         )}
-    fn memchr2 (&self, b1: u8, b2: u8        ) -> Option<usize> {self.as_bytes().memchr2 (b1, b2    )}
-    fn memchr3 (&self, b1: u8, b2: u8, b3: u8) -> Option<usize> {self.as_bytes().memchr3 (b1, b2, b3)}
+    fn memchr (&self, b : u8                ) -> Option<usize> {self.as_bytes().memchr  (b         )}
 
-    fn memrchr (&self, b : u8                ) -> Option<usize> {self.as_bytes().memrchr (b         )}
-    // fn memrchr2(&self, b1: u8, b2: u8        ) -> Option<usize> {self.as_bytes().memrchr2(b1, b2    )}
-    // fn memrchr3(&self, b1: u8, b2: u8, b3: u8) -> Option<usize> {self.as_bytes().memrchr3(b1, b2, b3)}
+    fn memrchr(&self, b : u8                ) -> Option<usize> {self.as_bytes().memrchr (b         )}
+
+    fn memchrn<const N: usize>(&self, bs: [u8; N]) -> Option<usize> {self.as_bytes().memchrn(bs)}
 }

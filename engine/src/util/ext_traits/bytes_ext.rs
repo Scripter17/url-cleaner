@@ -8,9 +8,6 @@ pub(crate) trait BytesExt {
     /// The index of the first occurence of `b`.
     fn memchr(&self, b: u8) -> Option<usize>;
 
-    /// The index of the last occurence of `b`.
-    fn memrchr(&self, b: u8) -> Option<usize>;
-
     /// The index of the first occurence of any byte in `bs`. 
     fn memchrn<const N: usize>(&self, bs: [u8; N]) -> Option<usize>;
 }
@@ -20,32 +17,17 @@ impl BytesExt for [u8] {
         self.as_ptr().addr()
     }
 
-    fn memchr (&self, b: u8) -> Option<usize> {
+    fn memchr(&self, b: u8) -> Option<usize> {
         unsafe {
             let a = libc::memchr(
                 self as *const [u8] as *const libc::c_void,
-                b as i32,
-                self.len()
-            );
+                b as libc::c_int,
+                self.len(),
+            ).addr();
 
-            match a.addr() {
+            match a {
                 0 => None,
-                x => Some(x - self.as_ptr().addr())
-            }
-        }
-    }
-
-    fn memrchr(&self, b: u8) -> Option<usize> {
-        unsafe {
-            let a = libc::memrchr(
-                self as *const [u8] as *const libc::c_void,
-                b as i32,
-                self.len()
-            );
-
-            match a.addr() {
-                0 => None,
-                x => Some(x - self.as_ptr().addr())
+                x => Some(x - self.addr()),
             }
         }
     }

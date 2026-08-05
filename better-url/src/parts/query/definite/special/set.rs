@@ -11,57 +11,98 @@ impl SpecialQuery<'_> {
     ///
     /// - If found and `value` is `None`, removes it.
     ///
-    /// - If we're one short, `index` is `0..`, and `value` is `Some(_)`, appends a new segment at the end.
+    /// - If we're one short, `index` is `0..`, and `value` is [`Some`], appends a new segment at the end.
     ///
-    /// - If we're one short, `index` is `..0`, and `value` is `Some(_)`, prepends a new segment to the beginning.
+    /// - If we're one short, `index` is `..0`, and `value` is [`Some`], prepends a new segment to the beginning.
+    ///
+    /// - If not found and `value` is [`None`], does nothing.
     /// # Errors
     /// - If we're more than one short and `value` is `Some(_)`, returns the error [`InsertNotFound`].
-    ///
-    /// - If not found and `value` is `None`, returns the error [`SegmentNotFound`].
     /// # Examples
     /// ```
     /// use better_url::prelude::*;
     ///
     /// let mut query = SpecialQuery::new("a=1&b=2&a=3");
     ///
-    /// query.set("a",  0, Some(Some("4 5"))).unwrap();
-    /// assert_eq!(query, "a=4+5&b=2&a=3");
-    ///
-    /// query.set("c",  0, Some(Some("6"))).unwrap();
-    /// assert_eq!(query, "a=4+5&b=2&a=3&c=6");
-    ///
-    /// query.set("c",  0, Some(None)).unwrap();
-    /// assert_eq!(query, "a=4+5&b=2&a=3&c");
-    ///
-    /// query.set("c",  0, None).unwrap();
-    /// assert_eq!(query, "a=4+5&b=2&a=3");
-    ///
-    /// query.set("c", -1, Some(None)).unwrap();
-    /// assert_eq!(query, "c&a=4+5&b=2&a=3");
+    /// assert!( query.set("a",  1, None           ).unwrap()); assert_eq!(query,     "a=1&b=2"      );
+    /// assert!(!query.set("a",  1, None           ).unwrap()); assert_eq!(query,     "a=1&b=2"      );
+    /// assert!( query.set("b",  1, Some(None     )).unwrap()); assert_eq!(query,     "a=1&b=2&b"    );
+    /// assert!( query.set("b",  2, Some(Some("3"))).unwrap()); assert_eq!(query,     "a=1&b=2&b&b=3");
+    /// assert!( query.set("c", -1, Some(Some("4"))).unwrap()); assert_eq!(query, "c=4&a=1&b=2&b&b=3");
+    /// assert!( query.set("c", -1, Some(None     )).unwrap()); assert_eq!(query,   "c&a=1&b=2&b&b=3");
+    /// assert!( query.set("c", -1, None           ).unwrap()); assert_eq!(query,     "a=1&b=2&b&b=3");
     /// ```
     pub fn set(&mut self, name: &str, index: isize, value: Option<Option<&str>>) -> Result<bool, SetQueryError> {
-        let temp = self.find_iter(name).try_neg_nth(index);
+        Ok(match value {
+            Some(Some(value)) => {
+                let temp = self.find_iter(name).try_neg_nth(index);
 
-        match value.map(|value| SpecialQuerySegment::from_pair(name, value)) {
-            Some(new) => match temp {
-                Ok(old) if old == new => return Ok(false),
-                Ok(old) => self.0.replace_substr(old.as_str(), new.as_str()),
-                Err(0) => match index {
-                    0.. => self.0.extend     (   ["&", new.as_str()]),
-                    ..0 => self.0.insert_with(0, [new.as_str(), "&"]),
-                },
-                Err(_) => Err(InsertNotFound)?
+                match temp {
+                    Ok(old) => {
+                        let (_, value) = encode_query_part(value);
+
+                        match old.raw_value() {
+                            Some(old_value) => self.0.replace_substr(old_value                                     ,       &value ),
+                            None            => self.0.insert_with   (old.as_str().end_addr() - self.as_str().addr(), ["=", &value]),
+                        }
+                    },
+                    Err(0) => {
+                        let (_, name ) = encode_query_part(name );
+                        let (_, value) = encode_query_part(value);
+
+                        match index {
+                            0.. => self.0.extend     (   ["&", &name, "=", &value     ]),
+                            ..0 => self.0.insert_with(0, [     &name, "=", &value, "&"]),
+                        }
+                    },
+                    Err(_) => Err(InsertNotFound)?
+                }
+
+                true
+            },
+            Some(None) => {
+                let temp = self.find_iter(name).try_neg_nth(index);
+
+                match temp {
+                    Ok(old) => match old.raw_value() {
+                        Some(x) => {
+                            self.0.replace_range(x.addr() - 1 - self.0.addr() .. x.end_addr() - self.0.addr(), "");
+
+                            true
+                        },
+                        None => false
+                    },
+                    Err(0) => {
+                        let (_, name) = encode_query_part(name);
+
+                        match index {
+                            0.. => self.0.extend     (   ["&", &name]),
+                            ..0 => self.0.insert_with(0, [&name, "&"]),
+                        }
+
+                        true
+                    },
+                    Err(_) => Err(InsertNotFound)?
+                }
             },
             None => {
-                let Range {start, end} = self.as_str().my_substr_range(temp.map_err(|_| SegmentNotFound)?.as_str());
-                match (start == 0, end == self.len()) {
-                    (true , true ) => Err(CantBeNone)?,
-                    (false, _    ) => self.0.replace_range(start - 1 ..  end, ""),
-                    (true , false) => self.0.replace_range(start     ..= end, ""),
+                let temp = self.find(name, index);
+
+                match temp {
+                    Some(temp) => {
+                        let Range {start, end} = self.as_str().my_substr_range(temp.as_str());
+
+                        match (start == 0, end == self.len()) {
+                            (true , true ) => Err(CantBeNone)?,
+                            (false, _    ) => self.0.replace_range(start - 1 ..  end, ""),
+                            (true , false) => self.0.replace_range(start     ..= end, ""),
+                        }
+
+                        true
+                    },
+                    None => false
                 }
             }
-        }
-
-        Ok(true)
+        })
     }
 }

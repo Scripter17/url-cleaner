@@ -21,6 +21,10 @@ mod remove;
 ///
 /// assert_eq!(url.as_str(), "non-special://example.com?empty#path");
 ///
+/// assert_eq!(url.segmented_path().unwrap(), "");
+///
+/// assert_eq!(url.segmented_path().unwrap().segments(), None);
+///
 /// assert_eq!(url.segmented_path().unwrap().iter().count(), 0);
 /// ```
 #[derive(Debug, Clone)]

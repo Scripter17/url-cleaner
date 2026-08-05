@@ -34,6 +34,8 @@ pub enum StringSourceError {
     /** [`NotInFunction`].               **/                           #[error(transparent)] NotInFunction              (#[from] NotInFunction                ),
     /** [`FunctionArgFunctionNotFound`]. **/                           #[error(transparent)] FunctionArgFunctionNotFound(#[from] FunctionArgFunctionNotFound  ),
 
+    /** [`std::str::Utf8Error`]. **/ #[error(transparent)] Utf8Error(#[from] std::str::Utf8Error),
+
     /** [`ExternError`]. **/ #[error(transparent)] Extern(#[from] ExternError),
 }
 

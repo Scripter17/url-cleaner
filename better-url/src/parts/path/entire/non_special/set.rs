@@ -65,12 +65,10 @@ impl NonSpecialPath<'_> {
     }
 
     /// Set, insert, or remove the `index`th segment.
+    ///
+    /// If `value` is [`None`] and `index` is out of bounds, does nothing.
     /// # Errors
     /// If `value` is [`Some`] and `index` is more than 1 out of bounds, returns the error [`InsertNotFound`].
-    ///
-    /// If `value` is [`None`] and `index` is out of bounds, returns the error [`SegmentNotFound`].
-    ///
-    /// If `value` is [`None`] and `index` is the only segment, returns the error [`CantBeNone`].
     /// # Examples
     /// ```
     /// use better_url::prelude::*;
@@ -101,21 +99,22 @@ impl NonSpecialPath<'_> {
 
                 (Err(_), _) => Err(InsertNotFound)?,
             },
-            None => {
-                let Range {start, end} = self.0.my_substr_range(self.iter_strs().neg_nth(index).ok_or(SegmentNotFound)?);
+            None => match self.iter_strs().neg_nth(index) {
+                Some(temp) => {
+                    let range = self.0.my_substr_range(temp);
 
-                self.0.replace_range(start - 1 .. end, "");
+                    self.0.replace_range(range.start - 1 .. range.end, "");
 
-                true
+                    true
+                },
+                None => false
             }
         })
     }
 
     /// Set the range of segments.
     /// # Errors
-    /// If the call to [`Self::range`] returns [`None`], returns the error [`RangeNotFound`].
-    ///
-    /// If the iterator is empty and all segments are set to be replaced, returns the error [`CantBeEmpty`].
+    /// If the call to [`Self::range_str`] returns [`None`], returns the error [`RangeNotFound`].
     /// # Examples
     /// ```
     /// use better_url::prelude::*;

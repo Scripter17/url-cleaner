@@ -26,7 +26,7 @@ tokio-stream = "0.1.19"
 async-stream = "0.3.6"
 
 # Other.
-clap         = { version = "4.6.4", features = ["derive"] }
+clap         = { version = "4.6.5", features = ["derive"] }
 serde        = { version = "1.0.229", features = ["derive"] }
 const-str    = { version = "1.1.0", features = ["proc"] }
 bytes        = "1.12.1"

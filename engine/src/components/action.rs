@@ -696,9 +696,9 @@ impl Action {
                 }
             },
 
-            Self::RemovePathSegment(index) => {task_state.url.remove_path_segment(*index)?; true},
-            Self::PopPath                  => {task_state.url.pop_path           (      )?; true},
-            Self::PopPathIfEmpty           =>  task_state.url.pop_path_if_empty  (      )?       ,
+            Self::RemovePathSegment(index) => task_state.url.remove_path_segment(*index)?,
+            Self::PopPath                  => task_state.url.pop_path           (      )?,
+            Self::PopPathIfEmpty           => task_state.url.pop_path_if_empty  (      )?,
 
             Self::SetPathSegment {index, value} => task_state.url.set_path_segment(*index, get!(?&!value))?,
             Self::ModifyPathSegment {index, modification} => {

@@ -21,7 +21,7 @@ impl BetterUrl {
         let b = unsafe {self.as_str().get_unchecked(self.details.scheme_mark as usize .. self.details.path_start as usize)};
 
         if !a && new.is_empty() {
-            new = unsafe {NonSpecialPath::new_unchecked("/")}.into();
+            new = unsafe {Path::new_non_special_unchecked("/")};
         }
 
         let old_range = self.path_range();
@@ -143,14 +143,15 @@ impl BetterUrl {
     /// If the call to [`SegmentedPath::pop`] returns an error, that error is returned.
     ///
     /// If the call to [`Self::set_path`] returns an error, that error is returned.
-    pub fn pop_path(&mut self) -> Result<(), SetPathError> {
+    pub fn pop_path(&mut self) -> Result<bool, SetPathError> {
         let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
 
-        path.pop()?;
-
-        self.set_path(path.into_owned())?;
-
-        Ok(())
+        if path.pop()? {
+            self.set_path(path.into_owned())?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     /// [`SegmentedPath::pop_if_empty`].
@@ -178,13 +179,14 @@ impl BetterUrl {
     /// If the call to [`SegmentedPath::remove`] returns an error, that error is returned.
     ///
     /// If the call to [`Self::set_path`] returns an error, that error is returned.
-    pub fn remove_path_segment(&mut self, index: isize) -> Result<(), SetPathError> {
+    pub fn remove_path_segment(&mut self, index: isize) -> Result<bool, SetPathError> {
         let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
 
-        path.remove(index)?;
-
-        self.set_path(path.into_owned())?;
-
-        Ok(())
+        if path.remove(index)? {
+            self.set_path(path.into_owned())?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 }
