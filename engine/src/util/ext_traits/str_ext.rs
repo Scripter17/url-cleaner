@@ -37,20 +37,20 @@ impl StrExt for str {
     fn memchr(&self, b: u8) -> Option<usize> {self.as_bytes().memchr(b)}
 
     fn find_start (&self, substr: &str) -> Option<usize> {
-        #[cfg(target_os = "windows")]
-        self.find(substr)
-        #[cfg(not(target_os = "windows"))]
-        unsafe {
-            let a = libc::memmem(
-                self as *const str as *const libc::c_void,
-                self.len(),
-                substr as *const str as *const libc::c_void,
-                substr.len(),
-            ).addr();
+        cfg_select! {
+            target_os = "windows" => memchr::memmem::find(self.as_bytes(), substr.as_bytes()),
+            _ => unsafe {
+                let a = libc::memmem(
+                    self as *const str as *const libc::c_void,
+                    self.len(),
+                    substr as *const str as *const libc::c_void,
+                    substr.len(),
+                ).addr();
 
-            match a {
-                0 => None,
-                x => Some(x - self.addr())
+                match a {
+                    0 => None,
+                    x => Some(x - self.addr())
+                }
             }
         }
     }
