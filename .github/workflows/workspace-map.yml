@@ -1,4 +1,4 @@
-name: Workspace All
+name: Workspace Mac
 
 on: [push, pull_request]
 
