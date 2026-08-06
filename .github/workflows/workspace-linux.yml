@@ -40,3 +40,27 @@ jobs:
       run: |
         set -euo pipefail
         diff <(cargo run --bin urlc-tool -- cleaner doc) bundled_cleaner.md
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: taiki-e/install-action@cargo-hack
+    - name: Test
+      run: cargo hack test --feature-powerset --clean-per-run
+
+  doc:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: taiki-e/install-action@cargo-hack
+    - name: Doc
+      run: RUSTDOCFLAGS="-Dwarnings" cargo hack doc --feature-powerset --no-deps --clean-per-run --document-private-items
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: taiki-e/install-action@cargo-hack
+    - name: Clippy
+      run: cargo hack clippy --feature-powerset --clean-per-run -- -D warnings
