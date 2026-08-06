@@ -1,42 +1,24 @@
 //! Util.
 
-pub mod site;
+mod site;
+mod fs;
+mod process;
 
-/// Prelude module for importing everything here better.
-pub mod prelude {
-    pub use super::super::prelude::*;
+pub use site::*;
+pub use fs::*;
+pub use process::*;
 
-    pub use super::site::*;
+use crate::prelude::*;
 
-    pub use super::{TerminateOnDrop, Bin};
-
-    pub use super::{new_file, is_default};
-}
-
-use prelude::*;
-
-/// SIGTERMs the [`std::process::Child`] on [`Drop`].
-#[derive(Debug)]
-pub struct TerminateOnDrop(pub std::process::Child);
-
-impl Drop for TerminateOnDrop {
-    fn drop(&mut self) {
-        if self.0.try_wait().unwrap().is_none() {
-            unsafe {
-                libc::kill(self.0.id() as _, libc::SIGTERM);
-            }
-            assert_eq!(self.0.wait().unwrap().code(), None);
-        }
+/// Format an integer.
+pub fn format_int(x: u64) -> String {
+    let mut ret = x.to_string();
+    let mut i = ret.len();
+    while i > 3 {
+        i -= 3;
+        ret.insert(i, ',');
     }
-}
-
-/// Make a new writable [`File`] and its directory if needed.
-pub fn new_file<P: AsRef<Path>>(path: P) -> File {
-    if let Some(dir) = path.as_ref().parent() {
-        std::fs::create_dir_all(dir).unwrap();
-    }
-
-    std::fs::OpenOptions::new().read(true).write(true).create(true).truncate(true).open(path).unwrap()
+    ret
 }
 
 /// Returns [`true`] if `x` is the deault value.
@@ -47,20 +29,15 @@ pub fn is_default<T: Default + PartialEq>(x: &T) -> bool {
 /// The bin to run.
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Bin {
-    /// CLI
-    Cli,
-    /// Site
-    Site,
-    /// Site Client
-    SiteClient,
-    /// Discord
-    Discord,
-    /// URLC Tool.
-    UrlcTool,
+    /** CLI.         **/ Cli       ,
+    /** Site.        **/ Site      ,
+    /** Site Client. **/ SiteClient,
+    /** Discord.     **/ Discord   ,
+    /** URLC Tool.   **/ UrlcTool  ,
 }
 
 impl Bin {
-    /// The binary's file name.
+    /// The file name.
     pub fn file_name(self) -> &'static str {
         match self {
             Self::Cli        => "url-cleaner",
@@ -71,7 +48,7 @@ impl Bin {
         }
     }
 
-    /// The path of the release binary.
+    /// The release path.
     pub fn release_path(self) -> &'static str {
         match self {
             Self::Cli        => "target/release/url-cleaner",
@@ -82,7 +59,7 @@ impl Bin {
         }
     }
 
-    /// The path of the debug binary.
+    /// The debug path.
     pub fn debug_path(self) -> &'static str {
         match self {
             Self::Cli        => "target/debug/url-cleaner",

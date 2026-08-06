@@ -33,25 +33,10 @@ pub async fn clean_ws(state: &'static State, job: Job<'static>, brief_unchanged:
             };
 
             let mut tasks = 0;
-            let mut next_start = 0;
+            let lines = better_url::util::MemchrLines {remainder: Some(&message)};
 
-            for i in memchr::memchr_iter(b'\n', &message) {
-                let line = unsafe {message.get_unchecked(next_start .. i)};
-
-                next_start = i + 1;
-
-                match line {
-                    b"" | b"\r" => continue,
-                    [line @ .., b'\r'] | line => {
-                        iss.get(tasks % iss.len()).expect("???").send(message.slice_ref(line)).expect("The in receiver to still be open.");
-                        tasks += 1;
-                    }
-                }
-            }
-
-            match unsafe {message.get_unchecked(next_start ..)} {
-                b"" | b"\r" => {},
-                [line @ .., b'\r'] | line => {
+            for line in lines {
+                if !line.is_empty() {
                     iss.get(tasks % iss.len()).expect("???").send(message.slice_ref(line)).expect("The in receiver to still be open.");
                     tasks += 1;
                 }
@@ -76,7 +61,7 @@ pub async fn clean_ws(state: &'static State, job: Job<'static>, brief_unchanged:
                     }
                 }
 
-                if buf.len() >= 2usize.pow(18) || i == tasks - 1 {
+                if buf.len() >= 2usize.pow(16) || i == tasks - 1 {
                     socket.send(buf.into()).await.expect("Sending messages to work.");
                     buf = String::new();
                 }

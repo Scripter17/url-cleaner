@@ -7,6 +7,7 @@ mod percent;
 mod ascii_set;
 mod byte_set;
 mod normalizer;
+mod memchr;
 mod macros;
 mod ext_traits;
 
@@ -17,6 +18,7 @@ pub use percent::*;
 pub use ascii_set::*;
 pub use byte_set::*;
 pub use normalizer::*;
+pub use memchr::*;
 
 pub(crate) use macros::*;
 pub(crate) use ext_traits::*;

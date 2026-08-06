@@ -1,7 +1,6 @@
 //! Site tools.
 
-use crate::prelude::*;
-use super::valgrind::*;
+use super::prelude::*;
 
 /// The tool to measure with.
 #[derive(Debug, Clone, Copy)]
@@ -17,6 +16,20 @@ impl ServerTool {
             Self::Valgrind(x) => x.get_entry(path),
         }
     }
+
+    /// The name as title.
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Valgrind(x) => x.title(),
+        }
+    }
+
+    /// The name as kebab case.
+    pub fn kebab(self) -> &'static str {
+        match self {
+            Self::Valgrind(x) => x.kebab(),
+        }
+    }
 }
 
 impl ValueEnum for ServerTool {
@@ -28,14 +41,6 @@ impl ValueEnum for ServerTool {
     }
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
-        Some(self.to_string().into())
-    }
-}
-
-impl std::fmt::Display for ServerTool {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Valgrind(tool) => write!(formatter, "{tool}"),
-        }
+        Some(self.kebab().into())
     }
 }

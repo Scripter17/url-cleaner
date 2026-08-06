@@ -1,4 +1,4 @@
-name: Workspace
+name: Workspace Linux
 
 on: [push, pull_request]
 
@@ -40,33 +40,3 @@ jobs:
       run: |
         set -euo pipefail
         diff <(cargo run --bin urlc-tool -- cleaner doc) bundled_cleaner.md
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: taiki-e/install-action@cargo-hack
-    - name: Test
-      run: |
-        set -euo pipefail
-        cargo hack test --feature-powerset --clean-per-run
-
-  doc:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: taiki-e/install-action@cargo-hack
-    - name: Doc
-      run: |
-        set -euo pipefail
-        RUSTDOCFLAGS="-Dwarnings" cargo hack doc --feature-powerset --no-deps --clean-per-run --document-private-items
-
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - uses: taiki-e/install-action@cargo-hack
-    - name: Clippy
-      run: |
-        set -euo pipefail
-        cargo hack clippy --feature-powerset --clean-per-run -- -D warnings

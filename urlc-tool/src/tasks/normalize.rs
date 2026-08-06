@@ -11,27 +11,15 @@ pub struct Args {}
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        let mut stdin = std::io::stdin().lock();
-        let mut buf = Vec::new();
-
-        while stdin.read_until(b'\n', &mut buf).unwrap() > 0 {
-            if buf.ends_with(b"\n") {
-                buf.pop();
-                if buf.ends_with(b"\r") {
-                    buf.pop();
-                }
-            }
-
-            if buf.is_empty() {
+        for line in std::io::stdin().lock().lines().map(Result::unwrap) {
+            if line.is_empty() {
                 continue;
             }
 
-            match Task::new(&*buf) {
+            match Task::new(&*line) {
                 Ok (task) => println!("{task}"),
                 Err(e   ) => println!("-{e:?}"),
             }
-
-            buf.clear();
         }
     }
 }

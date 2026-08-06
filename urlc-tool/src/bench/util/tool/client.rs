@@ -1,8 +1,6 @@
 //! Site CLIent.
 
-use crate::prelude::*;
-
-use super::*;
+use super::prelude::*;
 
 /// The tool to measure with.
 #[derive(Debug, Clone, Copy)]
@@ -21,6 +19,22 @@ impl ClientTool {
             Self::Valgrind (x) => x.get_entry(path),
         }
     }
+
+    /// The name as title.
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Hyperfine(x) => x.title(),
+            Self::Valgrind (x) => x.title(),
+        }
+    }
+
+    /// The name as kebab case.
+    pub fn kebab(self) -> &'static str {
+        match self {
+            Self::Hyperfine(x) => x.kebab(),
+            Self::Valgrind (x) => x.kebab(),
+        }
+    }
 }
 
 impl ValueEnum for ClientTool {
@@ -33,15 +47,6 @@ impl ValueEnum for ClientTool {
     }
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
-        Some(self.to_string().into())
-    }
-}
-
-impl std::fmt::Display for ClientTool {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Hyperfine(x) => write!(formatter, "{x}"),
-            Self::Valgrind (x) => write!(formatter, "{x}"),
-        }
+        Some(self.kebab().into())
     }
 }

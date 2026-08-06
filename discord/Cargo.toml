@@ -9,7 +9,7 @@ categories   = []
 license      = "AGPL-3.0-or-later"
 readme       = "README.md"
 rust-version = "1.96.1"
-publish = false
+publish      = false
 
 [dependencies]
 # URL Cleaner.

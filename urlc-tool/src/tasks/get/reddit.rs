@@ -23,9 +23,9 @@ impl Args {
     /// Do the command.
     pub fn r#do(self) {
         let client = reqwest::blocking::Client::builder().default_headers([
-		    ("user-agent".try_into().unwrap(), "Firefox".try_into().unwrap()),
-		    ("sec-gpc"   .try_into().unwrap(), "1"      .try_into().unwrap()),
-		    ("dnt"       .try_into().unwrap(), "1"      .try_into().unwrap()),
+		    ("user-agent".try_into().unwrap(), "Firefox"  .try_into().unwrap()),
+		    ("sec-gpc"   .try_into().unwrap(), "1"        .try_into().unwrap()),
+		    ("dnt"       .try_into().unwrap(), "1"        .try_into().unwrap()),
 		    ("cookie"    .try_into().unwrap(), self.cookie.try_into().unwrap()),
         ].into_iter().collect())
             .redirect(reqwest::redirect::Policy::none())

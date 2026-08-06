@@ -1,6 +1,6 @@
 //! Site.
 
-use super::prelude::*;
+use crate::prelude::*;
 
 /// Start Site, waiting for it to be ready.
 pub fn start_site(tls: bool) -> TerminateOnDrop {
@@ -41,5 +41,54 @@ pub fn await_site(child: &mut std::process::Child) {
             panic!("Site failed to start.");
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+}
+/// The protocol to use.
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum Protocol {
+    /// HTTP.
+    Http,
+    /// HTTPS.
+    Https,
+    /// WebSocket.
+    Ws,
+    /// Secure WebSocket.
+    Wss,
+}
+
+impl Protocol {
+    /// If it has TLS.
+    pub fn is_tls(self) -> bool {
+        matches!(self, Self::Https | Self::Wss)
+    }
+
+    /// The endpoint.
+    pub fn endpoint(self) -> &'static str {
+        match self {
+            Self::Http  => "http://127.0.0.1:9148",
+            Self::Https => "https://127.0.0.1:9148",
+            Self::Ws    => "ws://127.0.0.1:9148",
+            Self::Wss   => "wss://127.0.0.1:9148",
+        }
+    }
+
+    /// The name as kebab case.
+    pub fn kebab(self) -> &'static str {
+        match self {
+            Self::Http  => "http",
+            Self::Https => "https",
+            Self::Ws    => "ws",
+            Self::Wss   => "wss",
+        }
+    }
+
+    /// The name as upper.
+    pub fn upper(self) -> &'static str {
+        match self {
+            Self::Http  => "HTTP",
+            Self::Https => "HTTPS",
+            Self::Ws    => "WS",
+            Self::Wss   => "WSS",
+        }
     }
 }

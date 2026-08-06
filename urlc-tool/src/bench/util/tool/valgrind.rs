@@ -1,6 +1,6 @@
 //! Valgrind.
 
-use crate::prelude::*;
+use super::prelude::*;
 
 /// The valgrind tool to use.
 #[derive(Debug, Clone, Copy, ValueEnum)]
@@ -22,18 +22,25 @@ impl Valgrind {
                         ret = ret.max(x.parse().unwrap());
                     }
                 }
-                ret.to_formatted_string(&Locale::en)
+                format_int(ret)
             },
             Self::Callgrind => "...".into(),
         }
     }
-}
 
-impl std::fmt::Display for Valgrind {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    /// The name as title.
+    pub fn title(self) -> &'static str {
         match self {
-            Self::Massif    => write!(formatter, "massif"),
-            Self::Callgrind => write!(formatter, "callgrind"),
+            Self::Massif    => "Massif"   ,
+            Self::Callgrind => "Callgrind",
+        }
+    }
+
+    /// The name as kebab case.
+    pub fn kebab(self) -> &'static str {
+        match self {
+            Self::Massif    => "massif"   ,
+            Self::Callgrind => "callgrind",
         }
     }
 }

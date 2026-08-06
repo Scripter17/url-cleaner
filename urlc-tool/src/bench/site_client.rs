@@ -18,13 +18,13 @@ impl Args {
     pub fn r#do(self) -> String {
         let Self {name, task, num, params_diff, protocol, tool} = self;
 
-        let out_dir = format!("bench/site-client/{protocol}/{tool}/{name}/{num}");
-        let out = format!("{out_dir}/{tool}.out");
+        let out_dir = format!("bench/site-client/{}/{}/{name}/{num}", protocol.kebab(), tool.kebab());
+        let out = format!("{out_dir}/{}.out", tool.kebab());
 
         write_stdin(&task, num);
         fresh_dir(&out_dir);
 
-        let _site = start_site(protocol.tls());
+        let _site = start_site(protocol.is_tls());
 
         let mut cmd = match tool {
             ClientTool::Hyperfine(Hyperfine) => {
@@ -45,8 +45,8 @@ impl Args {
             ClientTool::Valgrind(tool) => {
                 let mut cmd = Command::new("valgrind");
 
-                cmd.arg(format!("--tool={tool}"));
-                cmd.arg(format!("--{tool}-out-file={out}"));
+                cmd.arg(format!("--tool={}", tool.kebab()));
+                cmd.arg(format!("--{}-out-file={out}", tool.kebab()));
 
                 if matches!(tool, Valgrind::Callgrind) {
                     cmd.arg("--separate-threads=yes");

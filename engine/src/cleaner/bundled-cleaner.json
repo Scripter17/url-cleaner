@@ -317,17 +317,17 @@
 
 			"do_www_prefix": {
 				"ensure": [
-					"1688.com", "9news.com.au", "abc.net.au", "adjust.com", "afp.com", "agorapulse.com", "alibaba.com", "animaapp.com", "anrdoezrs.net", "apple.com", "bbc.com", "kansascitypbs.org",
-					"behance.net", "bell.ca", "bizrate.com", "boot.dev", "boycat.io", "browserstack.com", "cbc.ca", "cbsnews.com", "change.org", "cnbc.com", "cnn.com",
+					"1688.com", "9news.com.au", "abc.net.au", "adjust.com", "afp.com", "agorapulse.com", "alibaba.com", "animaapp.com", "anrdoezrs.net", "apple.com", "arduino.cc",
+					"bbc.com", "behance.net", "bell.ca", "bizrate.com", "boot.dev", "boycat.io", "browserstack.com", "cbc.ca", "cbsnews.com", "change.org", "cnbc.com", "cnn.com",
 					"crunchyroll.com", "deviantart.com", "disney.com", "dw.com", "elsevier.com", "emjcd.com", "entripy.com", "etsy.com", "euronews.com", "facebook.com",
 					"fandom.com", "fiverr.com", "forbes.com", "france24.com", "ft.com", "furaffinity.net", "go.com", "go2cloud.org", "gofundme.com", "goodreads.com", "google.com",
-					"habedieeh.re", "howl.link", "hp.com", "iana.org", "icloud.com", "kff.org", "leaffilter.ca", "lego.com", "lenovo.com", "linkr.it", "loblaws.ca", "lovense",
-					"marvel.com", "mediafire.com", "microsoft.com", "minds.com", "mozilla.org", "mydealz.de", "nasa.gov", "nature.com", "ndw.jp", "nyc.gov", "nytimes.com", "obo.de",
-					"ojrq.net", "onet.pl", "paps.jp", "patreon.com", "pbs.org", "pcoptimum.ca", "phoronix.com", "pinterest.com", "pixiv.net", "playstation.com", "pxf.io",
-					"razer.com", "reddit.com", "reuters.com", "scan-safety.com", "sfchronicle.com", "shopyourlikes.com", "smartytags.com", "snapchat.com", "sng.link", "sub2get.com",
-					"techpowerup.com", "teepublic.com", "temu.com", "theguardian.com", "thqlhce.com", "threads.com", "tiekoetter.com", "tiktok.com", "tmz.com", "torproject.org",
-					"tribler.org", "tumblr.com", "twitch.tv", "undp.org", "unlock.com", "walmart.com", "whitehouse.gov", "wsj.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com",
-					"youtube.com", "woot.com"
+					"habedieeh.re", "howl.link", "hp.com", "iana.org", "icloud.com", "kansascitypbs.org", "kff.org", "leaffilter.ca", "lego.com", "lenovo.com", "linkr.it",
+					"loblaws.ca", "lovense", "marvel.com", "mediafire.com", "microsoft.com", "minds.com", "mozilla.org", "mydealz.de", "nasa.gov", "nature.com", "ndw.jp", "nyc.gov",
+					"nytimes.com", "obo.de", "ojrq.net", "onet.pl", "paps.jp", "patreon.com", "pbs.org", "pcoptimum.ca", "phoronix.com", "pinterest.com", "pixiv.net",
+					"playstation.com", "pxf.io", "razer.com", "reddit.com", "reuters.com", "scan-safety.com", "sfchronicle.com", "shopyourlikes.com", "smartytags.com",
+					"snapchat.com", "sng.link", "sub2get.com", "techpowerup.com", "teepublic.com", "temu.com", "theguardian.com", "thqlhce.com", "threads.com", "tiekoetter.com",
+					"tiktok.com", "tmz.com", "torproject.org", "tribler.org", "tumblr.com", "twitch.tv", "undp.org", "unlock.com", "walmart.com", "whitehouse.gov", "woot.com",
+					"wsj.com", "xiaohongshu.com", "xp-pen.com", "yahoo.com", "youtube.com"
 				],
 				"remove": [
 					"2kgam.es", "ab.co", "abcnews.link", "acer.com", "adfoc.us", "adguardteam.github.io", "admiregirls-byme.com", "adobe.ly", "aje.io", "all-fans.online",
@@ -381,15 +381,15 @@
 					"chn.ge", "chng.it", "cj.dotomi.com", "clckhl.co", "click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cons.lv", "cp2077.ly",
 					"crnch.it", "cutt.ly", "dareqr.info", "db.tt", "dcdr.me", "delivr.com", "diplo.de", "dis.gd", "dlvr.it", "dotomi.com", "econ.st", "eepurl.com", "emjcd.com",
 					"etsy.me", "f24.my", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "flowcode.com", "flowsto.com", "flyac.ca", "fn.gg", "forms.gle", "g.co", "gh.io",
-					"glo.bo", "go.forbes.com", "go.france24.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "go.undp.org", "gofund.me", "goo.gl",
-					"goo.gle", "goo.su", "goodsmile.link", "got.cr", "gum.co", "hmstr.fr", "hov.to", "howl.link", "hubs.la", "hulu.tv", "ift.tt", "ind.pd", "intel.ly", "interc.pt",
-					"iwe.one", "ja.ma", "jbgm.es", "k00.fr", "kck.st", "kre.pe", "l.bfmtv.com", "l.ead.me", "l.euronews.com", "l.ledauphine.com", "l.leparisien.fr",
-					"l.prageru.com", "l.tf1info.fr", "l8r.it", "li.famillefontaine.ca", "line.ee", "link.animaapp.com", "link.chtbl.com", "link.europa.eu", "link.space",
-					"link.spotfund.com", "linkr.it", "lmg.gg", "loom.ly", "lpc.ca", "m.me", "m.sesame.org", "mavelyinfluencer.com", "mol.im", "mondly.app", "mply.io", "msft.it",
-					"msi.gm", "mzl.la", "n.opn.tl", "n.pr", "nbc4i.co", "nine.social", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyti.ms", "nyto.ms", "obo.de", "ojrq.net",
-					"oly.ch", "on.fb.me", "on.forbes.com", "on.ft.com", "on.kff.org", "on.nyc.gov", "on.soundcloud.com", "on.wsj.com", "onl.bz", "onl.la", "onl.sc", "onl.tw",
-					"operagx.gg", "opr.as", "orlo.uk", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me", "play.st", "politi.co", "prn.to", "propub.li", "pulse.ly",
-					"py.pl", "qr-smartlabel.foodmaestro.me", "qr.paps.jp", "qrco.de", "rb.gy", "rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly",
+					"glo.bo", "go.flexispot.com", "go.forbes.com", "go.france24.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "go.undp.org",
+					"gofund.me", "goo.gl", "goo.gle", "goo.su", "goodsmile.link", "got.cr", "gum.co", "hmstr.fr", "hov.to", "howl.link", "hubs.la", "hulu.tv", "ift.tt", "ind.pd",
+					"intel.ly", "interc.pt", "iwe.one", "ja.ma", "jbgm.es", "k00.fr", "kck.st", "kre.pe", "l.bfmtv.com", "l.ead.me", "l.euronews.com", "l.ledauphine.com",
+					"l.leparisien.fr", "l.prageru.com", "l.tf1info.fr", "l8r.it", "li.famillefontaine.ca", "line.ee", "link.animaapp.com", "link.chtbl.com", "link.europa.eu",
+					"link.space", "link.spotfund.com", "linkr.it", "lmg.gg", "loom.ly", "lpc.ca", "m.me", "m.sesame.org", "mavelyinfluencer.com", "mol.im", "mondly.app", "mply.io",
+					"msft.it", "msi.gm", "mzl.la", "n.opn.tl", "n.pr", "nbc4i.co", "nine.social", "ninten.do", "ntdo.co.uk", "nvda.ws", "ny.ti", "nyti.ms", "nyto.ms", "obo.de",
+					"ojrq.net", "oly.ch", "on.fb.me", "on.forbes.com", "on.ft.com", "on.kff.org", "on.nyc.gov", "on.soundcloud.com", "on.wsj.com", "onl.bz", "onl.la", "onl.sc",
+					"onl.tw", "operagx.gg", "opr.as", "orlo.uk", "peoplem.ag", "perfht.ml", "pin.it", "pixiv.me", "pl.go-ga.me", "play.st", "politi.co", "prn.to", "propub.li",
+					"pulse.ly", "py.pl", "qr-smartlabel.foodmaestro.me", "qr.paps.jp", "qrco.de", "rb.gy", "rblx.co", "rdbl.co", "rdcu.be", "rebrand.ly",
 					"redirect.global.commerce-connector.com", "reut.rs", "rog.gg", "rzr.to", "s.click.aliexpress.com", "s.goodsmile.link", "s.spr.ly", "s.team", "s76.co",
 					"sbuxjoin.com", "scanqr.to", "scim.ag", "scnv.io", "share.firefox.dev", "share.temu.com", "shor.tf", "shorturl.at", "shrsl.com", "smartytags.com",
 					"sonic.frack.deals", "sou42.co", "sponsr.is", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "t.co", "t.ly", "theatln.tc", "thecut.io", "thef.pub",
@@ -403,23 +403,23 @@
 					"reddit.com", "sketchfab.com", "snapchat.com", "t2m.io", "teepublic.com", "thangs.com", "thejournal.ie", "woot.com"
 				],
 				"special": [
-					"1link.club", "adguardteam.github.io", "affiliate.xp-pen.com", "allegro.pl", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw", "fb.com", "kcpt.org",
+					"1link.club", "adguardteam.github.io", "affiliate.xp-pen.com", "allegro.pl", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw",
 					"bugzil.la", "buymeacoff.ee", "click.notification.elsevier.com", "cnn.it", "coff.ee", "cos.lv", "costco.ms", "deviantart.com", "drinkctrl.com", "duckduckgo.com",
-					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "e.newsletters.cnn.com", "fans.ly", "fansly.com", "fiverr.com",
-					"get-qr.com", "global.temu.com", "go.bsky.app", "go.shopyourlikes.com", "go.skimresources.com", "goodreads.com", "goto.walmart.com",
-					"gprivate.com", "gznmedia.go2cloud.org", "href.li", "instagr.am", "is.gd", "l.instagram.com", "l.mlive.com", "l.threads.com", "lego.com", "li.cnn.com",
-					"link.blissy.com", "link.sfchronicle.com", "link.streamelements.com", "linkprotect.cudasvc.com", "linktr.ee", "lk.cmte.fyi", "lmddgtfy.net", "lmgtfy2.com",
-					"lnk.bio", "lnkd.in", "lu.ma", "media.igram.world", "mel.sc", "messagenes.com", "mfy.gg", "nas.cr", "nyer.cm", "nyp.st", "o93x.net", "on.msnbc.com",
-					"on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "p.liadm.com", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com",
-					"qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com", "r.amzlink.to", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc",
-					"ro.blox.com", "share.spotfund.com", "shareasale-analytics.com", "shareasale.com", "skfb.ly", "smarturl.it", "smartyt.ag", "spot.fund", "spotify.link",
-					"ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com", "strms.net", "subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs",
-					"thr.cm", "tinyurl.com", "tkqlhce.com", "tmz.me", "toyhou.se", "tpu.me", "twpf.jp", "u.afp.com", "uqr.to", "urldefense.com", "v.redd.it", "wa.me", "wlo.link",
-					"youtube.com", "jrnl.ie", "furaffinity.net", "getpaint.net", "j.mp"
+					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "e.newsletters.cnn.com", "fans.ly", "fansly.com", "fb.com",
+					"fiverr.com", "furaffinity.net", "get-qr.com", "getpaint.net", "global.temu.com", "go.bsky.app", "go.shopyourlikes.com", "go.skimresources.com", "goodreads.com",
+					"goto.walmart.com", "gprivate.com", "gznmedia.go2cloud.org", "href.li", "instagr.am", "is.gd", "j.mp", "jrnl.ie", "kcpt.org", "l.instagram.com", "l.mlive.com",
+					"l.threads.com", "lego.com", "li.cnn.com", "link.blissy.com", "link.sfchronicle.com", "link.streamelements.com", "linkprotect.cudasvc.com", "linktr.ee",
+					"lk.cmte.fyi", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "lu.ma", "mcdonalds-survey.ca", "media.igram.world", "mel.sc", "messagenes.com", "mfy.gg",
+					"myproduct.info", "nas.cr", "nyer.cm", "nyp.st", "o93x.net", "on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com",
+					"p.liadm.com", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com", "qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com", "r.amzlink.to",
+					"rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com", "share.spotfund.com", "shareasale-analytics.com", "shareasale.com",
+					"skfb.ly", "smarturl.it", "smartyt.ag", "spot.fund", "spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com", "strms.net",
+					"subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs", "thr.cm", "tinyurl.com", "tkqlhce.com", "tmz.me", "toyhou.se", "tpu.me", "twpf.jp",
+					"u.afp.com", "uniqo.de", "uqr.to", "urldefense.com", "v.redd.it", "wa.me", "wlo.link", "youtube.com"
 				]
 			},
 			"do_expand_mode": {
-				"redirect": ["a9yw.net", "goo.gl", "o93x.net", "page.link", "pusle.ly", "pxf.io", "sjv.io", "trib.al", "visitlink.me"],
+				"redirect": ["a9yw.net", "goo.gl", "o93x.net", "page.link", "pusle.ly", "pxf.io", "scb.ai", "sjv.io", "trib.al", "visitlink.me"],
 				"sometimes_redirect": ["cmail20.com", "sendgrid.net"],
 				"special": [
 					"adj.st", "alibaba.com", "app.link", "awstrack.me", "carleton.ca", "digidip.net", "dw.com", "fb.watch", "flow2.it", "list-manage.com", "lnk.to", "nbcla.com",
@@ -1616,6 +1616,7 @@
 										}
 									}},
 									"lu.ma": {"SetHost": "luma.com"},
+									"mcdonalds-survey.ca": {"SetWhole": "https://survey.medallia.ca/?McD-GSS-FeedlessSurvey"},
 									"media.igram.world": {"GetUrlFromQueryParam": "uri"},
 									"mel.sc": {"SetHost": "melscience.com"},
 									"messagenes.com": {"All": [
@@ -1623,6 +1624,7 @@
 										{"Function": "expand_redirect"}
 									]},
 									"mfy.gg": {"SetHost": "metafy.gg"},
+									"myproduct.info": {"SetHost": "myproduct-info.scb.ai"},
 									"nas.cr": {"SetHost": "bit.ly"},
 									"nyer.cm": {"SetHost": "trib.al"},
 									"nyp.st": {"All": [
@@ -1907,6 +1909,19 @@
 														"sec-fetch-dest": "document"
 													}
 												}
+											}
+										}
+									}},
+									"uniqo.de": {"Function": {
+										"name": "extract_from_body",
+										"args": {
+											"string_sources": {
+												"prefix": "var redirectUrl = ",
+												"suffix": ";\n"
+											},
+											"flags": ["strip_prefix", "strip_suffix"],
+											"string_modifications": {
+												"parser": "GetJsString"
 											}
 										}
 									}},

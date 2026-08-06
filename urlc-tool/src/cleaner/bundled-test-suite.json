@@ -523,6 +523,7 @@
         {"task": "https://netflix.com/a/t?i=07OG0EH490&tp=qr"                    , "expect": "https://cologuard.com/"                                                                                                     },
         {"task": "https://ifcj.flow2.it/exS9uvyGwe"                              , "expect": "https://help.ifcj.org/donate/392"                                                                                           },
         {"task": "https://www.launchgood.com/TDRPalestine"                       , "expect": "https://www.launchgood.com/v4/campaign/save_a_child_in_palestine_now"                                                       },
+        {"task": "https://uniqo.de/nIuIxY"                                       , "expect": "https://www.expressvpn.com/start/privacy/data-theft"                                                                        },
 
 				{
 					"task": "https://get-bandlab.app.link/invite-link?$canonical_url=https://www.bandlab.com/join/s1vcb9n&$fallback_url=https://www.bandlab.com/join/s1vcb9n",

@@ -50,9 +50,8 @@ impl StrExt for str {
         self.strip_suffix(suffix).unwrap_or(self)
     }
 
-    fn memchr (&self, b : u8                ) -> Option<usize> {self.as_bytes().memchr  (b         )}
-
-    fn memrchr(&self, b : u8                ) -> Option<usize> {self.as_bytes().memrchr (b         )}
+    fn memchr (&self, b: u8) -> Option<usize> {self.as_bytes().memchr (b)}
+    fn memrchr(&self, b: u8) -> Option<usize> {self.as_bytes().memrchr(b)}
 
     fn memchrn<const N: usize>(&self, bs: [u8; N]) -> Option<usize> {self.as_bytes().memchrn(bs)}
 }

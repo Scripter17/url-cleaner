@@ -23,12 +23,11 @@ pub mod prelude {
     pub use std::str::FromStr;
 
     pub use regex::Regex;
-    pub use num_format::{Locale, ToFormattedString};
     pub use clap::{Parser, ValueEnum, builder::PossibleValue};
     pub use serde::Deserialize;
     pub use indexmap::IndexMap;
 
-    pub use super::util::prelude::*;
+    pub use super::util::*;
 
     pub use url_cleaner_engine::prelude::*;
 }

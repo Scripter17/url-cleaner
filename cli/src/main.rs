@@ -202,20 +202,15 @@ async fn main() -> Result<(), CliError> {
             let mut buf = Vec::new();
 
             while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(18)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
-                if let Some(i) = memchr::memrchr(b'\n', &buf) {
+                if let Some(i) = better_url::util::memrchr(&buf, b'\n') {
                     let temp = buf.split_off(i + 1);
                     let bytes = Bytes::from_owner(buf);
 
-                    let mut next_start = 0;
+                    let lines = better_url::util::MemchrLines {remainder: Some(&bytes)};
 
-                    for i in memchr::memchr_iter(b'\n', &bytes) {
-                        let line = unsafe {bytes.get_unchecked(next_start..i)};
-
-                        next_start = i + 1;
-
-                        match line {
-                            b"" | b"\r" => continue,
-                            [line @ .., b'\r'] | line => iss.get(isi.next().expect("???")).expect("???").send(bytes.slice_ref(line)).await.expect("The in receiever to still exist.")
+                    for line in lines {
+                        if !line.is_empty() {
+                            iss.get(isi.next().expect("???")).expect("???").send(bytes.slice_ref(line)).await.expect("The in receiever to still exist.")
                         }
                     }
 
@@ -259,7 +254,7 @@ async fn main() -> Result<(), CliError> {
                     buf.push_str(&x);
                     buf.push('\n');
 
-                    if buf.len() >= 2usize.pow(18) {
+                    if buf.len() >= 2usize.pow(16) {
                         print!("{buf}");
                         buf.clear();
                     }
