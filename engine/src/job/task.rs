@@ -21,7 +21,7 @@ string_or_struct_magic!(Task);
 impl Task {
     /// Make a new [`Self`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new<T: TryInto<Self>>(task: T) -> Result<Self, T::Error> {
         task.try_into()
     }

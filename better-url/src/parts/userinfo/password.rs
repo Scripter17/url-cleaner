@@ -30,7 +30,7 @@ impl<'a> Password<'a> {
 
     /// [`try_decode_password`].
     /// # Errors
-    /// If the call to [`try_decode_password`] returns an error, that error is returned.
+    /// If [`try_decode_password`] returns an error, that error is returned.
     pub fn try_decode(self) -> Result<Cow<'a, str>, Cow<'a, [u8]>> {
         match try_decode_password(self.0) {
             Ok ((_, value)) => Ok (value),

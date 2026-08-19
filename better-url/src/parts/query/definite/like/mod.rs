@@ -110,13 +110,22 @@ impl<'a> QueryLike<'a> {
     }
 }
 
-impl<'a> From<Query          <'a>> for QueryLike<'a> {fn from(value: Query          <'a>) -> Self {Self::Query   (value       )}}
-impl<'a> From<SpecialQuery   <'a>> for QueryLike<'a> {fn from(value: SpecialQuery   <'a>) -> Self {Self::Query   (value.into())}}
-impl<'a> From<NonSpecialQuery<'a>> for QueryLike<'a> {fn from(value: NonSpecialQuery<'a>) -> Self {Self::Query   (value.into())}}
-impl<'a> From<FragmentQuery  <'a>> for QueryLike<'a> {fn from(value: FragmentQuery  <'a>) -> Self {Self::Fragment(value       )}}
-impl<'a> From<Fragment       <'a>> for QueryLike<'a> {fn from(value: Fragment       <'a>) -> Self {Self::Fragment(value.into())}}
+impl<'a> From<QueryLikeSegment<'a>> for QueryLike<'a> {
+    fn from(value: QueryLikeSegment<'a>) -> Self {
+        match value {
+            QueryLikeSegment::Query   (x) => x.into(),
+            QueryLikeSegment::Fragment(x) => x.into(),
+        }
+    }
+}
 
+impl<'a> From<Query                 <'a>> for QueryLike<'a> {fn from(value: Query                 <'a>) -> Self {Self::Query   (value       )}}
+impl<'a> From<SpecialQuery          <'a>> for QueryLike<'a> {fn from(value: SpecialQuery          <'a>) -> Self {Self::Query   (value.into())}}
+impl<'a> From<NonSpecialQuery       <'a>> for QueryLike<'a> {fn from(value: NonSpecialQuery       <'a>) -> Self {Self::Query   (value.into())}}
+impl<'a> From<FragmentQuery         <'a>> for QueryLike<'a> {fn from(value: FragmentQuery         <'a>) -> Self {Self::Fragment(value       )}}
+impl<'a> From<Fragment              <'a>> for QueryLike<'a> {fn from(value: Fragment              <'a>) -> Self {Self::Fragment(value.into())}}
+
+impl<'a> From<FragmentQuerySegment  <'a>> for QueryLike<'a> {fn from(value: FragmentQuerySegment  <'a>) -> Self {Self::Fragment(value.into())}}
 impl<'a> From<QuerySegment          <'a>> for QueryLike<'a> {fn from(value: QuerySegment          <'a>) -> Self {Self::Query   (value.into())}}
 impl<'a> From<SpecialQuerySegment   <'a>> for QueryLike<'a> {fn from(value: SpecialQuerySegment   <'a>) -> Self {Self::Query   (value.into())}}
 impl<'a> From<NonSpecialQuerySegment<'a>> for QueryLike<'a> {fn from(value: NonSpecialQuerySegment<'a>) -> Self {Self::Query   (value.into())}}
-impl<'a> From<FragmentQuerySegment  <'a>> for QueryLike<'a> {fn from(value: FragmentQuerySegment  <'a>) -> Self {Self::Fragment(value.into())}}

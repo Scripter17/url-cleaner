@@ -21,13 +21,6 @@ pub struct InvalidIpv4Host;
 #[error("Failed to parse an IPv6 host.")]
 pub struct InvalidIpv6Host;
 
-/// Returned when failing to parse an IP host.
-#[derive(Debug, Error)]
-pub enum InvalidIpHost {
-    /** [`InvalidIpv4Host`]. **/ #[error(transparent)] V4(#[from] InvalidIpv4Host),
-    /** [`InvalidIpv6Host`]. **/ #[error(transparent)] V6(#[from] InvalidIpv6Host),
-}
-
 /// Returned when failing to parse an opaque host.
 #[derive(Debug, Error)]
 #[error("Failed to parse an opaque host.")]

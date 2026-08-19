@@ -16,6 +16,5 @@ impl From<InvalidNonSpecialHost    > for InvalidHost {fn from(_: InvalidNonSpeci
 impl From<InvalidDomainHost> for InvalidHost {fn from(_: InvalidDomainHost) -> Self {Self}}
 impl From<InvalidIpv4Host  > for InvalidHost {fn from(_: InvalidIpv4Host  ) -> Self {Self}}
 impl From<InvalidIpv6Host  > for InvalidHost {fn from(_: InvalidIpv6Host  ) -> Self {Self}}
-impl From<InvalidIpHost    > for InvalidHost {fn from(_: InvalidIpHost    ) -> Self {Self}}
 impl From<InvalidOpaqueHost> for InvalidHost {fn from(_: InvalidOpaqueHost) -> Self {Self}}
 impl From<InvalidEmptyHost > for InvalidHost {fn from(_: InvalidEmptyHost ) -> Self {Self}}

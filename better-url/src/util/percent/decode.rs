@@ -19,7 +19,7 @@ pub(crate) fn decode_hex_nibble(x: u8) -> Option<u8> {
 
 /// Try to losslessly percent decode.
 /// # Errors
-/// If the call to [`try_cow_bytes_to_str`] returns an error, that error is returned.
+/// If [`try_cow_bytes_to_str`] returns an error, that error is returned.
 #[expect(clippy::type_complexity, reason = "It's fine.")]
 pub fn try_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), (std::str::Utf8Error, Cow<'a, [u8]>)> {
     let value = value.into();

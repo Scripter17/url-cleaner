@@ -24,31 +24,26 @@ impl NonSpecialQuery<'_> {
     ///
     /// let mut query = NonSpecialQuery::new("a=1&b=2&a=3");
     ///
-    /// assert!( query.set("a",  1, None           ).unwrap()); assert_eq!(query,     "a=1&b=2"      );
-    /// assert!(!query.set("a",  1, None           ).unwrap()); assert_eq!(query,     "a=1&b=2"      );
-    /// assert!( query.set("b",  1, Some(None     )).unwrap()); assert_eq!(query,     "a=1&b=2&b"    );
-    /// assert!( query.set("b",  2, Some(Some("3"))).unwrap()); assert_eq!(query,     "a=1&b=2&b&b=3");
-    /// assert!( query.set("c", -1, Some(Some("4"))).unwrap()); assert_eq!(query, "c=4&a=1&b=2&b&b=3");
-    /// assert!( query.set("c", -1, Some(None     )).unwrap()); assert_eq!(query,   "c&a=1&b=2&b&b=3");
-    /// assert!( query.set("c", -1, None           ).unwrap()); assert_eq!(query,     "a=1&b=2&b&b=3");
+    /// assert!( query.set("a",  1, None::<&str>      ).unwrap()); assert_eq!(query,     "a=1&b=2"      );
+    /// assert!(!query.set("a",  1, None::<&str>      ).unwrap()); assert_eq!(query,     "a=1&b=2"      );
+    /// assert!( query.set("b",  1, Some(None::<&str>)).unwrap()); assert_eq!(query,     "a=1&b=2&b"    );
+    /// assert!( query.set("b",  2, Some(Some("3"))   ).unwrap()); assert_eq!(query,     "a=1&b=2&b&b=3");
+    /// assert!( query.set("c", -1, Some(Some("4"))   ).unwrap()); assert_eq!(query, "c=4&a=1&b=2&b&b=3");
+    /// assert!( query.set("c", -1, Some(None::<&str>)).unwrap()); assert_eq!(query,   "c&a=1&b=2&b&b=3");
+    /// assert!( query.set("c", -1, None::<&str>      ).unwrap()); assert_eq!(query,     "a=1&b=2&b&b=3");
     /// ```
-    pub fn set(&mut self, name: &str, index: isize, value: Option<Option<&str>>) -> Result<bool, SetQueryError> {
-        Ok(match value {
+    pub fn set<'b, T: Into<MaybeNonSpecialQueryValue<'b>>>(&mut self, name: &str, index: isize, value: Option<T>) -> Result<bool, SetQueryError> {
+        Ok(match value.map(|x| x.into().into_inner()) {
             Some(Some(value)) => {
                 let temp = self.find_iter(name).try_neg_nth(index);
 
                 match temp {
-                    Ok(old) => {
-                        let (_, value) = encode_query_part(value);
-
-                        match old.raw_value() {
-                            Some(old_value) => self.0.replace_substr(old_value                                     ,       &value ),
-                            None            => self.0.insert_with   (old.as_str().end_addr() - self.as_str().addr(), ["=", &value]),
-                        }
+                    Ok(old) => match old.value().as_str() {
+                        Some(old) => self.0.replace_substr(old                                           ,       &value ),
+                        None      => self.0.insert_with   (old.as_str().end_addr() - self.as_str().addr(), ["=", &value]),
                     },
                     Err(0) => {
-                        let (_, name ) = encode_query_part(name );
-                        let (_, value) = encode_query_part(value);
+                        let name = NonSpecialQueryName::new(name).into_inner();
 
                         match index {
                             0.. => self.0.extend     (   ["&", &name, "=", &value     ]),
@@ -64,9 +59,9 @@ impl NonSpecialQuery<'_> {
                 let temp = self.find_iter(name).try_neg_nth(index);
 
                 match temp {
-                    Ok(old) => match old.raw_value() {
-                        Some(x) => {
-                            self.0.replace_range(x.addr() - 1 - self.0.addr() .. x.end_addr() - self.0.addr(), "");
+                    Ok(old) => match old.value().as_str() {
+                        Some(old) => {
+                            self.0.replace_range(old.addr() - 1 - self.0.addr() .. old.end_addr() - self.0.addr(), "");
 
                             true
                         },

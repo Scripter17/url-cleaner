@@ -75,7 +75,7 @@ pub enum StringLocation {
     },
     /// Inverts the satisfaction of the contained [`Self`].
     /// # Errors
-    /// If the call to [`Self::check`] returns an error, that error is returned.
+    /// If [`Self::check`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::prelude::*;
@@ -295,7 +295,7 @@ pub enum StringLocation {
     /// # Errors
     /// If the specified range is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringLocationError::InvalidSlice`].
     ///
-    /// If the call to [`Self::check`] returns an error, that error is returned.
+    /// If [`Self::check`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::prelude::*;

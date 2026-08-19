@@ -120,7 +120,7 @@ impl DomainHost<'_> {
     /// Set, insert, or remove the `index`th origin segment.
     /// # Errors
     /// See [`Self`]'s documentation.
-    pub fn set_origin_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
+    pub fn set_origin_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
         let temp1 = self.origin_str().unwrap_or(self.suffix_str());
 
         let insert_start = temp1.addr    () - self.host.addr();
@@ -136,10 +136,9 @@ impl DomainHost<'_> {
             (Err(_  ), None   ) => return Ok(false),
 
             (Ok(old), Some(new)) => match self.host.split_around_substr(old) {
-                ("", "" ) if new.is_empty()         => Err(CantBeEmpty)?,
-                (_ , "" ) if new.last_is_empty   () => Err(NonFqdnCantEndInEmpty)?,
-                (_ , "" ) if new.ends_in_a_number() => Err(CantEndInANumber)?,
-                (_ , ".") if new.last_is_a_number() => Err(CantEndInANumber)?,
+                ("", ""      ) if new.is_empty   () => Err(CantBeEmpty)?,
+                (_ , ""      ) if new.is_empty   () => Err(NonFqdnCantEndInEmpty)?,
+                (_ , "" | ".") if new.is_a_number() => Err(CantEndInANumber)?,
 
                 _ => self.host.replace_substr(old, new.as_str()),
             },
@@ -155,7 +154,7 @@ impl DomainHost<'_> {
             },
 
             (Err(0), Some(new)) => match index {
-                0.. if !(self.is_fqdn() && new.last_is_empty()) && new.ends_in_a_number() => Err(CantEndInANumber)?,
+                0.. if new.is_a_number() => Err(CantEndInANumber)?,
 
                 0.. => self.host.insert_with(insert_after, [".", new.as_str()]),
                 ..0 => self.host.insert_with(insert_start, [new.as_str(), "."]),
@@ -206,7 +205,7 @@ impl DomainHost<'_> {
     /// Insert a new `index`th origin segment.
     /// # Errors
     /// See [`Self`]'s documentation.
-    pub fn insert_origin_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
+    pub fn insert_origin_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
         let new = value.try_into()?;
 
         if self.len() + new.len() + 1 > u32::MAX as usize {
@@ -221,9 +220,44 @@ impl DomainHost<'_> {
         let temp2 = temp1.split('.').map(|x| self.host.my_substr_range(x)).try_neg_nth(index);
 
         match (temp2, index) {
-            (Ok (_), -1) | (Err(0), 0..) if !self.is_fqdn() && new.last_is_empty   () => Err(NonFqdnCantEndInEmpty)?,
-            (Ok (_), -1) | (Err(0), 0..) if !self.is_fqdn() && new.ends_in_a_number() => Err(CantEndInANumber)?,
-            (Ok (_), -1) | (Err(0), 0..) if  self.is_fqdn() && new.last_is_a_number() => Err(CantEndInANumber)?,
+            (Ok(_), -1) | (Err(0), 0..) if !self.is_fqdn() && new.is_empty   () => Err(NonFqdnCantEndInEmpty)?,
+            (Ok(_), -1) | (Err(0), 0..) if                    new.is_a_number() => Err(CantEndInANumber)?,
+
+            (Err(1..), _) => Err(InsertNotFound)?,
+
+            (Ok(Range {start, ..}), 0..) => self.host.insert_with(start, [new.as_str(), "."]),
+            (Ok(Range {end  , ..}), ..0) => self.host.insert_with(end  , [".", new.as_str()]),
+
+            (Err(0), 0..) => self.host.insert_with(insert_after, [".", new.as_str()]),
+            (Err(0), ..0) => self.host.insert_with(insert_start, [new.as_str(), "."]),
+        }
+
+        self.details = DomainHostDetails::parse_unchecked(&self.host);
+
+        Ok(())
+    }
+
+    /// Insert new segments starting at the `index`th origin segment.
+    /// # Errors
+    /// See [`Self`]'s documentation.
+    pub fn insert_origin_segments<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
+        let new = value.try_into()?;
+
+        if self.len() + new.len() + 1 > u32::MAX as usize {
+            Err(TooLong)?;
+        }
+
+        let temp1 = self.origin_str().unwrap_or(self.suffix_str());
+
+        let insert_start = temp1.addr    () - self.host.addr();
+        let insert_after = temp1.end_addr() - self.host.addr();
+
+        let temp2 = temp1.split('.').map(|x| self.host.my_substr_range(x)).try_neg_nth(index);
+
+        match (temp2, index) {
+            (Ok(_), -1) | (Err(0), 0..) if !self.is_fqdn() && new.last_is_empty   () => Err(NonFqdnCantEndInEmpty)?,
+            (Ok(_), -1) | (Err(0), 0..) if !self.is_fqdn() && new.ends_in_a_number() => Err(CantEndInANumber)?,
+            (Ok(_), -1) | (Err(0), 0..) if  self.is_fqdn() && new.last_is_a_number() => Err(CantEndInANumber)?,
 
             (Err(1..), _) => Err(InsertNotFound)?,
 

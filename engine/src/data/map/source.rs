@@ -29,7 +29,7 @@ pub enum MapSource {
     },
     /// Index [`Self::StringMap::map`] with [`Self::StringMap::value`] and use that [`Self`].
     ///
-    /// If the call to [`Map::get`] returns [`None`], returns [`None`].
+    /// If [`Map::get`] returns [`None`], returns [`None`].
     StringMap {
         /// The index.
         value: StringSource,
@@ -41,7 +41,7 @@ pub enum MapSource {
     },
     /// Index [`Self::PartMap::map`] with [`Self::PartMap::part`] and use that [`Self`].
     ///
-    /// If the call to [`Map::get`] returns [`None`], returns [`None`].
+    /// If [`Map::get`] returns [`None`], returns [`None`].
     PartMap {
         /// The index.
         part: UrlPart,
@@ -62,9 +62,9 @@ pub enum MapSource {
 impl MapSource {
     /// [`Self::get`], replacing [`None`] with the sub-error [`MapNotFound`].
     /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
+    /// If [`Self::get`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::get`] returns [`None`], returns the sub-error [`MapNotFound`].
+    /// If [`Self::get`] returns [`None`], returns the sub-error [`MapNotFound`].
     pub fn get_some<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Result<&'j Map<String>, MapNotFound>, MapSourceError> {
         self.get(task_state, args).map(|x| x.ok_or(MapNotFound))
     }

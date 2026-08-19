@@ -17,7 +17,7 @@ better-url = { version = "0.12.0-beta", path = "../better-url", features = ["ser
 # Async.
 tokio        = { version = "1.53.1", features = ["io-std", "macros", "rt-multi-thread"] }
 async-stream = "0.3.6"
-futures-util = "0.3.33"
+futures-util = "0.3.34"
 
 # Websockets.
 tokio-tungstenite = { version = "0.28.0", features = ["native-tls", "url"] }
@@ -26,10 +26,10 @@ tokio-tungstenite = { version = "0.28.0", features = ["native-tls", "url"] }
 hyper          = { version = "1.11.0", features = ["http1", "client"       ] }
 hyper-util     = { version = "0.1.20", features = ["http1", "client-legacy"] }
 hyper-tls      = "0.6.0"
-http-body-util = "0.1.4"
+http-body-util = "0.1.5"
 
 # Other.
-clap       = { version = "4.6.5", features = ["derive"] }
+clap       = { version = "4.6.6", features = ["derive"] }
 bytes      = "1.12.1"
 serde_json = "1.0.151"
 

@@ -60,12 +60,11 @@ mod tests {
 
     #[test]
     fn sizes() {
-        // TODO: Make SetHostError 1 byte.
-
         assert_size_1!(
-            InvalidIpHost, SetDomainError,
+            SetDomainError,
             SetSchemeError,
             SetUserinfoError, SetUsernameError, SetPasswordError,
+            SetHostError,
             SetPathError,
             SetQueryError
         );

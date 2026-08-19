@@ -33,13 +33,13 @@ impl<'a> SpecialQuerySegment<'a> {
     }
 
     /// Make a new [`Self`] from a pair.
-    pub fn from_pair<'b, T: Into<Cow<'a, str>>, U: Into<Cow<'b, str>>>(name: T, value: Option<U>) -> Self {
-        let (_, mut raw) = encode_query_part(name);
+    pub fn from_pair<'b, T: Into<SpecialQueryName<'a>>, U: Into<MaybeSpecialQueryValue<'b>>>(name: T, value: U) -> Self {
+        let mut raw = name.into().into_inner();
 
-        match value {
+        match value.into().as_str() {
             Some(value) => {
                 let value_start = raw.len() + 1;
-                raw.extend(["=", &encode_query_part(value).1]);
+                raw.extend(["=", value]);
                 Self {raw, value_start: NonZero::new(value_start)}
             },
             None => Self {raw, value_start: None}
@@ -119,5 +119,3 @@ impl<'a> From<FragmentQuerySegment<'a>> for SpecialQuerySegment<'a> {
         }
     }
 }
-
-impl<'a, 'b, T: Into<Cow<'a, str>>, U: Into<Cow<'b, str>>> From<(T, Option<U>)> for SpecialQuerySegment<'a> {fn from(value: (T, Option<U>)) -> Self {Self::from_pair(value.0, value.1)}}

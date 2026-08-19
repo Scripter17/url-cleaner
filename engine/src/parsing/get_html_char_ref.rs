@@ -4,11 +4,11 @@ use crate::prelude::*;
 
 /// Convert the inside of an HTML character reference to the string it represents.
 /// # Errors
-/// If the call to [`u32::from_str_radix`] returns an error, that error is returned.
+/// If [`u32::from_str_radix`] returns an error, that error is returned.
 ///
-/// If the call to [`u32::from_str`] returns an error, that error is returned.
+/// If [`u32::from_str`] returns an error, that error is returned.
 ///
-/// If the call to [`char::try_from`] returns an error, that error is returned.
+/// If [`char::try_from`] returns an error, that error is returned.
 ///
 /// If either [`char::is_control`] or [`char::is_whitespace`] return [`true`], returns the error [`GetHtmlCharRefError::InvalidCharRef`].
 ///

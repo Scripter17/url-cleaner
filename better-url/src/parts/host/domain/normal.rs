@@ -91,7 +91,7 @@ impl DomainHost<'_> {
     /// Set the `index`th normal segment.
     /// # Errors
     /// See [`Self`]'s documentation.
-    pub fn set_normal_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
+    pub fn set_normal_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
         match self.details.wp {
             true  => self.set_origin_segment(index, value),
             false => self.set_labels_segment(index, value),
@@ -111,10 +111,20 @@ impl DomainHost<'_> {
     /// Insert a new `index`th normal segment.
     /// # Errors
     /// See [`Self`]'s documentation.
-    pub fn insert_normal_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
+    pub fn insert_normal_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
         match self.details.wp {
             true  => self.insert_origin_segment(index, value),
             false => self.insert_labels_segment(index, value),
+        }
+    }
+
+    /// Insert new segments starting at the `index`th normal segment.
+    /// # Errors
+    /// See [`Self`]'s documentation.
+    pub fn insert_normal_segments<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
+        match self.details.wp {
+            true  => self.insert_origin_segments(index, value),
+            false => self.insert_labels_segments(index, value),
         }
     }
 }

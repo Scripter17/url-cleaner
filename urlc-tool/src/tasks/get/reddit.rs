@@ -38,7 +38,7 @@ impl Args {
             std::io::stderr().flush().unwrap();
 
             url.set_path_segment(1, Some(&*host)).unwrap();
-            url.set_query_param("after", 0, None).unwrap();
+            url.set_query_param("after", 0, None::<&str>).unwrap();
 
             for page in 1..=self.pages {
                 eprint!(" {page}");

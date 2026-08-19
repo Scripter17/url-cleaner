@@ -30,7 +30,7 @@ impl<'a> Username<'a> {
 
     /// [`try_decode_username`].
     /// # Errors
-    /// If the call to [`try_decode_username`] returns an error, that error is returned.
+    /// If [`try_decode_username`] returns an error, that error is returned.
     pub fn try_decode(self) -> Result<Cow<'a, str>, Cow<'a, [u8]>> {
         match try_decode_username(self.0) {
             Ok ((_, value)) => Ok (value),

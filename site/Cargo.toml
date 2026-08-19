@@ -21,17 +21,17 @@ axum-server  = { version = "0.8.0", features = ["tls-rustls-no-provider"] }
 
 # Async.
 tokio        = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
-futures-util = { version = "0.3.33", features = ["io"] }
+futures-util = { version = "0.3.34", features = ["io"] }
 tokio-stream = "0.1.19"
 async-stream = "0.3.6"
 
 # Other.
-clap         = { version = "4.6.5", features = ["derive"] }
+clap         = { version = "4.6.6", features = ["derive"] }
 serde        = { version = "1.0.229", features = ["derive"] }
 const-str    = { version = "1.1.0", features = ["proc"] }
 bytes        = "1.12.1"
 serde_json   = "1.0.151"
-thiserror    = "2.0.19"
+thiserror    = "2.0.20"
 http         = "1.5.0"
 
 [features]

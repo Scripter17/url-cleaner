@@ -11,40 +11,24 @@ impl<'a> QuerySegment<'a> {
         }
     }
 
-    /// Either [`SpecialQuerySegment::raw_value`] or [`NonSpecialQuerySegment::raw_value`].
-    pub fn raw_value(&self) -> Option<&str> {
-        match self {
-            Self::Special   (x) => x.raw_value(),
-            Self::NonSpecial(x) => x.raw_value(),
-        }
-    }
-
-    /// Either [`SpecialQuerySegment::into_raw_value`] or [`NonSpecialQuerySegment::into_raw_value`].
-    pub fn into_raw_value(self) -> Option<Cow<'a, str>> {
-        match self {
-            Self::Special   (x) => x.into_raw_value(),
-            Self::NonSpecial(x) => x.into_raw_value(),
-        }
-    }
-
     /// Either [`SpecialQuerySegment::value`] or [`NonSpecialQuerySegment::value`].
-    pub fn value(&self) -> Option<Cow<'_, str>> {
+    pub fn value(&self) -> MaybeQueryValue<'_> {
         match self {
-            Self::Special   (x) => x.value(),
-            Self::NonSpecial(x) => x.value(),
+            Self::Special   (x) => x.value().into(),
+            Self::NonSpecial(x) => x.value().into(),
         }
     }
 
     /// Either [`SpecialQuerySegment::into_value`] or [`NonSpecialQuerySegment::into_value`].
-    pub fn into_value(self) -> Option<Cow<'a, str>> {
+    pub fn into_value(self) -> MaybeQueryValue<'a> {
         match self {
-            Self::Special   (x) => x.into_value(),
-            Self::NonSpecial(x) => x.into_value(),
+            Self::Special   (x) => x.into_value().into(),
+            Self::NonSpecial(x) => x.into_value().into(),
         }
     }
 
     /// Either [`SpecialQuerySegment::set_value`] or [`NonSpecialQuerySegment::set_value`].
-    pub fn set_value(&mut self, value: Option<&str>) {
+    pub fn set_value<'b, T: Into<MaybeSpecialQueryValue<'b>> + Into<MaybeNonSpecialQueryValue<'b>>>(&mut self, value: T) {
         match self {
             Self::Special   (x) => x.set_value(value),
             Self::NonSpecial(x) => x.set_value(value),

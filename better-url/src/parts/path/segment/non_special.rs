@@ -19,8 +19,24 @@ impl<'a> NonSpecialPathSegment<'a> {
         &self.0
     }
 
+    /// [`percent_decode`].
+    pub fn decode(self) -> Cow<'a, [u8]> {
+        let (_, value) = percent_decode(self.0);
+
+        value
+    }
+
+    /// [`try_percent_decode`].
+    /// # Errors
+    /// If [`try_percent_decode`] returns an error, that error is returned.
+    pub fn try_decode(self) -> Result<Cow<'a, str>, (std::str::Utf8Error, Cow<'a, [u8]>)> {
+        let (_, value) = try_percent_decode(self.into_inner())?;
+
+        Ok(value)
+    }
+
     /// [`lossy_percent_decode`].
-    pub fn decode(self) -> Cow<'a, str> {
+    pub fn lossy_decode(self) -> Cow<'a, str> {
         let (_, value) = lossy_percent_decode(self.into_inner());
 
         value
@@ -65,8 +81,8 @@ impl<'a> From<Cow<'a, str>> for NonSpecialPathSegment<'a> {
 impl<'a> From<PathSegment<'a>> for NonSpecialPathSegment<'a> {
     fn from(value: PathSegment<'a>) -> Self {
         match value {
-            PathSegment::SpecialNotFile(x) => x.into(),
             PathSegment::File          (x) => x.into(),
+            PathSegment::SpecialNotFile(x) => x.into(),
             PathSegment::NonSpecial    (x) => x,
         }
     }

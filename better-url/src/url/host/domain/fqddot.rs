@@ -34,11 +34,11 @@ impl BetterUrl {
 
     /// [`DomainHost::set_fqdn`].
     /// # Errors
-    /// If the call to [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
+    /// If [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
     ///
-    /// If the call to [`DomainHost::set_fqdn`] returns an error, that error is returned.
+    /// If [`DomainHost::set_fqdn`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_host`] reutrns an error, that error is returned.
+    /// If [`Self::set_host`] reutrns an error, that error is returned.
     pub fn set_fqdn(&mut self, value: bool) -> Result<bool, SetHostError> {
         if self.domain_details().ok_or(NoDomain)?.fq != value {
             let mut domain = self.domain().ok_or(NoDomain)?;

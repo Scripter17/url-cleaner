@@ -89,7 +89,7 @@ pub fn lossy_decode_password<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<
 
 /// [`try_percent_decode`] but with clearer intent.
 /// # Errors
-/// If the call to [`try_percent_decode`] returns an error, that error is returned.
+/// If [`try_percent_decode`] returns an error, that error is returned.
 #[expect(clippy::type_complexity, reason = "It's fine.")]
 pub fn try_decode_username<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), (std::str::Utf8Error, Cow<'a, [u8]>)> {
     try_percent_decode(value)
@@ -97,7 +97,7 @@ pub fn try_decode_username<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool,
 
 /// [`try_percent_decode`] but with clearer intent.
 /// # Errors
-/// If the call to [`try_percent_decode`] returns an error, that error is returned.
+/// If [`try_percent_decode`] returns an error, that error is returned.
 #[expect(clippy::type_complexity, reason = "It's fine.")]
 pub fn try_decode_password<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), (std::str::Utf8Error, Cow<'a, [u8]>)> {
     try_percent_decode(value)

@@ -1,5 +1,7 @@
 //! [`DomainHostDetails`].
 
+use psl::Psl;
+
 use crate::prelude::*;
 
 /// The details of where a domain's parts are.
@@ -19,9 +21,9 @@ pub struct DomainHostDetails {
 impl DomainHostDetails {
     /// Parse an encoded domain.
     /// # Errors
-    /// If the call to [`ends_in_a_number`] returns [`true`], returns the error [`InvalidDomainHost`].
+    /// If [`ends_in_a_number`] returns [`true`], returns the error [`InvalidDomainHost`].
     ///
-    /// If the call to [`Self::parse_not_eian`] returns an error, that error is returned.
+    /// If [`Self::parse_not_eian`] returns an error, that error is returned.
     pub fn parse(value: &str) -> Result<Self, InvalidDomainHost> {
         match ends_in_a_number(value) {
             true  => Err(InvalidDomainHost),
@@ -33,7 +35,7 @@ impl DomainHostDetails {
     /// # Errors
     /// If `value` is empty, returns the error [`InvalidDomainHost`].
     pub fn parse_not_eian(value: &str) -> Result<Self, InvalidDomainHost> {
-        debug_assert!(!ends_in_a_number(value));
+        debug_assert!(!ends_in_a_number(value), "The domain to not end in a number");
 
         match value {
             "" => Err(InvalidDomainHost),
@@ -42,20 +44,18 @@ impl DomainHostDetails {
     }
 
     /// Parse a domain literal without checking for validity.
-    /// # Panics
-    /// If the call to [`psl::suffix`] returns [`None`] (`value` is empty), panics.
     ///
-    /// As far as I know, that should only happen with the empty string.
+    /// Assumes that `value` is a valid output of [`encode_domain_host`].
+    #[allow(clippy::missing_panics_doc, reason = "It's a debug assert???")]
     pub fn parse_unchecked(value: &str) -> Self {
-        debug_assert!(!value.is_empty(), "The domain to not be empty.");
-        debug_assert!(!encode_domain_host(value).expect("The domain to be valid").0, "The domain to be encoded.");
+        debug_assert_eq!(value, encode_domain_host(value).expect("The domain to be valid").1, "The domain to be encoded.");
 
-        let (suffix, fq) = match psl::suffix(value.as_bytes()).expect("The domain to not be empty.").as_bytes() {
-            [suffix @ .., b'.'] => (suffix, true ),
-             suffix             => (suffix, false),
+        let (segments, fq) = match value.as_bytes() {
+            [value @ .., b'.'] => (value, true ),
+             value             => (value, false),
         };
 
-        let ss = suffix.as_ptr().addr() - value.addr();
+        let ss = segments.len() - psl::List.find(MemchrSplit {remainder: Some(segments), needle: b'.'}.rev()).len;
 
         let ms = match ss {
             0  => 0,

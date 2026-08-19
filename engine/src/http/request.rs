@@ -61,9 +61,9 @@ impl Default for HttpRequestSource {
 impl HttpRequestSource {
     /// Get a [`reqwest::RequestBuilder`].
     /// # Errors
-    /// If the call to [`reqwest::Method::from_str`] returns an error, that error is returned.
+    /// If [`reqwest::Method::from_str`] returns an error, that error is returned.
     ///
-    /// If the call to [`url::Url::parse`] returns an error, that error is returned.
+    /// If [`url::Url::parse`] returns an error, that error is returned.
     ///
     /// If any call to [`HeaderName::from_str`] returns an error, that error is returned.
     ///

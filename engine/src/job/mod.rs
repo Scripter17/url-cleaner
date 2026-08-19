@@ -41,9 +41,9 @@ pub struct Job<'j> {
 impl<'j> Job<'j> {
     /// Do a task.
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is turned into a [`MakeTaskError`] and returned.
+    /// If [`TryInto::try_into`] returns an error, that error is turned into a [`MakeTaskError`] and returned.
     ///
-    /// IF the call to [`Cleaner::apply`] returns an error, that error is returned.
+    /// IF [`Cleaner::apply`] returns an error, that error is returned.
     /// # Panics
     /// If called inside a Tokio runtime, may or may not panic.
     pub fn r#do<T: TryInto<Task>>(&self, task: T) -> Result<(bool, BetterUrl), DoTaskError> where MakeTaskError: From<T::Error> {

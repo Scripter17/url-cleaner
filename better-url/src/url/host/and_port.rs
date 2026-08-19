@@ -14,9 +14,9 @@ impl BetterUrl {
     ///
     /// Basically only used by [`Self::canon_set_host`].
     /// # Errors
-    /// If the call to [`Self::set_host`] returns an error, that error is returned.
+    /// If [`Self::set_host`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_port`] returns an error, that error is returned.
+    /// If [`Self::set_port`] returns an error, that error is returned.
     pub fn set_host_port<'h, 'p, H: TryInto<FileHost<'h>> + TryInto<SpecialNotFileHost<'h>> + TryInto<NonSpecialHost<'h>>, P: TryInto<MaybePort<'p>>>(&mut self, host: H, port: Option<P>) -> Result<(), SetHostPortError>
         where InvalidHost: From<<H as TryInto<FileHost<'h>>>::Error> + From<<H as TryInto<SpecialNotFileHost<'h>>>::Error> + From<<H as TryInto<NonSpecialHost<'h>>>::Error>, InvalidPort: From<P::Error>
     {

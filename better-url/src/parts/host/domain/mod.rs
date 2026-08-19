@@ -126,28 +126,6 @@ mod normal;
 /// assert_eq!(domain.suffix(),                 "com");
 /// ```
 ///
-/// Or that you're setting/inserting only one segment.
-///
-/// ```
-/// use better_url::prelude::*;
-///
-/// let mut domain = DomainHost::new("example.com").unwrap();
-///
-/// domain.set_middle(Some("www.example")).unwrap();
-///
-/// assert_eq!(domain             ,      "www.example.com" );
-/// assert_eq!(domain.prefix_str(), Some("www"            ));
-/// assert_eq!(domain.middle_str(), Some(    "example"    ));
-/// assert_eq!(domain.suffix_str(),                  "com" );
-///
-/// domain.insert_prefix_segment(-1, "123.456").unwrap();
-///
-/// assert_eq!(domain             ,      "www.123.456.example.com" );
-/// assert_eq!(domain.prefix_str(), Some("www.123.456"            ));
-/// assert_eq!(domain.middle_str(), Some(            "example"    ));
-/// assert_eq!(domain.suffix_str(),                          "com" );
-/// ```
-///
 /// However, they do ensure that the result is a valid domain host.
 ///
 /// ```
@@ -198,7 +176,7 @@ impl<'a> DomainHost<'a> {
     /// # Safety
     /// Requires that `value` be percent decoded.
     /// # Errors
-    /// If the call to [`Self::new_normalized`] returns an error, that error is returned.
+    /// If [`Self::new_normalized`] returns an error, that error is returned.
     pub unsafe fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
         let (_, value) = uts46_map_normalize(value);
 
@@ -211,7 +189,7 @@ impl<'a> DomainHost<'a> {
     /// # Safety
     /// Requires that `value` be percent decoded and UTS46 map normalized.
     /// # Errors
-    /// If the call to [`Self::new_normalized`] returns an error, that error is returned.
+    /// If [`Self::new_normalized`] returns an error, that error is returned.
     pub unsafe fn new_normalized<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
         let (_, value) = encode_normalized_domain_host(value)?;
 
@@ -302,22 +280,22 @@ impl<'a> DomainHost<'a> {
 
     /// Shorthand for [`Self::set_labels_segment`].
     /// # Errors
-    /// If the call to [`Self::set_labels_segment`] returns an error, that error is returned.
-    pub fn set_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
+    /// If [`Self::set_labels_segment`] returns an error, that error is returned.
+    pub fn set_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
         self.set_labels_segment(index, value)
     }
 
     /// Shorthand for [`Self::set_labels_range`].
     /// # Errors
-    /// If the call to [`Self::set_labels_range`] returns an error, that error is returned.
+    /// If [`Self::set_labels_range`] returns an error, that error is returned.
     pub fn set_range<'b, T: TryInto<DomainSegments<'b>>, B: RangeBounds<isize>>(&mut self, range: B, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
         self.set_labels_range(range, value)
     }
 
     /// Shorthand for [`Self::insert_labels_segment`].
     /// # Errors
-    /// If the call to [`Self::insert_labels_segment`] returns an error, that error is returned.
-    pub fn insert_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
+    /// If [`Self::insert_labels_segment`] returns an error, that error is returned.
+    pub fn insert_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
         self.insert_labels_segment(index, value)
     }
 }

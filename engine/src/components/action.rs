@@ -22,7 +22,7 @@ pub enum Action {
         then: Box<Self>,
         /// The else.
         ///
-        /// Defaults to [`Self::None`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         r#else: Box<Self>
     },
@@ -303,7 +303,7 @@ pub enum Action {
         /// The value.
         value: StringSource
     },
-    /// [`BetterUrl::path_segment`] + [`PathSegment::decode`] + [`StringModification::apply`] + [`BetterUrl::set_path_segment`].
+    /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`StringModification::apply`] + [`BetterUrl::set_path_segment`].
     ModifyPathSegment {
         /// The index.
         index: isize,
@@ -354,9 +354,9 @@ pub enum Action {
 
     /// Set the URL to the value of the query param.
     /// # Errors
-    /// If the call to [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     ///
-    /// If the call to [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     GetUrlFromQueryParam(StringSource),
 
     // Fragment
@@ -407,7 +407,7 @@ pub enum Action {
     HandleParams {
         /// The [`HandleParamsMode`].
         ///
-        /// Defaults to [`HandleParamsMode::Remove`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         mode: HandleParamsMode,
         /// If [`true`], handle query parameters.
@@ -422,22 +422,22 @@ pub enum Action {
         fragment: bool,
         /// The names of segments to match.
         ///
-        /// Defaults to [`SetSource::None`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         names: SetSource,
         /// The prefixes of segments to match.
         ///
-        /// Defaults to [`ListSource::None`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         prefixes: ListSource,
         /// The names of segments to not match.
         ///
-        /// Defaults to [`SetSource::None`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         except_names: SetSource,
         /// The prefixes of segments to not match.
         ///
-        /// Defaults to [`ListSource::None`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         except_prefixes: ListSource
     },
@@ -702,7 +702,7 @@ impl Action {
 
             Self::SetPathSegment {index, value} => task_state.url.set_path_segment(*index, get!(?&!value))?,
             Self::ModifyPathSegment {index, modification} => {
-                let mut value = task_state.url.path_segment(*index).map(PathSegment::decode);
+                let mut value = task_state.url.path_segment(*index).map(PathSegment::lossy_decode);
 
                 match modification.apply(task_state, args, &mut value)? {
                     true  => task_state.url.set_path_segment(*index, value.map(Cow::into_owned).as_deref())?,
@@ -719,23 +719,23 @@ impl Action {
             Self::RemoveEmptyQuery                        => task_state.url.remove_empty_query(),
             Self::RemoveQueryParam         (name   )      => {let name = get!(!name); task_state.url.filter_query(|s| s.name() != name)},
             Self::AllowQueryParam          (name   )      => {let name = get!(!name); task_state.url.filter_query(|s| s.name() == name)},
-            Self::RemoveQueryParams        (names  )      => task_state.url.filter_query(|s| !names.contains(&*s.name())),
-            Self::AllowQueryParams         (names  )      => task_state.url.filter_query(|s|  names.contains(&*s.name())),
+            Self::RemoveQueryParams        (names  )      => task_state.url.filter_query(|s| !names.contains(&*s.into_name().lossy_decode())),
+            Self::AllowQueryParams         (names  )      => task_state.url.filter_query(|s|  names.contains(&*s.into_name().lossy_decode())),
             Self::AllowQueryParamsMatching (matcher)      => {
-                match task_state.url.query().try_filtered(|s| matcher.check(task_state, args, Some(&s.name())))? {
+                match task_state.url.query().try_filtered(|s| matcher.check(task_state, args, Some(&s.into_name().lossy_decode())))? {
                     (true , query) => {task_state.url.set_query(query.into_owned())?; true},
                     (false, _    ) => false
                 }
             },
             Self::RemoveQueryParamsMatching (matcher) => {
-                match task_state.url.query().try_filtered(|s| matcher.check(task_state, args, Some(&s.name())).map(|x| !x))? {
+                match task_state.url.query().try_filtered(|s| matcher.check(task_state, args, Some(&s.into_name().lossy_decode())).map(|x| !x))? {
                     (true , query) => {task_state.url.set_query(query.into_owned())?; true},
                     (false, _    ) => false
                 }
             },
 
             Self::GetUrlFromQueryParam(name) => {
-                task_state.url = task_state.url.query_param(get!(&name), 0).and_then(QuerySegment::into_value).ok_or(QueryParamNotFound)?.parse()?;
+                task_state.url = task_state.url.query_param(get!(&name), 0).and_then(|x| x.into_value().lossy_decode()).ok_or(QueryParamNotFound)?.parse()?;
                 true
             },
 
@@ -745,18 +745,18 @@ impl Action {
             Self::SetFragmentParam            {param, value} => task_state.url.set_fragment_query_param(&param.name, param.index, get!(?&!value).map(Some))?,
             Self::RemoveFragment                             => task_state.url.remove_fragment      (),
             Self::RemoveEmptyFragment                        => task_state.url.remove_empty_fragment(),
-            Self::RemoveFragmentParam         (name   )      => {let name = get!(!name); task_state.url.filter_fragment_query(|s| s.name() != name)},
-            Self::AllowFragmentParam          (name   )      => {let name = get!(!name); task_state.url.filter_fragment_query(|s| s.name() == name)},
-            Self::RemoveFragmentParams        (names  )      => task_state.url.filter_fragment_query(|s| !names.contains(&*s.name())),
-            Self::AllowFragmentParams         (names  )      => task_state.url.filter_fragment_query(|s|  names.contains(&*s.name())),
+            Self::RemoveFragmentParam         (name   )      => {let name = get!(!name); task_state.url.filter_fragment_query(|s| s.into_name().lossy_decode() != name)},
+            Self::AllowFragmentParam          (name   )      => {let name = get!(!name); task_state.url.filter_fragment_query(|s| s.into_name().lossy_decode() == name)},
+            Self::RemoveFragmentParams        (names  )      => task_state.url.filter_fragment_query(|s| !names.contains(&*s.into_name().lossy_decode())),
+            Self::AllowFragmentParams         (names  )      => task_state.url.filter_fragment_query(|s|  names.contains(&*s.into_name().lossy_decode())),
             Self::AllowFragmentParamsMatching (matcher)      => {
-                match task_state.url.fragment_query().try_filtered(|s| matcher.check(task_state, args, Some(&s.name())))? {
+                match task_state.url.fragment_query().try_filtered(|s| matcher.check(task_state, args, Some(&s.into_name().lossy_decode())))? {
                     (true , fragment) => {task_state.url.set_fragment(fragment.into_owned())?; true},
                     (false, _       ) => false
                 }
             },
             Self::RemoveFragmentParamsMatching (matcher) => {
-                match task_state.url.fragment_query().try_filtered(|s| matcher.check(task_state, args, Some(&s.name())).map(|x| !x))? {
+                match task_state.url.fragment_query().try_filtered(|s| matcher.check(task_state, args, Some(&s.into_name().lossy_decode())).map(|x| !x))? {
                     (true , fragment) => {task_state.url.set_fragment(fragment.into_owned())?; true},
                     (false, _       ) => false
                 }
@@ -775,7 +775,7 @@ impl Action {
                 let ep = get!(?except_prefixes);
 
                 let filter = |segment: QueryLikeSegment<'_>| -> bool {
-                    let name = segment.into_name();
+                    let name = segment.into_name().lossy_decode();
 
                     let mn = || {mn.is_some_and(|x| x.contains_some(&*name))};
                     let mp = || {mp.is_some_and(|x| x.iter().any(|prefix| name.starts_with(prefix)))};

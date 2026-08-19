@@ -15,7 +15,7 @@ pub struct Ipv4HostDetails {
 impl Ipv4HostDetails {
     /// Parse a raw IPv4 host.
     /// # Errors
-    /// If the call to [`Ipv4Addr::from_str`] returns an error, returns the error [`InvalidIpv4Host`].
+    /// If [`Ipv4Addr::from_str`] returns an error, returns the error [`InvalidIpv4Host`].
     /// # Examples
     /// ```
     /// use better_url::prelude::*;
@@ -31,7 +31,7 @@ impl Ipv4HostDetails {
 
     /// Parse an IPv4 host.
     /// # Errors
-    /// If the call to [`parse_ipv4_host`] returns an error, that error is returned.
+    /// If [`parse_ipv4_host`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// use better_url::prelude::*;

@@ -54,6 +54,10 @@ pub struct CacheClient {
     pub pool: sqlx::SqlitePool,
     /// The [`tokio::runtime::Handle`].
     pub handle: tokio::runtime::Handle,
+    /// If the SQLite database should be assumed to be initialized.
+    ///
+    /// Just used to let [`Self::init_acquire`] skip the initialization.
+    pub assume_init: std::sync::atomic::AtomicBool,
 }
 
 impl CacheClient {
@@ -70,25 +74,25 @@ impl CacheClient {
 
     /// [`tokio::runtime::Handle::block_on`] + [`Self::new`].
     /// # Panics
-    /// If the call to [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
     pub fn new_sync(target: CacheTarget, handle: tokio::runtime::Handle) -> Self {
         handle.block_on(Self::new(target))
     }
 
     /// [`tokio::runtime::Handle::block_on`] + [`Self::read`].
     /// # Errors
-    /// If the call to [`Self::read`] returns an error, that error is returned.
+    /// If [`Self::read`] returns an error, that error is returned.
     /// # Panics
-    /// If the call to [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
     pub fn read_sync(&self, subject: &str, key: &str, config: CacheConfig) -> Result<Option<Option<String>>, ReadFromCacheError> {
         self.handle.block_on(self.read(subject, key, config))
     }
 
     /// [`tokio::runtime::Handle::block_on`] + [`Self::write`].
     /// # Errors
-    /// If the call to [`Self::write`] returns an error, that error is retuerned.
+    /// If [`Self::write`] returns an error, that error is retuerned.
     /// # Panics
-    /// If the call to [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
     pub fn write_sync(&self, subject: &str, key: &str, value: Option<&str>, duration: Duration, config: CacheConfig) -> Result<(), WriteToCacheError> {
         self.handle.block_on(self.write(subject, key, value, duration, config))
     }
@@ -97,7 +101,7 @@ impl CacheClient {
     /// # Errors
     /// If interacing with the database returns an error, returns the error [`sqlx::Error`].
     /// # Panics
-    /// If the call to [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
     pub fn init_acquire_sync(&self) -> Result<sqlx::pool::PoolConnection<sqlx::Sqlite>, InitAcquireCacheError> {
         self.handle.block_on(self.init_acquire())
     }
@@ -114,14 +118,15 @@ impl CacheClient {
         };
 
         Self {
-            pool  : sqlx::SqlitePool::connect_lazy_with(options),
-            handle: tokio::runtime::Handle::current(),
+            pool       : sqlx::SqlitePool::connect_lazy_with(options),
+            handle     : tokio::runtime::Handle::current(),
+            assume_init: false.into(),
         }
     }
 
     /// Read an entry's value.
     /// # Errors
-    /// If the call to [`Self::init_acquire`] returns an error, that error is returned.
+    /// If [`Self::init_acquire`] returns an error, that error is returned.
     ///
     /// If interacing with the database returns an error, returns the error [`sqlx::Error`].
     #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
@@ -143,11 +148,11 @@ impl CacheClient {
 
         Ok(match connection.fetch_optional(query).await? {
             Some(row) => {
-                if config.delay && let Some(remainder) = Duration::from_secs_f64(row.get("duration")).checked_sub(start.elapsed()) {
+                if config.delay && let Some(remainder) = Duration::from_secs_f64(row.try_get("duration")?).checked_sub(start.elapsed()) {
                     tokio::time::sleep(remainder).await;
                 }
 
-                Some(row.get("value"))
+                Some(row.try_get("value")?)
             },
             None => None
         })
@@ -155,7 +160,7 @@ impl CacheClient {
 
     /// Write an entry.
     /// # Errors
-    /// If the call to [`Self::init_acquire`] returns an error, that error is returned.
+    /// If [`Self::init_acquire`] returns an error, that error is returned.
     ///
     /// If interacing with the database returns an error, returns the error [`sqlx::Error`].
     #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
@@ -186,9 +191,13 @@ impl CacheClient {
     pub async fn init_acquire(&self) -> Result<sqlx::pool::PoolConnection<sqlx::Sqlite>, InitAcquireCacheError> {
         let mut connection = self.pool.acquire().await?;
 
-        let query = sqlx::query(Self::INIT);
+        if !self.assume_init.load(std::sync::atomic::Ordering::Relaxed) {
+            let query = sqlx::query(Self::INIT);
 
-        connection.execute(query).await?;
+            connection.execute(query).await?;
+
+            self.assume_init.store(true, std::sync::atomic::Ordering::Relaxed);
+        }
 
         Ok(connection)
     }

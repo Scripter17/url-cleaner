@@ -5,7 +5,7 @@ use crate::prelude::*;
 impl BetterUrl {
     /// The official protocol setter.
     /// # Errors
-    /// If the call to [`Self::set_scheme`] returns an error, that error is returned.
+    /// If [`Self::set_scheme`] returns an error, that error is returned.
     pub fn canon_set_protocol<'a, T: Into<Cow<'a, str>>>(&mut self, value: T) -> Result<(), SetSchemeError> {
         let (_, value) = canonize_scheme_setter(value);
 
@@ -14,7 +14,7 @@ impl BetterUrl {
 
     /// The official username setter.
     /// # Errors
-    /// If the call to [`Self::set_username`] returns an error, that error is returned.
+    /// If [`Self::set_username`] returns an error, that error is returned.
     pub fn canon_set_username<'a, T: Into<Cow<'a, str>>>(&mut self, value: T) -> Result<(), SetUsernameError> {
         let (_, value) = canonize_set_username(value);
 
@@ -23,7 +23,7 @@ impl BetterUrl {
 
     /// The official password setter.
     /// # Errors
-    /// If the call to [`Self::set_password`] returns an error, that error is returned.
+    /// If [`Self::set_password`] returns an error, that error is returned.
     pub fn canon_set_password<'a, T: Into<Cow<'a, str>>>(&mut self, value: T) -> Result<(), SetUsernameError> {
         let (_, value) = canonize_set_password(value);
 
@@ -32,7 +32,7 @@ impl BetterUrl {
 
     /// The official hostname setter.
     /// # Errors
-    /// If the call to [`Self::set_host`] returns an error, that error is returned.
+    /// If [`Self::set_host`] returns an error, that error is returned.
     pub fn canon_set_hostname<'a, T: Into<Cow<'a, str>>>(&mut self, value: T) -> Result<(), SetHostError> {
         let (_, value) = canonize_hostname_setter(value, self.is_special());
 
@@ -41,7 +41,7 @@ impl BetterUrl {
 
     /// The official host setter.
     /// # Errors
-    /// If the call to [`Self::set_host_port`] returns an error, that error is returned.
+    /// If [`Self::set_host_port`] returns an error, that error is returned.
     pub fn canon_set_host<'a, T: Into<Cow<'a, str>>>(&mut self, value: T) -> Result<(), SetHostPortError> {
         let (host, port) = canonize_host_setter(value, self.scheme_type())?;
 
@@ -50,7 +50,7 @@ impl BetterUrl {
 
     /// The official port setter.
     /// # Errors
-    /// If the call to [`Self::set_port`] returns an error, that error is returned.
+    /// If [`Self::set_port`] returns an error, that error is returned.
     pub fn canon_set_port<'a, T: Into<Cow<'a, str>>>(&mut self, value: T) -> Result<(), SetPortError> {
         let (_, value) = canonize_port_setter(value);
 
@@ -59,7 +59,7 @@ impl BetterUrl {
 
     /// The official pathname setter.
     /// # Errors
-    /// If the call to [`Self::set_path`] returns an error, that error is returned.
+    /// If [`Self::set_path`] returns an error, that error is returned.
     pub fn canon_set_pathname<'a, T: Into<Cow<'a, str>>>(&mut self, value: T) -> Result<(), SetPathError> {
         let (_, value) = canonize_part_setter(value);
 
@@ -68,7 +68,7 @@ impl BetterUrl {
 
     /// The official search setter.
     /// # Errors
-    /// If the call to [`Self::set_query`] returns an error, that error is returned.
+    /// If [`Self::set_query`] returns an error, that error is returned.
     pub fn canon_set_search<'a, T: Into<Cow<'a, str>>>(&mut self, value: T) -> Result<(), SetQueryError> {
         let (_, value) = canonize_query_setter(value);
 
@@ -77,7 +77,7 @@ impl BetterUrl {
 
     /// The official hash setter.
     /// # Errors
-    /// If the call to [`Self::set_fragment`] returns an error, that error is returned.
+    /// If [`Self::set_fragment`] returns an error, that error is returned.
     pub fn canon_set_hash<'a, T: Into<Cow<'a, str>>>(&mut self, value: T) -> Result<(), SetFragmentError> {
         let (_, value) = canonize_fragment_setter(value);
 

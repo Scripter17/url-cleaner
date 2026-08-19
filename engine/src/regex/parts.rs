@@ -25,7 +25,7 @@ crate::util::string_or_struct_magic!(RegexParts);
 impl RegexParts {
     /// Compile the regex.
     /// # Errors
-    /// If the call to [`RegexBuilder::build`] returns an error, that error is returned.
+    /// If [`RegexBuilder::build`] returns an error, that error is returned.
     pub fn build(&self) -> Result<Regex, regex::Error> {
         RegexBuilder::new(&self.pattern)
             .line_terminator     (self.config.line_terminator)

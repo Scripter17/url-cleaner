@@ -56,9 +56,9 @@ impl BetterUrl {
 
     /// Set the port.
     /// # Errors
-    /// If the call to [`MaybePort::new`] returns an error, returns the error [`InvalidPort`].
+    /// If [`MaybePort::new`] returns an error, returns the error [`InvalidPort`].
     ///
-    /// If the call to [`Self::cannot_have_userinfo_or_port`] returns [`true`], returns the error [`SetPortError::CantHavePort`].
+    /// If [`Self::cannot_have_userinfo_or_port`] returns [`true`], returns the error [`SetPortError::CantHavePort`].
     ///
     /// If the URL would become too long, returns the error [`TooLong`].
     #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]

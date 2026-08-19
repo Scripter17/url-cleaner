@@ -5,9 +5,9 @@ use crate::prelude::*;
 impl SegmentedPath<'_> {
     /// Either [`FilePath::pop`], [`SpecialNotFilePath::pop`], or [`NonSpecialPath::pop`].
     /// # Errors
-    /// If the call to [`FilePath::pop`] returns an error, that error is returned.
+    /// If [`FilePath::pop`] returns an error, that error is returned.
     ///
-    /// If the call to [`SpecialNotFilePath::pop`] returns an error, that error is returned.
+    /// If [`SpecialNotFilePath::pop`] returns an error, that error is returned.
     pub fn pop(&mut self) -> Result<bool, SetPathError> {
         match self {
             Self::File          (x) =>    x.pop() ,
@@ -18,9 +18,9 @@ impl SegmentedPath<'_> {
 
     /// Either [`FilePath::pop_if_empty`], [`SpecialNotFilePath::pop_if_empty`], or [`NonSpecialPath::pop_if_empty`].
     /// # Errors
-    /// If the call to [`FilePath::pop_if_empty`] returns an error, that error is returned.
+    /// If [`FilePath::pop_if_empty`] returns an error, that error is returned.
     ///
-    /// If the call to [`SpecialNotFilePath::pop_if_empty`] returns an error, that error is returned.
+    /// If [`SpecialNotFilePath::pop_if_empty`] returns an error, that error is returned.
     pub fn pop_if_empty(&mut self) -> Result<bool, SetPathError> {
         match self {
             Self::File          (x) =>    x.pop_if_empty() ,
@@ -31,9 +31,9 @@ impl SegmentedPath<'_> {
 
     /// Either [`FilePath::remove`], [`SpecialNotFilePath::remove`], or [`NonSpecialPath::remove`].
     /// # Errors
-    /// If the call to [`FilePath::remove`] returns an error, that error is returned.
+    /// If [`FilePath::remove`] returns an error, that error is returned.
     ///
-    /// If the call to [`SpecialNotFilePath::remove`] returns an error, that error is returned.
+    /// If [`SpecialNotFilePath::remove`] returns an error, that error is returned.
     pub fn remove(&mut self, index: isize) -> Result<bool, SetPathError> {
         match self {
             Self::File          (x) =>    x.remove(index) ,

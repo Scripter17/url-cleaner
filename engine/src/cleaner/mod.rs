@@ -64,9 +64,9 @@ static BUNDLED_CLEANER: OnceLock<Cleaner<'static>> = OnceLock::new();
 impl<'a> Cleaner<'a> {
     /// Load [`Self`] from a JSON file.
     /// # Errors
-    /// If the call to [`read_to_string`] returns an error, that error is returned.
+    /// If [`read_to_string`] returns an error, that error is returned.
     ///
-    /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
+    /// If [`serde_json::from_str`] returns an error, that error is returned.
     pub fn load<T: AsRef<Path>>(path: T) -> Result<(String, Cleaner<'static>), LoadCleanerError> {
         let string = read_to_string(path)?;
         let cleaner = serde_json::from_str(&string)?;
@@ -77,7 +77,7 @@ impl<'a> Cleaner<'a> {
 
     /// Make a new instance of the bundled cleaner.
     /// # Errors
-    /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
+    /// If [`serde_json::from_str`] returns an error, that error is returned.
     #[cfg(feature = "bundled-cleaner")]
     pub fn new_bundled() -> Result<Cleaner<'static>, LoadCleanerError> {
         Ok(serde_json::from_str(BUNDLED_CLEANER_STR)?)
@@ -85,7 +85,7 @@ impl<'a> Cleaner<'a> {
 
     /// Gets the cached bundled cleaner, parsing it if not already cached.
     /// # Errors
-    /// If the call to [`Self::new_bundled`] returns an error, that error is returned.
+    /// If [`Self::new_bundled`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::prelude::*;
@@ -108,9 +108,9 @@ impl<'a> Cleaner<'a> {
 
     /// Either [`Self::load`] or [`Self::new_bundled`].
     /// # Errors
-    /// If the call to [`Self::load`] returns an error, that error is returned.
+    /// If [`Self::load`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::new_bundled`] returns an error, that error is returned.
+    /// If [`Self::new_bundled`] returns an error, that error is returned.
     #[cfg(feature = "bundled-cleaner")]
     pub fn load_or_new_bundled<T: AsRef<Path>>(path: Option<T>) -> Result<(Cow<'static, str>, Cleaner<'static>), LoadCleanerError> {
         match path {
@@ -121,9 +121,9 @@ impl<'a> Cleaner<'a> {
 
     /// Either [`Self::load`] or [`Self::get_bundled`].
     /// # Errors
-    /// If the call to [`Self::load`] returns an error, that error is returned.
+    /// If [`Self::load`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::get_bundled`] returns an error, that error is returned.
+    /// If [`Self::get_bundled`] returns an error, that error is returned.
     #[cfg(feature = "bundled-cleaner")]
     pub fn load_or_get_bundled<T: AsRef<Path>>(path: Option<T>) -> Result<(Cow<'static, str>, Cow<'static, Cleaner<'static>>), LoadCleanerError> {
         Ok(match path {
@@ -167,7 +167,7 @@ impl<'a> Cleaner<'a> {
 impl<'j> Cleaner<'j> {
     /// [`Action::apply`].
     /// # Errors
-    /// If the call to [`Action::apply`] returns an error, that error is returned.
+    /// If [`Action::apply`] returns an error, that error is returned.
     pub fn apply(&'j self, task_state: &mut TaskState<'j>) -> Result<bool, ApplyCleanerError> {
         Ok(self.action.apply(task_state, None)?)
     }

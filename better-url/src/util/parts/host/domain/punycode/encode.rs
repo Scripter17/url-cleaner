@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// Punycode encode, in-place if possible.
 /// # Errors
-/// If the call to [`encode_punycode_into`] returns an error, that error is returned.
+/// If [`encode_punycode_into`] returns an error, that error is returned.
 /// # Examples
 /// ```
 /// use better_url::util::*;
@@ -45,7 +45,7 @@ pub fn encode_punycode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<Cow<'a, st
 ///
 /// Returnx the number of ASCII codepoints and non-ASCII codepoints.
 /// # Errors
-/// If the call to [`encode_punycode_into_bytes`] returns an error, that error is returned.
+/// If [`encode_punycode_into_bytes`] returns an error, that error is returned.
 pub fn encode_punycode_into<I: IntoIterator<Item = char>>(iter: I, out: &mut String) -> Result<(u32, u32), TooLong> {
     encode_punycode_into_bytes(iter, unsafe {out.as_mut_vec()})
 }

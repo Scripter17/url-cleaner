@@ -1,4 +1,4 @@
-//! Common stuff.
+//! Setter stuff.
 
 use crate::prelude::*;
 

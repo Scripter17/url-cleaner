@@ -1,6 +1,6 @@
 # URL Cleaner
 
-[Engine](engine) | [CLI](cli) | [Site and Site Userscript](site) | [Site CLIent](site-client) | [Discord](discord)
+[Better URL](better-url) | [Engine](engine) | [CLI](cli) | [Site and Site Userscript](site) | [Site CLIent](site-client) | [Discord](discord)
 
 Explicit non-consent to URL spytext.
 
@@ -19,7 +19,7 @@ URL Cleaner currently has 3 official frontends:
 
 - [A CLI tool](cli)
 - [An HTTP/WebSocket server and userscript](site)
-  - [A CLI client for Site](site-client)
+  - There is also a [CLI client](site-client) for Site
 - [A discord app/bot](discord)
 
 You can also make your own frontends by using the [`url_cleaner_engine`](engine) crate.
@@ -42,7 +42,7 @@ However, the Bundled Cleaner will by default expand and cache known redirects by
 
 To use proxies, see [reqwest's documentation](https://docs.rs/reqwest/latest/reqwest/#proxies).
 
-To disable network access, set the `no_network` flag.
+To disable network access, either use `--no-http` or, in the Bundled Cleaner, set the `no_network` flag.
 
 To disable reading from the cache, use `--no-read-cache`.
 

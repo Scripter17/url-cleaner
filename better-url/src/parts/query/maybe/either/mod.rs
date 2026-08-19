@@ -168,12 +168,6 @@ impl<'a> From<QuerySegment<'a>> for MaybeQuery<'a> {
 impl<'a> From<MaybeSpecialQuery            <'a> > for MaybeQuery<'a> {fn from(value: MaybeSpecialQuery            <'a> ) -> Self {Self::Special   (value)       }}
 impl<'a> From<MaybeNonSpecialQuery         <'a> > for MaybeQuery<'a> {fn from(value: MaybeNonSpecialQuery         <'a> ) -> Self {Self::NonSpecial(value)       }}
 
-impl<'a> From<SpecialQuery                 <'a> > for MaybeQuery<'a> {fn from(value: SpecialQuery                 <'a> ) -> Self {Self::Special   (value.into())}}
-impl<'a> From<NonSpecialQuery              <'a> > for MaybeQuery<'a> {fn from(value: NonSpecialQuery              <'a> ) -> Self {Self::NonSpecial(value.into())}}
-
-impl<'a> From<SpecialQuerySegment          <'a> > for MaybeQuery<'a> {fn from(value: SpecialQuerySegment          <'a> ) -> Self {Self::Special   (value.into())}}
-impl<'a> From<NonSpecialQuerySegment       <'a> > for MaybeQuery<'a> {fn from(value: NonSpecialQuerySegment       <'a> ) -> Self {Self::NonSpecial(value.into())}}
-
 impl<'a> From<Option<SpecialQuery          <'a>>> for MaybeQuery<'a> {fn from(value: Option<SpecialQuery          <'a>>) -> Self {Self::Special   (value.into())}}
 impl<'a> From<Option<NonSpecialQuery       <'a>>> for MaybeQuery<'a> {fn from(value: Option<NonSpecialQuery       <'a>>) -> Self {Self::NonSpecial(value.into())}}
 

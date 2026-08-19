@@ -24,9 +24,9 @@ pub struct ProfilesConfig {
 impl ProfilesConfig {
     /// Load [`Self`] from a JSON file.
     /// # Errors
-    /// If the call to [`read_to_string`] returns an error, that error is returned.
+    /// If [`read_to_string`] returns an error, that error is returned.
     ///
-    /// If the call to [`serde_json::from_str`] returns an error, that error is returned.
+    /// If [`serde_json::from_str`] returns an error, that error is returned.
     pub fn load<T: AsRef<Path>>(path: T) -> Result<(String, Self), LoadProfilesConfigError> {
         let string = read_to_string(path)?;
         let config = serde_json::from_str(&string)?;
@@ -35,7 +35,7 @@ impl ProfilesConfig {
 
     /// Either [`Self::load`] or [`Default::default`].
     /// # Errors
-    /// If the call to [`Self::load`] returns an error, that error is returned.
+    /// If [`Self::load`] returns an error, that error is returned.
     pub fn load_or_default<T: AsRef<Path>>(path: Option<T>) -> Result<(Cow<'static, str>, Self), LoadProfilesConfigError> {
         Ok(match path {
             Some(path) => {

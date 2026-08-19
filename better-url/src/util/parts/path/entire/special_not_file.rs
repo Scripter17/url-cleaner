@@ -79,7 +79,7 @@ pub fn resolve_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bo
     let mut value = value.into();
     let mut changed = false;
 
-    if !value.starts_with('/') {
+    if !matches!(value.as_bytes(), [b'/', ..]) {
         value.to_mut().insert(0, '/');
         changed = true;
     }

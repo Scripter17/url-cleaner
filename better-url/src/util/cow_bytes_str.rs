@@ -12,7 +12,7 @@ pub fn cow_str_to_bytes<'a, T: Into<Cow<'a, str>>>(value: T) -> Cow<'a, [u8]> {
 
 /// Try to convert a `Cow<'_, [u8]>` into a `Cow<'_, str>`.
 /// # Errors
-/// If the call to [`str::from_utf8`] returns an error, that error and the `value` are returned.
+/// If [`str::from_utf8`] returns an error, that error and the `value` are returned.
 pub fn try_cow_bytes_to_str<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<Cow<'a, str>, (std::str::Utf8Error, Cow<'a, [u8]>)> {
     let value = value.into();
 

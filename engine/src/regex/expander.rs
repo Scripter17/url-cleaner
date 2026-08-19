@@ -38,7 +38,7 @@ use crate::prelude::*;
 pub enum RegexExpansion {
     /// [`StringSource::get`].
     /// # Errors
-    /// If the call to [`StringSource::get`] returns an error, that error is returned.
+    /// If [`StringSource::get`] returns an error, that error is returned.
     String(StringSource),
     /// Joins a list of [`Self`].
     ///
@@ -52,7 +52,7 @@ pub enum RegexExpansion {
     Name(String),
     /// Apply [`Self::Modified::modification`] to [`Self::Modified::value`].
     /// # Errors
-    /// If the call to [`StringModification::apply`] returns an error, that error is returned.
+    /// If [`StringModification::apply`] returns an error, that error is returned.
     Modified {
         /// The [`Self`] to modify.
         value: Box<Self>,

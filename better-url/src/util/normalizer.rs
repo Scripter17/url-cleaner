@@ -67,7 +67,7 @@ impl     From<String      > for Normalizer<'static> {fn from(value: String      
 
 impl<'a> std::fmt::Write for Normalizer<'a> {
     fn write_str(&mut self, s: &str) -> Result<(), std::fmt::Error> {
-        if self.i + s.len() > self.x.len() || unsafe {self.x.get_unchecked(self.i..self.i+s.len())}.bytes().ne(s.bytes()) {
+        if self.i + s.len() > self.x.len() || unsafe {self.x.get_unchecked(self.i .. self.i + s.len())} != s {
             unsafe {
                 self.x.to_mut().as_mut_vec().set_len(self.i);
             }

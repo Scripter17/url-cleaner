@@ -3,40 +3,32 @@
 use crate::prelude::*;
 
 impl<'a> QueryLikeSegment<'a> {
-    /// Either [`QuerySegment::raw_value`] or [`FragmentQuerySegment::raw_value`].
-    pub fn raw_value(&self) -> Option<&str> {
+    /// Either [`QuerySegment::has_value`] or [`FragmentQuerySegment::has_value`].
+    pub fn has_value(&self) -> bool {
         match self {
-            Self::Query   (x) => x.raw_value(),
-            Self::Fragment(x) => x.raw_value(),
+            Self::Query   (x) => x.has_value(),
+            Self::Fragment(x) => x.has_value(),
         }
     }
 
     /// Either [`QuerySegment::value`] or [`FragmentQuerySegment::value`].
-    pub fn value(&self) -> Option<Cow<'_, str>> {
+    pub fn value(&self) -> MaybeQueryLikeValue<'_> {
         match self {
-            Self::Query   (x) => x.value(),
-            Self::Fragment(x) => x.value(),
-        }
-    }
-
-    /// Either [`QuerySegment::into_raw_value`] or [`FragmentQuerySegment::into_raw_value`].
-    pub fn into_raw_value(self) -> Option<Cow<'a, str>> {
-        match self {
-            Self::Query   (x) => x.into_raw_value(),
-            Self::Fragment(x) => x.into_raw_value(),
+            Self::Query   (x) => x.value().into(),
+            Self::Fragment(x) => x.value().into(),
         }
     }
 
     /// Either [`QuerySegment::into_value`] or [`FragmentQuerySegment::into_value`].
-    pub fn into_value(self) -> Option<Cow<'a, str>> {
+    pub fn into_value(self) -> MaybeQueryLikeValue<'a> {
         match self {
-            Self::Query   (x) => x.into_value(),
-            Self::Fragment(x) => x.into_value(),
+            Self::Query   (x) => x.into_value().into(),
+            Self::Fragment(x) => x.into_value().into(),
         }
     }
 
     /// Either [`QuerySegment::set_value`] or [`FragmentQuerySegment::set_value`].
-    pub fn set_value(&mut self, value: Option<&str>) {
+    pub fn set_value<'b, T: Into<MaybeSpecialQueryValue<'b>> + Into<MaybeNonSpecialQueryValue<'b>> + Into<MaybeFragmentQueryValue<'b>>>(&mut self, value: T) {
         match self {
             Self::Query   (x) => x.set_value(value),
             Self::Fragment(x) => x.set_value(value),

@@ -39,7 +39,7 @@
 				"bluesky_mode": {
 					"desc": "Decides what host to replace Bluesky/Bluesky embed hosts with.",
 					"required": false,
-					"unset": "Set Bluesky and Bluesky embed hosts to `bsky.app`.",
+					"unset": "Set Bluesky embed hosts to `bsky.app`.",
 					"variants": {
 						"canon": "Always set it to `bsky.app`.",
 						"embed": "Always set it to the `bluesky_embed_host` var."
@@ -53,7 +53,7 @@
 				"fandom_mode": {
 					"desc": "Decides what to replace Fandom/Breezewiki URLs with.",
 					"required": false,
-					"unset": "Keep fandom URLs as-is and change Breezewiki URLs to the `breezewiki_host` var.",
+					"unset": "Do nothing.",
 					"variants": {
 						"canon"     : "Set to fandom.",
 						"breezewiki": "Set to the `breezewiki_host` var."
@@ -65,14 +65,32 @@
 				},
 
 				"furaffinity_mode": {
-					"desc": "Decides what host to replace furaffinity hosts with.",
+					"desc": "Decides what host to replace Furaffinity/Furaffinity embed hosts with.",
 					"required": false,
-					"unset": "Keep as-is.",
+					"unset": "Do nothing",
 					"variants": {
 						"canon": "Set to `www.furaffinity.net`.",
 						"sfw"  : "Set to `sfw.furaffinity.net`.",
-						"nsfw" : "Set to `www.furaffinity.net`."
+						"embed": "Set to the `furaffinity_embed_host` var."
 					}
+				},
+				"furaffinity_embed_host": {
+					"desc": "The Furaffinity embed host to use.",
+					"required": true
+				},
+
+				"instagram_mode": {
+					"desc": "Decides what host to replace instagram/instagram embed hosts with.",
+					"required": false,
+					"unset": "Do nothing",
+					"variants": {
+						"canon": "Set to `instagram.com`.",
+						"embed": "Set to the `instagram_embed_host` var."
+					}
+				},
+				"instagram_embed_host": {
+					"desc": "The instagram embed host to use.",
+					"required": false
 				},
 
 				"pixiv_mode": {
@@ -92,12 +110,15 @@
 				"reddit_mode": {
 					"desc": "Decides what host to replace reddit hosts with.",
 					"required": false,
-					"unset": "Keep as-is.",
+					"unset": "Do nothing",
 					"variants": {
 						"canon": "Set to `www.reddit.com`.",
-						"old"  : "Set to `old.reddit.com`.",
-						"new"  : "Set to `www.reddit.com`."
+						"old"  : "Set to `old.reddit.com`."
 					}
+				},
+				"reddit_embed_host": {
+					"desc": "The reddit embed host to use.",
+					"required": false
 				},
 
 				"tiktok_mode": {
@@ -195,10 +216,11 @@
 	},
 	"params": {
 		"vars": {
-			"bluesky_embed_host": "fxbsky.app",
-			"pixiv_embed_host"  : "phixiv.net",
-			"tiktok_embed_host" : "www.tfxktok.com",
-			"twitter_embed_host": "fixupx.com",
+			"bluesky_embed_host"    : "fxbsky.app",
+			"furaffinity_embed_host": "xfuraffinity.net",
+			"pixiv_embed_host"      : "phixiv.net",
+			"tiktok_embed_host"     : "tfxktok.com",
+			"twitter_embed_host"    : "fixupx.com",
 
 			"breezewiki_host": "breezewiki.com",
 			"invidious_host" : "yewtu.be",
@@ -254,13 +276,26 @@
 
 				"deviantart_embed_hosts": ["fxdeviantart.com"],
 
+				"furaffinity": ["furaffinity.net", "sfw.furaffinity.net"],
+				"furaffinity_embed_hosts": ["xfuraffinity.net"],
+
+				"instagram": ["instagram.com"],
+				"instagram_embed_hosts": ["vxinstagram.com", "ddinstagram.com", "fxinstagram.com", "ddinstagram.com", "instafix.com", "vxinst.com"],
+
 				"pixiv": ["pixiv.net"],
 				"pixiv_embed_hosts": ["phixiv.net"],
+
+				"reddit": ["reddit.com", "old.reddit.com"],
+				"reddit_abnormal": ["new.reddit.com"],
+				"reddit_embed_hosts": ["rxddit.com", "old.rxddit.com"],
 
 				"tiktok": ["tiktok.com"],
 				"tiktok_embed_hosts": ["tfxktok.com"],
 
-				"twitter": ["x.com", "twitter.com", "mobile.x.com", "mobile.twitter.com"],
+				"threads": ["threads.com", "threads.net"],
+
+				"twitter": ["x.com"],
+				"twitter_abnormal": ["twitter.com", "mobile.x.com", "mobile.twitter.com"],
 				"twitter_embed_hosts": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com"],
 				"nitter": [
 					"bird.habedieeh.re", "nitter.holo-mix.com", "nitter.io.lol", "nitter.kavin.rocks", "nitter.kylrth.com", "nitter.lucabased.xyz", "nitter.lunar.icu",
@@ -308,8 +343,6 @@
 
 				"alibaba": ["1688.com", "alibaba.com", "aliexpress.com", "m.1688.com", "sale.alibaba.com"],
 				"disney": ["disney.com", "marvel.com"],
-				"furaffinity": ["furaffinity.net", "sfw.furaffinity.net"],
-				"instagram": ["instagram.com", "threads.com", "threads.net"],
 				"lmgtfy": ["letmegoogleforyou.com", "letmegooglethat.com", "lmgt.org", "lmgtfy.app", "lmgtfy.click", "lmgtfy.com"]
 			},
 
@@ -695,53 +728,6 @@
 
 
 
-			"tiktok": {"All": [
-				{"HandleParams": {
-					"names": ["checksum", "source", "u_code", "timestamp", "user_id", "enable_checksum", "web_id", "lang"],
-					"prefixes": ["_", "sec_", "ug", "is_from", "sender", "share", "social_", "refer", "embed"]
-				}},
-				{"StringMap": {
-					"value": {"Var": "tiktok_mode"},
-					"map": {
-						"canon": {"SetHost": "www.tiktok.com"},
-						"embed": {"SetHost": {"Var": "tiktok_embed_host"}}
-					},
-					"if_none": {"SetHost": {"FunctionArg": "default_host"}}
-				}}
-			]},
-
-
-
-			"twitter": {"All": [
-				{"PartMap": {
-					"part": {"PathSegment": 0},
-					"map": {
-						"intent": {"AllowQueryParams": ["screen_name", "tweet_id", "text"]},
-						"search": {"AllowQueryParams": ["q", "f", "pf", "lf"]}
-					},
-					"else": "RemoveQuery"
-				}},
-				{"StringMap": {
-					"value": {"Var": "twitter_mode"},
-					"map": {
-						"canon" : {"SetHost": "x.com"},
-						"embed" : {"SetHost": {"Var": "twitter_embed_host"}},
-						"nitter": {"SetHost": {"Var": "nitter_host"}}
-					},
-					"if_none": {"SetHost": {"FunctionArg": "default_host"}}
-				}}
-			]},
-
-
-
-			"pixiv": {"StringMap": {
-				"value": {"Var": "pixiv_mode"},
-				"map": {
-					"canon": {"SetHost": "www.pixiv.net"},
-					"embed": {"SetHost": {"Var": "pixiv_embed_host"}}
-				},
-				"if_none": {"SetHost": {"FunctionArg": "default_host"}}
-			}},
 
 
 
@@ -776,9 +762,110 @@
 				{"StringMap": {
 					"value": {"Var": "bluesky_mode"},
 					"map": {
+						"canon": {"SetHost": "bsky.app"},
 						"embed": {"SetHost": {"Var": "bluesky_embed_host"}}
 					},
-					"if_none": {"SetHost": "bsky.app"}
+					"if_none": {"FunctionArg": "modeless"}
+				}}
+			]},
+
+
+
+			"furaffinity": {"StringMap": {
+				"value": {"Var": "furaffinity_mode"},
+				"map": {
+					"canon": {"SetHost": "www.furaffinity.net"},
+					"sfw"  : {"SetHost": "sfw.furaffinity.net"},
+					"embed": {"SetHost": {"Var": "furaffinity_embed_host"}}
+				},
+				"if_none": {"FunctionArg": "modeless"}
+			}},
+
+
+
+			"instagram": {"All": [
+				{"HandleParams": {
+					"names": ["igshid", "igsh", "xmt", "ig_mid", "e", "g", "hl", "slof"],
+					"prefixes": ["xmt=", "source_", "igsh"]
+				}},
+				{"StringMap": {
+					"value": "instagram_mode",
+					"map": {
+						"canon": {"SetHost": "www.instagram.com"},
+						"embed": {"SetHost": {"Var": "instagram_embed_host"}}
+					},
+					"if_none": {"FunctionArg": "modeless"}
+				}}
+			]},
+
+
+
+			"pixiv": {"StringMap": {
+				"value": {"Var": "pixiv_mode"},
+				"map": {
+					"canon": {"SetHost": "www.pixiv.net"},
+					"embed": {"SetHost": {"Var": "pixiv_embed_host"}}
+				},
+				"if_none": {"FunctionArg": "modeless"}
+			}},
+
+
+
+			"reddit": {"All": [
+				{"PartMap": {
+					"part": {"PathSegment": 0},
+					"map": {
+						"domain": {"AllowQueryParams": ["count", "after"]}
+					},
+					"else": {"RemoveQueryParams": ["cid", "share_id"]}
+				}},
+				{"StringMap": {
+					"value": {"Var": "reddit_mode"},
+					"map": {
+						"canon": {"SetHost": "www.reddit.com"},
+						"old"  : {"SetHost": "old.reddit.com"},
+						"embed": {"SetHost": {"Var": "reddit_embed_host"}}
+					},
+					"if_none": {"FunctionArg": "modeless"}
+				}}
+			]},
+
+
+
+			"tiktok": {"All": [
+				{"HandleParams": {
+					"names": ["checksum", "source", "u_code", "timestamp", "user_id", "enable_checksum", "web_id", "lang"],
+					"prefixes": ["_", "sec_", "ug", "is_from", "sender", "share", "social_", "refer", "embed"]
+				}},
+				{"StringMap": {
+					"value": {"Var": "tiktok_mode"},
+					"map": {
+						"canon": {"SetHost": "www.tiktok.com"},
+						"embed": {"SetHost": {"Var": "tiktok_embed_host"}}
+					},
+					"if_none": {"FunctionArg": "modeless"}
+				}}
+			]},
+
+
+
+			"twitter": {"All": [
+				{"PartMap": {
+					"part": {"PathSegment": 0},
+					"map": {
+						"intent": {"AllowQueryParams": ["screen_name", "tweet_id", "text"]},
+						"search": {"AllowQueryParams": ["q", "f", "pf", "lf"]}
+					},
+					"else": "RemoveQuery"
+				}},
+				{"StringMap": {
+					"value": {"Var": "twitter_mode"},
+					"map": {
+						"canon" : {"SetHost": "x.com"},
+						"embed" : {"SetHost": {"Var": "twitter_embed_host"}},
+						"nitter": {"SetHost": {"Var": "nitter_host"}}
+					},
+					"if_none": {"FunctionArg": "modeless"}
 				}}
 			]},
 
@@ -815,8 +902,7 @@
 					"map": {
 						"canon"    : {"SetHost": "www.youtube.com"},
 						"invidious": {"SetHost": {"Var": "invidious_host"}}
-					},
-					"if_none": {"SetHost": {"FunctionArg": "default_host"}}
+					}
 				}}
 			]}
 		}
@@ -1991,18 +2077,6 @@
 						"tracelog", "wx_navbar_tramsparent", "wx_navbar_transparent", "wx_xpage", "from", "ckvia"
 					]},
 
-					"bluesky": {"Function": "bluesky"},
-					"bluesky_embed_hosts": {"If": {
-						"if": {"PathIs": "/"},
-						"then": {"PartMap": {
-							"part": "DomainNormal",
-							"map": {
-								"fxbsky.app": {"SetWhole": "https://bsky.app/profile/fxbsky.app"}
-							}
-						}},
-						"else": {"Function": "bluesky"}
-					}},
-
 					"breezewiki": {"StringMap": {
 						"value": {"Var": "fandom_mode"},
 						"map": {
@@ -2030,29 +2104,7 @@
 						"if_none": {"SetHost": {"Var": "breezewiki_host"}}
 					}},
 
-					"deviantart_embed_hosts": {"SetDomainOrigin": "deviantart.com"},
-
 					"disney": {"RemoveQueryParams": ["cid", "cmp", "att", "t", "DISCID", "r"]},
-
-					"furaffinity": {"StringMap": {
-						"value": {"Var": "furaffinity_mode"},
-						"map": {
-							"canon": {"SetHost": "www.furaffinity.net"},
-							"sfw"  : {"SetHost": "sfw.furaffinity.net"},
-							"nsfw" : {"SetHost": "www.furaffinity.net"}
-						}
-					}},
-
-					"instagram": {"All": [
-						{"HandleParams": {
-							"names": ["igshid", "igsh", "xmt", "ig_mid", "e", "g", "hl", "slof"],
-							"prefixes": ["xmt=", "source_", "igsh"]
-						}},
-						{"If": {
-							"if": {"DomainOriginIs": "threads.net"},
-							"then": {"SetHost": "www.threads.com"}
-						}}
-					]},
 
 					"lmgtfy": {"If": {
 						"if": {"QueryHasParam": "q"},
@@ -2062,11 +2114,117 @@
 						]}}
 					}},
 
+
+
+					"bluesky": {"Function": {
+						"name": "bluesky",
+						"args": {
+							"actions": {
+								"modeless": "None"
+							}
+						}
+					}},
+					"bluesky_embed_hosts": {"If": {
+						"if": {"PathIs": "/"},
+						"then": {"PartMap": {
+							"part": "DomainNormal",
+							"map": {
+								"fxbsky.app": {"SetWhole": "https://bsky.app/profile/fxbsky.app"}
+							}
+						}},
+						"else": {"Function": {
+							"name": "bluesky",
+							"args": {
+								"actions": {
+									"modeless": {"SetHost": "bsky.app"}
+								}
+							}
+						}}
+					}},
+
+					"deviantart_embed_hosts": {"SetDomainOrigin": "deviantart.com"},
+
+					"instagram_embed_hosts": {"SetHost": "www.instagram.com"},
+
+					"furaffinity": {"Function": {
+						"name": "furaffinity",
+						"args": {
+							"actions": {
+								"modeless": "None"
+							}
+						}
+					}},
+					"furaffinity_embed_hosts": {"If": {
+						"if": {"PathIs": "/"},
+						"then": {"PartMap": {
+							"part": "DomainNormal",
+							"map": {
+								"xfuraffinity.net": {"SetWhole": "https://firrawoof.github.io/xfuraffinity/"}
+							}
+						}},
+						"else": {"Function": {
+							"name": "furaffinity",
+							"args": {
+								"actions": {
+									"modeless": {"SetHost": "www.furaffinity.net"}
+								}
+							}
+						}}
+					}},
+
+					"instagram": {"Function": {
+						"name": "instagram",
+						"args": {
+							"actions": {
+								"modeless": "None"
+							}
+						}
+					}},
+					"instagram_embed_hosts": {"If": {
+						"if": {"Not": {"PathIs": "/"}},
+						"then": {"Function": {
+							"name": "instagram",
+							"args": {
+								"actions": {
+									"modeless": {"SetHost": "www.instagram.com"}
+								}
+							}
+						}}
+					}},
+
+					"reddit": {"Function": {
+						"name": "reddit",
+						"args": {
+							"actions": {
+								"modeless": "None"
+							}
+						}
+					}},
+					"reddit_abnormal": {"Function": {
+						"name": "reddit",
+						"args": {
+							"actions": {
+								"modeless": {"SetHost": "www.reddit.com"}
+							}
+						}
+					}},
+					"reddit_embed_hosts": {"If": {
+						"if": {"Not": {"PathIs": "/"}},
+						"then": {"Function": {
+							"name": "reddit",
+							"args": {
+								"actions": {
+									"modeless": {"SetHost": "www.reddit.com"}
+								}
+							}
+						}}
+					}},
+
 					"pixiv": {"Function": {
 						"name": "pixiv",
 						"args": {
-							"string_sources": {
-								"default_host": "www.pixiv.net"
+							"actions": {
+								"modeless": "None"
 							}
 						}
 					}},
@@ -2081,8 +2239,8 @@
 						"else": {"Function": {
 							"name": "pixiv",
 							"args": {
-								"string_sources": {
-									"default_host": {"Var": "pixiv_embed_host"}
+								"actions": {
+									"modeless": {"SetHost": "www.pixiv.net"}
 								}
 							}
 						}}
@@ -2091,25 +2249,47 @@
 					"tiktok": {"Function": {
 						"name": "tiktok",
 						"args": {
-							"string_sources": {
-								"default_host": "www.tiktok.com"
+							"actions": {
+								"modeless": "None"
 							}
 						}
 					}},
-					"tiktok_embed_hosts": {"Function": {
-						"name": "tiktok",
-						"args": {
-							"string_sources": {
-								"default_host": "www.tiktok.com"
+					"tiktok_embed_hosts": {"If": {
+						"if": {"Not": {"PathIs": "/"}},
+						"then": {"Function": {
+							"name": "tiktok",
+							"args": {
+								"actions": {
+									"modeless": {"SetHost": "www.tiktok.com"}
+								}
 							}
-						}
+						}}
 					}},
+
+					"threads": {"All": [
+						{"HandleParams": {
+							"names": ["igshid", "igsh", "xmt", "ig_mid", "e", "g", "hl", "slof"],
+							"prefixes": ["xmt=", "source_", "igsh"]
+						}},
+						{"If": {
+							"if": {"DomainOriginIs": "threads.net"},
+							"then": {"SetHost": "www.threads.com"}
+						}}
+					]},
 
 					"twitter": {"Function": {
 						"name": "twitter",
 						"args": {
-							"string_sources": {
-								"default_host": "x.com"
+							"actions": {
+								"modeless": "None"
+							}
+						}
+					}},
+					"twitter_abnormal": {"Function": {
+						"name": "twitter",
+						"args": {
+							"actions": {
+								"modeless": {"SetHost": "x.com"}
 							}
 						}
 					}},
@@ -2127,8 +2307,8 @@
 						"else": {"Function": {
 							"name": "twitter",
 							"args": {
-								"string_sources": {
-									"default_host": "x.com"
+								"actions": {
+									"modeless": {"SetHost": "x.com"}
 								}
 							}
 						}}
@@ -2136,42 +2316,21 @@
 					"nitter": {"Function": {
 						"name": "twitter",
 						"args": {
-							"string_sources": {
-								"default_host": {"Var": "nitter_host"}
+							"actions": {
+								"modeless": "None"
 							}
 						}
 					}},
 
-					"youtube": {"Function": {
-						"name": "youtube",
-						"args": {
-							"string_sources": {
-								"default_host": {"Part": "Host"}
-							}
-						}
-					}},
+					"youtube": {"Function": "youtube"},
 					"youtu_be": {"All": [
 						{"SetWhole": {"Join": [
 							"https://www.youtube.com/watch?v=",
 							{"PathSegment": 0}
 						]}},
-						{"Function": {
-							"name": "youtube",
-							"args": {
-								"string_sources": {
-									"default_host": "www.youtube.com"
-								}
-							}
-						}}
+						{"Function": "youtube"}
 					]},
-					"invidious": {"Function": {
-						"name": "youtube",
-						"args": {
-							"string_sources":{
-								"default_host": {"Var": "invidious_host"}
-							}
-						}
-					}}
+					"invidious": {"Function": "youtube"}
 				}
 			}},
 
@@ -2355,23 +2514,6 @@
 						]}}
 					}},
 					"razer.com": {"RemoveQueryParam": "cid"},
-					"reddit.com": {"All": [
-						{"PartMap": {
-							"part": {"PathSegment": 0},
-							"map": {
-								"domain": {"AllowQueryParams": ["count", "after"]}
-							},
-							"else": {"RemoveQueryParams": ["cid", "share_id"]}
-						}},
-						{"StringMap": {
-							"value": {"Var": "reddit_mode"},
-							"map": {
-								"canon": {"SetHost": "www.reddit.com"},
-								"old"  : {"SetHost": "old.reddit.com"},
-								"new"  : {"SetHost": "www.reddit.com"}
-							}
-						}}
-					]},
 					"rule34.xxx": {"If": {
 						"if": {"All": [
 							{"FlagIsSet": "remove_unused_search_query"},
@@ -2488,12 +2630,18 @@
 					"yahoo.com": {"RemoveQueryParams": ["p", "src", "pspid", "activity", ".src", "specId", "y"]}
 				}
 			}},
+
+
+
 			{"PartMap": {
 				"part": "DomainSuffix",
 				"map": {
 					"carrd.co": {"RemoveQueryParam": "ref"}
 				}
 			}},
+
+
+
 			{"PartMap": {
 				"part": "DomainNormal",
 				"map": {
@@ -2614,6 +2762,9 @@
 					"xp-pen.com": {"RemoveQueryParams": ["channel", "papClickId"]}
 				}
 			}},
+
+
+
 			{"PartMap": {
 				"part": "DomainMiddle",
 				"map": {

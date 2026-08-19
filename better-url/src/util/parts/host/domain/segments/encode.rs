@@ -31,9 +31,9 @@ const DATA: [u8; 256] = get_data();
 ///
 /// If you know your input will be percent decoded, see [`encode_percent_decoded_domain_segments`].
 /// # Errors
-/// If the call to [`try_percent_decode`] returns an error, returns the error [`InvalidDomainSegments`].
+/// If [`try_percent_decode`] returns an error, returns the error [`InvalidDomainSegments`].
 ///
-/// If the call to [`encode_percent_decoded_domain_segments`] returns an error, that error is returned.
+/// If [`encode_percent_decoded_domain_segments`] returns an error, that error is returned.
 pub fn encode_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
     let (a, value) = try_percent_decode(value).map_err(|_| InvalidDomainSegments)?;
     let (b, value) = encode_percent_decoded_domain_segments(value)?;
@@ -44,7 +44,7 @@ pub fn encode_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bo
 ///
 /// If you know your input will be UTS46 mapped and normalized, see [`encode_normalized_domain_segments`].
 /// # Errors
-/// If the call to [`encode_normalized_domain_segments`] returns an error, that error is returned.
+/// If [`encode_normalized_domain_segments`] returns an error, that error is returned.
 pub fn encode_percent_decoded_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
     let (a, value) = uts46_map_normalize(value);
     let (b, value) = encode_normalized_domain_segments(value)?;
@@ -62,7 +62,7 @@ pub fn encode_percent_decoded_domain_segments<'a, T: Into<Cow<'a, str>>>(value: 
 /// - If any call to [`BidiDetail::parse`] returns [`BidiDetail::ForceLtr`] and any other call to [`BidiDetail::parse`] returns [`BidiDetail::Rtl`], returns the error [`InvalidDomainSegments`].
 ///
 /// - If any call to [`encode_domain_segment`] returns an error, that error is returned.
-#[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
+#[expect(clippy::missing_panics_doc, reason = "Normalizer::write_str can't panic (unless String::push_str panics (at which point there's nothing to do.).).")]
 pub fn encode_normalized_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
     let mut value = value.into();
 

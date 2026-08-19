@@ -26,7 +26,7 @@ impl<'a> Ipv4Host<'a> {
 
     /// Make a new [`Self`] from a percent decoded value.
     /// # Errors
-    /// If the call to [`Self::new_normalized`] returns an error, that error is returned.
+    /// If [`Self::new_normalized`] returns an error, that error is returned.
     pub fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
         let (_, value) = uts46_map_normalize(value);
         Self::new_normalized(value)
@@ -34,7 +34,7 @@ impl<'a> Ipv4Host<'a> {
 
     /// Make a new [`Self`] from a percent decoded and UTS46 normalized value.
     /// # Errors
-    /// If the call to [`parse_ipv4_host`] returns an error, that error is returned.
+    /// If [`parse_ipv4_host`] returns an error, that error is returned.
     pub fn new_normalized<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
         let (_, addr, host) = make_ipv4_host(value)?;
 

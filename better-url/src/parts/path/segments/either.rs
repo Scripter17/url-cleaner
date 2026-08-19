@@ -145,6 +145,16 @@ impl<'a> PathSegments<'a> {
 
 
 
+impl<'a> From<PathSegment<'a>> for PathSegments<'a> {
+    fn from(value: PathSegment<'a>) -> Self {
+        match value {
+            PathSegment::File          (x) => x.into(),
+            PathSegment::SpecialNotFile(x) => x.into(),
+            PathSegment::NonSpecial    (x) => x.into(),
+        }
+    }
+}
+
 impl<'a> From<FilePathSegments          <'a>> for PathSegments<'a> {fn from(value: FilePathSegments          <'a>) -> Self {Self::File          (value)}}
 impl<'a> From<SpecialNotFilePathSegments<'a>> for PathSegments<'a> {fn from(value: SpecialNotFilePathSegments<'a>) -> Self {Self::SpecialNotFile(value)}}
 impl<'a> From<NonSpecialPathSegments    <'a>> for PathSegments<'a> {fn from(value: NonSpecialPathSegments    <'a>) -> Self {Self::NonSpecial    (value)}}

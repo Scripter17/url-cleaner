@@ -85,8 +85,8 @@ pub const OPAQUE_HOST                       : AsciiSet = C0;
 pub const OPAQUE_PATH                       : AsciiSet = C0;
 /// [The path percent-encode set](https://url.spec.whatwg.org/#application-x-www-form-urlencoded-percent-encode-set).
 pub const PATH                              : AsciiSet = NON_SPECIAL_QUERY.add_many(b"?^`{}");
-/// [`PATH`] + `/`.
-pub const PATH_SEGMENT                      : AsciiSet = PATH.add(b'/');
+/// [`PATH`] + `/` and `%`.
+pub const PATH_SEGMENT                      : AsciiSet = PATH.add_many(b"/%");
 
 /// [The application/x-www-form-urlencoded percent-encode set](https://url.spec.whatwg.org/#application-x-www-form-urlencoded-percent-encode-set).
 pub const QUERY_PART                        : AsciiSet = COMPONENT.add_many(b"!'()~");
@@ -105,3 +105,18 @@ pub const SPECIAL_QUERY_SEGMENT             : AsciiSet = SPECIAL_QUERY.add(b'&')
 pub const FRAGMENT                          : AsciiSet = C0.add_many(b" \"<>`");
 /// [`FRAGMENT`] + `&`.
 pub const FRAGMENT_QUERY_SEGMENT            : AsciiSet = FRAGMENT.add(b'&');
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a() {
+        for b in 0..=255 {
+            if NON_SPECIAL_QUERY.contains(b) {assert!(QUERY_PART.contains(b));}
+            if SPECIAL_QUERY    .contains(b) {assert!(QUERY_PART.contains(b));}
+            if FRAGMENT         .contains(b) {assert!(QUERY_PART.contains(b));}
+        }
+    }
+}

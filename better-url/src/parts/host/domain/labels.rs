@@ -117,7 +117,7 @@ impl DomainHost<'_> {
     /// DomainHost::new( ".com" ).unwrap().set_labels_segment(-1, None::<&str>).unwrap_err();
     /// DomainHost::new("..com" ).unwrap().set_labels_segment(-1, None::<&str>).unwrap_err();
     /// ```
-    pub fn set_labels_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
+    pub fn set_labels_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
         let old = self.segments().try_neg_nth(index);
         let new = value.map(TryInto::try_into).transpose()?;
 
@@ -131,10 +131,9 @@ impl DomainHost<'_> {
             (Err(_  ), None   ) => return Ok(false),
 
             (Ok(old), Some(new)) => match self.host.split_around_substr(old.as_str()) {
-                ("", "" ) if new.is_empty()         => Err(CantBeEmpty)?,
-                (_ , "" ) if new.last_is_empty   () => Err(NonFqdnCantEndInEmpty)?,
-                (_ , "" ) if new.ends_in_a_number() => Err(CantEndInANumber)?,
-                (_ , ".") if new.last_is_a_number() => Err(CantEndInANumber)?,
+                ("", ""      ) if new.is_empty   () => Err(CantBeEmpty)?,
+                (_ , ""      ) if new.is_empty   () => Err(NonFqdnCantEndInEmpty)?,
+                (_ , "" | ".") if new.is_a_number() => Err(CantEndInANumber)?,
 
                 _ => self.host.replace_substr(old.as_str(), new.as_str()),
             },
@@ -150,7 +149,7 @@ impl DomainHost<'_> {
             },
 
             (Err(0), Some(new)) => match index {
-                0.. if (!self.is_fqdn() || !new.last_is_empty()) && new.ends_in_a_number() => Err(CantEndInANumber)?,
+                0.. if new.is_a_number() => Err(CantEndInANumber)?,
 
                 0.. => {let i = self.suffix_after(); self.host.insert_with(i, [".", new.as_str()]);},
                 ..0 =>                               self.host.insert_with(0, [new.as_str(), "."]),
@@ -231,7 +230,7 @@ impl DomainHost<'_> {
     /// domain.insert_labels_segment(-1, "123").unwrap_err(); assert_eq!(domain, "www.example.com." );
     /// domain.insert_labels_segment(-1, ""   ).unwrap    (); assert_eq!(domain, "www.example.com..");
     /// ```
-    pub fn insert_labels_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
+    pub fn insert_labels_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
         let new = value.try_into()?;
 
         if self.len() + new.len() + 1 > u32::MAX as usize {
@@ -241,9 +240,55 @@ impl DomainHost<'_> {
         let temp = self.segments().try_neg_nth(index).map(|x| self.as_str().my_substr_range(x.as_str()));
 
         match (temp, index) {
-            (Ok (_), -1) | (Err(0), 0..) if !self.is_fqdn() && new.last_is_empty   () => Err(NonFqdnCantEndInEmpty)?,
-            (Ok (_), -1) | (Err(0), 0..) if !self.is_fqdn() && new.last_is_a_number() => Err(CantEndInANumber)?,
-            (Ok (_), -1) | (Err(0), 0..) if  self.is_fqdn() && new.ends_in_a_number() => Err(CantEndInANumber)?,
+            (Ok(_), -1) | (Err(0), 0..) if !self.is_fqdn() && new.is_empty   () => Err(NonFqdnCantEndInEmpty)?,
+            (Ok(_), -1) | (Err(0), 0..) if                    new.is_a_number() => Err(CantEndInANumber)?,
+
+            (Err(1..), _) => Err(InsertNotFound)?,
+
+            (Ok(Range {start, ..}), 0..) => self.host.insert_with(start, [new.as_str(), "."]),
+            (Ok(Range {end  , ..}), ..0) => self.host.insert_with(end  , [".", new.as_str()]),
+
+            (Err(0), 0..) => {let i = self.suffix_after(); self.host.insert_with(i, [".", new.as_str()]);},
+            (Err(0), ..0) =>                               self.host.insert_with(0, [new.as_str(), "."]),
+        }
+
+        self.details = DomainHostDetails::parse_unchecked(&self.host);
+
+        Ok(())
+    }
+
+    /// Insert new segments starting at the `index`th labels segment.
+    /// # Errors
+    /// See [`Self`]'s documentation.
+    /// # Examples
+    /// ```
+    /// use better_url::prelude::*;
+    ///
+    /// let mut domain = DomainHost::new("example.com").unwrap();
+    ///
+    /// domain.insert_labels_segments( 0, "www").unwrap    (); assert_eq!(domain, "www.example.com");
+    /// domain.insert_labels_segments(-1, "123").unwrap_err(); assert_eq!(domain, "www.example.com");
+    /// domain.insert_labels_segments(-1, ""   ).unwrap_err(); assert_eq!(domain, "www.example.com");
+    ///
+    /// let mut domain = DomainHost::new("example.com.").unwrap();
+    ///
+    /// domain.insert_labels_segments( 0, "www").unwrap    (); assert_eq!(domain, "www.example.com." );
+    /// domain.insert_labels_segments(-1, "123").unwrap_err(); assert_eq!(domain, "www.example.com." );
+    /// domain.insert_labels_segments(-1, ""   ).unwrap    (); assert_eq!(domain, "www.example.com..");
+    /// ```
+    pub fn insert_labels_segments<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
+        let new = value.try_into()?;
+
+        if self.len() + new.len() + 1 > u32::MAX as usize {
+            Err(TooLong)?;
+        }
+
+        let temp = self.segments().try_neg_nth(index).map(|x| self.as_str().my_substr_range(x.as_str()));
+
+        match (temp, index) {
+            (Ok(_), -1) | (Err(0), 0..) if !self.is_fqdn() && new.last_is_empty   () => Err(NonFqdnCantEndInEmpty)?,
+            (Ok(_), -1) | (Err(0), 0..) if !self.is_fqdn() && new.last_is_a_number() => Err(CantEndInANumber)?,
+            (Ok(_), -1) | (Err(0), 0..) if  self.is_fqdn() && new.ends_in_a_number() => Err(CantEndInANumber)?,
 
             (Err(1..), _) => Err(InsertNotFound)?,
 

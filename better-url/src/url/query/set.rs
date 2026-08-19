@@ -84,10 +84,10 @@ impl BetterUrl {
 
     /// [`MaybeQuery::set`].
     /// # Errors
-    /// If the call to [`MaybeQuery::set`] returns an error, that error is returned.
+    /// If [`MaybeQuery::set`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_query`] returns an error, that error is returned.
-    pub fn set_query_param(&mut self, name: &str, index: isize, value: Option<Option<&str>>) -> Result<bool, SetQueryError> {
+    /// If [`Self::set_query`] returns an error, that error is returned.
+    pub fn set_query_param<'a, T: Into<MaybeSpecialQueryValue<'a>> + Into<MaybeNonSpecialQueryValue<'a>>>(&mut self, name: &str, index: isize, value: Option<T>) -> Result<bool, SetQueryError> {
         let mut query = self.query();
 
         if query.set(name, index, value)? {
@@ -111,7 +111,7 @@ impl BetterUrl {
 
     /// [`MaybeQuery::try_filtered`].
     /// # Errors
-    /// If the call to [`MaybeQuery::try_filtered`] returns an error, that error is returned in an `Ok(Err(_))`.
+    /// If [`MaybeQuery::try_filtered`] returns an error, that error is returned in an `Ok(Err(_))`.
     #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
     pub fn try_filter_query<F: FnMut(QuerySegment<'_>) -> Result<bool, E>, E>(&mut self, f: F) -> Result<bool, E> {
         if let (true, query) = self.query().try_filtered(f)? {

@@ -34,6 +34,7 @@ pub enum Bin {
     /** Site Client. **/ SiteClient,
     /** Discord.     **/ Discord   ,
     /** URLC Tool.   **/ UrlcTool  ,
+    /** BURL Bench.  **/ BurlBench ,
 }
 
 impl Bin {
@@ -45,6 +46,7 @@ impl Bin {
             Self::SiteClient => "url-cleaner-site-client",
             Self::Discord    => "url-cleaner-discord",
             Self::UrlcTool   => "urlc-tool",
+            Self::BurlBench  => "better-url-bench",
         }
     }
 
@@ -56,6 +58,7 @@ impl Bin {
             Self::SiteClient => "target/release/url-cleaner-site-client",
             Self::Discord    => "target/release/url-cleaner-discord",
             Self::UrlcTool   => "target/release/urlc-tool",
+            Self::BurlBench  => "target/release/better-url-bench",
         }
     }
 
@@ -67,6 +70,7 @@ impl Bin {
             Self::SiteClient => "target/debug/url-cleaner-site-client",
             Self::Discord    => "target/debug/url-cleaner-discord",
             Self::UrlcTool   => "target/debug/urlc-tool",
+            Self::BurlBench  => "target/debug/better-url-bench",
         }
     }
 }

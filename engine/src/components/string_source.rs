@@ -20,6 +20,8 @@ use crate::prelude::*;
 #[serde(remote = "Self")]
 pub enum StringSource {
     /// [`None`].
+    ///
+    /// The default.
     #[default]
     None,
     /// The contained [`String`].
@@ -75,7 +77,7 @@ pub enum StringSource {
     },
     /// [`Self::AssertSome::0`] or, if [`None`], the error [`StringNotFound`].
     /// # Errors
-    /// If the call to [`Self::get`] returns [`None`], returns the error [`StringNotFound`].
+    /// If [`Self::get`] returns [`None`], returns the error [`StringNotFound`].
     AssertSome(Box<Self>),
 
 
@@ -128,7 +130,7 @@ pub enum StringSource {
     /** [`BetterUrl::domain_prefix_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainPrefixSegment(isize),
     /** [`BetterUrl::domain_suffix_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainSuffixSegment(isize),
 
-    /// [`BetterUrl::path_segment`] + [`PathSegment::decode`].
+    /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`].
     PathSegment(isize),
     /// [`BetterUrl::path_segment`] + [`PathSegment::into_inner`].
     RawPathSegment(isize),
@@ -145,13 +147,13 @@ pub enum StringSource {
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
         end: Bound<isize>
     },
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`].
+    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`].
     QueryParam(QueryParamSelector),
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_raw_value`].
+    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].
     RawQueryParam(QueryParamSelector),
-    /// [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_value`].
+    /// [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`].
     FragmentParam(QueryParamSelector),
-    /// [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_raw_value`].
+    /// [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].
     RawFragmentParam(QueryParamSelector),
 
 
@@ -224,12 +226,12 @@ pub enum StringSource {
     HttpRequest {
         /// The [`HttpRequestSource`].
         ///
-        /// Defaults to a default [`HttpRequestSource`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         request: Box<HttpRequestSource>,
         /// The [`HttpResponseHandler`].
         ///
-        /// Defaults to a default [`HttpResponseHandler`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         response: Box<HttpResponseHandler>
     },
@@ -370,16 +372,16 @@ impl StringSource {
 
     /// [`Self::get`] with [`None`] replaced with [`StringNotFound`].
     /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
+    /// If [`Self::get`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::get`] returns [`None`], returns the error [`StringNotFound`].
+    /// If [`Self::get`] returns [`None`], returns the error [`StringNotFound`].
     pub fn get_some<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Result<Cow<'t, str>, StringNotFound>, StringSourceError> {
         debug!(StringSource::get_some, self, args; self._get(task_state, args).map(|x| x.ok_or(StringNotFound)))
     }
 
     /// [`Self::get`] for use with [`BetterUrl`] setters.
     /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
+    /// If [`Self::get`] returns an error, that error is returned.
     pub fn get_part<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'j, str>>, StringSourceError> {
         debug!(StringSource::get_part, self; match self {
             Self::None => Ok(None),
@@ -390,9 +392,9 @@ impl StringSource {
 
     /// [`Self::get_part`] with [`None`] replaced with [`StringNotFound`].
     /// # Errors
-    /// If the call to [`Self::get_part`] returns an error, that error is returned.
+    /// If [`Self::get_part`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::get_part`] returns [`None`], returns the error [`StringNotFound`].
+    /// If [`Self::get_part`] returns [`None`], returns the error [`StringNotFound`].
     pub fn get_some_part<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Result<Cow<'j, str>, StringNotFound>, StringSourceError> {
         debug!(StringSource::get_some_part, self; match self {
             Self::String(x) => Ok(Ok(Cow::Borrowed(&**x))),
@@ -458,15 +460,15 @@ impl StringSource {
             Self::DecodedDomainPrefixSegment(index) => task_state.url.domain_prefix_segment(*index).map(DomainSegment::decode),
             Self::DecodedDomainSuffixSegment(index) => task_state.url.domain_suffix_segment(*index).map(DomainSegment::decode),
 
-            Self::PathSegment         (index     ) => task_state.url.path_segment      (*index        ).map(PathSegment ::decode    ),
-            Self::RawPathSegment      (index     ) => task_state.url.path_segment      (*index        ).map(PathSegment ::into_inner),
-            Self::RawPathSegmentRange {start, end} => task_state.url.path_segment_range((*start, *end)).map(PathSegments::into_inner),
+            Self::PathSegment         (index     ) => task_state.url.path_segment      (*index        ).map(PathSegment ::lossy_decode),
+            Self::RawPathSegment      (index     ) => task_state.url.path_segment      (*index        ).map(PathSegment ::into_inner  ),
+            Self::RawPathSegmentRange {start, end} => task_state.url.path_segment_range((*start, *end)).map(PathSegments::into_inner  ),
 
-            Self::QueryParam   (param) => task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_value    ),
-            Self::RawQueryParam(param) => task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_raw_value),
+            Self::QueryParam   (param) => task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()),
+            Self::RawQueryParam(param) => task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner  ()),
 
-            Self::FragmentParam   (param) => task_state.url.fragment_query_param(&param.name, param.index).and_then(FragmentQuerySegment::into_value    ),
-            Self::RawFragmentParam(param) => task_state.url.fragment_query_param(&param.name, param.index).and_then(FragmentQuerySegment::into_raw_value),
+            Self::FragmentParam   (param) => task_state.url.fragment_query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()),
+            Self::RawFragmentParam(param) => task_state.url.fragment_query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner  ()),
 
 
 

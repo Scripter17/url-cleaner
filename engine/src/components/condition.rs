@@ -28,7 +28,7 @@ pub enum Condition {
         then: Box<Self>,
         /// The else.
         ///
-        /// Defaults to [`Self::Never`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         r#else: Box<Self>
     },
@@ -169,7 +169,7 @@ pub enum Condition {
         substr: StringSource,
         /// The [`StringLocation`].
         ///
-        /// Defaults to [`StringLocation::Anywhere`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
@@ -183,42 +183,27 @@ pub enum Condition {
 
     // Whole
 
-    /// [`BetterUrl::is_special`].
-    UrlIsSpecial,
-    /// [`BetterUrl::is_special_not_file`].
-    UrlIsSpecialNotFile,
-    /// [`BetterUrl::is_file`].
-    UrlIsFile,
-    /// [`BetterUrl::is_non_special`].
-    UrlIsNonSpecial,
+    /** [`BetterUrl::is_special`].          **/ UrlIsSpecial,
+    /** [`BetterUrl::is_special_not_file`]. **/ UrlIsSpecialNotFile,
+    /** [`BetterUrl::is_file`].             **/ UrlIsFile,
+    /** [`BetterUrl::is_non_special`].      **/ UrlIsNonSpecial,
 
     // Scheme
 
-    /// If the [`BetterUrl::scheme_str`] is the specified value.
-    SchemeIs(StringSource),
-    /// If the [`BetterUrl::scheme_str`] is in the [`Set`].
-    SchemeIsInSet(SetSource),
-    /// [`SchemeDetails::is_http`].
-    SchemeIsHttp,
-    /// [`SchemeDetails::is_https`].
-    SchemeIsHttps,
-    /// [`SchemeDetails::is_http_or_https`].
-    SchemeIsHttpOrHttps,
+    /** [`BetterUrl::scheme_str`] + [`PartialEq::eq`].      **/ SchemeIs(StringSource),
+    /** [`BetterUrl::scheme_str`] + [`Set::contains_some`]. **/ SchemeIsInSet(SetSource),
+    /** [`SchemeDetails::is_http`].                         **/ SchemeIsHttp,
+    /** [`SchemeDetails::is_https`].                        **/ SchemeIsHttps,
+    /** [`SchemeDetails::is_http_or_https`].                **/ SchemeIsHttpOrHttps,
 
     // Host is
 
-    /// If the [`BetterUrl::host_str`] is equal to the specified string.
-    HostIs(StringSource),
-    /// If the [`BetterUrl::domain_normal`] is equal to the specified string.
-    DomainNormalIs(StringSource),
-    /// If the [`BetterUrl::domain_origin`] is equal to the specified string.
-    DomainOriginIs(StringSource),
-    /// If the [`BetterUrl::domain_prefix`] is equal to the specified string.
-    DomainPrefixIs(StringSource),
-    /// If the [`BetterUrl::domain_middle`] is equal to the specified string.
-    DomainMiddleIs(StringSource),
-    /// If the [`BetterUrl::domain_suffix`] is equal to the specified string.
-    DomainSuffixIs(StringSource),
+    /** [`BetterUrl::host_str`]          + [`PartialEq::eq`]. **/ HostIs        (StringSource),
+    /** [`BetterUrl::domain_normal_str`] + [`PartialEq::eq`]. **/ DomainNormalIs(StringSource),
+    /** [`BetterUrl::domain_origin_str`] + [`PartialEq::eq`]. **/ DomainOriginIs(StringSource),
+    /** [`BetterUrl::domain_prefix_str`] + [`PartialEq::eq`]. **/ DomainPrefixIs(StringSource),
+    /** [`BetterUrl::domain_middle_str`] + [`PartialEq::eq`]. **/ DomainMiddleIs(StringSource),
+    /** [`BetterUrl::domain_suffix_str`] + [`PartialEq::eq`]. **/ DomainSuffixIs(StringSource),
 
 
 
@@ -253,18 +238,12 @@ pub enum Condition {
 
     // Host is in set
 
-    /// If the [`BetterUrl::host_str`] is in the specified [`Set`].
-    HostIsInSet(SetSource),
-    /// If the [`BetterUrl::domain_normal`] is in the specified [`Set`].
-    DomainNormalIsInSet(SetSource),
-    /// If the [`BetterUrl::domain_prefix`] is in the specified [`Set`].
-    DomainPrefixIsInSet(SetSource),
-    /// If the [`BetterUrl::domain_origin`] is in the specified [`Set`].
-    DomainOriginIsInSet(SetSource),
-    /// If the [`BetterUrl::domain_middle`] is in the specified [`Set`].
-    DomainMiddleIsInSet(SetSource),
-    /// If the [`BetterUrl::domain_suffix`] is in the specified [`Set`].
-    DomainSuffixIsInSet(SetSource),
+    /** [`BetterUrl::host_str`]          + [`Set::contains`]. **/ HostIsInSet        (SetSource),
+    /** [`BetterUrl::domain_normal_str`] + [`Set::contains`]. **/ DomainNormalIsInSet(SetSource),
+    /** [`BetterUrl::domain_prefix_str`] + [`Set::contains`]. **/ DomainPrefixIsInSet(SetSource),
+    /** [`BetterUrl::domain_origin_str`] + [`Set::contains`]. **/ DomainOriginIsInSet(SetSource),
+    /** [`BetterUrl::domain_middle_str`] + [`Set::contains`]. **/ DomainMiddleIsInSet(SetSource),
+    /** [`BetterUrl::domain_suffix_str`] + [`Set::contains`]. **/ DomainSuffixIsInSet(SetSource),
 
 
 
@@ -330,28 +309,21 @@ pub enum Condition {
 
     // Path
 
-    /// [`BetterUrl::path_is_segmented`].
-    PathIsSegmented,
-    /// [`BetterUrl::path_is_opaque`].
-    PathIsOpaque,
-    /// [`BetterUrl::has_path_segment`].
-    PathHasSegment(isize),
+    /** [`BetterUrl::path_is_segmented`]. **/ PathIsSegmented,
+    /** [`BetterUrl::path_is_opaque`].    **/ PathIsOpaque,
+    /** [`BetterUrl::has_path_segment`].  **/ PathHasSegment(isize),
 
-    /// If [`BetterUrl::path_str`] is the specified value.
-    PathIs(StringSource),
-    /// If [`BetterUrl::path_str`] is in the [`Set`].
-    PathIsInSet(SetSource),
-    /// If [`BetterUrl::path_str`] starts with the specified value.
-    PathStartsWith(StringSource),
-    /// If [`BetterUrl::path_str`] ends with the specified value.
-    PathEndsWith(StringSource),
-    /// If [`BetterUrl::path_str`] contains the specified value.
+    /** If [`BetterUrl::path_str`] + [`PartialEq::eq`].      **/ PathIs        (StringSource),
+    /** If [`BetterUrl::path_str`] + [`Set::contains_some`]. **/ PathIsInSet   (SetSource),
+    /** If [`BetterUrl::path_str`] + [`str::starts_with`].   **/ PathStartsWith(StringSource),
+    /** If [`BetterUrl::path_str`] + [`str::ends_with`].     **/ PathEndsWith  (StringSource),
+    /// If [`BetterUrl::path_str`] + [`StringLocation::check`].
     PathContains {
         /// The value to check for.
         substr: StringSource,
         /// The [`StringLocation`].
         ///
-        /// Defaults to [`StringLocation::Anywhere`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
@@ -360,21 +332,21 @@ pub enum Condition {
 
     // Path segment
 
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::decode`] is the specified value.
+    /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`PartialEq::eq`].
     PathSegmentIs {
         /// The segment to check.
         index: isize,
         /// The value to check for.
         value: StringSource
     },
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::decode`] is in the [`Set`].
+    /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`Set::contains`].
     PathSegmentIsInSet {
         /// The segment to check.
         index: isize,
         /// The [`Set`] to check in.
         set: SetSource
     },
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::decode`] starts with the specified value.
+    /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`str::starts_with`].
     /// # Errors
     /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`PathSegmentNotFound`].
     PathSegmentStartsWith {
@@ -383,7 +355,7 @@ pub enum Condition {
         /// The value to check for.
         prefix: StringSource
     },
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::decode`] ends with the specified value.
+    /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`str::ends_with`].
     /// # Errors
     /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`PathSegmentNotFound`].
     PathSegmentEndsWith {
@@ -392,7 +364,7 @@ pub enum Condition {
         /// The value to check for.
         suffix: StringSource
     },
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::decode`] contains the specified value.
+    /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`StringLocation::check`].
     /// # Errors
     /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`PathSegmentNotFound`].
     PathSegmentContains {
@@ -402,11 +374,11 @@ pub enum Condition {
         substr: StringSource,
         /// The location to cehck at.
         ///
-        /// Defaults to [`StringLocation::Anywhere`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::decode`] satisfies the [`StringMatcher`].
+    /// If the [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] satisfies the [`StringMatcher`].
     PathSegmentMatches {
         /// The segment to check.
         index: isize,
@@ -456,7 +428,7 @@ pub enum Condition {
         substr: StringSource,
         /// The location to cehck at.
         ///
-        /// Defaults to [`StringLocation::Anywhere`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
@@ -470,21 +442,17 @@ pub enum Condition {
 
     // Query
 
-    /// [`BetterUrl::query_str`] + [`PartialEq::eq`].
-    QueryIs(StringSource),
-    /// [`BetterUrl::query_str`] + [`Set::contains`].
-    QueryIsInSet(SetSource),
-    /// If [`BetterUrl::query_str`] starts with the specified value.
-    QueryStartsWith(StringSource),
-    /// If [`BetterUrl::query_str`] ends with the specified value.
-    QueryEndsWith(StringSource),
-    /// If [`BetterUrl::query_str`] contains the specified value.
+    /** [`BetterUrl::query_str`] + [`PartialEq::eq`].    **/ QueryIs(StringSource),
+    /** [`BetterUrl::query_str`] + [`Set::contains`].    **/ QueryIsInSet(SetSource),
+    /** [`BetterUrl::query_str`] + [`str::starts_with`]. **/ QueryStartsWith(StringSource),
+    /** [`BetterUrl::query_str`] + [`str::ends_with`].   **/ QueryEndsWith(StringSource),
+    /// [`BetterUrl::query_str`] + [`StringLocation::check`].
     QueryContains {
         /// The value to check for.
         substr: StringSource,
         /// The [`StringLocation`].
         ///
-        /// Defaults to [`StringLocation::Anywhere`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
@@ -496,41 +464,47 @@ pub enum Condition {
 
     // Query params
 
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`PartialEq::eq`].
+    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] + [`PartialEq::eq`].
     QueryParamIs {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The value to check for.
         value: StringSource
     },
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`Set::contains`].
+    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] + [`Set::contains`].
     QueryParamIsInSet {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The [`Set`].
         set: SetSource
     },
-    /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] starts with the specified value.
+    /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] starts with the specified value.
     /// # Errors
     /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    ///
+    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     QueryParamStartsWith {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The value to check for.
         prefix: StringSource
     },
-    /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] ends with the specified value.
+    /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] ends with the specified value.
     /// # Errors
     /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    ///
+    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     QueryParamEndsWith {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The value to check for.
         suffix: StringSource
     },
-    /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] contains the specified value.
+    /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] contains the specified value.
     /// # Errors
     /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    ///
+    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     QueryParamContains {
         /// The [`QueryParamSelectorget.
         param: QueryParamSelector,
@@ -538,11 +512,15 @@ pub enum Condition {
         substr: StringSource,
         /// The location to cehck at.
         ///
-        /// Defaults to [`StringLocation::Anywhere`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]) +ed [`StringMatcher::check`]
+    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]) + [`MaybeQueryValue::lossy_decode`] +ed [`StringMatcher::check`]
+    /// # Errors
+    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    ///
+    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     QueryParamMatches {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
@@ -552,41 +530,47 @@ pub enum Condition {
 
 
 
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_raw_value`] ([`Option::flatten`]ed) + [`PartialEq::eq`].
+    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] + [`PartialEq::eq`].
     RawQueryParamIs {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The value to check for.
         value: StringSource
     },
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_raw_value`] ([`Option::flatten`]ed) + [`Set::contains`].
+    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] + [`Set::contains`].
     RawQueryParamIsInSet {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The [`Set`].
         set: SetSource
     },
-    /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_raw_value`] starts with the specified value.
+    /// If the [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] starts with the specified value.
     /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    ///
+    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     RawQueryParamStartsWith {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The value to check for.
         prefix: StringSource
     },
-    /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_raw_value`] ends with the specified value.
+    /// If the [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] ends with the specified value.
     /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    ///
+    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     RawQueryParamEndsWith {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The value to check for.
         suffix: StringSource
     },
-    /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_raw_value`] contains the specified value.
+    /// If the [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] contains the specified value.
     /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    ///
+    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     RawQueryParamContains {
         /// The [`QueryParamSelectorget.
         param: QueryParamSelector,
@@ -594,11 +578,15 @@ pub enum Condition {
         substr: StringSource,
         /// The location to cehck at.
         ///
-        /// Defaults to [`StringLocation::Anywhere`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_raw_value`] + [`Option::flatten`] + [`StringMatcher::check`]
+    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] + [`StringMatcher::check`]
+    /// # Errors
+    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    ///
+    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
     RawQueryParamMatches {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
@@ -653,7 +641,7 @@ pub enum Condition {
         substr: StringSource,
         /// The [`StringLocation`].
         ///
-        /// Defaults to [`StringLocation::Anywhere`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
@@ -687,7 +675,7 @@ pub enum Condition {
         substr: StringSource,
         /// The [`StringLocation`].
         ///
-        /// Defaults to [`StringLocation::Anywhere`].
+        /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
         at: StringLocation
     },
@@ -895,12 +883,12 @@ impl Condition {
             Self::PathIsInSet   (set       ) => get!(set).contains_some(             task_state.url.path_str()),
             Self::PathMatches   (matcher   ) => matcher.check(task_state, args, Some(task_state.url.path_str()))?,
 
-            Self::PathSegmentIs        {index, value     } =>                                 task_state.url.path_segment(*index).map(PathSegment::decode) == get!(?value),
-            Self::PathSegmentStartsWith{index, prefix    } =>                                 task_state.url.path_segment(*index).map(PathSegment::decode).ok_or(PathSegmentNotFound)?.starts_with(get!(&prefix)),
-            Self::PathSegmentEndsWith  {index, suffix    } =>                                 task_state.url.path_segment(*index).map(PathSegment::decode).ok_or(PathSegmentNotFound)?.ends_with  (get!(&suffix)),
-            Self::PathSegmentContains  {index, substr, at} => at.check(                      &task_state.url.path_segment(*index).map(PathSegment::decode).ok_or(PathSegmentNotFound)?,            get!(&substr))?,
-            Self::PathSegmentIsInSet   {index, set       } => get!(set).contains(             task_state.url.path_segment(*index).map(PathSegment::decode).as_deref()),
-            Self::PathSegmentMatches   {index, matcher   } => matcher.check(task_state, args, task_state.url.path_segment(*index).map(PathSegment::decode).as_deref())?,
+            Self::PathSegmentIs        {index, value     } =>                                 task_state.url.path_segment(*index).map(PathSegment::lossy_decode) == get!(?value),
+            Self::PathSegmentStartsWith{index, prefix    } =>                                 task_state.url.path_segment(*index).map(PathSegment::lossy_decode).ok_or(PathSegmentNotFound)?.starts_with(get!(&prefix)),
+            Self::PathSegmentEndsWith  {index, suffix    } =>                                 task_state.url.path_segment(*index).map(PathSegment::lossy_decode).ok_or(PathSegmentNotFound)?.ends_with  (get!(&suffix)),
+            Self::PathSegmentContains  {index, substr, at} => at.check(                      &task_state.url.path_segment(*index).map(PathSegment::lossy_decode).ok_or(PathSegmentNotFound)?,            get!(&substr))?,
+            Self::PathSegmentIsInSet   {index, set       } => get!(set).contains(             task_state.url.path_segment(*index).map(PathSegment::lossy_decode).as_deref()),
+            Self::PathSegmentMatches   {index, matcher   } => matcher.check(task_state, args, task_state.url.path_segment(*index).map(PathSegment::lossy_decode).as_deref())?,
 
             Self::RawPathSegmentIs        {index, value     } =>                                 task_state.url.path_segment_str(*index) == get!(?&value),
             Self::RawPathSegmentStartsWith{index, prefix    } =>                                 task_state.url.path_segment_str(*index).ok_or(PathSegmentNotFound)?.starts_with(get!(&prefix)),
@@ -920,19 +908,19 @@ impl Condition {
             Self::QueryContains  {substr, at} => at.check(                       task_state.url.query_str().ok_or(QueryNotFound)?, get!(&substr))?,
             Self::QueryMatches   (matcher   ) => matcher.check(task_state, args, task_state.url.query_str())?,
 
-            Self::QueryParamIs         {param, value     } =>                                 task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_value) == get!(?value),
-            Self::QueryParamStartsWith {param, prefix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_value).ok_or(QueryParamNotFound)?.starts_with(get!(&prefix)),
-            Self::QueryParamEndsWith   {param, suffix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_value).ok_or(QueryParamNotFound)?.ends_with  (get!(&suffix)),
-            Self::QueryParamContains   {param, substr, at} => at.check(                      &task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_value).ok_or(QueryParamNotFound)?,            get!(&substr))?,
-            Self::QueryParamIsInSet    {param, set       } => get!(set).contains(             task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_value).as_deref()),
-            Self::QueryParamMatches    {param, matcher   } => matcher.check(task_state, args, task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_value).as_deref())?,
+            Self::QueryParamIs         {param, value     } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()) == get!(?value),
+            Self::QueryParamStartsWith {param, prefix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).ok_or(QueryParamNotFound)?.starts_with(get!(&prefix)),
+            Self::QueryParamEndsWith   {param, suffix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).ok_or(QueryParamNotFound)?.ends_with  (get!(&suffix)),
+            Self::QueryParamContains   {param, substr, at} => at.check(                      &task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).ok_or(QueryParamNotFound)?,            get!(&substr))?,
+            Self::QueryParamIsInSet    {param, set       } => get!(set).contains(             task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).as_deref()),
+            Self::QueryParamMatches    {param, matcher   } => matcher.check(task_state, args, task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).as_deref())?,
 
-            Self::RawQueryParamIs         {param, value     } =>                                 task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_raw_value) == get!(?value),
-            Self::RawQueryParamStartsWith {param, prefix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_raw_value).ok_or(QueryParamNotFound)?.starts_with(get!(&prefix)),
-            Self::RawQueryParamEndsWith   {param, suffix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_raw_value).ok_or(QueryParamNotFound)?.ends_with  (get!(&suffix)),
-            Self::RawQueryParamContains   {param, substr, at} => at.check(                      &task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_raw_value).ok_or(QueryParamNotFound)?,            get!(&substr))?,
-            Self::RawQueryParamIsInSet    {param, set       } => get!(set).contains(             task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_raw_value).as_deref()),
-            Self::RawQueryParamMatches    {param, matcher   } => matcher.check(task_state, args, task_state.url.query_param(&param.name, param.index).and_then(QuerySegment::into_raw_value).as_deref())?,
+            Self::RawQueryParamIs         {param, value     } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()) == get!(?value),
+            Self::RawQueryParamStartsWith {param, prefix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()).ok_or(QueryParamNotFound)?.starts_with(get!(&prefix)),
+            Self::RawQueryParamEndsWith   {param, suffix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()).ok_or(QueryParamNotFound)?.ends_with  (get!(&suffix)),
+            Self::RawQueryParamContains   {param, substr, at} => at.check(                      &task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()).ok_or(QueryParamNotFound)?,            get!(&substr))?,
+            Self::RawQueryParamIsInSet    {param, set       } => get!(set).contains(             task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()).as_deref()),
+            Self::RawQueryParamMatches    {param, matcher   } => matcher.check(task_state, args, task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()).as_deref())?,
 
             // Fragment
 

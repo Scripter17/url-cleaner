@@ -18,17 +18,16 @@ impl BytesExt for [u8] {
     }
 
     fn memchr(&self, b: u8) -> Option<usize> {
-        unsafe {
-            let a = libc::memchr(
-                self as *const [u8] as *const libc::c_void,
-                b as libc::c_int,
-                self.len(),
-            ).addr();
+        let found = unsafe {libc::memchr(
+            self.as_ptr() as _,
+            b as _,
+            self.len(),
+        )}.addr();
 
-            match a {
-                0 => None,
-                x => Some(x - self.addr()),
-            }
+        if found == 0 {
+            None
+        } else {
+            Some(found - self.addr())
         }
     }
 
@@ -36,16 +35,14 @@ impl BytesExt for [u8] {
         let mut ret = self.len();
 
         for b in bs {
-            unsafe {
-                let found = libc::memchr(
-                    self as *const [u8] as *const libc::c_void,
-                    b as i32,
-                    ret,
-                ).addr();
+            let found = unsafe {libc::memchr(
+                self.as_ptr() as _,
+                b as _,
+                ret,
+            )}.addr();
 
-                if found != 0 {
-                    ret = found - self.addr();
-                }
+            if found != 0 {
+                ret = found - self.addr();
             }
         }
 

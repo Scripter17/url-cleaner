@@ -175,7 +175,7 @@ pub enum StringMatcher {
 
     // Glue
 
-    /// Satisfied if the call to [`Regex::is_match`] returns [`true`].
+    /// Satisfied if [`Regex::is_match`] returns [`true`].
     Regex(LazyRegex),
 
     // Function/Extern

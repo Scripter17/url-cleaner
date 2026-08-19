@@ -22,9 +22,9 @@ pub enum PartitioningSource {
 impl PartitioningSource {
     /// [`Self::get`], replacing [`None`] with the sub-error [`PartitioningNotFound`].
     /// # Errors
-    /// If the call to [`Self::get`] returns an error, that error is returned.
+    /// If [`Self::get`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::get`] returns [`None`], returns the sub-error [`PartitioningNotFound`].
+    /// If [`Self::get`] returns [`None`], returns the sub-error [`PartitioningNotFound`].
     pub fn get_some<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Result<&'j Partitioning, PartitioningNotFound>, PartitioningSourceError> {
         self.get(task_state, args).map(|x| x.ok_or(PartitioningNotFound))
     }

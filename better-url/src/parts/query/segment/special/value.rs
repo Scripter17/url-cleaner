@@ -8,45 +8,36 @@ impl<'a> SpecialQuerySegment<'a> {
         self.value_start.is_some()
     }
 
-    /// The raw value.
-    pub fn raw_value(&self) -> Option<&str> {
-        Some(unsafe {self.as_str().get_unchecked(self.value_start?.get() ..)})
-    }
-
-    /// Consume and keep only the raw value.
-    pub fn into_raw_value(self) -> Option<Cow<'a, str>> {
-        let mut ret = self.raw;
+    /// The [`MaybeSpecialQueryValue`].
+    pub fn value(&self) -> MaybeSpecialQueryValue<'_> {
         unsafe {
-            ret.retain_range_unchecked(self.value_start?.get() ..);
+            MaybeSpecialQueryValue::new_unchecked(self.value_start.map(|x| self.as_str().get_unchecked(x.get() ..)))
         }
-        Some(ret)
     }
 
-    /// The decoded value.
-    pub fn value(&self) -> Option<Cow<'_, str>> {
-        let (_, value) = lossy_decode_query_part(self.raw_value()?);
+    /// Turn into the [`MaybeSpecialQueryValue`].
+    pub fn into_value(self) -> MaybeSpecialQueryValue<'a> {
+        let mut ret = self.raw;
 
-        Some(value)
-    }
+        match self.value_start {
+            Some(x) => unsafe {
+                ret.retain_range_unchecked(x.get() ..);
 
-    /// Consume and keep only the value.
-    pub fn into_value(self) -> Option<Cow<'a, str>> {
-        let (_, value) = lossy_decode_query_part(self.into_raw_value()?);
-
-        Some(value)
+                MaybeSpecialQueryValue::new_unchecked(Some(ret))
+            },
+            None => MaybeSpecialQueryValue(None)
+        }
     }
 
     /// Set the value.
-    pub fn set_value(&mut self, value: Option<&str>) {
-        match value {
+    pub fn set_value<'b, T: Into<MaybeSpecialQueryValue<'b>>>(&mut self, value: T) {
+        match value.into().as_str() {
             Some(value) => {
-                let (_, value) = encode_query_part(value);
-
                 match self.value_start {
-                    Some(i) => self.raw.replace_range(i.get() .., &value),
+                    Some(i) => self.raw.replace_range(i.get() .., value),
                     None => {
                         self.value_start = NonZero::new(self.len() + 1);
-                        self.raw.extend(["=", &value]);
+                        self.raw.extend(["=", value]);
                     }
                 }
             },

@@ -15,7 +15,7 @@ use crate::prelude::*;
 /// # Errors
 /// If `value` does not begin with a valid HTML opening tag, returns the error [`SyntaxError`].
 ///
-/// If the call to [`unescape_html`] returns an error, that error is returned.
+/// If [`unescape_html`] returns an error, that error is returned.
 /// # Examples
 /// ```
 /// use url_cleaner_engine::prelude::*;

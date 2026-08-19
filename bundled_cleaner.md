@@ -30,7 +30,7 @@ Licensed under the AGPL 3.0 or later.
   - Required: false.
 - `bluesky_mode`: Decides what host to replace Bluesky/Bluesky embed hosts with.
   - Required: false.
-  - Unset: Set Bluesky and Bluesky embed hosts to `bsky.app`.
+  - Unset: Set Bluesky embed hosts to `bsky.app`.
   - `canon`: Always set it to `bsky.app`.
   - `embed`: Always set it to the `bluesky_embed_host` var.
 - `bluesky_embed_host`: The Bluesky embed host to use.
@@ -38,18 +38,28 @@ Licensed under the AGPL 3.0 or later.
   - Default: `fxbsky.app`.
 - `fandom_mode`: Decides what to replace Fandom/Breezewiki URLs with.
   - Required: false.
-  - Unset: Keep fandom URLs as-is and change Breezewiki URLs to the `breezewiki_host` var.
+  - Unset: Do nothing.
   - `canon`: Set to fandom.
   - `breezewiki`: Set to the `breezewiki_host` var.
 - `breezewiki_host`: The Breezewiki host to use.
   - Required: true.
   - Default: `breezewiki.com`.
-- `furaffinity_mode`: Decides what host to replace furaffinity hosts with.
+- `furaffinity_mode`: Decides what host to replace Furaffinity/Furaffinity embed hosts with.
   - Required: false.
-  - Unset: Keep as-is.
+  - Unset: Do nothing
   - `canon`: Set to `www.furaffinity.net`.
   - `sfw`: Set to `sfw.furaffinity.net`.
-  - `nsfw`: Set to `www.furaffinity.net`.
+  - `embed`: Set to the `furaffinity_embed_host` var.
+- `furaffinity_embed_host`: The Furaffinity embed host to use.
+  - Required: true.
+  - Default: `xfuraffinity.net`.
+- `instagram_mode`: Decides what host to replace instagram/instagram embed hosts with.
+  - Required: false.
+  - Unset: Do nothing
+  - `canon`: Set to `instagram.com`.
+  - `embed`: Set to the `instagram_embed_host` var.
+- `instagram_embed_host`: The instagram embed host to use.
+  - Required: false.
 - `pixiv_mode`: Decides what host to replace pixiv/pixiv embed hosts with.
   - Required: false.
   - Unset: Set pixiv and pixiv embed hosts to `www.pixiv.net`.
@@ -60,10 +70,11 @@ Licensed under the AGPL 3.0 or later.
   - Default: `phixiv.net`.
 - `reddit_mode`: Decides what host to replace reddit hosts with.
   - Required: false.
-  - Unset: Keep as-is.
+  - Unset: Do nothing
   - `canon`: Set to `www.reddit.com`.
   - `old`: Set to `old.reddit.com`.
-  - `new`: Set to `www.reddit.com`.
+- `reddit_embed_host`: The reddit embed host to use.
+  - Required: false.
 - `tiktok_mode`: Decides what host to replace tiktok/tiktok embed hosts with.
   - Required: false.
   - Unset: Set tiktok and tiktok embed hosts to `tiktok.com`.
@@ -71,7 +82,7 @@ Licensed under the AGPL 3.0 or later.
   - `embed`: Always set to the `tiktok_embed_host` var.
 - `tiktok_embed_host`: The tiktok embed host to use.
   - Required: true.
-  - Default: `www.tfxktok.com`.
+  - Default: `tfxktok.com`.
 - `twitter_mode`: Decides what host to replace twitter/twitter embed/Nitter hosts with.
   - Required: false.
   - Unset: Set twitter and twitter embed hosts to `x.com` and Nitter hosts to the `nitter_host` var.

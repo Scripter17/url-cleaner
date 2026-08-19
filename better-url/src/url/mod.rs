@@ -43,7 +43,7 @@ pub struct BetterUrl {
 impl BetterUrl {
     /// Make a new [`Self`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new<T: TryInto<Self>>(value: T) -> Result<Self, T::Error> {
         value.try_into()
     }

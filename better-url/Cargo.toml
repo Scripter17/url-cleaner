@@ -15,12 +15,15 @@ rust-version = "1.96.1"
 serde = { version = "1.0.229", optional = true, features = ["derive"] }
 
 # Other.
-icu_normalizer = { version = "2.2.0", default-features = false, features = ["compiled_data"] }
-icu_properties = "2.2.0"
-psl            = "2.1.223"
-thiserror      = "2.0.19"
+icu_normalizer = { version = "2.3.0", default-features = false, features = ["compiled_data"] }
+icu_properties = "2.3.0"
+psl            = "2.1.225"
+thiserror      = "2.0.20"
 include_data   = "1.0.1"
 libc           = "0.2.189"
+
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+memchr = "2.8.3"
 
 [dev-dependencies]
 serde      = { version = "1.0.229", features = ["derive"] }

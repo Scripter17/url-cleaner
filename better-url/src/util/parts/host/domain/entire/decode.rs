@@ -8,7 +8,7 @@ use crate::prelude::*;
 ///
 /// If `value` [`ends_in_a_number`], returns the error [`InvalidDomainHost`].
 ///
-/// If the call to [`decode_domain_segments`] returns an error, that error is returned.
+/// If [`decode_domain_segments`] returns an error, that error is returned.
 pub fn decode_domain_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainHost> {
     let value = value.into();
 

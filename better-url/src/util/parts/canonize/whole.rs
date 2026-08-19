@@ -15,12 +15,10 @@ pub fn canonize_parser_input<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<
             let start = value.bytes(). position(|b| b > 0x20).unwrap_or(0);
             let after = value.bytes().rposition(|b| b > 0x20).map_or(0, |x| x + 1);
 
-            if after - start != value.len() {
-                unsafe {
-                    value.retain_range_unchecked(start..after);
-                }
-                changed = true;
+            unsafe {
+                value.retain_range_unchecked(start..after);
             }
+            changed = true;
         }
     }
 

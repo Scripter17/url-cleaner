@@ -26,35 +26,35 @@ impl<'a> NonSpecialHost<'a> {
 
     /// Make a new [`Self::Opaque`] from a [`DomainHost`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_domain<T: TryInto<DomainHost<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }
 
     /// Make a new [`Self::Opaque`] from an [`Ipv4Host`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_ipv4<T: TryInto<Ipv4Host<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }
 
     /// Make a new [`Self::Ipv6`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_ipv6<T: TryInto<Ipv6Host<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }
 
     /// Make a new [`Self::Opaque`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_opaque<T: TryInto<OpaqueHost<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }
 
     /// Make a new [`Self::Empty`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_empty<T: TryInto<EmptyHost<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }

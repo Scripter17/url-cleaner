@@ -15,7 +15,7 @@ pub struct Ipv6HostDetails {
 impl Ipv6HostDetails {
     /// Parse an IPv6 host.
     /// # Errors
-    /// If the call to [`Ipv6Addr::from_str`] returns an error, returns the error [`InvalidIpv6Host`].
+    /// If [`Ipv6Addr::from_str`] returns an error, returns the error [`InvalidIpv6Host`].
     pub fn parse(s: &str) -> Result<Self, InvalidIpv6Host> {
         Ok(Self {
             parsed: s

@@ -62,10 +62,10 @@ impl BetterUrl {
 
     /// [`MaybeFragmentQuery::set`].
     /// # Errors
-    /// If the call to [`MaybeFragmentQuery::set`] returns an error, that error is returned.
+    /// If [`MaybeFragmentQuery::set`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_fragment`] returns an error, that error is returned.
-    pub fn set_fragment_query_param(&mut self, name: &str, index: isize, value: Option<Option<&str>>) -> Result<bool, SetFragmentError> {
+    /// If [`Self::set_fragment`] returns an error, that error is returned.
+    pub fn set_fragment_query_param<'a, T: Into<MaybeFragmentQueryValue<'a>>>(&mut self, name: &str, index: isize, value: Option<T>) -> Result<bool, SetFragmentError> {
         let mut fragment = self.fragment_query();
 
         if fragment.set(name, index, value)? {
@@ -89,7 +89,7 @@ impl BetterUrl {
 
     /// [`MaybeFragmentQuery::try_filtered`].
     /// # Errors
-    /// If the call to [`MaybeFragmentQuery::try_filtered`] returns an error, that error is returned.
+    /// If [`MaybeFragmentQuery::try_filtered`] returns an error, that error is returned.
     #[expect(clippy::missing_panics_doc, reason = "Can't happen.")]
     pub fn try_filter_fragment_query<F: FnMut(FragmentQuerySegment<'_>) -> Result<bool, E>, E>(&mut self, f: F) -> Result<bool, E> {
         if let (true, fragment) = self.fragment_query().try_filtered(f)? {

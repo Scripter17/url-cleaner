@@ -84,12 +84,12 @@ impl BetterUrl {
 
     /// [`SegmentedPath::set`].
     /// # Errors
-    /// If the call to [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
+    /// If [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
     ///
-    /// If the call to [`SegmentedPath::set`] returns an error, that error is returned.
+    /// If [`SegmentedPath::set`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_path`] returns an error, that error is returned.
-    pub fn set_path_segment<'a, T: Into<SpecialNotFilePathSegments<'a>> + Into<FilePathSegments<'a>> + Into<NonSpecialPathSegments<'a>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetPathError> {
+    /// If [`Self::set_path`] returns an error, that error is returned.
+    pub fn set_path_segment<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetPathError> {
         let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
 
         if path.set(index, value)? {
@@ -102,11 +102,11 @@ impl BetterUrl {
 
     /// [`SegmentedPath::set_range`];
     /// # Errors
-    /// If the call to [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
+    /// If [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
     ///
-    /// If the call to [`SegmentedPath::set_range`] returns an error, that error is returned.
+    /// If [`SegmentedPath::set_range`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_path`] returns an error, that error is returned.
+    /// If [`Self::set_path`] returns an error, that error is returned.
     pub fn set_path_range<'a, T: Into<SpecialNotFilePathSegments<'a>> + Into<FilePathSegments<'a>> + Into<NonSpecialPathSegments<'a>>, B: RangeBounds<isize>>(&mut self, range: B, value: Option<T>) -> Result<bool, SetPathError> {
         let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
 
@@ -120,12 +120,12 @@ impl BetterUrl {
 
     /// [`SegmentedPath::insert`].
     /// # Errors
-    /// If the call to [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
+    /// If [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
     ///
-    /// If the call to [`SegmentedPath::insert`] returns an error, that error is returned.
+    /// If [`SegmentedPath::insert`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_path`] returns an error, that error is returned.
-    pub fn insert_path_segment<'a, T: Into<SpecialNotFilePathSegments<'a>> + Into<FilePathSegments<'a>> + Into<NonSpecialPathSegments<'a>>>(&mut self, index: isize, value: T) -> Result<bool, SetPathError> {
+    /// If [`Self::set_path`] returns an error, that error is returned.
+    pub fn insert_path_segment<'a, T: Into<SpecialNotFilePathSegment<'a>> + Into<FilePathSegment<'a>> + Into<NonSpecialPathSegment<'a>>>(&mut self, index: isize, value: T) -> Result<bool, SetPathError> {
         let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
 
         if path.insert(index, value)? {
@@ -138,11 +138,11 @@ impl BetterUrl {
 
     /// [`SegmentedPath::pop`].
     /// # Errors
-    /// If the call to [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
+    /// If [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
     ///
-    /// If the call to [`SegmentedPath::pop`] returns an error, that error is returned.
+    /// If [`SegmentedPath::pop`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_path`] returns an error, that error is returned.
+    /// If [`Self::set_path`] returns an error, that error is returned.
     pub fn pop_path(&mut self) -> Result<bool, SetPathError> {
         let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
 
@@ -156,11 +156,11 @@ impl BetterUrl {
 
     /// [`SegmentedPath::pop_if_empty`].
     /// # Errors
-    /// If the call to [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
+    /// If [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
     ///
-    /// If the call to [`SegmentedPath::pop_if_empty`] returns an error, that error is returned.
+    /// If [`SegmentedPath::pop_if_empty`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_path`] returns an error, that error is returned.
+    /// If [`Self::set_path`] returns an error, that error is returned.
     pub fn pop_path_if_empty(&mut self) -> Result<bool, SetPathError> {
         let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
 
@@ -174,11 +174,11 @@ impl BetterUrl {
 
     /// [`SegmentedPath::remove`].
     /// # Errors
-    /// If the call to [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
+    /// If [`Self::segmented_path`] returns [`None`], returns the error [`PathIsOpaque`].
     ///
-    /// If the call to [`SegmentedPath::remove`] returns an error, that error is returned.
+    /// If [`SegmentedPath::remove`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_path`] returns an error, that error is returned.
+    /// If [`Self::set_path`] returns an error, that error is returned.
     pub fn remove_path_segment(&mut self, index: isize) -> Result<bool, SetPathError> {
         let mut path = self.segmented_path().ok_or(PathIsOpaque)?;
 

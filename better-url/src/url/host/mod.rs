@@ -66,9 +66,9 @@ impl BetterUrl {
 
     /// Set the host.
     /// # Errors
-    /// If the call to [`Host::new`] returns an error, that error is returned.
+    /// If [`Host::new`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::cannot_be_a_base`] returns true, returns the error [`CantHaveHost`].
+    /// If [`Self::cannot_be_a_base`] returns true, returns the error [`CantHaveHost`].
     ///
     /// If the URL would become too long, returns the error [`TooLong`].
     ///

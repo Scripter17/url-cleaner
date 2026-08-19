@@ -145,7 +145,7 @@ impl DomainHost<'_> {
     /// domain.set_prefix_segment(-1, None::<&str>).unwrap(); assert_eq!(domain,         "abc.example.com");
     /// domain.set_prefix_segment(-1, None::<&str>).unwrap(); assert_eq!(domain,             "example.com");
     /// ```
-    pub fn set_prefix_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
+    pub fn set_prefix_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
         let temp = self.prefix_segments().into_iter().flatten().try_neg_nth(index);
 
         match (temp, value.map(TryInto::try_into).transpose()?) {
@@ -246,7 +246,49 @@ impl DomainHost<'_> {
     /// domain.insert_prefix_segment(-4, "ghi").unwrap(); assert_eq!(domain,     "ghi.abc.www.def.example.com");
     /// domain.insert_prefix_segment(-4, "jkl").unwrap(); assert_eq!(domain, "ghi.jkl.abc.www.def.example.com");
     /// ```
-    pub fn insert_prefix_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
+    pub fn insert_prefix_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
+        let ms = self.middle_start().ok_or(InsertNotFound)?;
+
+        let new = value.try_into()?;
+
+        if self.len() + new.len() + 1 > u32::MAX as usize {
+            Err(TooLong)?;
+        }
+
+        let temp = self.prefix_segments().into_iter().flatten().try_neg_nth(index).map(|x| self.as_str().my_substr_range(x.as_str()));
+
+        match (temp, index) {
+            (Ok(Range {start, ..}), 0..) => self.host.insert_with(start, [new.as_str(), "."]),
+            (Ok(Range {end  , ..}), ..0) => self.host.insert_with(end  , [".", new.as_str()]),
+            (Err(0)               , 0..) => self.host.insert_with(ms   , [new.as_str(), "."]),
+            (Err(0)               , ..0) => self.host.insert_with(0    , [new.as_str(), "."]),
+            _ => Err(InsertNotFound)?
+        }
+
+        self.details.ms += new.len() as u32 + 1;
+        self.details.ss += new.len() as u32 + 1;
+
+        self.details.wp = unsafe {self.host.get_unchecked(..ms)} == "www.";
+
+        Ok(())
+    }
+
+    /// Insert new segments starting at the `index`th prefix segment.
+    /// # Errors
+    /// See [`Self`]'s documentation.
+    /// # Examples
+    /// ```
+    /// use better_url::prelude::*;
+    ///
+    /// let mut domain = DomainHost::try_from("example.com").unwrap();
+    ///
+    /// domain.insert_prefix_segments( 0, "www").unwrap(); assert_eq!(domain,                 "www.example.com");
+    /// domain.insert_prefix_segments( 0, "abc").unwrap(); assert_eq!(domain,             "abc.www.example.com");
+    /// domain.insert_prefix_segments( 2, "def").unwrap(); assert_eq!(domain,         "abc.www.def.example.com");
+    /// domain.insert_prefix_segments(-4, "ghi").unwrap(); assert_eq!(domain,     "ghi.abc.www.def.example.com");
+    /// domain.insert_prefix_segments(-4, "jkl").unwrap(); assert_eq!(domain, "ghi.jkl.abc.www.def.example.com");
+    /// ```
+    pub fn insert_prefix_segments<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
         let ms = self.middle_start().ok_or(InsertNotFound)?;
 
         let new = value.try_into()?;

@@ -40,11 +40,11 @@ impl<'a> Host<'a> {
 
     /// Make a new [`Self`] for the specified [`SchemeType`].
     /// # Errors
-    /// If the call to [`Self::new_file`] returns an error, returns the error [`InvalidHost`].
+    /// If [`Self::new_file`] returns an error, returns the error [`InvalidHost`].
     ///
-    /// If the call to [`Self::new_special_not_file`] returns an error, returns the error [`InvalidHost`].
+    /// If [`Self::new_special_not_file`] returns an error, returns the error [`InvalidHost`].
     ///
-    /// If the call to [`Self::new_non_special`] returns an error, returns the error [`InvalidHost`].
+    /// If [`Self::new_non_special`] returns an error, returns the error [`InvalidHost`].
     pub fn new<T: TryInto<FileHost<'a>> + TryInto<SpecialNotFileHost<'a>> + TryInto<NonSpecialHost<'a>>>(value: T, scheme_type: SchemeType) -> Result<Self, InvalidHost>
         where InvalidHost: From<<T as TryInto<FileHost<'a>>>::Error> + From<<T as TryInto<SpecialNotFileHost<'a>>>::Error> + From<<T as TryInto<NonSpecialHost<'a>>>::Error>
     {
@@ -57,21 +57,21 @@ impl<'a> Host<'a> {
 
     /// Make from a new [`FileHost`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_file<T: TryInto<FileHost<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }
 
     /// Make from a new [`SpecialNotFileHost`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_special_not_file<T: TryInto<SpecialNotFileHost<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }
 
     /// Make from a new [`NonSpecialHost`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_non_special<T: TryInto<NonSpecialHost<'a>>>(value: T) -> Result<Self, T::Error> {
         Ok(value.try_into()?.into())
     }
@@ -80,35 +80,35 @@ impl<'a> Host<'a> {
 
     /// Make a new [`Self::Domain`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_domain<T: TryInto<DomainHost<'a>>>(value: T) -> Result<Self, T::Error> {
         value.try_into().map(Into::into)
     }
 
     /// Make a new [`Self::Ipv4`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_ipv4<T: TryInto<DomainHost<'a>>>(value: T) -> Result<Self, T::Error> {
         value.try_into().map(Into::into)
     }
 
     /// Make a new [`Self::Ipv6`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_ipv6<T: TryInto<Ipv6Host<'a>>>(value: T) -> Result<Self, T::Error> {
         value.try_into().map(Into::into)
     }
 
     /// Make a new [`Self::Opaque`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_opaque<T: TryInto<OpaqueHost<'a>>>(value: T) -> Result<Self, T::Error> {
         value.try_into().map(Into::into)
     }
 
     /// Make a new [`Self::Empty`].
     /// # Errors
-    /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+    /// If [`TryInto::try_into`] returns an error, that error is returned.
     pub fn new_empty<T: TryInto<EmptyHost<'a>>>(value: T) -> Result<Self, T::Error> {
         value.try_into().map(Into::into)
     }

@@ -4,9 +4,9 @@ use serde::{Serialize, Deserialize};
 
 use super::*;
 
-/** Serde helper. **/                                                  pub(crate) fn is_default<T: Default + PartialEq>(x: &T) -> bool {x == &T::default()}
-/** Serde helper. **/ #[cfg(any(feature = "http", feature = "cache"))] pub(crate) fn is_true (x: &bool) -> bool {*x}
-/** Serde helper. **/ #[cfg(any(feature = "http", feature = "cache"))] pub(crate) fn get_true(        ) -> bool {true}
+/** Serde helper. **/ pub(crate) fn is_default<T: Default + PartialEq>(x: &T) -> bool {x == &T::default()}
+/** Serde helper. **/ pub(crate) fn is_true (x: &bool) -> bool {*x}
+/** Serde helper. **/ pub(crate) fn get_true(        ) -> bool {true}
 
 /// Config for a `/clean` job.
 ///
@@ -57,49 +57,40 @@ pub struct JobConfig {
     /// If [`true`], don't disable the HTTP Client.
     ///
     /// Defaults to [`true`].
-    #[cfg(feature = "http")]
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub http: bool,
     /// If [`true`], don't disable reading from the cache.
     ///
     /// Defaults to [`true`].
-    #[cfg(feature = "cache")]
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub read_cache: bool,
     /// If [`true`], don't disable writing to the cache.
     ///
     /// Defaults to [`true`].
-    #[cfg(feature = "cache")]
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub write_cache: bool,
     /// If [`true`], enable cache delays.
     ///
     /// Defaults to [`false`].
-    #[cfg(feature = "cache")]
     #[serde(default, skip_serializing_if = "is_default")]
     pub cache_delay: bool,
 }
 
-#[allow(clippy::derivable_impls, reason = "Can't be derived with http/cache feature.")]
 impl Default for JobConfig {
     fn default() -> Self {
         Self {
-            username: None,
-            password: None,
-            context: Default::default(),
-            profile: None,
-            params_diff: Default::default(),
+            username       : None,
+            password       : None,
+            context        : Default::default(),
+            profile        : None,
+            params_diff    : Default::default(),
             brief_unchanged: false,
-            brief_error: false,
-            unthread: false,
-            #[cfg(feature = "http")]
-            http: true,
-            #[cfg(feature = "cache")]
-            read_cache: true,
-            #[cfg(feature = "cache")]
-            write_cache: true,
-            #[cfg(feature = "cache")]
-            cache_delay: false,
+            brief_error    : false,
+            unthread       : false,
+            http           : true,
+            read_cache     : true,
+            write_cache    : true,
+            cache_delay    : false,
         }
     }
 }
@@ -131,7 +122,7 @@ impl<S: Sync> FromRequestParts<S> for JobConfig {
         Ok(match (MaybeSpecialQuery::from(parts.uri.query()).find("config", 0), parts.headers.get("x-config")) {
             (None        , None        ) => Default::default(),
             (None        , Some(config)) => serde_json::from_slice(config.as_bytes())?,
-            (Some(config), None        ) => serde_json::from_str(&config.into_value().ok_or(GetJobConfigError::EmptyConfigParam)?)?,
+            (Some(config), None        ) => serde_json::from_str(&config.into_value().lossy_decode().ok_or(GetJobConfigError::EmptyConfigParam)?)?,
             (Some(_)     , Some(_)     ) => Err(GetJobConfigError::ConfigSetTwice)?,
         })
     }

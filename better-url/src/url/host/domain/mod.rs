@@ -64,12 +64,12 @@ impl BetterUrl {
 
     /// [`DomainHost::set_segment`].
     /// # Errors
-    /// If the call to [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
+    /// If [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
     ///
-    /// If the call to [`DomainHost::set_segment`] returns an error, that error is returned.
+    /// If [`DomainHost::set_segment`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_host`] reutrns an error, that error is returned.
-    pub fn set_domain_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetHostError> where SetDomainError: From<T::Error> {
+    /// If [`Self::set_host`] reutrns an error, that error is returned.
+    pub fn set_domain_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetHostError> where SetDomainError: From<T::Error> {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
         if domain.set_segment(index, value)? {
@@ -82,12 +82,12 @@ impl BetterUrl {
 
     /// [`DomainHost::insert_segment`].
     /// # Errors
-    /// If the call to [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
+    /// If [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
     ///
-    /// If the call to [`DomainHost::insert_segment`] returns an error, that error is returned.
+    /// If [`DomainHost::insert_segment`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_host`] reutrns an error, that error is returned.
-    pub fn insert_domain_segment<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetHostError> where SetDomainError: From<T::Error> {
+    /// If [`Self::set_host`] reutrns an error, that error is returned.
+    pub fn insert_domain_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetHostError> where SetDomainError: From<T::Error> {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
         domain.insert_segment(index, value)?;
@@ -98,11 +98,11 @@ impl BetterUrl {
 
     /// [`DomainHost::set_range`].
     /// # Errors
-    /// If the call to [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
+    /// If [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
     ///
-    /// If the call to [`DomainHost::set_range`] returns an error, that error is returned.
+    /// If [`DomainHost::set_range`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_host`] reutrns an error, that error is returned.
+    /// If [`Self::set_host`] reutrns an error, that error is returned.
     pub fn set_domain_range<'b, T: TryInto<DomainSegments<'b>>, B: RangeBounds<isize>>(&mut self, range: B, value: Option<T>) -> Result<bool, SetHostError> where SetDomainError: From<T::Error> {
         let mut domain = self.domain().ok_or(NoDomain)?;
 

@@ -70,7 +70,7 @@ pub fn resolve_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, C
         return (false, value)
     }
 
-    if !value.starts_with('/') {
+    if !matches!(value.as_bytes(), [b'/', ..]) {
         value.to_mut().insert(0, '/');
         changed = true;
     }

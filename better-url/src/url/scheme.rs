@@ -31,7 +31,7 @@ impl BetterUrl {
 
     /// Set the scheme.
     /// # Errors
-    /// If the call to [`Scheme::new`] returns an error, that error is returned.
+    /// If [`Scheme::new`] returns an error, that error is returned.
     ///
     /// If the URL would become too long, returns the error [`TooLong`].
     #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]

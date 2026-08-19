@@ -46,9 +46,9 @@ pub fn unchecked_decode_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> (
 /// # Errors
 /// If `value` is empty or ends with `-`, returns the error [`InvalidDomainSegment`].
 ///
-/// If the call to [`decode_punycode`] returns an error, returns the error [`InvalidDomainSegment`].
+/// If [`decode_punycode`] returns an error, returns the error [`InvalidDomainSegment`].
 ///
-/// If the call to [`mostly_validate_domain_segment_unicode`] returns [`false`], returns the error [`InvalidDomainSegment`].
+/// If [`mostly_validate_domain_segment_unicode`] returns [`false`], returns the error [`InvalidDomainSegment`].
 pub fn decode_domain_segment_punycode(value: &str) -> Result<String, InvalidDomainSegment> {
     // If `value` is non-ASCII, violating 4.1, [`decode_punycode`] will return an error.
     // If `value` is empty, its decoding will be empty, violating 4.3.

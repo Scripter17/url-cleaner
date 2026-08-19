@@ -18,11 +18,11 @@ pub enum HostDetails {
 impl HostDetails {
     /// Parse from a literal for the specified [`SchemeType`].
     /// # Errors
-    /// If the call to [`FileHostDetails::parse`] returns an error, that error is returned.
+    /// If [`FileHostDetails::parse`] returns an error, that error is returned.
     ///
-    /// If the call to [`SpecialNotFileHostDetails::parse`] returns an error, that error is returned.
+    /// If [`SpecialNotFileHostDetails::parse`] returns an error, that error is returned.
     ///
-    /// If the call to [`NonSpecialHostDetails::parse`] returns an error, that error is returned.
+    /// If [`NonSpecialHostDetails::parse`] returns an error, that error is returned.
     pub fn parse(value: &str, r#type: SchemeType) -> Result<Self, InvalidHost> {
         Ok(match r#type {
             SchemeType::File           => FileHostDetails          ::parse(value)?.into(),

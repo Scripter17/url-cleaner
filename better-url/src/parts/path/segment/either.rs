@@ -64,11 +64,35 @@ impl<'a> PathSegment<'a> {
     }
 
     /// The decoded value.
-    pub fn decode(self) -> Cow<'a, str> {
+    pub fn decode(self) -> Cow<'a, [u8]> {
         match self {
             Self::File          (x) => x.decode(),
             Self::SpecialNotFile(x) => x.decode(),
             Self::NonSpecial    (x) => x.decode(),
+        }
+    }
+
+    /// The decoded value.
+    /// # Errors
+    /// If [`FilePathSegment::try_decode`] returns an error, that error is returned.
+    ///
+    /// If [`SpecialNotFilePathSegment::try_decode`] returns an error, that error is returned.
+    ///
+    /// If [`NonSpecialPathSegment::try_decode`] returns an error, that error is returned.
+    pub fn try_decode(self) -> Result<Cow<'a, str>, (std::str::Utf8Error, Cow<'a, [u8]>)> {
+        match self {
+            Self::File          (x) => x.try_decode(),
+            Self::SpecialNotFile(x) => x.try_decode(),
+            Self::NonSpecial    (x) => x.try_decode(),
+        }
+    }
+
+    /// The decoded value.
+    pub fn lossy_decode(self) -> Cow<'a, str> {
+        match self {
+            Self::File          (x) => x.lossy_decode(),
+            Self::SpecialNotFile(x) => x.lossy_decode(),
+            Self::NonSpecial    (x) => x.lossy_decode(),
         }
     }
 

@@ -20,10 +20,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup
-      if: matrix.oses.name != 'windows-latest'
-      run: set -euo pipefail
-
     - name: Build
       run: cargo build -r --bin url-cleaner --bin url-cleaner-site --bin url-cleaner-site-client --bin url-cleaner-discord
 
@@ -39,5 +35,4 @@ jobs:
           target/release/url-cleaner-site-client${{ matrix.oses.extension }}
           target/release/url-cleaner-discord${{ matrix.oses.extension }}
           engine/src/cleaner/bundled-cleaner.json
-          engine/src/cleaner/tests
           site/url-cleaner-site-userscript.js

@@ -1,0 +1,23 @@
+[package]
+name        = "better-url-bench"
+version     = "0.12.0-beta"
+edition     = "2024"
+description = "A tool to benchmark Better URL"
+repository  = "https://github.com/Scripter17/url-cleaner"
+keywords    = []
+categories  = []
+license     = "AGPL-3.0-or-later"
+readme      = "README.md"
+publish     = false
+
+[dependencies]
+# URL Cleaner.
+better-url = { version = "0.12.0-beta", path = "../better-url" }
+
+# Other.
+clap    = { version = "4.6.6", features = ["derive"] }
+url     = "2.5.8"
+ada-url = "4.0.0"
+
+[lints]
+workspace = true

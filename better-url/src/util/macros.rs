@@ -195,8 +195,10 @@ macro_rules! from_cow_impls {
                 }
             }
 
-            impl<'a> From<&'a str> for $t<'a     > {fn from(value: &'a str) -> Self {Cow::from(value).into()}}
-            impl     From<String > for $t<'static> {fn from(value: String ) -> Self {Cow::from(value).into()}}
+            impl<'a> From<&'a str         > for $t<'a     > {fn from(value: &'a str         ) -> Self {Cow::from(value).into()}}
+            impl     From<String          > for $t<'static> {fn from(value: String          ) -> Self {Cow::from(value).into()}}
+            impl<'a> From<&'a String      > for $t<'a     > {fn from(value: &'a String      ) -> Self {      (&**value).into()}}
+            impl<'a> From<&'a Cow<'_, str>> for $t<'a     > {fn from(value: &'a Cow<'_, str>) -> Self {      (&**value).into()}}
 
             #[cfg(feature = "serde")]
             impl<'de> Deserialize<'de> for $t<'de> {
@@ -231,8 +233,14 @@ macro_rules! from_option_cow_impls {
             impl     From<String      > for $t<'static> {fn from(value: String      ) -> Self {Cow::from(value).into()}}
             impl<'a> From<Cow<'a, str>> for $t<'a     > {fn from(value: Cow<'a, str>) -> Self {Some(value).into()}}
 
-            impl<'a> From<Option<&'a str>> for $t<'a     > {fn from(value: Option<&'a str>) -> Self {value.map(Cow::from).into()}}
-            impl     From<Option<String >> for $t<'static> {fn from(value: Option<String >) -> Self {value.map(Cow::from).into()}}
+            impl<'a> From<Option<&'a str         >> for $t<'a     > {fn from(value: Option<&'a str         >) -> Self {value.map(Cow::from).into()}}
+            impl     From<Option<String          >> for $t<'static> {fn from(value: Option<String          >) -> Self {value.map(Cow::from).into()}}
+            impl<'a> From<Option<&'a String      >> for $t<'a     > {fn from(value: Option<&'a String      >) -> Self {value.map(|x| &**x).into()}}
+            impl<'a> From<Option<&'a Cow<'_, str>>> for $t<'a     > {fn from(value: Option<&'a Cow<'_, str>>) -> Self {value.map(|x| &**x).into()}}
+
+            impl<'a> From<&'a Option<&str        >> for $t<'a     > {fn from(value: &'a Option<&str        >) -> Self {value.as_deref().into()}}
+            impl<'a> From<&'a Option<String      >> for $t<'a     > {fn from(value: &'a Option<String      >) -> Self {value.as_deref().into()}}
+            impl<'a> From<&'a Option<Cow<'_, str>>> for $t<'a     > {fn from(value: &'a Option<Cow<'_, str>>) -> Self {value.as_deref().into()}}
 
             #[cfg(feature = "serde")]
             impl<'de> Deserialize<'de> for $t<'de> {
@@ -251,7 +259,7 @@ macro_rules! try_from_cow_impls {
             impl<'a> $t<'a> {
                 /// Make a new [`Self`].
                 /// # Errors
-                /// If the call to [`TryInto::try_into`] returns an error, that error is returned.
+                /// If [`TryInto::try_into`] returns an error, that error is returned.
                 pub fn new<T: TryInto<Self>>(value: T) -> Result<Self, T::Error> {
                     value.try_into()
                 }
@@ -281,6 +289,22 @@ macro_rules! try_from_cow_impls {
                 }
             }
 
+            impl<'a> TryFrom<&'a String> for $t<'a> {
+                type Error = <Self as TryFrom<Cow<'a, str>>>::Error;
+
+                fn try_from(value: &'a String) -> Result<Self, Self::Error> {
+                    Cow::from(&**value).try_into()
+                }
+            }
+
+            impl<'a> TryFrom<&'a Cow<'_, str>> for $t<'a> {
+                type Error = <Self as TryFrom<Cow<'a, str>>>::Error;
+
+                fn try_from(value: &'a Cow<'_, str>) -> Result<Self, Self::Error> {
+                    Cow::from(&**value).try_into()
+                }
+            }
+
             #[cfg(feature = "serde")]
             impl<'de> Deserialize<'de> for $t<'de> {
                 fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
@@ -304,8 +328,30 @@ macro_rules! borrowed_impls {
     }
 }
 
+/// [`From`] for references of similar types.
+macro_rules! from_borrowed {
+    ($t:ident$(, $x:ident)*$(,)?) => {
+        $(
+            impl<'a> From<&'a $x<'_>> for $t<'a> {fn from(value: &'a $x<'_>) -> Self {value.borrowed().into()}}
+        )*
+    }
+}
+
+/// [`From`] for [`Option`]s and borrows of [`Option`]s
+macro_rules! from_options {
+    ($t:ident$(, $x:ident)*$(,)?) => {
+        $(
+            impl<'a> From<               $x<'a> > for $t<'a> {fn from(value:                $x<'a> ) -> Self {Some(value).into()}}
+            impl<'a> From<&'a Option<    $x<'_>>> for $t<'a> {fn from(value: &'a Option<    $x<'_>>) -> Self {value.as_ref().into()}}
+            impl<'a> From<    Option<&'a $x<'_>>> for $t<'a> {fn from(value:     Option<&'a $x<'_>>) -> Self {value.map($x::borrowed).into()}}
+        )*
+    }
+}
+
 pub(crate) use as_str_impls;
 pub(crate) use from_cow_impls;
 pub(crate) use from_option_cow_impls;
 pub(crate) use try_from_cow_impls;
 pub(crate) use borrowed_impls;
+pub(crate) use from_borrowed;
+pub(crate) use from_options;

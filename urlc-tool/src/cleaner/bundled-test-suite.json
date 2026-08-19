@@ -257,19 +257,6 @@
 			]
 		},
 		{
-			"name": "offline-furaffinity_mode-nsfw",
-			"params_diff": {
-				"vars": {
-					"furaffinity_mode": "nsfw"
-				}
-			},
-			"tests": [
-				{"task": "https://furaffinity.net"    , "expect": "https://www.furaffinity.net/"},
-				{"task": "https://www.furaffinity.net", "expect": "https://www.furaffinity.net/"},
-				{"task": "https://sfw.furaffinity.net", "expect": "https://www.furaffinity.net/"}
-			]
-		},
-		{
 			"name": "offline-furaffinity-unmangle",
 			"job_context": {
 				"source_host": "furaffinity.net"
@@ -298,7 +285,7 @@
 			"tests": [
 				{"task": "https://reddit.com"    , "expect": "https://www.reddit.com/"},
 				{"task": "https://old.reddit.com", "expect": "https://old.reddit.com/"},
-				{"task": "https://new.reddit.com", "expect": "https://new.reddit.com/"}
+				{"task": "https://new.reddit.com", "expect": "https://www.reddit.com/"}
 			]
 		},
 		{
@@ -327,19 +314,6 @@
 				{"task": "https://new.reddit.com", "expect": "https://old.reddit.com/"}
 			]
 		},
-		{
-			"name": "offline-reddit_mode-new",
-			"params_diff": {
-				"vars": {
-					"reddit_mode": "new"
-				}
-			},
-			"tests": [
-				{"task": "https://reddit.com"    , "expect": "https://www.reddit.com/"},
-				{"task": "https://old.reddit.com", "expect": "https://www.reddit.com/"},
-				{"task": "https://new.reddit.com", "expect": "https://www.reddit.com/"}
-			]
-		},
 
 
 
@@ -361,7 +335,7 @@
 			"name": "offline-tiktok_mode-unset",
 			"tests": [
 				{"task": "https://tiktok.com" , "expect": "https://www.tiktok.com/"},
-				{"task": "https://tfxktok.com", "expect": "https://www.tiktok.com/"}
+				{"task": "https://tfxktok.com", "expect": "https://tfxktok.com/"}
 			]
 		},
 		{
@@ -373,7 +347,7 @@
 			},
 			"tests": [
 				{"task": "https://tiktok.com" , "expect": "https://www.tiktok.com/"},
-				{"task": "https://tfxktok.com", "expect": "https://www.tiktok.com/"}
+				{"task": "https://tfxktok.com", "expect": "https://tfxktok.com/"}
 			]
 		},
 		{
@@ -384,8 +358,8 @@
 				}
 			},
 			"tests": [
-				{"task": "https://tiktok.com" , "expect": "https://www.tfxktok.com/"},
-				{"task": "https://tfxktok.com", "expect": "https://www.tfxktok.com/"}
+				{"task": "https://tiktok.com" , "expect": "https://tfxktok.com/"},
+				{"task": "https://tfxktok.com", "expect": "https://tfxktok.com/"}
 			]
 		},
 
@@ -394,11 +368,11 @@
 		{
 			"name": "offline-twitter_mode-unset",
 			"tests": [
-				{"task": "https://twitter.com/username/status/1" , "expect": "https://x.com/username/status/1"},
-				{"task": "https://x.com/username/status/1"       , "expect": "https://x.com/username/status/1"},
-				{"task": "https://fixupx.com/username/status/1"  , "expect": "https://x.com/username/status/1"},
-				{"task": "https://nitter.net/username/status/1"  , "expect": "https://nitter.net/username/status/1"},
-				{"task": "https://xcancel.com/username/status/1" , "expect": "https://nitter.net/username/status/1"}
+				{"task": "https://twitter.com/username/status/1" , "expect": "https://x.com/username/status/1"      },
+				{"task": "https://x.com/username/status/1"       , "expect": "https://x.com/username/status/1"      },
+				{"task": "https://fixupx.com/username/status/1"  , "expect": "https://x.com/username/status/1"      },
+				{"task": "https://nitter.net/username/status/1"  , "expect": "https://nitter.net/username/status/1" },
+				{"task": "https://xcancel.com/username/status/1" , "expect": "https://xcancel.com/username/status/1"}
 			]
 		},
 		{
@@ -454,7 +428,7 @@
 			"tests": [
 				{"task": "https://youtube.com/watch?v=12345"   , "expect": "https://www.youtube.com/watch?v=12345"},
 				{"task": "https://yewtu.be/watch?v=12345"      , "expect": "https://yewtu.be/watch?v=12345"       },
-				{"task": "https://inv.nadeko.net/watch?v=12345", "expect": "https://yewtu.be/watch?v=12345"       }
+				{"task": "https://inv.nadeko.net/watch?v=12345", "expect": "https://inv.nadeko.net/watch?v=12345" }
 			]
 		},
 		{

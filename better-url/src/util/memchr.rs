@@ -1,20 +1,29 @@
 //! Memchr.
 
-use crate::prelude::*;
-
-
-
 /// A simple wrapper around [`libc`]'s memchr.
-pub fn memchr(bytes: &[u8], byte: u8) -> Option<usize> {
-    bytes.memchr(byte)
+pub fn memchr(haystack: &[u8], needle: u8) -> Option<usize> {
+    unsafe {libc::memchr(
+        haystack.as_ptr() as _,
+        needle as _,
+        haystack.len()
+    )}.addr().checked_sub(haystack.as_ptr().addr())
 }
 
 /// A simple wrapper around [`libc`]'s memrchr.
-pub fn memrchr(bytes: &[u8], byte: u8) -> Option<usize> {
-    bytes.memrchr(byte)
+pub fn memrchr(haystack: &[u8], needle: u8) -> Option<usize> {
+    cfg_select! {
+        target_os = "linux" => {
+            unsafe {libc::memrchr(
+                haystack.as_ptr() as _,
+                needle as _,
+                haystack.len()
+            )}.addr().checked_sub(haystack.as_ptr().addr())
+        },
+        _ => memchr::memchr(needle, haystack)
+    }
 }
 
-/// Like [`memchr`] but searches for the first of a set of bytes.
+/// Like [`memchr`] but searches for the first of a set of needles.
 ///
 /// `neeldes` should be ordered in descending likiness of each needle being first.
 ///
@@ -23,15 +32,33 @@ pub fn memrchr(bytes: &[u8], byte: u8) -> Option<usize> {
 /// ```
 /// use better_url::util::*;
 ///
-/// assert_eq!(memchrn(b"a1b2c3", *b"123"), Some(1));
-/// assert_eq!(memchrn(b"a1b2c3", *b"231"), Some(1));
-/// assert_eq!(memchrn(b"a1b2c3", *b"312"), Some(1));
+/// assert_eq!(memchrn(b"a1b2c3", b"123"), Some(1));
+/// assert_eq!(memchrn(b"a1b2c3", b"231"), Some(1));
+/// assert_eq!(memchrn(b"a1b2c3", b"312"), Some(1));
 /// ```
-pub fn memchrn<const N: usize>(haystack: &[u8], needles: [u8; N]) -> Option<usize> {
-    haystack.memchrn(needles)
+pub fn memchrn(haystack: &[u8], needles: &[u8]) -> Option<usize> {
+    let mut ret = haystack.len();
+
+    for &needle in needles {
+        let found = unsafe {libc::memchr(
+            haystack.as_ptr() as _,
+            needle as _,
+            ret,
+        )}.addr();
+
+        if found != 0 {
+            ret = found - haystack.as_ptr().addr();
+        }
+    }
+
+    if ret == haystack.len() {
+        None
+    } else {
+        Some(ret)
+    }
 }
 
-/// Like [`memrchr`] but searches for the first of a set of bytes.
+/// Like [`memrchr`] but searches for the first of a set of needles.
 ///
 /// `neeldes` should be ordered in descending likiness of each needle being last.
 ///
@@ -40,12 +67,28 @@ pub fn memchrn<const N: usize>(haystack: &[u8], needles: [u8; N]) -> Option<usiz
 /// ```
 /// use better_url::util::*;
 ///
-/// assert_eq!(memrchrn(b"a1b2c3", *b"123"), Some(5));
-/// assert_eq!(memrchrn(b"a1b2c3", *b"231"), Some(5));
-/// assert_eq!(memrchrn(b"a1b2c3", *b"312"), Some(5));
+/// assert_eq!(memrchrn(b"a1b2c3", b"123"), Some(5));
+/// assert_eq!(memrchrn(b"a1b2c3", b"231"), Some(5));
+/// assert_eq!(memrchrn(b"a1b2c3", b"312"), Some(5));
 /// ```
-pub fn memrchrn<const N: usize>(haystack: &[u8], needles: [u8; N]) -> Option<usize> {
-    haystack.memrchrn(needles)
+pub fn memrchrn(haystack: &[u8], needles: &[u8]) -> Option<usize> {
+    let mut ret = None;
+    let mut x = 0;
+
+    for &needle in needles {
+        let found = unsafe {libc::memchr(
+            haystack.as_ptr().add(x) as _,
+            needle as _,
+            haystack.len() - x,
+        )}.addr();
+
+        if found != 0 {
+            x = found - haystack.as_ptr().addr();
+            ret = Some(x);
+        }
+    }
+
+    ret
 }
 
 
@@ -55,8 +98,8 @@ pub fn memrchrn<const N: usize>(haystack: &[u8], needles: [u8; N]) -> Option<usi
 pub struct MemchrIter<'a> {
     /// The remainder.
     pub remainder: Option<&'a [u8]>,
-    /// The byte to search for.
-    pub byte: u8,
+    /// The needle to search for.
+    pub needle: u8,
 }
 
 impl<'a> Iterator for MemchrIter<'a> {
@@ -65,7 +108,7 @@ impl<'a> Iterator for MemchrIter<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let remainder = self.remainder?;
 
-        match remainder.memchr(self.byte) {
+        match memchr(remainder, self.needle) {
             Some(i) => {
                 self.remainder = Some(unsafe {remainder.get_unchecked(i + 1 ..)});
                 Some(i)
@@ -82,7 +125,7 @@ impl<'a> DoubleEndedIterator for MemchrIter<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
         let remainder = self.remainder?;
 
-        match remainder.memrchr(self.byte) {
+        match memrchr(remainder, self.needle) {
             Some(i) => {
                 self.remainder = Some(unsafe {remainder.get_unchecked(.. i)});
                 Some(i)
@@ -99,20 +142,20 @@ impl<'a> DoubleEndedIterator for MemchrIter<'a> {
 
 /// An [`Iterator`] of each [`memchrn`].
 #[derive(Debug)]
-pub struct MemchrnIter<'a, const N: usize> {
+pub struct MemchrnIter<'a> {
     /// The remainder.
     pub remainder: Option<&'a [u8]>,
-    /// The bytes to search for.
-    pub bytes: [u8; N]
+    /// The needles to search for.
+    pub needles: &'a [u8]
 }
 
-impl<'a, const N: usize> Iterator for MemchrnIter<'a, N> {
+impl<'a> Iterator for MemchrnIter<'a> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
         let remainder = self.remainder?;
 
-        match remainder.memchrn(self.bytes) {
+        match memchrn(remainder, self.needles) {
             Some(i) => {
                 self.remainder = Some(unsafe {remainder.get_unchecked(i + 1 ..)});
                 Some(i)
@@ -125,11 +168,11 @@ impl<'a, const N: usize> Iterator for MemchrnIter<'a, N> {
     }
 }
 
-impl<'a, const N: usize> DoubleEndedIterator for MemchrnIter<'a, N> {
+impl<'a> DoubleEndedIterator for MemchrnIter<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
         let remainder = self.remainder?;
 
-        match remainder.memrchrn(self.bytes) {
+        match memrchrn(remainder, self.needles) {
             Some(i) => {
                 self.remainder = Some(unsafe {remainder.get_unchecked(.. i)});
                 Some(i)
@@ -144,13 +187,13 @@ impl<'a, const N: usize> DoubleEndedIterator for MemchrnIter<'a, N> {
 
 
 
-/// An [`Iterator`] of of bytes split on each [`memchr`].
+/// An [`Iterator`] of bytes split on each [`memchr`].
 #[derive(Debug)]
 pub struct MemchrSplit<'a> {
     /// The remainder.
     pub remainder: Option<&'a [u8]>,
-    /// The byte to search for.
-    pub byte: u8,
+    /// The needle to search for.
+    pub needle: u8,
 }
 
 impl<'a> Iterator for MemchrSplit<'a> {
@@ -159,7 +202,7 @@ impl<'a> Iterator for MemchrSplit<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let remainder = self.remainder?;
 
-        match remainder.memchr(self.byte) {
+        match memchr(remainder, self.needle) {
             Some(i) => {
                 self.remainder = Some(unsafe {remainder.get_unchecked(i + 1 ..)});
                 Some(unsafe {remainder.get_unchecked(.. i)})
@@ -176,7 +219,7 @@ impl<'a> DoubleEndedIterator for MemchrSplit<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
         let remainder = self.remainder?;
 
-        match remainder.memrchr(self.byte) {
+        match memrchr(remainder, self.needle) {
             Some(i) => {
                 self.remainder = Some(unsafe {remainder.get_unchecked(.. i)});
                 Some(unsafe {remainder.get_unchecked(i + 1 ..)})
@@ -191,22 +234,22 @@ impl<'a> DoubleEndedIterator for MemchrSplit<'a> {
 
 
 
-/// An [`Iterator`] of of bytes split on each [`memchrn`].
+/// An [`Iterator`] of bytes split on each [`memchrn`].
 #[derive(Debug)]
-pub struct MemchrnSplit<'a, const N: usize> {
+pub struct MemchrnSplit<'a> {
     /// The remainder.
     pub remainder: Option<&'a [u8]>,
-    /// The bytes to search for.
-    pub bytes: [u8; N],
+    /// The needles to search for.
+    pub needles: &'a [u8],
 }
 
-impl<'a, const N: usize> Iterator for MemchrnSplit<'a, N> {
+impl<'a> Iterator for MemchrnSplit<'a> {
     type Item = &'a [u8];
 
     fn next(&mut self) -> Option<Self::Item> {
         let remainder = self.remainder?;
 
-        match remainder.memchrn(self.bytes) {
+        match memchrn(remainder, self.needles) {
             Some(i) => {
                 self.remainder = Some(unsafe {remainder.get_unchecked(i + 1 ..)});
                 Some(unsafe {remainder.get_unchecked(.. i)})
@@ -219,11 +262,11 @@ impl<'a, const N: usize> Iterator for MemchrnSplit<'a, N> {
     }
 }
 
-impl<'a, const N: usize> DoubleEndedIterator for MemchrnSplit<'a, N> {
+impl<'a> DoubleEndedIterator for MemchrnSplit<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
         let remainder = self.remainder?;
 
-        match remainder.memrchrn(self.bytes) {
+        match memrchrn(remainder, self.needles) {
             Some(i) => {
                 self.remainder = Some(unsafe {remainder.get_unchecked(.. i)});
                 Some(unsafe {remainder.get_unchecked(i + 1 ..)})
@@ -251,7 +294,7 @@ impl<'a> Iterator for MemchrLines<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let remainder = self.remainder?;
 
-        match remainder.memchr(b'\n') {
+        match memchr(remainder, b'\n') {
             Some(i) => {
                 self.remainder = Some(unsafe {remainder.get_unchecked(i + 1 ..)});
                 Some(match unsafe {remainder.get_unchecked(.. i)} {
@@ -272,7 +315,7 @@ impl<'a> DoubleEndedIterator for MemchrLines<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
         let remainder = self.remainder?;
 
-        match remainder.memrchr(b'\n') {
+        match memrchr(remainder, b'\n') {
             Some(i) => {
                 self.remainder = Some(unsafe {remainder.get_unchecked(.. i)});
                 Some(match unsafe {remainder.get_unchecked(i + 1 ..)} {

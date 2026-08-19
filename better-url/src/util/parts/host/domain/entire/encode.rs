@@ -6,9 +6,9 @@ use crate::prelude::*;
 ///
 /// If you know your input will be percent decoded, see [`encode_percent_decoded_domain_host`].
 /// # Errors
-/// If the call to [`try_percent_decode`] returns an error, returns the error [`InvalidDomainHost`].
+/// If [`try_percent_decode`] returns an error, returns the error [`InvalidDomainHost`].
 ///
-/// If the call to [`encode_percent_decoded_domain_segments`] returns an error, that error is returned.
+/// If [`encode_percent_decoded_domain_segments`] returns an error, that error is returned.
 pub fn encode_domain_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainHost> {
     let (a, value) = try_percent_decode(value).map_err(|_| InvalidDomainHost)?;
     let (b, value) = encode_percent_decoded_domain_host(value)?;
@@ -19,7 +19,7 @@ pub fn encode_domain_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, 
 ///
 /// If you know your input will be UTS46 mapped and normalized, see [`encode_normalized_domain_host`].
 /// # Errors
-/// If the call to [`encode_normalized_domain_segments`] returns an error, that error is returned.
+/// If [`encode_normalized_domain_segments`] returns an error, that error is returned.
 pub fn encode_percent_decoded_domain_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainHost> {
     let (a, value) = uts46_map_normalize(value);
     let (b, value) = encode_normalized_domain_host(value)?;
@@ -28,7 +28,7 @@ pub fn encode_percent_decoded_domain_host<'a, T: Into<Cow<'a, str>>>(value: T) -
 
 /// Encode a percent decoded and UTS46 mapped and normalized domain host.
 /// # Errors
-/// If the call to [`encode_normalized_domain_segments`] returns an error, that error is returned.
+/// If [`encode_normalized_domain_segments`] returns an error, that error is returned.
 ///
 /// If the resulting domain is empty or larger than [`u32::MAX`] bytes, returns the error [`InvalidDomainHost`].
 ///

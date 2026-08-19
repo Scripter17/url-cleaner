@@ -2,14 +2,16 @@
 
 use crate::prelude::*;
 
-impl SpecialNotFilePath<'_> {
-    /// [`resolve_special_not_file_path_range`].
+// TODO: Optimize relatives.
+
+impl FilePath<'_> {
+    /// [`resolve_file_path_range`].
     fn resolve_range<B: RangeBounds<usize>>(&mut self, range: B) -> bool {
         let mut temp = "/".into();
 
         std::mem::swap(&mut self.0, &mut temp);
 
-        let (changed, mut temp) = resolve_special_not_file_path_range(temp, range);
+        let (changed, mut temp) = resolve_file_path_range(temp, range);
 
         std::mem::swap(&mut self.0, &mut temp);
 
@@ -21,15 +23,14 @@ impl SpecialNotFilePath<'_> {
     /// ```
     /// use better_url::prelude::*;
     ///
-    /// let mut path = SpecialNotFilePath::new("/abc/def/ghi");
+    /// let mut path = FilePath::new("/abc/def/ghi");
     ///
-    /// path.push("123/456"); assert_eq!(path, "/abc/def/ghi/123/456");
-    /// path.push(".."     ); assert_eq!(path, "/abc/def/ghi/123/"   );
-    /// path.push(".."     ); assert_eq!(path, "/abc/def/ghi/123/"   );
-    /// path.push("../.."  ); assert_eq!(path, "/abc/def/ghi/"       );
-    /// path.push("."      ); assert_eq!(path, "/abc/def/ghi//"      );
+    /// path.push("123"); assert_eq!(path, "/abc/def/ghi/123");
+    /// path.push(".." ); assert_eq!(path, "/abc/def/ghi/"   );
+    /// path.push(".." ); assert_eq!(path, "/abc/def/ghi/"   );
+    /// path.push("."  ); assert_eq!(path, "/abc/def/ghi//"  );
     /// ```
-    pub fn push<'a, T: Into<SpecialNotFilePathSegments<'a>>>(&mut self, value: T) -> bool {
+    pub fn push<'a, T: Into<FilePathSegment<'a>>>(&mut self, value: T) -> bool {
         let start = self.len();
 
         self.0.extend(["/", value.into().as_str()]);
@@ -44,13 +45,13 @@ impl SpecialNotFilePath<'_> {
     /// ```
     /// use better_url::prelude::*;
     ///
-    /// let mut path = SpecialNotFilePath::new("/abc/def/ghi");
+    /// let mut path = FilePath::new("/abc/def/ghi");
     ///
     /// path.prepend("123"); assert_eq!(path, "/123/abc/def/ghi");
     /// path.prepend("."  ); assert_eq!(path, "/123/abc/def/ghi");
     /// path.prepend(".." ); assert_eq!(path, "/123/abc/def/ghi");
     /// ```
-    pub fn prepend<'a, T: Into<SpecialNotFilePathSegments<'a>>>(&mut self, value: T) -> bool {
+    pub fn prepend<'a, T: Into<FilePathSegment<'a>>>(&mut self, value: T) -> bool {
         let new = value.into();
 
         self.0.insert_with(0, ["/", new.as_str()]);
@@ -71,13 +72,15 @@ impl SpecialNotFilePath<'_> {
     /// ```
     /// use better_url::prelude::*;
     ///
-    /// let mut path = SpecialNotFilePath::new("/abc/def/ghi");
+    /// let mut path = FilePath::new("/c:/abc/def/ghi");
     ///
-    /// path.set(1, Some("123/456/..")).unwrap(); assert_eq!(path, "/abc/123/ghi"    );
-    /// path.set(1, Some("123/456/." )).unwrap(); assert_eq!(path, "/abc/123/456/ghi");
-    /// path.set(1, None::<&str>      ).unwrap(); assert_eq!(path, "/abc/456/ghi"    );
+    /// path.set( 1, Some(".." )).unwrap(); assert_eq!(path, "/c:/def/ghi"    );
+    /// path.set( 0, Some("e|" )).unwrap(); assert_eq!(path, "/e:/def/ghi"    );
+    /// path.set(-4, Some("123")).unwrap(); assert_eq!(path, "/123/e:/def/ghi");
+    /// path.set( 2, Some(".." )).unwrap(); assert_eq!(path, "/123/ghi"       );
+    /// path.set( 2, Some("456")).unwrap(); assert_eq!(path, "/123/ghi/456"   );
     /// ```
-    pub fn set<'a, T: Into<SpecialNotFilePathSegments<'a>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetPathError> {
+    pub fn set<'a, T: Into<FilePathSegment<'a>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetPathError> {
         Ok(match value.map(Into::into) {
             Some(new) => match (self.iter_strs().try_neg_nth(index), index) {
                 (Ok(old), _) => {
@@ -114,16 +117,18 @@ impl SpecialNotFilePath<'_> {
 
     /// Set the range of segments.
     /// # Errors
-    /// If the call to [`Self::range_str`] returns [`None`], returns the error [`RangeNotFound`].
+    /// If [`Self::range_str`] returns [`None`], returns the error [`RangeNotFound`].
+    ///
+    /// If `value` is [`None`] and `range` contains all segments, returns the error [`CantBeEmpty`].
     /// # Examples
     /// ```
     /// use better_url::prelude::*;
     ///
-    /// let mut path = SpecialNotFilePath::new("/c:/abc/def/ghi");
+    /// let mut path = FilePath::new("/c:/abc/def/ghi");
     ///
-    /// path.set_range(1..2, Some(".././123/.")).unwrap(); assert_eq!(path, "/123/def/ghi");
+    /// path.set_range(1..2, Some(".././123/.")).unwrap(); assert_eq!(path, "/c:/123/def/ghi");
     /// ```
-    pub fn set_range<'a, T: Into<SpecialNotFilePathSegments<'a>>, B: RangeBounds<isize>>(&mut self, range: B, value: Option<T>) -> Result<bool, SetPathError> {
+    pub fn set_range<'a, T: Into<FilePathSegments<'a>>, B: RangeBounds<isize>>(&mut self, range: B, value: Option<T>) -> Result<bool, SetPathError> {
         Ok(match value.map(Into::into) {
             Some(new) => {
                 let old = self.range_str(range).ok_or(RangeNotFound)?;
@@ -159,11 +164,10 @@ impl SpecialNotFilePath<'_> {
     /// ```
     /// use better_url::prelude::*;
     ///
-    /// let mut path = SpecialNotFilePath::new("/abc/def/ghi");
+    /// let mut path = FilePath::new("/c:/abc/def/ghi");
     ///
-    /// path.insert(0, "./123/..").unwrap(); assert_eq!(path, "/abc/def/ghi");
     /// ```
-    pub fn insert<'a, T: Into<SpecialNotFilePathSegments<'a>>>(&mut self, index: isize, value: T) -> Result<bool, SetPathError> {
+    pub fn insert<'a, T: Into<FilePathSegment<'a>>>(&mut self, index: isize, value: T) -> Result<bool, SetPathError> {
         let new = value.into();
 
         let i = match (self.iter_strs().try_neg_nth(index), index) {

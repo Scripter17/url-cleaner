@@ -39,6 +39,15 @@ impl BetterUrl {
         }
     }
 
+    /// The [`SegmentedPathType`].
+    pub fn segmented_path_type(&self) -> Option<SegmentedPathType> {
+        self.can_be_a_base().then_some(match self.scheme_type() {
+            SchemeType::File           => SegmentedPathType::File          ,
+            SchemeType::SpecialNotFile => SegmentedPathType::SpecialNotFile,
+            SchemeType::NonSpecial     => SegmentedPathType::NonSpecial    ,
+        })
+    }
+
     /// The [`Path`].
     pub fn path(&self) -> Path<'_> {
         unsafe {

@@ -35,11 +35,11 @@ impl BetterUrl {
 
     /// [`DomainHost::set_middle`].
     /// # Errors
-    /// If the call to [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
+    /// If [`Self::domain`] returns [`None`], returns the error [`NoDomain`].
     ///
-    /// If the call to [`DomainHost::set_middle`] returns an error, that error is returned.
+    /// If [`DomainHost::set_middle`] returns an error, that error is returned.
     ///
-    /// If the call to [`Self::set_host`] reutrns an error, that error is returned.
+    /// If [`Self::set_host`] reutrns an error, that error is returned.
     pub fn set_domain_middle<'b, T: TryInto<DomainSegments<'b>>>(&mut self, value: Option<T>) -> Result<bool, SetHostError> where SetDomainError: From<T::Error> {
         let mut domain = self.domain().ok_or(NoDomain)?;
 

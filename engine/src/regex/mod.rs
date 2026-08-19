@@ -65,7 +65,7 @@ impl LazyRegex {
     ///
     /// Given this should be pretty rare and the cost of storing the error is pretty high, I choose to consider a reasonable tradeoff.
     /// # Errors
-    /// If the cache is unset and the call to [`RegexParts::build`] returns an error, that error is returned.
+    /// If the cache is unset and [`RegexParts::build`] returns an error, that error is returned.
     /// # Examples
     /// ```
     /// use url_cleaner_engine::prelude::*;

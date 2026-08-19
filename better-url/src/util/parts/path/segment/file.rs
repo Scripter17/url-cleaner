@@ -15,7 +15,7 @@ pub fn special_not_file_path_segment_to_file_path_segment<'a, T: Into<Cow<'a, st
 /// Convert a [`NonSpecialPathSegment`] into a [`FilePathSegment`].
 pub fn non_special_path_segment_to_file_path_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let (a, value) = non_special_path_segment_to_special_not_file_path_segment(value);
-    let (b, value) = special_not_file_path_segment_to_file_path_segment(value);
+    let (b, value) = special_not_file_path_segment_to_file_path_segment       (value);
 
     (a || b, value)
 }

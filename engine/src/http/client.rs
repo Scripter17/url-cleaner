@@ -28,16 +28,16 @@ pub struct HttpClient {
 impl HttpClient {
     /// Make a new [`Self`].
     /// # Panics
-    /// If the call to [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
     pub fn new_sync(handle: tokio::runtime::Handle) -> Self {
         handle.block_on(Self::new())
     }
 
     /// [`Self::do`] + [`tokio::runtime::Handle::block_on`].
     /// # Errors
-    /// If the call to [`Self::do`] returns an error, that error is returned.
+    /// If [`Self::do`] returns an error, that error is returned.
     /// # Panics
-    /// If the call to [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
     pub fn do_sync<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
         debug!(HttpClient::do_sync, self, request, response; self._do_sync(request, response, task_state, args))
     }
@@ -61,11 +61,11 @@ impl HttpClient {
 
     /// [`HttpRequestSource::get`] + [`HttpResponseHandler::handle`].
     /// # Errors
-    /// If the call to [`HttpRequestSource::get`] returns an error, that error is returned.
+    /// If [`HttpRequestSource::get`] returns an error, that error is returned.
     ///
-    /// If the call to [`reqwest::RequestBuilder::send`] returns an error, that error is returned.
+    /// If [`reqwest::RequestBuilder::send`] returns an error, that error is returned.
     ///
-    /// If the call to [`HttpResponseHandler::handle`] returns an error, that error is returned.
+    /// If [`HttpResponseHandler::handle`] returns an error, that error is returned.
     pub async fn r#do<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
         debug!(HttpClient::r#do, self, request, response; self._do(request, response, task_state, args).await)
     }
@@ -79,7 +79,7 @@ impl HttpClient {
 
     /// Gets [`Self::client`] or, if it's uninitialized, creates the default client.
     /// # Errors
-    /// If the call to [`reqwest::ClientBuilder::build`] returns an error, that error is returned.
+    /// If [`reqwest::ClientBuilder::build`] returns an error, that error is returned.
     pub fn init_get(&self) -> Result<&reqwest::Client, reqwest::Error> {
         if let Some(client) = self.client.get() {
             Ok(client)
