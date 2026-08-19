@@ -23,11 +23,11 @@ pub fn memrchr(haystack: &[u8], needle: u8) -> Option<usize> {
     }
 }
 
-/// Like [`memchr`] but searches for the first of a set of needles.
+/// Like [`memchr()`] but searches for the first of a set of needles.
 ///
 /// `neeldes` should be ordered in descending likiness of each needle being first.
 ///
-/// This is because it calls [`memchr`] in a loop.
+/// This is because it calls [`memchr()`] in a loop.
 /// # Examples
 /// ```
 /// use better_url::util::*;
@@ -87,7 +87,7 @@ pub fn memrchrn(haystack: &[u8], needles: &[u8]) -> Option<usize> {
 
 
 
-/// An [`Iterator`] of each [`memchr`].
+/// An [`Iterator`] of each [`memchr()`].
 #[derive(Debug)]
 pub struct MemchrIter<'a> {
     /// The remainder.
@@ -181,7 +181,7 @@ impl<'a> DoubleEndedIterator for MemchrnIter<'a> {
 
 
 
-/// An [`Iterator`] of bytes split on each [`memchr`].
+/// An [`Iterator`] of bytes split on each [`memchr()`].
 #[derive(Debug)]
 pub struct MemchrSplit<'a> {
     /// The remainder.
