@@ -19,7 +19,7 @@ pub fn memrchr(haystack: &[u8], needle: u8) -> Option<usize> {
                 haystack.len()
             )}.addr().checked_sub(haystack.as_ptr().addr())
         },
-        _ => memchr::memchr(needle, haystack)
+        _ => memchr::memrchr(needle, haystack)
     }
 }
 
@@ -76,14 +76,8 @@ pub fn memrchrn(haystack: &[u8], needles: &[u8]) -> Option<usize> {
     let mut x = 0;
 
     for &needle in needles {
-        let found = unsafe {libc::memchr(
-            haystack.as_ptr().add(x) as _,
-            needle as _,
-            haystack.len() - x,
-        )}.addr();
-
-        if found != 0 {
-            x = found - haystack.as_ptr().addr();
+        if let Some(found) = memrchr(unsafe {haystack.get_unchecked(x..)}, needle) {
+            x += found;
             ret = Some(x);
         }
     }
