@@ -189,9 +189,26 @@ impl<'a> DomainHost<'a> {
     /// # Safety
     /// Requires that `value` be percent decoded and UTS46 map normalized.
     /// # Errors
-    /// If [`Self::new_normalized`] returns an error, that error is returned.
+    /// If [`ends_in_a_number`] returns [`true`], returns the error [`InvalidDomainHost`].
     pub unsafe fn new_normalized<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
-        let (_, value) = encode_normalized_domain_host(value)?;
+        let value = value.into();
+
+        if ends_in_a_number(&value) {
+            Err(InvalidDomainHost)?;
+        }
+
+        unsafe {
+            Self::new_not_eian(value)
+        }
+    }
+
+    /// Make a new [`Self`] from a percent decoded and UTS46 map normalized value that does not end in a number.
+    /// # Safety
+    /// Requires that `value` be percent decoded and UTS46 map normalized and does not end in a number.
+    /// # Errors
+    /// If [`encode_not_eian_domain_host`] returns an error, that error is returned.
+    pub unsafe fn new_not_eian<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
+        let (_, value) = encode_not_eian_domain_host(value)?;
 
         unsafe {
             Ok(Self::new_raw(value))

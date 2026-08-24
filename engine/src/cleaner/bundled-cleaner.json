@@ -448,7 +448,7 @@
 					"rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com", "share.spotfund.com", "shareasale-analytics.com", "shareasale.com",
 					"skfb.ly", "smarturl.it", "smartyt.ag", "spot.fund", "spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com", "strms.net",
 					"subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs", "thr.cm", "tinyurl.com", "tkqlhce.com", "tmz.me", "toyhou.se", "tpu.me", "twpf.jp",
-					"u.afp.com", "uniqo.de", "uqr.to", "urldefense.com", "v.redd.it", "wa.me", "wlo.link", "youtube.com"
+					"u.afp.com", "uniqo.de", "uqr.to", "urldefense.com", "v.redd.it", "wa.me", "wlo.link", "youtube.com", "aryion.net"
 				]
 			},
 			"do_expand_mode": {
@@ -1265,6 +1265,10 @@
 										}},
 										{"Function": "expand_redirect"}
 									]},
+									"aryion.net": {"If": {
+										"if": {"PathIs": "/g4/redirect.php"},
+										"then": {"GetUrlFromQueryParam": "url"}
+									}},
 									"awin1.com": {"If": {
 										"if": {"PathIs": "/cread.php"},
 										"then": {"TryElse": {

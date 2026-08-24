@@ -6,19 +6,28 @@ impl BetterUrl {
     /// [`SchemeType::File`].
     pub(super) fn new_file(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
         // TODO: What?
-        let (host, pqf) = match rest.as_bytes() {
-            [b'/' | b'\\', b'/' | b'\\', x @ ..] => {
-                let rest = &rest[2..];
-                match x {
-                    [b'a'..=b'z' | b'A'..=b'Z', b':' | b'|'                                ] => ("", rest),
-                    [b'a'..=b'z' | b'A'..=b'Z', b':' | b'|', b'/' | b'\\' | b'?' | b'#', ..] => ("", rest),
-                    x => rest.split_at(x.memchrn(*b"/?#\\").unwrap_or(x.len()))
-                }
-            },
-            _ => ("", rest)
-        };
+        let (host, path, query, fragment) = match rest.as_bytes() {
+            [b'/' | b'\\', b'/' | b'\\', b'a'..=b'z' | b'A'..=b'Z', b':' | b'|'] |
+            [b'/' | b'\\', b'/' | b'\\', b'a'..=b'z' | b'A'..=b'Z', b':' | b'|', b'/' | b'\\' | b'?' | b'#', ..] => {
+                let (path, query, fragment) = split_pqf(&rest[1..]);
 
-        let (path, query, fragment) = split_pqf(pqf);
+                ("", path, query, fragment)
+            },
+            [b'/' | b'\\', b'/' | b'\\', ..] => {
+                let rest = &rest[2..];
+
+                let (rest, fragment) = pop_fragment    (rest);
+                let (rest, query   ) = pop_query       (rest);
+                let (host, path    ) = pop_special_path(rest);
+
+                (host, path, query, fragment)
+            },
+            _ => {
+                let (path, query, fragment) = split_pqf(rest);
+
+                ("", path, query, fragment)
+            }
+        };
 
 
         let host     = FileHost         ::new(host    )?;

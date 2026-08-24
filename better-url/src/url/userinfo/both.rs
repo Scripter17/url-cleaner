@@ -56,7 +56,7 @@ impl BetterUrl {
 
     /// The visible [`Userinfo`].
     ///
-    /// See [`Self::visible_userinfo_str`] foe details.
+    /// See [`Self::visible_userinfo_str`] for details.
     /// # Examples
     /// ```
     /// use better_url::prelude::*;
@@ -100,7 +100,7 @@ impl BetterUrl {
 
     /// The [`Userinfo`].
     ///
-    /// See [`Self::userinfo_str`] foe details.
+    /// See [`Self::userinfo_str`] for details.
     /// # Examples
     /// ```
     /// use better_url::prelude::*;

@@ -56,6 +56,10 @@ const CONTINUE_DATA: [u8; 256] = get_continue_data();
 pub fn encode_scheme<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidScheme> {
     let mut value = value.into();
 
+    if matches!(&*value, "http" | "https" | "ws" | "wss" | "file") {
+        return Ok((false, value));
+    }
+
     let mut bytes = value.bytes();
 
     let mut class = START_DATA[bytes.next().ok_or(InvalidScheme)? as usize];

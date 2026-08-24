@@ -2,22 +2,28 @@
 
 /// A simple wrapper around [`libc`]'s memchr.
 pub fn memchr(haystack: &[u8], needle: u8) -> Option<usize> {
-    unsafe {libc::memchr(
+    match unsafe {libc::memchr(
         haystack.as_ptr() as _,
         needle as _,
         haystack.len()
-    )}.addr().checked_sub(haystack.as_ptr().addr())
+    )}.addr() {
+        0 => None,
+        x => Some(x - haystack.as_ptr().addr())
+    }
 }
 
 /// A simple wrapper around [`libc`]'s memrchr.
 pub fn memrchr(haystack: &[u8], needle: u8) -> Option<usize> {
     cfg_select! {
         target_os = "linux" => {
-            unsafe {libc::memrchr(
+            match unsafe {libc::memrchr(
                 haystack.as_ptr() as _,
                 needle as _,
                 haystack.len()
-            )}.addr().checked_sub(haystack.as_ptr().addr())
+            )}.addr() {
+                0 => None,
+                x => Some(x - haystack.as_ptr().addr())
+            }
         },
         _ => memchr::memrchr(needle, haystack)
     }

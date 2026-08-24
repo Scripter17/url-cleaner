@@ -55,7 +55,7 @@ impl DomainHostDetails {
              value             => (value, false),
         };
 
-        let ss = segments.len() - psl::List.find(MemchrSplit {remainder: Some(segments), needle: b'.'}.rev()).len;
+        let ss = segments.len() - psl::List.find(SplitDots(Some(unsafe {str::from_utf8_unchecked(segments)})).rev().map(str::as_bytes)).len;
 
         let ms = match ss {
             0  => 0,

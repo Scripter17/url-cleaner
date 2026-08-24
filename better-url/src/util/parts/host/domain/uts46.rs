@@ -78,7 +78,7 @@ pub fn uts46_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a
                     (None, None) => {
                         drop(b);
                         return (false, value);
-                    }
+                    },
                     (None, Some(y)) => {
                         let mut ret = value.to_string();
                         ret.extend(std::iter::once(y).chain(b));

@@ -106,7 +106,7 @@ impl<'a> MaybeQuery<'a> {
         }
     }
 
-    /// Turn into an owned [`MaybeQuery`].
+    /// Turn into an owned [`Self`].
     pub fn into_owned(self) -> MaybeQuery<'static> {
         match self {
             Self::Special   (x) => x.into_owned().into(),

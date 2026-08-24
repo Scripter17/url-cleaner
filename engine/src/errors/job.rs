@@ -20,14 +20,14 @@ pub enum LoadProfilesConfigError {
 #[derive(Debug, Error)]
 pub enum LoadCleanerError {
     /** [`io::Error`].         **/ #[error(transparent)] IoError       (#[from] io::Error        ),
-    /** [`serde_json::Error`]. **/ #[error(transparent)] SetdeJsonError(#[from] serde_json::Error),
+    /** [`serde_json::Error`]. **/ #[error(transparent)] SerdeJsonError(#[from] serde_json::Error),
 }
 
 /// [`Secrets::load`].
 #[derive(Debug, Error)]
 pub enum LoadSecretsError {
     /** [`io::Error`].         **/ #[error(transparent)] IoError       (#[from] io::Error        ),
-    /** [`serde_json::Error`]. **/ #[error(transparent)] SetdeJsonError(#[from] serde_json::Error),
+    /** [`serde_json::Error`]. **/ #[error(transparent)] SerdeJsonError(#[from] serde_json::Error),
 }
 
 /// [`Cleaner::apply`].

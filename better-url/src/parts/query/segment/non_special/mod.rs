@@ -56,7 +56,7 @@ impl<'a> NonSpecialQuerySegment<'a> {
         }
     }
 
-    /// Turn into an owned [`NonSpecialQuerySegment`].
+    /// Turn into an owned [`Self`].
     pub fn into_owned(self) -> NonSpecialQuerySegment<'static> {
         NonSpecialQuerySegment {
             raw: self.raw.into_owned().into(),
@@ -64,7 +64,7 @@ impl<'a> NonSpecialQuerySegment<'a> {
         }
     }
 
-    /// Turn into the inner [`Self`].
+    /// Turn into the inner [`Cow`].
     pub fn into_inner(self) -> Cow<'a, str> {
         self.raw
     }

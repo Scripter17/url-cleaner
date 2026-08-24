@@ -6,7 +6,7 @@
 //!
 //! ## Performance
 //!
-//! See [`better-url-bench`](https://github.com/Scripter17/url-cleaner/tree/main/better-url-bench) for details, but TL;DR if you're mostly parsing medium/long URLs and/or doing even slight modifications to URLs, Better URL polishes the floor with Servo and Ada's URL crates in terms of speed.
+//! See [`better-url-bench`](https://github.com/Scripter17/url-cleaner/tree/main/better-url-bench) for performance details.
 
 mod url;
 pub mod parts;

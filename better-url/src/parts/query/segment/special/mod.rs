@@ -64,7 +64,7 @@ impl<'a> SpecialQuerySegment<'a> {
         }
     }
 
-    /// Turn into the inner [`Self`].
+    /// Turn into the inner [`Cow`].
     pub fn into_inner(self) -> Cow<'a, str> {
         self.raw
     }

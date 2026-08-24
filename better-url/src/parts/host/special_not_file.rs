@@ -109,7 +109,7 @@ impl<'a> TryFrom<Cow<'a, str>> for SpecialNotFileHost<'a> {
 
                 match ends_in_a_number(&value) {
                     true  =>         Ipv4Host  ::new_normalized(value) ?.into(),
-                    false => unsafe {DomainHost::new_normalized(value)}?.into(),
+                    false => unsafe {DomainHost::new_not_eian  (value)}?.into(),
                 }
             }
         })

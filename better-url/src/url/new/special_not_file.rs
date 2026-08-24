@@ -5,16 +5,15 @@ use crate::prelude::*;
 impl BetterUrl {
     /// [`SchemeType::SpecialNotFile`].
     pub(super) fn new_special_not_file(scheme: Scheme<'_>, mut rest: &str) -> Result<Self, InvalidUrl> {
-        // rest = rest.trim_start_matches(['/', '\\']);
-
         while matches!(rest.as_bytes(), [b'/' | b'\\', ..]) {
             rest = unsafe {rest.get_unchecked(1..)};
         }
 
-        let ((userinfo, host, port), (path, query, fragment)) = match rest.memchrn(*b"/?#\\") {
-            Some(i) => unsafe {(split_auth(rest.get_unchecked(..i)), split_pqf(rest.get_unchecked(i..)))},
-            None    =>         (split_auth(rest                   ), ("/", None, None                 )) ,
-        };
+        let (rest, fragment) = pop_fragment    (rest);
+        let (rest, query   ) = pop_query       (rest);
+        let (auth, path    ) = pop_special_path(rest);
+
+        let (userinfo, host, port) = split_auth(auth);
 
 
 

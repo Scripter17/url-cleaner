@@ -20,18 +20,79 @@ pub fn split_auth(value: &str) -> (Option<&str>, &str, Option<&str>) {
 }
 
 /// Split a path, query, and fragment.
+/// # Examples
+/// ```
+/// use better_url::util::*;
+///
+/// assert_eq!(split_pqf("/1/2?3?4#5#6"), ("/1/2", Some("3?4"), Some("5#6")));
+/// assert_eq!(split_pqf("/1/2?3?4"    ), ("/1/2", Some("3?4"), None       ));
+/// assert_eq!(split_pqf("/1/2"        ), ("/1/2", None       , None       ));
+/// ```
 pub fn split_pqf(value: &str) -> (&str, Option<&str>, Option<&str>) {
-    unsafe {
-        let (rest, fragment) = match value.memchr(b'#') {
-            Some(i) => (value.get_unchecked(..i), Some(value.get_unchecked(i+1..))),
-            None    => (value                   , None                            ),
-        };
+    let (rest, fragment) = pop_fragment(value);
+    let (path, query   ) = pop_query   (rest );
 
-        let (path, query) = match rest.memchr(b'?') {
-            Some(i) => (rest.get_unchecked(..i), Some(rest.get_unchecked(i+1..))),
-            None    => (rest                   , None                           ),
-        };
+    (path, query, fragment)
+}
 
-        (path, query, fragment)
+/// Pop the fragment.
+/// # Examples
+/// ```
+/// use better_url::util::*;
+///
+/// assert_eq!(pop_fragment("example.com/1/2?3?4#5#6"), ("example.com/1/2?3?4", Some("5#6")));
+/// ```
+pub fn pop_fragment(value: &str) -> (&str, Option<&str>) {
+    match value.memchr(b'#') {
+        Some(i) => unsafe {(value.get_unchecked(..i), Some(value.get_unchecked(i+1..)))},
+        None    =>         (value                   , None                            ) ,
+    }
+}
+
+/// Pop the query.
+/// # Examples
+/// ```
+/// use better_url::util::*;
+///
+/// assert_eq!(pop_query("example.com/1/2?3?4"), ("example.com/1/2", Some("3?4")));
+/// ```
+pub fn pop_query(value: &str) -> (&str, Option<&str>) {
+    match value.memchr(b'?') {
+        Some(i) => unsafe {(value.get_unchecked(..i), Some(value.get_unchecked(i+1..)))},
+        None    =>         (value                   , None                            ) ,
+    }
+}
+
+/// Pop the special path.
+/// # Examples
+/// ```
+/// use better_url::util::*;
+///
+/// assert_eq!(pop_special_path("example.com/1/2"  ), ("example.com", "/1/2"  ));
+/// assert_eq!(pop_special_path("example.com\\1/2" ), ("example.com", "\\1/2" ));
+/// assert_eq!(pop_special_path("example.com\\1\\2"), ("example.com", "\\1\\2"));
+/// assert_eq!(pop_special_path("example.com"      ), ("example.com", "/"     ));
+/// ```
+pub fn pop_special_path(value: &str) -> (&str, &str) {
+    match value.memchrn(*b"/\\") {
+        Some(i) => unsafe {(value.get_unchecked(..i), value.get_unchecked(i..))},
+        None    =>         (value                   , "/"                     ) ,
+    }
+}
+
+/// Pop the non-special path
+/// # Examples
+/// ```
+/// use better_url::util::*;
+///
+/// assert_eq!(pop_non_special_path("example.com/1/2"  ), ("example.com"      , "/1/2"));
+/// assert_eq!(pop_non_special_path("example.com\\1/2" ), ("example.com\\1"   , "/2"  ));
+/// assert_eq!(pop_non_special_path("example.com\\1\\2"), ("example.com\\1\\2", ""    ));
+/// assert_eq!(pop_non_special_path("example.com"      ), ("example.com"      , ""    ));
+/// ```
+pub fn pop_non_special_path(value: &str) -> (&str, &str) {
+    match value.memchr(b'/') {
+        Some(i) => unsafe {(value.get_unchecked(..i), value.get_unchecked(i..))},
+        None    =>         (value                   , ""                      ) ,
     }
 }

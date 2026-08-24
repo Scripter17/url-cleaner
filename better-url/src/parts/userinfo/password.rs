@@ -21,18 +21,25 @@ impl<'a> Password<'a> {
 
 
 
-    /// [`lossy_decode_password`].
-    pub fn lossy_decode(self) -> Cow<'a, str> {
-        let (_, value) = lossy_decode_password(self.0);
+    /// [`percent_decode`].
+    pub fn decode(self) -> Cow<'a, [u8]> {
+        let (_, value) = percent_decode(self.0);
 
         value
     }
 
-    /// [`try_decode_password`].
+    /// [`lossy_percent_decode`].
+    pub fn lossy_decode(self) -> Cow<'a, str> {
+        let (_, value) = lossy_percent_decode(self.0);
+
+        value
+    }
+
+    /// [`try_percent_decode`].
     /// # Errors
-    /// If [`try_decode_password`] returns an error, that error is returned.
+    /// If [`try_percent_decode`] returns an error, that error is returned.
     pub fn try_decode(self) -> Result<Cow<'a, str>, Cow<'a, [u8]>> {
-        match try_decode_password(self.0) {
+        match try_percent_decode(self.0) {
             Ok ((_, value)) => Ok (value),
             Err((_, value)) => Err(value),
         }

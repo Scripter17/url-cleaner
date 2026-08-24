@@ -5,13 +5,11 @@ use crate::prelude::*;
 impl BetterUrl {
     /// `non_special://...`
     pub(super) fn new_ns_host(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
-        let (auth, pqf) = match rest.memchrn(*b"/?#") {
-            Some(i) => unsafe {(rest.get_unchecked(..i), rest.get_unchecked(i..))},
-            None    =>         (rest                   , ""                      ),
-        };
+        let (rest, fragment) = pop_fragment        (rest);
+        let (rest, query   ) = pop_query           (rest);
+        let (auth, path    ) = pop_non_special_path(rest);
 
         let (userinfo, host, port ) = split_auth(auth);
-        let (path, query, fragment) = split_pqf (pqf );
 
         if host.is_empty() && (userinfo.is_some() || port.is_some()) {
             Err(InvalidUrl::EmptyHostCantHaveUserinfoOrPort)?;

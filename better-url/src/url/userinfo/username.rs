@@ -62,7 +62,7 @@ impl BetterUrl {
 
     /// The visible [`Username`].
     ///
-    /// See [`Self::visible_username_str`] foe details.
+    /// See [`Self::visible_username_str`] for details.
     pub fn visible_username(&self) -> Option<Username<'_>> {
         Some(unsafe {
             Username::new_unchecked(self.visible_username_str()?)
@@ -71,7 +71,7 @@ impl BetterUrl {
 
     /// The [`Username`].
     ///
-    /// See [`Self::username_str`] foe details.
+    /// See [`Self::username_str`] for details.
     pub fn username(&self) -> Username<'_> {
         unsafe {
             Username::new_unchecked(self.username_str())

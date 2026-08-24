@@ -8,6 +8,12 @@ use better_url::prelude::*;
 
 /// Benchmark URL parsing.
 ///
+/// Compares against Servo's and Ada's URL crates, both with and without them calculating a SchemeDetails and HostDetails
+///
+/// If you care about Better URL's domain part APIs like BetterUrl::domain_prefix, columns 6-8 and 12-14 are probably more relevant to you than columns 3-5 and 9-11
+///
+/// If you don't, columns 3-5 and 9-11 are probably more relevant to you than columns 6-8 and 12-14
+///
 /// The columns are:
 ///
 /// 1. The line number
@@ -22,7 +28,7 @@ use better_url::prelude::*;
 ///
 /// 5. The current sum of column 3 divided by the current sum of column 2
 ///
-/// 6. Column 3 plus the time it takes SchemeDetails::new_unchecked and HostDetails::parse to complete once per run
+/// 6. The time it takes url::Url::parse, SchemeDetails::new_unchecked, and HostDetails::parse to complete
 ///
 /// 7. Column 6 divided by column 2
 ///
@@ -36,15 +42,11 @@ use better_url::prelude::*;
 ///
 /// 11. The current sum of column 9 divided by the current sum of column 2
 ///
-/// 12. Column 9 plus the time it takes SchemeDetails::new_unchecked and HostDetails::parse to complete once per run
+/// 12. The time it takes ada_url::Url::parse, SchemeDetails::new_unchecked, and HostDetails::parse to complete
 ///
 /// 13. Column 12 divided by column 2
 ///
 /// 14. The current sum of column 12 divided by the current sum of column 2
-///
-/// If you care about Better URL's domain part APIs (BetterUrl::domain_prefix, ::set_domain_prefix, etc.) then columns 6-8 and 12-14 are more more relevant.
-///
-/// If you don't then columns 3-5 and 9-11 are more relevant to you.
 #[derive(Debug, Parser)]
 pub struct Args {
     /// Compare to Servo's URL crate.
@@ -61,11 +63,11 @@ pub struct Args {
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        let mut me_total             = std::time::Duration::default();
-        let mut servo_raw_total      = std::time::Duration::default();
-        let mut servo_detailed_total = std::time::Duration::default();
-        let mut ada_raw_total        = std::time::Duration::default();
-        let mut ada_detailed_total   = std::time::Duration::default();
+        let mut burl_total       = std::time::Duration::default();
+        let mut servo_total      = std::time::Duration::default();
+        let mut servo_plus_total = std::time::Duration::default();
+        let mut ada_total        = std::time::Duration::default();
+        let mut ada_plus_total   = std::time::Duration::default();
 
         for (i, line) in std::io::stdin().lock().lines().map(Result::unwrap).enumerate() {
             print!("{i}");
@@ -76,10 +78,10 @@ impl Args {
                 let _ = BetterUrl::new(&*line);
             }
 
-            let me = timer.elapsed();
-            me_total += me;
+            let burl = timer.elapsed();
+            burl_total += burl;
 
-            print!("\t{me:.2?}");
+            print!("\t{burl:.2?}");
 
 
 
@@ -90,15 +92,13 @@ impl Args {
                     let _ = url::Url::parse(&line);
                 }
 
-                let servo_raw = timer.elapsed();
-                servo_raw_total += servo_raw;
-
-                let url = url::Url::parse(&line);
+                let servo = timer.elapsed();
+                servo_total += servo;
 
                 let timer = std::time::Instant::now();
 
-                if let Ok(url) = url {
-                    for _ in 0..self.num {
+                for _ in 0..self.num {
+                    if let Ok(url) = url::Url::parse(&line) {
                         let scheme_type = SchemeDetails::new_unchecked(url.scheme()).r#type();
 
                         if let Some(host) = url.host_str() {
@@ -107,16 +107,16 @@ impl Args {
                     }
                 }
 
-                let servo_detailed = servo_raw + timer.elapsed();
-                servo_detailed_total += servo_detailed;
+                let servo_plus = timer.elapsed();
+                servo_plus_total += servo_plus;
 
-                let servo_raw_factor            = servo_raw           .as_secs_f64() / me      .as_secs_f64();
-                let servo_raw_total_factor      = servo_raw_total     .as_secs_f64() / me_total.as_secs_f64();
-                let servo_detailed_factor       = servo_detailed      .as_secs_f64() / me      .as_secs_f64();
-                let servo_detailed_total_factor = servo_detailed_total.as_secs_f64() / me_total.as_secs_f64();
+                let servo_factor            = servo           .as_secs_f64() / burl      .as_secs_f64();
+                let servo_total_factor      = servo_total     .as_secs_f64() / burl_total.as_secs_f64();
+                let servo_plus_factor       = servo_plus      .as_secs_f64() / burl      .as_secs_f64();
+                let servo_plus_total_factor = servo_plus_total.as_secs_f64() / burl_total.as_secs_f64();
 
-                print!("\t{servo_raw:.2?}\t{servo_raw_factor:.2}\t{servo_raw_total_factor:.2}");
-                print!("\t{servo_detailed:.2?}\t{servo_detailed_factor:.2}\t{servo_detailed_total_factor:.2}");
+                print!("\t{servo:.2?}\t{servo_factor:.2}\t{servo_total_factor:.2}");
+                print!("\t{servo_plus:.2?}\t{servo_plus_factor:.2}\t{servo_plus_total_factor:.2}");
             }
 
 
@@ -128,31 +128,29 @@ impl Args {
                     let _ = ada_url::Url::parse(&line, None);
                 }
 
-                let ada_raw = timer.elapsed();
-                ada_raw_total += ada_raw;
-
-                let url = ada_url::Url::parse(&line, None);
+                let ada = timer.elapsed();
+                ada_total += ada;
 
                 let timer = std::time::Instant::now();
 
-                if let Ok(url) = url {
-                    for _ in 0..self.num {
+                for _ in 0..self.num {
+                    if let Ok(url) = ada_url::Url::parse(&line, None) {
                         let scheme_type = SchemeDetails::new_unchecked(url.protocol().strip_suffix(':').unwrap()).r#type();
 
                         let _ = HostDetails::parse(url.hostname(), scheme_type);
                     }
                 }
 
-                let ada_detailed = ada_raw + timer.elapsed();
-                ada_detailed_total += ada_detailed;
+                let ada_plus = timer.elapsed();
+                ada_plus_total += ada_plus;
 
-                let ada_raw_factor            = ada_raw           .as_secs_f64() / me      .as_secs_f64();
-                let ada_raw_total_factor      = ada_raw_total     .as_secs_f64() / me_total.as_secs_f64();
-                let ada_detailed_factor       = ada_detailed      .as_secs_f64() / me      .as_secs_f64();
-                let ada_detailed_total_factor = ada_detailed_total.as_secs_f64() / me_total.as_secs_f64();
+                let ada_factor            = ada           .as_secs_f64() / burl      .as_secs_f64();
+                let ada_total_factor      = ada_total     .as_secs_f64() / burl_total.as_secs_f64();
+                let ada_plus_factor       = ada_plus      .as_secs_f64() / burl      .as_secs_f64();
+                let ada_plus_total_factor = ada_plus_total.as_secs_f64() / burl_total.as_secs_f64();
 
-                print!("\t{ada_raw:.2?}\t{ada_raw_factor:.2}\t{ada_raw_total_factor:.2}");
-                print!("\t{ada_detailed:.2?}\t{ada_detailed_factor:.2}\t{ada_detailed_total_factor:.2}");
+                print!("\t{ada:.2?}\t{ada_factor:.2}\t{ada_total_factor:.2}");
+                print!("\t{ada_plus:.2?}\t{ada_plus_factor:.2}\t{ada_plus_total_factor:.2}");
             }
 
 

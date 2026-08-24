@@ -5,7 +5,9 @@ use crate::prelude::*;
 mod get;
 mod set;
 
-/// A special query.
+/// A [`Fragment`] treated as a query.
+///
+/// This is stupid and annoying but websites love doing absolute nonsense.
 #[derive(Debug, Clone)]
 pub struct FragmentQuery<'a>(pub(crate) Cow<'a, str>);
 

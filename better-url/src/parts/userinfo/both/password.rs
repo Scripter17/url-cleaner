@@ -45,14 +45,14 @@ impl<'a> Userinfo<'a> {
 
     /// The visible [`Password`].
     ///
-    /// See [`Self::visible_password_str`] foe details.
+    /// See [`Self::visible_password_str`] for details.
     pub fn visible_password(&self) -> Option<Password<'_>> {
         Some(unsafe {Password::new_unchecked(self.visible_password_str()?)})
     }
 
     /// The [`Password`].
     ///
-    /// See [`Self::password_str`] foe details.
+    /// See [`Self::password_str`] for details.
     pub fn password(&self) -> Password<'_> {
         unsafe {Password::new_unchecked(self.password_str())}
     }
