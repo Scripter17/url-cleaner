@@ -162,14 +162,16 @@ impl SpecialNotFilePath<'_> {
     ///
     /// let mut path = SpecialNotFilePath::new("/abc/def/ghi");
     ///
-    /// path.insert(1, "123").unwrap(); assert_eq!(path, "/abc/123/def/ghi");
-    /// path.insert(2, ".." ).unwrap(); assert_eq!(path, "/abc/def/ghi"    );
+    /// path.insert( 1, "123").unwrap(); assert_eq!(path, "/abc/123/def/ghi");
+    /// path.insert( 2, ".." ).unwrap(); assert_eq!(path, "/abc/def/ghi"    );
+    /// path.insert(-1, "123").unwrap(); assert_eq!(path, "/abc/def/ghi/123");
     /// ```
     pub fn insert<'a, T: Into<SpecialNotFilePathSegment<'a>>>(&mut self, index: isize, value: T) -> Result<bool, SetPathError> {
         let new = value.into();
 
         let i = match (self.iter_strs().try_neg_nth(index), index) {
-            (Ok (x), _  ) => x.addr() - self.0.addr() - 1,
+            (Ok (x), ..0) => x.end_addr() - self.0.addr(),
+            (Ok (x), 0..) => x.    addr() - self.0.addr() - 1,
             (Err(0), 0..) => self.len(),
             (Err(0), ..0) => 0,
             (Err(_), _  ) => Err(InsertNotFound)?

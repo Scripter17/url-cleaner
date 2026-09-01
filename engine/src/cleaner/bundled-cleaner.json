@@ -26,8 +26,8 @@
 					"required": false,
 					"unset": "Keep URLs as-is.",
 					"variants": {
-						"desktop": "to change mobile URLs to desktop URLs.",
-						"mobile" : "to change dekstop URLs to mobile URLs."
+						"desktop": "Change mobile URLs to desktop URLs.",
+						"mobile" : "Change dekstop URLs to mobile URLs."
 					}
 				},
 
@@ -135,6 +135,20 @@
 					"required": true
 				},
 
+				"tumblr_mode": {
+					"desc": "Decides what host to replace tumblr/tumblr embed hosts with.",
+					"required": false,
+					"unset": "Set tumblr and tumblr embed hosts to `tumblr.com`",
+					"variants": {
+						"canon": "Always set to `tumblr.com`",
+						"embed": "Always set to the `tumblr_embed_host` var"
+					}
+				},
+				"tumblr_embed_host": {
+					"desc": "The tumblr embed host to use.",
+					"required": true
+				},
+
 				"twitter_mode": {
 					"desc": "Decides what host to replace twitter/twitter embed/Nitter hosts with.",
 					"required": false,
@@ -148,6 +162,10 @@
 				"twitter_embed_host": {
 					"desc": "The twitter embed host to use.",
 					"required": true
+				},
+				"twitter_embed_lang": {
+					"desc": "The language to use for the twitter embed host.",
+					"required": false
 				},
 				"nitter_host": {
 					"desc": "The Nitter host to use.",
@@ -220,6 +238,7 @@
 			"furaffinity_embed_host": "xfuraffinity.net",
 			"pixiv_embed_host"      : "phixiv.net",
 			"tiktok_embed_host"     : "tfxktok.com",
+			"tumblr_embed_host"     : "txtumblr.com",
 			"twitter_embed_host"    : "fixupx.com",
 
 			"breezewiki_host": "breezewiki.com",
@@ -293,6 +312,8 @@
 				"tiktok_embed_hosts": ["tfxktok.com"],
 
 				"threads": ["threads.com", "threads.net"],
+
+				"tumblr_embed_hosts": ["tpmblr.com", "txtumblr.com"],
 
 				"twitter": ["x.com"],
 				"twitter_abnormal": ["twitter.com", "mobile.x.com", "mobile.twitter.com"],
@@ -381,9 +402,9 @@
 					"reurl.cc", "reut.rs", "s.team", "s76.co", "sbuxjoin.com", "scim.ag", "secretpack-links.com", "sendgrid.net", "shor.tf", "sketchfab.com", "socialwolvez.com",
 					"sou42.co", "sponsr.is", "spoti.fi", "spotify.link", "sqex.to", "square.link", "st.news", "stackoverflow.com", "steamcommunity.com", "stupidpenisx.com",
 					"sub2unlock.com", "sub2unlock.io", "sub4unlock.io", "subscribestar.adult", "substack.com", "t.co", "t.ly", "tavernleaks.com", "tee.pub", "than.gs", "thangs.com",
-					"theatln.tc", "thecut.io", "theonion.com", "throne.com", "tinylf.com", "tinyurl.com", "tmblr.co", "toyhou.se", "tpu.me", "tr.ee", "umblr.com", "unf.pa",
-					"uni.cf", "ur0.link", "urldefense.com", "visitlink.me", "w.wiki", "whatever.social", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "x.com", "x.gd", "xcancel.com",
-					"xhslink.com", "xnaas.github.io", "xprmpacks.com", "yewtu.be", "yiffx.com", "zionism.observer"
+					"theatln.tc", "thecut.io", "theonion.com", "throne.com", "tinylf.com", "tinyurl.com", "tmblr.co", "toyhou.se", "tpmblr.com", "tpu.me", "tr.ee", "umblr.com",
+					"unf.pa", "uni.cf", "ur0.link", "urldefense.com", "visitlink.me", "w.wiki", "whatever.social", "wlgrn.com", "wlo.link", "wn.nr", "wp.me", "x.com", "x.gd",
+					"xcancel.com", "xhslink.com", "xnaas.github.io", "xprmpacks.com", "yewtu.be", "yiffx.com", "zionism.observer"
 				]
 			},
 			"dm_www_prefix": {
@@ -427,28 +448,28 @@
 					"sbuxjoin.com", "scanqr.to", "scim.ag", "scnv.io", "share.firefox.dev", "share.temu.com", "shor.tf", "shorturl.at", "shrsl.com", "smartytags.com",
 					"sonic.frack.deals", "sou42.co", "sponsr.is", "spoti.fi", "spr.ly", "sqex.to", "square.link", "sta.sh", "t.co", "t.ly", "theatln.tc", "thecut.io", "thef.pub",
 					"thrn.co", "tiny.cc", "tinylf.com", "tmblr.co", "to.pbs.org", "tps.to", "tr.ee", "trk.mail.ru", "u.jd.com", "unes.co", "unf.pa", "uni.cf", "uniceflink.org",
-					"ur0.link", "v.aa.com.tr", "visitlink.me", "vm.tiktok.com", "vt.tiktok.com", "w.wiki", "wccf.tech", "wix-l.in", "wlgrn.com", "wn.nr", "wp.me", "wwdc.io",
-					"x.alibaba.com", "x.gd", "xbx.ly", "xhslink.com", "zurl.co"
+					"ur0.link", "url-shortener.me", "v.aa.com.tr", "visitlink.me", "vm.tiktok.com", "vt.tiktok.com", "w.wiki", "wccf.tech", "wix-l.in", "wlgrn.com", "wn.nr",
+					"wp.me", "wwdc.io", "x.alibaba.com", "x.gd", "xbx.ly", "xhslink.com", "zurl.co"
 				],
 				"sometimes_redirect": [
-					"abc.net.au", "allmylinks.com", "apexpartner.app", "api.pinterest.com", "bitly.com", "displate.com", "facebook.com", "gumroad.com", "heise.de", "hisubway.com",
-					"kuku.lu", "launchgood.com", "lovense.com", "mydealz.de", "naver.me", "netflix.com", "old.reddit.com", "ow.ly", "pawoo.net", "qr.io", "qrfy.com", "qudsnen.co",
-					"reddit.com", "sketchfab.com", "snapchat.com", "t2m.io", "teepublic.com", "thangs.com", "thejournal.ie", "woot.com"
+					"abc.net.au", "allmylinks.com", "apexpartner.app", "api.pinterest.com", "bitly.com", "displate.com", "facebook.com", "google.com", "gumroad.com", "heise.de",
+					"hisubway.com", "kuku.lu", "launchgood.com", "lovense.com", "mydealz.de", "naver.me", "netflix.com", "old.reddit.com", "ow.ly", "pawoo.net", "qr.io", "qrfy.com",
+					"qudsnen.co", "reddit.com", "sketchfab.com", "snapchat.com", "t2m.io", "teepublic.com", "thangs.com", "thejournal.ie", "woot.com"
 				],
 				"special": [
-					"1link.club", "adguardteam.github.io", "affiliate.xp-pen.com", "allegro.pl", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "awin1.com", "bfy.tw",
-					"bugzil.la", "buymeacoff.ee", "click.notification.elsevier.com", "cnn.it", "coff.ee", "cos.lv", "costco.ms", "deviantart.com", "drinkctrl.com", "duckduckgo.com",
-					"duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "e.newsletters.cnn.com", "fans.ly", "fansly.com", "fb.com",
-					"fiverr.com", "furaffinity.net", "get-qr.com", "getpaint.net", "global.temu.com", "go.bsky.app", "go.shopyourlikes.com", "go.skimresources.com", "goodreads.com",
-					"goto.walmart.com", "gprivate.com", "gznmedia.go2cloud.org", "href.li", "instagr.am", "is.gd", "j.mp", "jrnl.ie", "kcpt.org", "l.instagram.com", "l.mlive.com",
-					"l.threads.com", "lego.com", "li.cnn.com", "link.blissy.com", "link.sfchronicle.com", "link.streamelements.com", "linkprotect.cudasvc.com", "linktr.ee",
-					"lk.cmte.fyi", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "lu.ma", "mcdonalds-survey.ca", "media.igram.world", "mel.sc", "messagenes.com", "mfy.gg",
-					"myproduct.info", "nas.cr", "nyer.cm", "nyp.st", "o93x.net", "on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com",
-					"p.liadm.com", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com", "qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com", "r.amzlink.to",
-					"rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com", "share.spotfund.com", "shareasale-analytics.com", "shareasale.com",
-					"skfb.ly", "smarturl.it", "smartyt.ag", "spot.fund", "spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com", "strms.net",
-					"subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs", "thr.cm", "tinyurl.com", "tkqlhce.com", "tmz.me", "toyhou.se", "tpu.me", "twpf.jp",
-					"u.afp.com", "uniqo.de", "uqr.to", "urldefense.com", "v.redd.it", "wa.me", "wlo.link", "youtube.com", "aryion.net"
+					"1link.club", "adguardteam.github.io", "affiliate.xp-pen.com", "allegro.pl", "api.linkr.bio", "api.linkr.com", "app.adjust.com", "aryion.net", "awin1.com",
+					"bfy.tw", "bugzil.la", "buymeacoff.ee", "click.notification.elsevier.com", "cnn.it", "coff.ee", "cos.lv", "costco.ms", "deviantart.com", "drinkctrl.com",
+					"duckduckgo.com", "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion", "e.emailalerts.cnn.com", "e.newsletters.cnn.com", "fans.ly", "fansly.com",
+					"fb.com", "fiverr.com", "furaffinity.net", "get-qr.com", "getpaint.net", "global.temu.com", "go.bsky.app", "go.shopyourlikes.com", "go.skimresources.com",
+					"goodreads.com", "goto.walmart.com", "gprivate.com", "gznmedia.go2cloud.org", "href.li", "instagr.am", "is.gd", "j.mp", "jrnl.ie", "kcpt.org", "l.instagram.com",
+					"l.mlive.com", "l.threads.com", "lego.com", "li.cnn.com", "link.blissy.com", "link.sfchronicle.com", "link.streamelements.com", "linkprotect.cudasvc.com",
+					"linktr.ee", "lk.cmte.fyi", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "lu.ma", "mcdonalds-survey.ca", "media.igram.world", "mel.sc", "messagenes.com",
+					"mfy.gg", "myproduct.info", "nas.cr", "nyer.cm", "nyp.st", "o93x.net", "on.msnbc.com", "on.theatln.tc", "open-api.tiktok.com", "open.substack.com",
+					"out.reddit.com", "p.liadm.com", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com", "qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com",
+					"r.amzlink.to", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc", "ro.blox.com", "share.spotfund.com", "shareasale-analytics.com",
+					"shareasale.com", "skfb.ly", "smarturl.it", "smartyt.ag", "spot.fund", "spotify.link", "ss3.shipstation.com", "star.aliexpress.com", "steamcommunity.com",
+					"strms.net", "subscribestar.adult", "substack.com", "t.umblr.com", "tee.pub", "than.gs", "thr.cm", "tinyurl.com", "tkqlhce.com", "tmz.me", "toyhou.se", "tpu.me",
+					"twpf.jp", "u.afp.com", "uniqo.de", "uqr.to", "urldefense.com", "v.redd.it", "wa.me", "wlo.link", "youtube.com"
 				]
 			},
 			"do_expand_mode": {
@@ -849,6 +870,26 @@
 
 
 
+			"tumblr": {"StringMap": {
+				"value": {"Var": "tumblr_mode"},
+				"map": {
+					"canon": {"SetDomainOrigin": "tumblr.com"},
+					"embed": {"All": [
+						{"If": {
+							"if": {"Not": {"DomainPrefixIsInSet": ["www", null]}},
+							"then": {"InsertPathSegment": {
+								"index": 0,
+								"value": {"Part": "DomainPrefix"}
+							}}
+						}},
+						{"SetHost": {"Var": "tumblr_embed_host"}}
+					]}
+				},
+				"if_none": {"FunctionArg": "modeless"}
+			}},
+
+
+
 			"twitter": {"All": [
 				{"PartMap": {
 					"part": {"PathSegment": 0},
@@ -861,8 +902,17 @@
 				{"StringMap": {
 					"value": {"Var": "twitter_mode"},
 					"map": {
-						"canon" : {"SetHost": "x.com"},
-						"embed" : {"SetHost": {"Var": "twitter_embed_host"}},
+						"canon": {"SetHost": "x.com"},
+						"embed": {"All": [
+							{"SetHost": {"Var": "twitter_embed_host"}},
+							{"If": {
+								"if": {"VarIsSome": "twitter_embed_lang"},
+								"then": {"InsertPathSegment": {
+									"index": -1,
+									"value": {"Var": "twitter_embed_lang"}
+								}}
+							}}
+						]},
 						"nitter": {"SetHost": {"Var": "nitter_host"}}
 					},
 					"if_none": {"FunctionArg": "modeless"}
@@ -978,10 +1028,23 @@
 								"map": {
 									"google": {"If": {
 										"if": {"PathIs": "/url"},
-										"then": {"TryElse": {
-											"try": {"GetUrlFromQueryParam": "q"},
-											"else": {"GetUrlFromQueryParam": "url"}
-										}}
+										"then": {"FirstNotError": [
+											{"GetUrlFromQueryParam": "q"},
+											{"GetUrlFromQueryParam": "url"},
+											{"Function": {
+												"name": "extract_from_body",
+												"args": {
+													"string_sources": {
+														"prefix": "redirectUrl=",
+														"suffix": "';"
+													},
+													"flags": ["strip_prefix"],
+													"string_modifications": {
+														"parser": "GetJsString"
+													}
+												}
+											}}
+										]}
 									}}
 								}
 							}}
@@ -1187,6 +1250,7 @@
 										"bitly.com"               : {"Not": {"Any": [{"PathIs": "/"}, {"PathHasSegment": 1}]}},
 										"displate.com"            : {"PathStartsWith": "/l"},
 										"facebook.com"            : {"PathStartsWith": "/share/"},
+										"google.com"              : {"PathIs": "/goto"},
 										"gumroad.com"             : {"PathStartsWith": "/u/"},
 										"heise.de"                : {"PathStartsWith": "/-"},
 										"hisubway.com"            : {"QueryHasParam": "link"},
@@ -2281,6 +2345,18 @@
 						}}
 					]},
 
+					"tumblr_embed_hosts": {"If": {
+						"if": {"Not": {"PathIs": "/"}},
+						"then": {"Function": {
+							"name": "tumblr",
+							"args": {
+								"actions": {
+									"modeless": {"SetHost": "tumblr.com"}
+								}
+							}
+						}}
+					}},
+
 					"twitter": {"Function": {
 						"name": "twitter",
 						"args": {
@@ -2308,14 +2384,23 @@
 								"stupidpenisx.com": {"SetWhole": "https://github.com/dylanpdx/BetterTwitFix"}
 							}
 						}},
-						"else": {"Function": {
-							"name": "twitter",
-							"args": {
-								"actions": {
-									"modeless": {"SetHost": "x.com"}
+						"else": {"All": [
+							{"If": {
+								"if": {"PartMatches": {
+									"part": {"PathSegment": -1},
+									"matcher": {"IsSomeAnd": {"LengthIs": 2}}
+								}},
+								"then": {"RemovePathSegment": -1}
+							}},
+							{"Function": {
+								"name": "twitter",
+								"args": {
+									"actions": {
+										"modeless": {"SetHost": "x.com"}
+									}
 								}
-							}
-						}}
+							}}
+						]}
 					}},
 					"nitter": {"Function": {
 						"name": "twitter",
@@ -2609,6 +2694,14 @@
 								{"InsertPathSegment": {"index": 0, "value": {"Part": "DomainPrefix"}}},
 								{"SetDomainPrefix": null}
 							]}
+						}},
+						{"Function": {
+							"name": "tumblr",
+							"args": {
+								"actions": {
+									"modeless": "None"
+								}
+							}
 						}}
 					]},
 					"twitch.tv": {"HandleParams": {

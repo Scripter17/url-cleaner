@@ -1,4 +1,4 @@
-//! [`parse`].
+//! [`get_urls`].
 
 use std::sync::LazyLock;
 use regex::Regex;
@@ -12,8 +12,8 @@ static CODE_LINE: LazyLock<Regex> = LazyLock::new(|| regex::Regex::new(r#"``.+?`
 /// Regex to extract URLS.
 static URLS: LazyLock<Regex> = LazyLock::new(|| regex::Regex::new(r#"\[\]\(.|\[[\s\S]+?\]\((https?://\S+?(?:\(\))?)(?:\s.*?)?\)|(https?://\S+)"#).expect("The URLS Regex to be valid."));
 
-/// Parse a discord message for URLs.
-pub fn parse(value: &str) -> impl Iterator<Item = &str> {
+/// Get urls from a discord message.
+pub fn get_urls(value: &str) -> impl Iterator<Item = &str> {
     CODE_BLOCK.split(value)
         .flat_map(|node| CODE_LINE.split(node))
         .flat_map(|part| URLS.captures_iter(part))
@@ -50,9 +50,9 @@ b](https://example.com/11)
 "#;
 
     #[test]
-    fn parse_test() {
+    fn get_urls_test() {
         assert_eq!(
-            parse(TEST).collect::<Vec<_>>(),
+            get_urls(TEST).collect::<Vec<_>>(),
             [
                 "https://example.com/1",
                 "https://example.com/2",

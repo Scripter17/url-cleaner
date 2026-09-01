@@ -4,14 +4,12 @@ use crate::prelude::*;
 
 mod job_context;
 mod secrets;
-mod auth;
 mod task;
 mod task_context;
 mod task_state;
 
 pub use job_context::*;
 pub use secrets::*;
-pub use auth::*;
 pub use task::*;
 pub use task_context::*;
 pub use task_state::*;
@@ -25,8 +23,8 @@ pub struct Job<'j> {
     pub cleaner: Cleaner<'j>,
     /// The [`Secrets`].
     pub secrets: &'j Secrets,
-    /// The unthreader.
-    pub unthreader: Option<parking_lot::ReentrantMutex<()>>,
+    /// The thread hider.
+    pub thread_hider: Option<std::sync::Arc<parking_lot::ReentrantMutex<()>>>,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
     pub http_client: Option<&'j HttpClient>,

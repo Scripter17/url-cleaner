@@ -38,7 +38,7 @@ To get URL Cleaner Site Userscript, you can either:
 
 - Use URL Cleaner Site's `userscript` subcommand.
 
-Afterwards, add the userscript you your userscript manager.
+Afterwards, add the userscript to your userscript manager.
 
 ### TLS/HTTPS
 

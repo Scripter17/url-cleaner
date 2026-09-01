@@ -41,7 +41,7 @@ jobs:
         set -euo pipefail
         diff <(cargo run --bin urlc-tool -- cleaner doc) bundled_cleaner.md
 
-  test:
+  test_linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -49,7 +49,7 @@ jobs:
     - name: Test
       run: cargo hack test --feature-powerset --clean-per-run
 
-  doc:
+  doc_linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -57,7 +57,7 @@ jobs:
     - name: Doc
       run: RUSTDOCFLAGS="-Dwarnings" cargo hack doc --feature-powerset --no-deps --clean-per-run --document-private-items
 
-  clippy:
+  clippy_linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3

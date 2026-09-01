@@ -6,7 +6,9 @@ use std::fs::read_to_string;
 use crate::prelude::*;
 
 /// Secret values that you don't want to expose to the world, such as API keys.
-#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+///
+/// The [`std::fmt::Debug`] impl just prints `Secrets`.
+#[derive(Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Secrets {
     /// The vars.
@@ -14,11 +16,19 @@ pub struct Secrets {
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub vars: FxHashMap<String, String>,
-    /// The [`AuthInfo`].
+    /// Optionally the passwords required to access cleaning.
+    ///
+    /// Used mainly by Site for basic account control.
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub auth_info: AuthInfo,
+    pub passwords: Option<FxHashSet<String>>,
+}
+
+impl std::fmt::Debug for Secrets {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("Secrets")
+    }
 }
 
 impl Secrets {
@@ -40,6 +50,24 @@ impl Secrets {
             None       => Ok(Default::default()),
         }
     }
+
+    /// If [`Self::passwords`] is [`Some`].
+    pub fn requires_password(&self) -> bool {
+        self.passwords.is_some()
+    }
+
+    /// Check if `password` is valid.
+    ///
+    /// If [`Self::passwords`] is [`Some`], `password` must be [`Some`] and in [`Self::passwords`].
+    ///
+    /// If [`Self::passwords`] is [`None`], `password` must be [`None`].
+    pub fn check_password(&self, password: Option<&str>) -> bool {
+        match (self.passwords.as_ref(), password) {
+            (Some(passwords), Some(password)) => passwords.contains(password),
+            (None, None) => true,
+            _ => false
+        }
+    }
 }
 
 impl Suitability for Secrets {
@@ -55,6 +83,6 @@ impl Suitability for Secrets {
             }
         }
 
-        self.auth_info.assert_suitability(cleaner);
+        self.passwords.assert_suitability(cleaner);
     }
 }

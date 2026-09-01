@@ -6,21 +6,8 @@ impl Bot {
     /// The `clean_url` slash command.
     #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
     pub async fn clean_url(&self, context: &Context, command: &CommandInteraction) {
-        let options = command.data.options();
-
-        let url = options.iter().find_map(|x| {
-            match x {
-                ResolvedOption {name: "url", value: ResolvedValue::String(url), ..} => Some(*url),
-                _ => None
-            }
-        }).expect("A URL");
-
-        let profile = options.iter().find_map(|x| {
-            match x {
-                ResolvedOption {name: "profile", value: ResolvedValue::String(profile), ..} => Some(*profile),
-                _ => None
-            }
-        });
+        let url     = command.data.options.iter().find_map(|x| {(x.name == "url"    ).then(|| x.value.as_str().expect("Value to be a string"))}).expect("A URL");
+        let profile = command.data.options.iter().find_map(|x| {(x.name == "profile").then(|| x.value.as_str().expect("Value to be a string"))})                ;
 
         let cleaner = self.profiled_cleaner.get(profile).expect("Only valid profiles to be accepted");
 
@@ -28,11 +15,11 @@ impl Bot {
 
         let job = Job {
             cleaner,
-            context    : Default::default(),
-            unthreader : None,
-            secrets    : &self.secrets,
+            context     : Default::default(),
+            thread_hider: None,
+            secrets     : &self.secrets,
             #[cfg(feature = "http")]
-            http_client: self.http_client.as_ref(),
+            http_client : self.http_client.as_ref(),
             #[cfg(feature = "cache")]
             cache_client: &self.cache_client,
             #[cfg(feature = "cache")]

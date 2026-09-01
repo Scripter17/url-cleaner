@@ -1,5 +1,6 @@
 //! Run URL Cleaner Site.
 
+use std::num::NonZero;
 use std::borrow::Cow;
 use std::net::IpAddr;
 use std::path::PathBuf;
@@ -52,19 +53,19 @@ https://www.gnu.org/licenses/agpl-3.0.html
 pub struct Args {
     /// The Cleaner to use.
     #[cfg(feature = "bundled-cleaner")]
-    #[arg(long, short = 'c')]
+    #[arg(long, short = 'c', value_name = "PATH")]
     cleaner: Option<PathBuf>,
     /// The Cleaner to use.
     #[cfg(not(feature = "bundled-cleaner"))]
-    #[arg(long, short = 'c')]
+    #[arg(long, short = 'c', value_name = "PATH")]
     cleaner: PathBuf,
 
     /// The ProfilesConfig to use.
-    #[arg(long)]
+    #[arg(long, value_name = "PATH")]
     profiles: Option<PathBuf>,
 
     /// The Secrets to use.
-    #[arg(long)]
+    #[arg(long, value_name = "PATH")]
     secrets: Option<PathBuf>,
 
     /// Disable the HTTP client.
@@ -72,14 +73,14 @@ pub struct Args {
     #[arg(long, short = 'H')]
     no_http: bool,
 
-    /// The CacheLocation to use.
+    /// The CacheTarget to use.
     #[cfg(feature = "cache")]
     #[arg(long, default_value = "url-cleaner-site.sqlite")]
     cache: CacheTarget,
 
-    /// The number of worker threads to use per job. 0 = CPU thread count.
-    #[arg(long, default_value_t = 0)]
-    workers: usize,
+    /// The number of worker threads to use for each job.
+    #[arg(long, short = 't')]
+    threads: Option<NonZero<usize>>,
 
     /// The IP to bind to.
     #[arg(long, default_value = "127.0.0.1")]
@@ -101,7 +102,7 @@ pub struct State {
     /// The [`Info`].
     info: Info,
     /// The number of worker threads to use.
-    workers: usize,
+    threads: NonZero<usize>,
     /// The [`ProfiledCleaner`].
     profiled_cleaner: ProfiledCleaner<'static>,
     /// The [`Cleaner`] string.
@@ -139,16 +140,11 @@ pub enum RunError {
 /// Info about the instance.
 #[derive(Debug, Serialize)]
 struct Info {
-    /// The version.
-    version       : &'static str,
-    /// The link to the source code.
-    source_code   : &'static str,
-    /// The [`AuthMode`].
-    auth_mode     : AuthMode,
-    /// If the `http` feature is enabled.
-    supports_http : bool,
-    /// If the `cache` feature is enabled.
-    supports_cache: bool,
+    /** The version.                       **/ version          : &'static str,
+    /** The link to the source code.       **/ source_code      : &'static str,
+    /** If `/clean` requires a password.   **/ requires_password: bool,
+    /** If the `http` feature is enabled.  **/ supports_http    : bool,
+    /** If the `cache` feature is enabled. **/ supports_cache   : bool,
 }
 
 impl Args {
@@ -169,23 +165,20 @@ impl Args {
 
         let secrets = Secrets::load_or_default(self.secrets)?;
 
-        let workers = match self.workers {
-            0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").into(),
-            x => x,
-        };
+        let threads = self.threads.unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism."));
 
         #[cfg(feature = "http" )] let http_client  = HttpClient ::new(          ).await;
         #[cfg(feature = "cache")] let cache_client = CacheClient::new(self.cache).await;
 
         let state = STATE.get_or_init(|| State {
             info: Info {
-                version       : VERSION,
-                source_code   : REPOSITORY,
-                auth_mode     : secrets.auth_info.mode(),
-                supports_http : cfg_select!(feature = "http"  => true, _ => false),
-                supports_cache: cfg_select!(feature = "cache" => true, _ => false),
+                version          : VERSION,
+                source_code      : REPOSITORY,
+                requires_password: secrets.requires_password(),
+                supports_http    : cfg_select!(feature = "http"  => true, _ => false),
+                supports_cache   : cfg_select!(feature = "cache" => true, _ => false),
             },
-            workers,
+            threads,
             profiled_cleaner,
             cleaner_string,
             profiles_string,

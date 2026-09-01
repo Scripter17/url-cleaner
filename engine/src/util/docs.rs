@@ -14,13 +14,13 @@ macro_rules! doc_job {
         let http_client = HttpClient::new_sync(runtime.handle().clone());
 
         #[cfg(feature = "cache")]
-        let cache_client = CacheClient::new_sync(CacheTarget::Memory, runtime.handle().clone());
+        let cache_client = CacheClient::new_sync(":memory:".parse().unwrap(), runtime.handle().clone());
 
         let $name = $crate::prelude::Job {
             context: Default::default(),
             cleaner: Default::default(),
             secrets: &Default::default(),
-            unthreader: None,
+            thread_hider: None,
             #[cfg(feature = "http")]
             http_client: Some(&http_client),
             #[cfg(feature = "cache")]

@@ -30,6 +30,7 @@ const USERSCRIPT: &str = include_str!("userscript.js");
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
 #[derive(Debug, Parser)]
 #[expect(clippy::missing_docs_in_private_items, reason = "Makes Clap propogate docs.")]
+#[allow(clippy::large_enum_variant, reason = "It's fine.")]
 enum Args {
     Run       (run       ::Args),
     Keygen    (keygen    ::Args),

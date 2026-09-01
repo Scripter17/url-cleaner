@@ -24,8 +24,8 @@ Licensed under the AGPL 3.0 or later.
 - `client_type`: Whether the client is a desktop or mobile device.
   - Required: false.
   - Unset: Keep URLs as-is.
-  - `desktop`: to change mobile URLs to desktop URLs.
-  - `mobile`: to change dekstop URLs to mobile URLs.
+  - `desktop`: Change mobile URLs to desktop URLs.
+  - `mobile`: Change dekstop URLs to mobile URLs.
 - `bypass_vip_api_key`: The API key used for [bypass.vip](https://bypass.vip). Overrides the `bypass_vip_api_key` Secret Var.
   - Required: false.
 - `bluesky_mode`: Decides what host to replace Bluesky/Bluesky embed hosts with.
@@ -83,6 +83,14 @@ Licensed under the AGPL 3.0 or later.
 - `tiktok_embed_host`: The tiktok embed host to use.
   - Required: true.
   - Default: `tfxktok.com`.
+- `tumblr_mode`: Decides what host to replace tumblr/tumblr embed hosts with.
+  - Required: false.
+  - Unset: Set tumblr and tumblr embed hosts to `tumblr.com`
+  - `canon`: Always set to `tumblr.com`
+  - `embed`: Always set to the `tumblr_embed_host` var
+- `tumblr_embed_host`: The tumblr embed host to use.
+  - Required: true.
+  - Default: `txtumblr.com`.
 - `twitter_mode`: Decides what host to replace twitter/twitter embed/Nitter hosts with.
   - Required: false.
   - Unset: Set twitter and twitter embed hosts to `x.com` and Nitter hosts to the `nitter_host` var.
@@ -92,6 +100,8 @@ Licensed under the AGPL 3.0 or later.
 - `twitter_embed_host`: The twitter embed host to use.
   - Required: true.
   - Default: `fixupx.com`.
+- `twitter_embed_lang`: The language to use for the twitter embed host.
+  - Required: false.
 - `nitter_host`: The Nitter host to use.
   - Required: true.
   - Default: `nitter.net`.

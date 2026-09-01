@@ -9,16 +9,9 @@ use super::*;
 /** Serde helper. **/ pub(crate) fn get_true(        ) -> bool {true}
 
 /// Config for a `/clean` job.
-///
-/// Given as JSON text in either the `config` query parameter XOR the `X-Config` header.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct JobConfig {
-    /// The username to use.
-    ///
-    /// Defaults to [`None`].
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub username: Option<String>,
     /// The password to use.
     ///
     /// Defaults to [`None`].
@@ -26,7 +19,7 @@ pub struct JobConfig {
     pub password: Option<String>,
     /// The [`JobContext`] to use.
     ///
-    /// Defaults to [`JobContext::default`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub context: JobContext,
     /// The profile to use.
@@ -36,61 +29,60 @@ pub struct JobConfig {
     pub profile: Option<String>,
     /// The [`ParamsDiff`] to use on top of the profile.
     ///
-    /// Defaults to [`None`].
+    /// Defaulted.
     #[serde(default, skip_serializing_if = "ParamsDiff::is_empty")]
     pub params_diff: ParamsDiff,
-    /// If [`true`], enable brief unchanged mode.
+    /// If [`true`], unchanged lines are replaced with `=`.
     ///
     /// Defaults to false.
     #[serde(default, skip_serializing_if = "is_default")]
     pub brief_unchanged: bool,
-    /// If [`true`], enable brief unchanged mode.
+    /// If [`true`], error lines are replaced with `-`.
     ///
     /// Defaults to false.
     #[serde(default, skip_serializing_if = "is_default")]
     pub brief_error: bool,
-    /// If [`true`], enable unhtreading.
+    /// If [`true`], hide the threads.
     ///
     /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub unthread: bool,
-    /// If [`true`], don't disable the HTTP Client.
+    pub hide_threads: bool,
+    /// If [`false`], disable the HTTP Client.
     ///
     /// Defaults to [`true`].
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub http: bool,
-    /// If [`true`], don't disable reading from the cache.
+    /// If [`false`], disable reading from the cache.
     ///
     /// Defaults to [`true`].
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub read_cache: bool,
-    /// If [`true`], don't disable writing to the cache.
+    /// If [`false`], disable writing to the cache.
     ///
     /// Defaults to [`true`].
     #[serde(default = "get_true", skip_serializing_if = "is_true")]
     pub write_cache: bool,
-    /// If [`true`], enable cache delays.
+    /// If [`true`], hide the cache.
     ///
     /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub cache_delay: bool,
+    pub hide_cache: bool,
 }
 
 impl Default for JobConfig {
     fn default() -> Self {
         Self {
-            username       : None,
             password       : None,
             context        : Default::default(),
             profile        : None,
             params_diff    : Default::default(),
             brief_unchanged: false,
             brief_error    : false,
-            unthread       : false,
+            hide_threads   : false,
             http           : true,
             read_cache     : true,
             write_cache    : true,
-            cache_delay    : false,
+            hide_cache     : false,
         }
     }
 }

@@ -4,8 +4,8 @@ use super::*;
 
 /// `/clean` HTTP.
 pub async fn clean_http(state: &'static State, job: Job<'static>, brief_unchanged: bool, brief_error: bool, body: Body) -> Response {
-    let (iss,     irs) = (0..state.workers).map(|_| tokio::sync::mpsc::channel::<Bytes            >(512)).collect::<(Vec<_>, Vec<_>)>();
-    let (oss, mut ors) = (0..state.workers).map(|_| tokio::sync::mpsc::channel::<Cow<'static, str>>(512)).collect::<(Vec<_>, Vec<_>)>();
+    let (iss,     irs) = (0..state.threads.get()).map(|_| tokio::sync::mpsc::channel::<Bytes            >(512)).collect::<(Vec<_>, Vec<_>)>();
+    let (oss, mut ors) = (0..state.threads.get()).map(|_| tokio::sync::mpsc::channel::<Cow<'static, str>>(512)).collect::<(Vec<_>, Vec<_>)>();
 
     let job = Arc::new(job);
 

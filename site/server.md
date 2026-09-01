@@ -4,14 +4,6 @@ By default, URL Cleaner Site will listen on IP `127.0.0.1` at port `9149`.
 
 The API is described in [api.md](api.md).
 
-## Passwords
-
-You can limit access to cleaning URLs by providing `--passwords` with a file containing one password per non-empty line.
-
-If no password file is provided, users must not provide a password.
-
-If a password file is provided, users must provided a password.
-
 ## TLS
 
 ### Generate the keys

@@ -802,7 +802,7 @@ impl Action {
 
             #[cfg(feature = "cache")]
             Self::Cache {subject, action} => {
-                let _unthread_handle = task_state.job.unthreader.as_ref().map(|x| x.lock());
+                let _thread_hiderandle = task_state.job.thread_hider.as_ref().map(|x| x.lock());
 
                 let subject = get!(&!subject);
                 let key = task_state.url.as_str();

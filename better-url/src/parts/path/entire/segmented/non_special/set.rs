@@ -165,9 +165,9 @@ impl NonSpecialPath<'_> {
     ///
     /// let mut path = NonSpecialPath::new("");
     ///
-    /// path.insert(0, "def").unwrap(); assert_eq!(path, "/def"        );
-    /// path.insert(1, "ghi").unwrap(); assert_eq!(path, "/def/ghi"    );
-    /// path.insert(0, "abc").unwrap(); assert_eq!(path, "/abc/def/ghi");
+    /// path.insert( 0, "def").unwrap(); assert_eq!(path, "/def"        );
+    /// path.insert(-1, "ghi").unwrap(); assert_eq!(path, "/def/ghi"    );
+    /// path.insert( 0, "abc").unwrap(); assert_eq!(path, "/abc/def/ghi");
     ///
     /// path.insert(1, "123").unwrap(); assert_eq!(path, "/abc/123/def/ghi");
     /// path.insert(2, ".." ).unwrap(); assert_eq!(path, "/abc/def/ghi"    );
@@ -176,7 +176,8 @@ impl NonSpecialPath<'_> {
         let new = value.into();
 
         let i = match (self.iter_strs().try_neg_nth(index), index) {
-            (Ok (x), _  ) => x.addr() - self.0.addr() - 1,
+            (Ok (x), ..0) => x.end_addr() - self.0.addr(),
+            (Ok (x), 0..) => x.    addr() - self.0.addr() - 1,
             (Err(0), 0..) => self.len(),
             (Err(0), ..0) => 0,
             (Err(_), _  ) => Err(InsertNotFound)?

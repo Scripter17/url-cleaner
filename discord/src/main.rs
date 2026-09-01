@@ -14,7 +14,7 @@ use url_cleaner_engine::prelude::*;
 mod help;
 mod clean_url;
 mod clean_urls;
-mod parse;
+mod get_urls;
 
 /// The introduction to the /help message.
 const INFO: &str = concat!(r#"URL Cleaner Discord
@@ -40,20 +40,20 @@ https://www.gnu.org/licenses/agpl-3.0.html
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
 #[derive(Debug, Parser)]
 struct Args {
-    /// The cleaner file to use.
+    /// The Cleaner to use.
     #[cfg(feature = "bundled-cleaner")]
     #[arg(long, short = 'c', value_name = "PATH")]
     cleaner: Option<PathBuf>,
-    /// The cleaner file to use.
+    /// The Cleaner to use.
     #[cfg(not(feature = "bundled-cleaner"))]
     #[arg(long, short = 'c', value_name = "PATH")]
     cleaner: PathBuf,
 
-    /// The ProfilesConfig file.
+    /// The ProfilesConfig to use.
     #[arg(long, value_name = "PATH")]
     profiles: Option<PathBuf>,
 
-    /// The secrets file to use.
+    /// The Secrets to use.
     #[arg(long, value_name = "PATH")]
     secrets: Option<PathBuf>,
 
@@ -62,22 +62,23 @@ struct Args {
     #[arg(long, short = 'H')]
     no_http: bool,
 
-    /// The path cache to use.
+    /// The CacheTarget to use.
     #[cfg(feature = "cache")]
     #[arg(long, default_value = "url-cleaner-discord.sqlite")]
     cache: CacheTarget,
-    /// If true, read from the cache.
+
+    /// Disable reading from the cache.
     #[cfg(feature = "cache")]
     #[arg(long, short = 'R')]
     no_read_cache: bool,
-    /// If true, write to the cache.
+    /// Disable writing to the cache.
     #[cfg(feature = "cache")]
     #[arg(long, short = 'W')]
     no_write_cache: bool,
-    /// If true, artificially delay cache reads.
+    /// Hide cache reads.
     #[cfg(feature = "cache")]
-    #[arg(long, short = 'd')]
-    cache_delay: bool
+    #[arg(long, short = 'C')]
+    hide_cache: bool
 }
 
 /// The bot's state.
@@ -150,7 +151,7 @@ async fn main() -> Result<(), DiscordError> {
         cache_config: CacheConfig {
             read : !args.no_read_cache ,
             write: !args.no_write_cache,
-            delay:  args.cache_delay,
+            hide :  args.hide_cache    ,
         },
     };
 

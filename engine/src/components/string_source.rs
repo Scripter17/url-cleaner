@@ -523,7 +523,7 @@ impl StringSource {
 
             #[cfg(feature = "http")]
             Self::HttpRequest {request, response} => {
-                let _unthread_handle = task_state.job.unthreader.as_ref().map(|x| x.lock());
+                let _thread_hider_handle = task_state.job.thread_hider.as_ref().map(|x| x.lock());
 
                 task_state.job.http_client.ok_or(NoHttpClient)?.do_sync(request, response, task_state, args)?
             },
@@ -532,7 +532,7 @@ impl StringSource {
 
             #[cfg(feature = "cache")]
             Self::Cache {subject, key, value} => {
-                let _unthreader_lock = task_state.job.unthreader.as_ref().map(|x| x.lock());
+                let _thread_hider_lock = task_state.job.thread_hider.as_ref().map(|x| x.lock());
 
                 let subject = get!(subject);
                 let key = get!(key);

@@ -18,7 +18,7 @@ impl Args {
     pub fn r#do(self) -> String {
         let Self {name, task, num, params_diff, protocol, tool} = self;
 
-        let out_dir = format!("bench/site-client/{}/{}/{name}/{num}", protocol.kebab(), tool.kebab());
+        let out_dir = format!("urlc-tool/out/bench/site-client/{}/{}/{name}/{num}", protocol.kebab(), tool.kebab());
         let out = format!("{out_dir}/{}.out", tool.kebab());
 
         write_stdin(&task, num);

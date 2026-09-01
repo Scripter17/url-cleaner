@@ -24,8 +24,8 @@ impl<S: Send + Sync> FromRequest<S> for CleanPayload {
         let (mut parts, body) = req.into_parts();
 
         Ok(match WebSocketUpgrade::from_request_parts(&mut parts, state).await {
-            Ok (wsu) => Self::Ws  (wsu),
-            Err(_  ) => Self::Http(body)
+            Ok (wsu) => Self::Ws  (wsu ),
+            Err(_  ) => Self::Http(body),
         })
     }
 }
@@ -40,7 +40,7 @@ impl FromRequestParts<&'static State> for &'static State {
 
 /// `/clean`.
 pub async fn clean(state: &'static State, job_config: JobConfig, clean_payload: CleanPayload) -> Result<Response, (StatusCode, &'static str)> {
-    if !state.secrets.auth_info.check(job_config.username.as_deref(), job_config.password.as_deref()) {
+    if !state.secrets.check_password(job_config.password.as_deref()) {
         Err((StatusCode::UNAUTHORIZED, "Bad auth"))?;
     }
 
@@ -51,16 +51,16 @@ pub async fn clean(state: &'static State, job_config: JobConfig, clean_payload: 
         context: job_config.context,
         cleaner,
         secrets: &state.secrets,
-        unthreader: job_config.unthread.then(Default::default),
+        thread_hider: job_config.hide_threads.then(Default::default),
         #[cfg(feature = "http")]
         http_client: state.http_client.as_ref().filter(|_| job_config.http),
         #[cfg(feature = "cache")]
         cache_client: &state.cache_client,
         #[cfg(feature = "cache")]
         cache_config: CacheConfig {
-            read : job_config.read_cache,
+            read : job_config.read_cache ,
             write: job_config.write_cache,
-            delay: job_config.cache_delay,
+            hide : job_config.hide_cache ,
         }
     };
 

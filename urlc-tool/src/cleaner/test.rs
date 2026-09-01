@@ -101,8 +101,8 @@ impl Args {
         let filter = Regex::new(&self.filter.unwrap_or_default()).unwrap();
 
         let runtime      = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
-        let cache_client = CacheClient::new_sync(CacheTarget::Memory, runtime.handle().clone());
-        let http_client  = HttpClient ::new_sync(                     runtime.handle().clone());
+        let cache_client = CacheClient::new_sync(":memory:".parse().unwrap(), runtime.handle().clone());
+        let http_client  = HttpClient ::new_sync(                             runtime.handle().clone());
 
         for test_job in test_suite.jobs {
             if filter.find(&test_job.name).is_none() {
@@ -123,10 +123,10 @@ impl Args {
                 context: test_job.job_context,
                 cleaner,
                 secrets: &Default::default(),
-                unthreader: None,
+                thread_hider: None,
                 http_client: Some(&http_client),
                 cache_client: &cache_client,
-                cache_config: CacheConfig {read: false, write: false, delay: false},
+                cache_config: CacheConfig {read: false, write: false, hide: false},
             };
 
             for test in test_job.tests {

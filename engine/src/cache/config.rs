@@ -19,7 +19,7 @@ pub struct CacheConfig {
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub delay: bool,
+    pub hide: bool,
 }
 
 impl Default for CacheConfig {
@@ -27,7 +27,7 @@ impl Default for CacheConfig {
         Self {
             read : true ,
             write: true ,
-            delay: false,
+            hide : false,
         }
     }
 }

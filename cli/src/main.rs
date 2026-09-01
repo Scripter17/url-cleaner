@@ -2,6 +2,7 @@
 //!
 //! See [url_cleaner_engine] to integrate URL Cleaner with your own projects.
 
+use std::num::NonZero;
 use std::path::PathBuf;
 use std::io::IsTerminal;
 use std::fmt::Debug;
@@ -33,7 +34,7 @@ use url_cleaner_engine::prelude::*;
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
 #[derive(Debug, Parser)]
 struct Args {
-    /// Unvalidated task lines to do before STDIN.
+    /// Task lines to do before STDIN.
     tasks: Vec<String>,
 
     /// The Cleaner to use.
@@ -52,14 +53,14 @@ struct Args {
     #[arg(long, value_name = "NAME", requires = "profiles")]
     profile: Option<String>,
 
-    /// The ParamsDiff to apply to the profile.
+    /// The ParamsDiff to apply on top of the profile.
     #[arg(long, value_name = "PATH")]
     params_diff: Option<PathBuf>,
 
-    /// Flags to set after ParamsDiff.
+    /// Flags to apply on top of the ParamsDiff.
     #[arg(long, short = 'f')]
     flag: Vec<String>,
-    /// Vars to set after ParamsDiff.
+    /// Vars to apply on top of the ParamsDiff.
     #[arg(long, short = 'v', value_names = ["NAME", "VALUE"], num_args = 2)]
     var: Vec<Vec<String>>,
 
@@ -71,19 +72,26 @@ struct Args {
     #[arg(long, value_name = "PATH")]
     secrets: Option<PathBuf>,
 
-    /// Enable brief unchanged mode.
-    #[arg(long, short = 'U')]
+    /// Replace unchanged lines with =.
+    #[arg(long, short = 'u')]
     brief_unchanged: bool,
-    /// Enable brief error mode.
-    #[arg(long, short = 'E')]
+    /// Replace error lines with -.
+    #[arg(long, short = 'e')]
     brief_error: bool,
+
+    /// The number of worker threads to use.
+    #[arg(long, short = 't')]
+    threads: Option<NonZero<usize>>,
+    /// Hide the thread count.
+    #[arg(long, short = 'T')]
+    hide_threads: bool,
 
     /// Disable the HTTP client.
     #[cfg(feature = "http")]
     #[arg(long, short = 'H')]
     no_http: bool,
 
-    /// The path of the cache to use.
+    /// The CacheTarget to use.
     #[cfg(feature = "cache")]
     #[arg(long, default_value = "url-cleaner.sqlite")]
     cache: CacheTarget,
@@ -95,17 +103,10 @@ struct Args {
     #[cfg(feature = "cache")]
     #[arg(long, short = 'W')]
     no_write_cache: bool,
-    /// Enable cache delay.
+    /// Hide cache reads.
     #[cfg(feature = "cache")]
-    #[arg(long, short = 'd')]
-    cache_delay: bool,
-
-    /// Enable unthreading.
-    #[arg(long)]
-    unthread: bool,
-    /// The number of worker threads to use.
-    #[arg(long, short = 'w', default_value_t = 0)]
-    workers: usize,
+    #[arg(long, short = 'C')]
+    hide_cache: bool,
 }
 
 /// The enum of errors [`main`] can return.
@@ -169,7 +170,7 @@ async fn main() -> Result<(), CliError> {
         context,
         cleaner,
         secrets: SECRETS.get_or_init(|| secrets),
-        unthreader: args.unthread.then(Default::default),
+        thread_hider: args.hide_threads.then(Default::default),
         #[cfg(feature = "http")]
         http_client: (!args.no_http).then(|| HTTP_CLIENT.get_or_init(|| http_client)),
         #[cfg(feature = "cache")]
@@ -178,17 +179,14 @@ async fn main() -> Result<(), CliError> {
         cache_config: CacheConfig {
             read : !args.no_read_cache ,
             write: !args.no_write_cache,
-            delay:  args.cache_delay   ,
+            hide :  args.hide_cache    ,
         },
     });
 
-    let threads = match args.workers {
-        0 => std::thread::available_parallelism().expect("To be able to get the available parallelism.").get(),
-        x => x
-    };
+    let threads = args.threads.unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism."));
 
-    let (iss,     irs) = (0..threads).map(|_| tokio::sync::mpsc::channel::<Bytes            >(512)).collect::<(Vec<_>, Vec<_>)>();
-    let (oss, mut ors) = (0..threads).map(|_| tokio::sync::mpsc::channel::<Cow<'static, str>>(512)).collect::<(Vec<_>, Vec<_>)>();
+    let (iss,     irs) = (0..threads.get()).map(|_| tokio::sync::mpsc::channel::<Bytes            >(512)).collect::<(Vec<_>, Vec<_>)>();
+    let (oss, mut ors) = (0..threads.get()).map(|_| tokio::sync::mpsc::channel::<Cow<'static, str>>(512)).collect::<(Vec<_>, Vec<_>)>();
 
     let input = tokio::spawn(async move {
         let mut isi = (0..iss.len()).cycle();

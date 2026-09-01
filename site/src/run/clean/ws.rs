@@ -4,13 +4,14 @@ use super::*;
 
 /// `/clean` WebSocket.
 pub async fn clean_ws(state: &'static State, job: Job<'static>, brief_unchanged: bool, brief_error: bool, ws: WebSocketUpgrade) -> Response {
-    let (iss,     irs) = (0..state.workers).map(|_| tokio::sync::mpsc::unbounded_channel::<Bytes            >()).collect::<(Vec<_>, Vec<_>)>();
-    let (oss, mut ors) = (0..state.workers).map(|_| tokio::sync::mpsc::unbounded_channel::<Cow<'static, str>>()).collect::<(Vec<_>, Vec<_>)>();
+    let (iss,     irs) = (0..state.threads.get()).map(|_| tokio::sync::mpsc::unbounded_channel::<Bytes            >()).collect::<(Vec<_>, Vec<_>)>();
+    let (oss, mut ors) = (0..state.threads.get()).map(|_| tokio::sync::mpsc::unbounded_channel::<Cow<'static, str>>()).collect::<(Vec<_>, Vec<_>)>();
 
     let job = Arc::new(job);
 
     for (mut ir, os) in irs.into_iter().zip(oss) {
         let job = job.clone();
+
         std::thread::spawn(move || {
             while let Some(task) = ir.blocking_recv() {
                 os.send(match job.r#do(&*task) {

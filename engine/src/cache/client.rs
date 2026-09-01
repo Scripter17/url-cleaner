@@ -6,6 +6,11 @@ use sqlx::{Arguments, Executor, Row};
 
 use crate::prelude::*;
 
+/// A convenient name for [`sqlx::sqlite::SqliteConnectOptions`].
+///
+/// Lets you not explicitly depend on [`sqlx`].
+pub type CacheTarget = sqlx::sqlite::SqliteConnectOptions;
+
 /// A connection to a SQLite cache.
 ///
 /// TODO: Fix race condition.
@@ -16,12 +21,12 @@ use crate::prelude::*;
 ///
 /// let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
 ///
-/// let client = CacheClient::new_sync(CacheTarget::Memory, runtime.handle().clone());
+/// let client = CacheClient::new_sync(":memory:".parse().unwrap(), runtime.handle().clone());
 ///
 /// let mut config = CacheConfig {
 ///     read : true,
 ///     write: true,
-///     delay: false,
+///     hide : false,
 /// };
 ///
 /// let duration = Duration::from_secs_f64(0.5);
@@ -36,7 +41,7 @@ use crate::prelude::*;
 /// assert_eq!(client.read_sync("", "abc", config).unwrap(), Some(Some("def".into())));
 /// assert!(a.elapsed() < duration);
 ///
-/// config.delay = true;
+/// config.hide = true;
 ///
 /// let a = Instant::now();
 /// assert_eq!(client.read_sync("", "abc", config).unwrap(), Some(Some("def".into())));
@@ -75,8 +80,8 @@ impl CacheClient {
     /// [`tokio::runtime::Handle::block_on`] + [`Self::new`].
     /// # Panics
     /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
-    pub fn new_sync(target: CacheTarget, handle: tokio::runtime::Handle) -> Self {
-        handle.block_on(Self::new(target))
+    pub fn new_sync(options: CacheTarget, handle: tokio::runtime::Handle) -> Self {
+        handle.block_on(Self::new(options))
     }
 
     /// [`tokio::runtime::Handle::block_on`] + [`Self::read`].
@@ -111,12 +116,7 @@ impl CacheClient {
     /// Make a new [`Self`] using the current runtime's [`tokio::runtime::Handle`].
     /// # Panics
     /// If called outside a Tokio runtime, panics.
-    pub async fn new(target: CacheTarget) -> Self {
-        let options = match target {
-            CacheTarget::File(path) => sqlx::sqlite::SqliteConnectOptions::new().filename(path).create_if_missing(true),
-            CacheTarget::Memory     => ":memory:".parse().expect("???")
-        };
-
+    pub async fn new(options: CacheTarget) -> Self {
         Self {
             pool       : sqlx::SqlitePool::connect_lazy_with(options),
             handle     : tokio::runtime::Handle::current(),
@@ -148,7 +148,7 @@ impl CacheClient {
 
         Ok(match connection.fetch_optional(query).await? {
             Some(row) => {
-                if config.delay && let Some(remainder) = Duration::from_secs_f64(row.try_get("duration")?).checked_sub(start.elapsed()) {
+                if config.hide && let Some(remainder) = Duration::from_secs_f64(row.try_get("duration")?).checked_sub(start.elapsed()) {
                     tokio::time::sleep(remainder).await;
                 }
 

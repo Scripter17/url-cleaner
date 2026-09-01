@@ -131,6 +131,9 @@ pub enum Condition {
     /// [`FlagSource::get`] inverted.
     FlagIsNotSet(FlagSource),
 
+    /// [`VarSource::get`] + [`Option::is_some`].
+    VarIsSome(VarSource),
+
     // String source
 
     /// If [`Self::StringIs::left`] is [`Self::StringIs::right`].
@@ -773,6 +776,8 @@ impl Condition {
 
             Self::FlagIsSet   (flag) =>  flag.get(task_state, args)?,
             Self::FlagIsNotSet(flag) => !flag.get(task_state, args)?,
+
+            Self::VarIsSome(var) => get!(?var).is_some(),
 
             // Strings
 
