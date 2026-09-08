@@ -17,7 +17,7 @@ serde = { version = "1.0.229", optional = true, features = ["derive"] }
 # Other.
 icu_normalizer = { version = "2.3.0", default-features = false, features = ["compiled_data"] }
 icu_properties = "2.3.0"
-psl            = "2.1.226"
+psl            = "2.1.231"
 thiserror      = "2.0.20"
 include_data   = "1.0.1"
 libc           = "0.2.189"

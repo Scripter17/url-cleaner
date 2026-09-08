@@ -17,8 +17,10 @@ impl BetterUrl {
             },
             false => match rest.strip_prefix('#') {
                 Some(f) => {
-                    if let Some(x) = self.details.fragment_mark.take() {
-                        self.serialization.truncate(x.get() as usize);
+                    if let Some(fm) = self.details.fragment_mark.take() {
+                        unsafe {
+                            self.serialization.modify(|x| x.truncate(fm.get() as usize));
+                        }
                     }
                     self.join_push_fragment(f);
                 }

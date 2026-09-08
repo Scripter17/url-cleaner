@@ -27,14 +27,14 @@ ${GM.info.script.namespace}`);
 			context: {
 				source_host: window.location.hostname // Used for per-site processing.
 			},
-			// username   : null, // The password        (Site default: null                           )
-			// password   : null, // The password        (Site default: null                           )
-			// profile    : null, // The Profile name    (Site default: null                           )
-			// params_diff: null, // The ParamsDiff      (Site default: null                           )
-			   unthread   : true, // Enable unthreading  (Site default: false, Userscript default: true)
-			// read_cache : true, // Read from the cache (Site default: true                           )
-			// write_cache: true, // Write to the cache  (Site default: true                           )
-			   cache_delay: true, // Enable cache delay  (Site default: false, Userscript default: true)
+			// username    : null, // The password               (Site default: null                           )
+			// password    : null, // The password               (Site default: null                           )
+			// profile     : null, // The Profile name           (Site default: null                           )
+			// params_diff : null, // The ParamsDiff             (Site default: null                           )
+			   hide_threads: true, // Enable hiding the threads  (Site default: false, Userscript default: true)
+			// read_cache  : true, // Read from the cache        (Site default: true                           )
+			// write_cache : true, // Write to the cache         (Site default: true                           )
+			   hide_cache  : true, // Enable hiding the delay    (Site default: false, Userscript default: true)
 		}
 	};
 

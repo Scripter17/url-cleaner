@@ -37,7 +37,7 @@ impl BetterUrl {
                 let diff = (after_len as u32).wrapping_sub(self.len() as u32);
 
                 unsafe {
-                    self.serialization.as_mut_vec().replace_range_with_unchecked(old_range.clone(), &[b"/.", new.as_str().as_bytes()]);
+                    self.serialization.modify(|x| x.as_mut_vec().replace_range_with_unchecked(old_range.clone(), &[b"/.", new.as_str().as_bytes()]));
                 }
 
                 self.details.path_start += 2;
@@ -54,7 +54,7 @@ impl BetterUrl {
                 let diff = (after_len as u32).wrapping_sub(self.len() as u32);
 
                 unsafe {
-                    self.serialization.as_mut_vec().replace_range_unchecked(old_range.start - 2 .. old_range.end, new.as_str().as_bytes());
+                    self.serialization.modify(|x| x.as_mut_vec().replace_range_unchecked(old_range.start - 2 .. old_range.end, new.as_str().as_bytes()));
                 }
 
                 self.details.path_start -= 2;
@@ -71,7 +71,7 @@ impl BetterUrl {
                 let diff = (after_len as u32).wrapping_sub(self.len() as u32);
 
                 unsafe {
-                    self.serialization.as_mut_vec().replace_range_unchecked(old_range, new.as_str().as_bytes());
+                    self.serialization.modify(|x| x.as_mut_vec().replace_range_unchecked(old_range, new.as_str().as_bytes()));
                 }
 
                 if let Some(x) = self.details.query_mark    {self.details.query_mark    = NonZero::new(x.get().wrapping_add(diff));}

@@ -15,8 +15,26 @@ mod query;
 mod fragment;
 
 /// A URL.
+///
+/// # Size
+///
+/// By using [`UrlString`] and [`DenseUrlDetails`] instead of [`String`] and [`UrlDetails`], [`BetterUrl`] takes, on 64 bit targets, just 64 bytes of stack space.
+///
+/// On 32 bit systems it takes even less but who cares.
+///
+/// ```
+/// use better_url::prelude::*;
+///
+/// assert!(std::mem::size_of::<BetterUrl>() <= 64);
+/// ```
+///
 /// # Canon APIs
-/// The [URL spec](https://url.spec.whatwg.org/) specifies a number of APIs that do specific additional things that the normal type based API provided by this crate does not.
+///
+/// The [URL spec](https://url.spec.whatwg.org/) specifies a number of APIs that do specific additional things that the normal type based APIs provided by this crate don't.
+///
+/// Primarily, this involves getters doing stupid things to avoid ever returning [`None`] and setters doing pointless pre-processing to compensate for javascript being awful.
+///
+/// Generally, you should stick to the non-canon APIs since they're just better, but if you need them the canon APIs are provided.
 ///
 /// For example:
 ///
@@ -30,14 +48,10 @@ mod fragment;
 /// let mut x = BetterUrl::new("https://example.com/abc").unwrap();
 /// x.set_host("example\t3.net/def").unwrap_err();
 /// ```
-///
-/// Primarily, this involves getters doing stupid things to avoid ever returning [`None`] and setters doing a bit of pre-processing to remove any port, path, query, and fragment that ends up in a call to the hostname setter.
-///
-/// Generally, you should stick to the non-canon APIs since they're just better, but if you need them the canon APIs are provided.
 #[derive(Debug, Clone)]
 pub struct BetterUrl {
-    /** The serialization.  **/ serialization: String,
-    /** The [`UrlDetails`]. **/ details      : UrlDetails,
+    /** The serialization.       **/ serialization: UrlString    ,
+    /** The [`DenseUrlDetails`]. **/ details      : DenseUrlDetails,
 }
 
 impl BetterUrl {
@@ -51,17 +65,17 @@ impl BetterUrl {
     /// Make a new [`Self`] without doing any validity checks.
     /// # Safety
     /// `serialization`, `splits` and `details` must be a valid output of [`Self::new`] and [`Self::into_parts`].
-    pub unsafe fn from_parts(serialization: String, details: UrlDetails) -> Self {
+    pub unsafe fn from_parts(serialization: UrlString, details: DenseUrlDetails) -> Self {
         Self {serialization, details}
     }
 
-    /// Turn into the inner [`String`] and [`UrlDetails`].
-    pub fn into_parts(self) -> (String, UrlDetails) {
+    /// Turn into the inner [`String`] and [`DenseUrlDetails`].
+    pub fn into_parts(self) -> (UrlString, DenseUrlDetails) {
         (self.serialization, self.details)
     }
 
-    /// The [`UrlDetails`].
-    pub fn details(&self) -> UrlDetails {
+    /// The [`DenseUrlDetails`].
+    pub fn details(&self) -> DenseUrlDetails {
         self.details
     }
 
@@ -105,7 +119,7 @@ impl BetterUrl {
     /// The length.
     #[expect(clippy::len_without_is_empty, reason = "Can't be empty.")]
     pub fn len(&self) -> usize {
-        self.serialization.len()
+        self.serialization.len() as usize
     }
 }
 
@@ -157,14 +171,14 @@ impl TryFrom<&String> for BetterUrl {
 
 
 
-impl From<BetterUrl> for String            {fn from(value: BetterUrl) -> Self {value.serialization       }}
-impl From<BetterUrl> for Cow<'static, str> {fn from(value: BetterUrl) -> Self {value.serialization.into()}}
+impl From<BetterUrl> for String            {fn from(value: BetterUrl) -> Self {           value.serialization.into() }}
+impl From<BetterUrl> for Cow<'static, str> {fn from(value: BetterUrl) -> Self {Cow::Owned(value.serialization.into())}}
 
 impl AsRef <str> for BetterUrl {fn as_ref(&self) -> &str {self.as_str()}}
 impl Borrow<str> for BetterUrl {fn borrow(&self) -> &str {self.as_str()}}
 
-impl AsRef <String> for BetterUrl {fn as_ref(&self) -> &String {&self.serialization}}
-impl Borrow<String> for BetterUrl {fn borrow(&self) -> &String {&self.serialization}}
+impl AsRef <UrlString> for BetterUrl {fn as_ref(&self) -> &UrlString {&self.serialization}}
+impl Borrow<UrlString> for BetterUrl {fn borrow(&self) -> &UrlString {&self.serialization}}
 
 
 

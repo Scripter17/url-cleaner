@@ -45,7 +45,7 @@ impl BetterUrl {
         if  self.is_file             () &&  self.host_is_empty() {return Ok(());}
 
         let start_len = self.len();
-        let after_len = self.len() - self.details.scheme_mark as usize + new.len();
+        let after_len = start_len - self.details.scheme_mark as usize + new.len();
 
         if after_len > u32::MAX as usize {
             Err(TooLong)?;
@@ -53,7 +53,9 @@ impl BetterUrl {
 
         let diff = (after_len as u32).wrapping_sub(start_len as u32);
 
-        self.serialization.replace_range(..self.details.scheme_mark as usize, new.as_str());
+        unsafe {
+            self.serialization.modify(|x| x.replace_range(..self.details.scheme_mark as usize, new.as_str()));
+        }
         self.details.scheme = new.details();
 
         self.details.scheme_mark = self.details.scheme_mark.wrapping_add(diff);

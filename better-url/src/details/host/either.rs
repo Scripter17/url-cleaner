@@ -43,6 +43,57 @@ impl HostDetails {
     /** The [`Ipv6HostDetails`].   **/ pub fn ipv6  (self) -> Option<Ipv6HostDetails  > {self.try_into().ok()}
     /** The [`OpaqueHostDetails`]. **/ pub fn opaque(self) -> Option<OpaqueHostDetails> {self.try_into().ok()}
     /** The [`EmptyHostDetails`].  **/ pub fn empty (self) -> Option<EmptyHostDetails > {self.try_into().ok()}
+
+    /// Split into a [`HostType`] and [`HostData`].
+    pub fn into_parts(self) -> (HostType, HostData) {
+        match self {
+            HostDetails::Domain(x) => (HostType::Domain, HostData {domain: x}),
+            HostDetails::Ipv4  (x) => (HostType::Ipv4  , HostData {ipv4  : x}),
+            HostDetails::Ipv6  (x) => (HostType::Ipv6  , HostData {ipv6  : x}),
+            HostDetails::Opaque(x) => (HostType::Opaque, HostData {opaque: x}),
+            HostDetails::Empty (x) => (HostType::Empty , HostData {empty : x}),
+        }
+    }
+
+    /// Create from a [`HostType`] and [`HostData`].
+    /// # Safety
+    /// It must be sound to read the [`HostData`] variant specified by the [`HostType`].
+    pub unsafe fn from_parts(r#type: HostType, data: HostData) -> Self {
+        match r#type {
+            HostType::Domain => unsafe {data.domain}.into(),
+            HostType::Ipv4   => unsafe {data.ipv4  }.into(),
+            HostType::Ipv6   => unsafe {data.ipv6  }.into(),
+            HostType::Opaque => unsafe {data.opaque}.into(),
+            HostType::Empty  => unsafe {data.empty }.into(),
+        }
+    }
+
+    /// Split into an [`Option`] of a [`HostType`] and [`HostData`].
+    pub fn into_option_parts(host_details: Option<Self>) -> (Option<HostType>, HostData) {
+        match host_details {
+            None => (None, HostData {empty: Default::default()}),
+
+            Some(HostDetails::Domain(x)) => (Some(HostType::Domain), HostData {domain: x}),
+            Some(HostDetails::Ipv4  (x)) => (Some(HostType::Ipv4  ), HostData {ipv4  : x}),
+            Some(HostDetails::Ipv6  (x)) => (Some(HostType::Ipv6  ), HostData {ipv6  : x}),
+            Some(HostDetails::Opaque(x)) => (Some(HostType::Opaque), HostData {opaque: x}),
+            Some(HostDetails::Empty (x)) => (Some(HostType::Empty ), HostData {empty : x}),
+        }
+    }
+
+    /// Create from an [`Option`] of a [`HostType`] and [`HostData`].
+    /// # Safety
+    /// See [`Self::from_parts`].
+    pub unsafe fn from_option_parts(host_type: Option<HostType>, host_data: HostData) -> Option<Self> {
+        match host_type {
+            None => None,
+            Some(HostType::Domain) => Some(unsafe {host_data.domain}.into()),
+            Some(HostType::Ipv4  ) => Some(unsafe {host_data.ipv4  }.into()),
+            Some(HostType::Ipv6  ) => Some(unsafe {host_data.ipv6  }.into()),
+            Some(HostType::Opaque) => Some(unsafe {host_data.opaque}.into()),
+            Some(HostType::Empty ) => Some(unsafe {host_data.empty }.into()),
+        }
+    }
 }
 
 impl From<FileHostDetails> for HostDetails {

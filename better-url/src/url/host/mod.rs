@@ -44,22 +44,22 @@ impl BetterUrl {
 
 
 
-    /** The [`HostDetails`].       **/ pub fn host_details       (&self) -> Option<HostDetails      > {self.details.host}
-    /** The [`DomainHostDetails`]. **/ pub fn domain_details     (&self) -> Option<DomainHostDetails> {self.details.host?.try_into().ok()}
-    /** The [`Ipv4HostDetails`].   **/ pub fn ipv4_details       (&self) -> Option<Ipv4HostDetails  > {self.details.host?.try_into().ok()}
-    /** The [`Ipv6HostDetails`].   **/ pub fn ipv6_details       (&self) -> Option<Ipv6HostDetails  > {self.details.host?.try_into().ok()}
-    /** The [`OpaqueHostDetails`]. **/ pub fn opaque_host_details(&self) -> Option<OpaqueHostDetails> {self.details.host?.try_into().ok()}
-    /** The [`EmptyHostDetails`].  **/ pub fn empty_host_details (&self) -> Option<EmptyHostDetails > {self.details.host?.try_into().ok()}
+    /** The [`HostDetails`].       **/ pub fn host_details       (&self) -> Option<HostDetails      > {self.details.host_details  ()}
+    /** The [`DomainHostDetails`]. **/ pub fn domain_details     (&self) -> Option<DomainHostDetails> {self.details.domain_details()}
+    /** The [`Ipv4HostDetails`].   **/ pub fn ipv4_details       (&self) -> Option<Ipv4HostDetails  > {self.details.ipv4_details  ()}
+    /** The [`Ipv6HostDetails`].   **/ pub fn ipv6_details       (&self) -> Option<Ipv6HostDetails  > {self.details.ipv6_details  ()}
+    /** The [`OpaqueHostDetails`]. **/ pub fn opaque_host_details(&self) -> Option<OpaqueHostDetails> {self.details.opaque_details()}
+    /** The [`EmptyHostDetails`].  **/ pub fn empty_host_details (&self) -> Option<EmptyHostDetails > {self.details.empty_details ()}
 
-    /** If the host is [`DomainHost`]. **/ pub fn host_is_domain(&self) -> bool {matches!(self.details.host, Some(HostDetails::Domain(_)))}
-    /** If the host is [`Ipv4Host`].   **/ pub fn host_is_ipv4  (&self) -> bool {matches!(self.details.host, Some(HostDetails::Ipv4  (_)))}
-    /** If the host is [`Ipv6Host`].   **/ pub fn host_is_ipv6  (&self) -> bool {matches!(self.details.host, Some(HostDetails::Ipv6  (_)))}
-    /** If the host is [`OpaqueHost`]. **/ pub fn host_is_opaque(&self) -> bool {matches!(self.details.host, Some(HostDetails::Opaque(_)))}
-    /** If the host is [`EmptyHost`].  **/ pub fn host_is_empty (&self) -> bool {matches!(self.details.host, Some(HostDetails::Empty (_)))}
+    /** If the host is [`DomainHost`]. **/ pub fn host_is_domain(&self) -> bool {self.details.host_is_domain()}
+    /** If the host is [`Ipv4Host`].   **/ pub fn host_is_ipv4  (&self) -> bool {self.details.host_is_ipv4  ()}
+    /** If the host is [`Ipv6Host`].   **/ pub fn host_is_ipv6  (&self) -> bool {self.details.host_is_ipv6  ()}
+    /** If the host is [`OpaqueHost`]. **/ pub fn host_is_opaque(&self) -> bool {self.details.host_is_opaque()}
+    /** If the host is [`EmptyHost`].  **/ pub fn host_is_empty (&self) -> bool {self.details.host_is_empty ()}
 
     /// If the host is [`Ipv4Host`] or [`Ipv6Host`].
     pub fn host_is_ip(&self) -> bool {
-        matches!(self.details.host, Some(HostDetails::Ipv4(_) | HostDetails::Ipv6(_)))
+        matches!(self.details.host_type(), Some(HostType::Ipv4 | HostType::Ipv6))
     }
 
 
@@ -92,11 +92,11 @@ impl BetterUrl {
                     }
 
                     unsafe {
-                        self.serialization.as_mut_vec()[self.details.scheme_mark as usize + 2] = b'/';
-                    };
+                        self.serialization.modify(|x| x.as_mut_vec()[self.details.scheme_mark as usize + 2] = b'/');
 
-                    self.serialization.insert_str(self.details.scheme_mark as usize + 3, new.as_str());
-                    self.details.host = Some(new.details());
+                        self.serialization.modify(|x| x.insert_str(self.details.scheme_mark as usize + 3, new.as_str()));
+                    };
+                    self.details.set_host_details(Some(new.details()));
 
                     self.details.host_start = NonZero::new(self.details.scheme_mark + 3);
                     self.details.path_start += diff as u32;
@@ -111,10 +111,10 @@ impl BetterUrl {
                         Err(TooLong)?;
                     }
 
-                    // self.serialization.insert_str(self.details.scheme_mark as usize + 1, "//");
-                    // self.serialization.insert_str(self.details.scheme_mark as usize + 3, new.as_str());
-                    self.serialization.insert_with(self.details.scheme_mark as usize + 1, ["//", new.as_str()]);
-                    self.details.host = Some(new.details());
+                    unsafe {
+                        self.serialization.modify(|x| x.insert_with(self.details.scheme_mark as usize + 1, ["//", new.as_str()]));
+                    }
+                    self.details.set_host_details(Some(new.details()));
 
                     self.details.host_start = NonZero::new(self.details.scheme_mark + 3);
                     self.details.path_start += diff as u32;
@@ -140,9 +140,9 @@ impl BetterUrl {
                 let diff = (after_len as u32).wrapping_sub(start_len as u32);
 
                 unsafe {
-                    self.serialization.as_mut_vec().replace_range_unchecked(range.clone(), new.as_str().as_bytes());
+                    self.serialization.modify(|x| x.as_mut_vec().replace_range_unchecked(range.clone(), new.as_str().as_bytes()));
                 }
-                self.details.host = Some(new.details());
+                self.details.set_host_details(Some(new.details()));
 
                 self.details.path_start = self.details.path_start.wrapping_add(diff);
 

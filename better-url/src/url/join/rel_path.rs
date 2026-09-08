@@ -20,22 +20,28 @@ impl BetterUrl {
             },
             None => {
                 if q.is_some() {
-                    if self.path_after() + q.search_len() + f.hash_len() > u32::MAX as usize {
+                    let pa = self.path_after();
+
+                    if pa + q.search_len() + f.hash_len() > u32::MAX as usize {
                         Err(TooLong)?;
                     }
 
-                    self.serialization.truncate(self.path_after());
+                    unsafe {
+                        self.serialization.modify(|x| x.truncate(pa));
+                    }
                     self.details.query_mark    = None;
                     self.details.fragment_mark = None;
 
                     self.join_push_query   (q);
                     self.join_push_fragment(f);
-                } else if let Some(x) = self.details.fragment_mark {
-                    if x.get() as usize + f.hash_len() > u32::MAX as usize {
+                } else if let Some(fm) = self.details.fragment_mark {
+                    if fm.get() as usize + f.hash_len() > u32::MAX as usize {
                         Err(TooLong)?;
                     }
 
-                    self.serialization.truncate(x.get() as usize);
+                    unsafe {
+                        self.serialization.modify(|x| x.truncate(fm.get() as usize));
+                    }
                     self.details.fragment_mark = None;
 
                     self.join_push_fragment(f);

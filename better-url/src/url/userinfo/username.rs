@@ -98,7 +98,9 @@ impl BetterUrl {
 
                     let i = self.details.host_start.expect("???").get();
 
-                    self.serialization.replace_range((i - diff) as usize .. i as usize, "");
+                    unsafe {
+                        self.serialization.modify(|x| x.replace_range((i - diff) as usize .. i as usize, ""));
+                    }
 
                     self.details.username_after = None;
 
@@ -118,7 +120,9 @@ impl BetterUrl {
 
                     let diff = (new.len() as u32).wrapping_sub(range.len() as u32);
 
-                    self.serialization.replace_range(range, new.as_str());
+                    unsafe {
+                        self.serialization.modify(|x| x.replace_range(range, new.as_str()));
+                    }
 
                     self.details.username_after = NonZero::new(self.details.scheme_mark + 3 + new.len() as u32);
 
@@ -140,8 +144,9 @@ impl BetterUrl {
 
                 let i = self.details.host_start.expect("???").get() as usize;
 
-                self.serialization.insert(i, '@');
-                self.serialization.insert_str(i, new.as_str());
+                unsafe {
+                    self.serialization.modify(|x| x.insert_with(i, [new.as_str(), "@"]));
+                }
 
                 self.details.username_after = NonZero::new(self.details.scheme_mark + 3 + new.len() as u32);
 

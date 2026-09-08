@@ -113,7 +113,9 @@ impl BetterUrl {
                         }
                     };
 
-                    self.serialization.replace_range(r, "");
+                    unsafe {
+                        self.serialization.modify(|x| x.replace_range(r, ""));
+                    }
 
                     if let Some(x) = self.details.host_start {self.details.host_start = NonZero::new(x.get() - diff);}
                     if let Some(x) = self.details.port_mark  {self.details.port_mark  = NonZero::new(x.get() - diff);}
@@ -130,7 +132,9 @@ impl BetterUrl {
 
                     let diff = (new.len() as u32).wrapping_sub(pr.len() as u32);
 
-                    self.serialization.replace_range(pr, new.as_str());
+                    unsafe {
+                        self.serialization.modify(|x| x.replace_range(pr, new.as_str()));
+                    }
 
                     if let Some(x) = self.details.host_start {self.details.host_start = NonZero::new(x.get().wrapping_add(diff));}
                     if let Some(x) = self.details.port_mark  {self.details.port_mark  = NonZero::new(x.get().wrapping_add(diff));}
@@ -150,8 +154,9 @@ impl BetterUrl {
 
                         let diff = new.len() as u32 + 1;
 
-                        self.serialization.insert_str(ur.end, new.as_str());
-                        self.serialization.insert    (ur.end, ':');
+                        unsafe {
+                            self.serialization.modify(|x| x.insert_with(ur.end, [":", new.as_str()]));
+                        }
 
                         self.details.host_start = NonZero::new(ur.end as u32 + 1 + diff);
 
@@ -171,9 +176,9 @@ impl BetterUrl {
 
                         let i = self.details.host_start.expect("???").get();
 
-                        self.serialization.insert    (i as usize, '@');
-                        self.serialization.insert_str(i as usize, new.as_str());
-                        self.serialization.insert    (i as usize, ':');
+                        unsafe {
+                            self.serialization.modify(|x| x.insert_with(i as usize, [":", new.as_str(), "@"]));
+                        }
 
                         self.details.username_after = NonZero::new(i);
 

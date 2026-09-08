@@ -80,8 +80,11 @@ impl BetterUrl {
                     Err(TooLong)?;
                 }
 
-                self.serialization.insert_str(self.details.path_start as usize, new.as_str());
-                self.serialization.insert    (self.details.path_start as usize, ':');
+                let pa = self.path_start();
+
+                unsafe {
+                    self.serialization.modify(|x| x.insert_with(pa, [":", new.as_str()]));
+                }
 
                 self.details.port = new.as_num();
 
@@ -98,7 +101,9 @@ impl BetterUrl {
                     Err(TooLong)?;
                 }
 
-                self.serialization.replace_range(pr, new.as_str());
+                unsafe {
+                    self.serialization.modify(|x| x.replace_range(pr, new.as_str()));
+                }
                 self.details.port = new.as_num();
 
                 self.details.path_start = self.details.path_start.wrapping_add_signed(diff as i32);
@@ -110,7 +115,9 @@ impl BetterUrl {
                 let r = pr.start - 1 .. pr.end;
                 let diff = r.len();
 
-                self.serialization.replace_range(r, "");
+                unsafe {
+                    self.serialization.modify(|x| x.replace_range(r, ""));
+                }
 
                 self.details.path_start -= diff as u32;
                 self.details.port_mark = None;

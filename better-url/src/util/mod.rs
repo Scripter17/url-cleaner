@@ -8,6 +8,7 @@ mod ascii_set;
 mod byte_set;
 mod normalizer;
 mod memchr;
+mod url_string;
 mod macros;
 mod ext_traits;
 
@@ -19,6 +20,7 @@ pub use ascii_set::*;
 pub use byte_set::*;
 pub use normalizer::*;
 pub use memchr::*;
+pub use url_string::*;
 
 pub(crate) use macros::*;
 pub(crate) use ext_traits::*;

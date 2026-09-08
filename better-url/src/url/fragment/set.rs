@@ -18,11 +18,15 @@ impl BetterUrl {
                 }
 
                 self.details.fragment_mark = NonZero::new(self.len() as u32);
-                self.serialization.extend(["#", new]);
+                unsafe {
+                    self.serialization.modify(|x| x.extend(["#", new]));
+                }
             },
 
             (Some(mark), None) => {
-                self.serialization.truncate(mark.get() as usize);
+                unsafe {
+                    self.serialization.modify(|x| x.truncate(mark.get() as usize));
+                }
                 self.details.fragment_mark = None;
             },
 
@@ -31,7 +35,9 @@ impl BetterUrl {
                     Err(TooLong)?;
                 }
 
-                self.serialization.replace_range(mark.get() as usize + 1 .., new);
+                unsafe {
+                    self.serialization.modify(|x| x.replace_range(mark.get() as usize + 1 .., new));
+                }
             },
         }
 
@@ -40,8 +46,10 @@ impl BetterUrl {
 
     /// Remove the fragment.
     pub fn remove_fragment(&mut self) -> bool {
-        if let Some(x) = self.details.fragment_mark {
-            self.serialization.truncate(x.get() as usize);
+        if let Some(fm) = self.details.fragment_mark {
+            unsafe {
+                self.serialization.modify(|x| x.truncate(fm.get() as usize));
+            }
             self.details.fragment_mark = None;
             true
         } else {
@@ -51,8 +59,10 @@ impl BetterUrl {
 
     /// Remove the fragment if it's empty.
     pub fn remove_empty_fragment(&mut self) -> bool {
-        if let Some(x) = self.details.fragment_mark && x.get() as usize + 1 == self.len() {
-            self.serialization.truncate(x.get() as usize);
+        if let Some(fm) = self.details.fragment_mark && fm.get() as usize + 1 == self.len() {
+            unsafe {
+                self.serialization.modify(|x| x.truncate(fm.get() as usize));
+            }
             self.details.fragment_mark = None;
             true
         } else {

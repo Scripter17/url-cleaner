@@ -20,7 +20,7 @@ impl BetterUrl {
 
     /// The domain host as a [`str`].
     pub fn domain_str(&self) -> Option<&str> {
-        self.domain_details().and(self.host_str())
+        (self.details.host_type() == Some(HostType::Domain)).then_some(self.host_str()?)
     }
 
     /// Shorthand for [`Self::domain_labels_segment_strs`].
@@ -42,7 +42,10 @@ impl BetterUrl {
 
     /// The [`DomainHost`].
     pub fn domain(&self) -> Option<DomainHost<'_>> {
-        self.host()?.domain()
+        Some(DomainHost {
+            host: self.host_str()?.into(),
+            details: self.domain_details()?,
+        })
     }
 
     /// Shorthand for [`Self::domain_labels_segments`].

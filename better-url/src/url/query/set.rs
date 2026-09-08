@@ -18,22 +18,27 @@ impl BetterUrl {
                 }
 
                 match self.details.fragment_mark {
-                    Some(x) => {
-                        self.details.query_mark    = Some(x);
-                        self.details.fragment_mark = NonZero::new(x.get() + new.len() as u32 + 1);
+                    Some(fm) => {
+                        self.details.query_mark    = Some(fm);
+                        self.details.fragment_mark = NonZero::new(fm.get() + new.len() as u32 + 1);
 
-                        self.serialization.insert_str(x.get() as usize, new);
-                        self.serialization.insert    (x.get() as usize, '?');
+                        unsafe {
+                            self.serialization.modify(|x| x.insert_with(fm.get() as usize, ["?", new]));
+                        }
                     },
                     None => {
                         self.details.query_mark = NonZero::new(self.len() as u32);
-                        self.serialization.extend(["?", new]);
+                        unsafe {
+                            self.serialization.modify(|x| x.extend(["?", new]));
+                        }
                     }
                 }
             },
 
             (Some(range), None     ) => {
-                self.serialization.replace_range(range.start - 1 .. range.end, "");
+                unsafe {
+                    self.serialization.modify(|x| x.replace_range(range.start - 1 .. range.end, ""));
+                }
 
                 if self.details.fragment_mark.is_some() {
                     self.details.fragment_mark = self.details.query_mark;
@@ -47,7 +52,9 @@ impl BetterUrl {
                     Err(TooLong)?;
                 }
 
-                self.serialization.replace_range(range.clone(), new);
+                unsafe {
+                    self.serialization.modify(|x| x.replace_range(range.clone(), new));
+                }
 
                 if let Some(x) = self.details.fragment_mark {
                     self.details.fragment_mark = NonZero::new(x.get() - range.len() as u32 + new.len() as u32)

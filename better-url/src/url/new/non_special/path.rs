@@ -38,7 +38,7 @@ impl BetterUrl {
         debug_assert_eq!(serialization.len(), len);
 
         Ok(Self {
-            serialization,
+            serialization: unsafe {UrlString::new_unchecked(serialization)},
             details: UrlDetails {
                 scheme_mark  : scheme_mark as u32,
                 username_after: None,
@@ -48,9 +48,9 @@ impl BetterUrl {
                 query_mark    : query_mark   .and_then(|x| NonZero::new(x as u32)),
                 fragment_mark : fragment_mark.and_then(|x| NonZero::new(x as u32)),
                 scheme: scheme.details(),
-                host  : None,
-                port  : 0,
-            }
+                host: None,
+                port: 0,
+            }.into()
         })
     }
 }
