@@ -199,20 +199,18 @@ async fn main() -> Result<(), CliError> {
             let stdin = &mut tokio::io::stdin();
             let mut buf = Vec::new();
 
-            while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(18)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
+            while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(17)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
                 if let Some(i) = better_url::util::memrchr(&buf, b'\n') {
-                    let temp = buf.split_off(i + 1);
-                    let bytes = Bytes::from_owner(buf);
+                    let bytes = Bytes::copy_from_slice(unsafe {buf.get_unchecked(..i)});
+                    buf.drain(..=i);
 
                     let lines = better_url::util::MemchrLines {remainder: Some(&bytes)};
 
                     for line in lines {
                         if !line.is_empty() {
-                            iss.get(isi.next().expect("???")).expect("???").send(bytes.slice_ref(line)).await.expect("The in receiever to still exist.")
+                            iss.get(isi.next().expect("???")).expect("???").send(bytes.slice_ref(line)).await.expect("The in receiever to still exist.");
                         }
                     }
-
-                    buf = temp;
                 }
             }
 
