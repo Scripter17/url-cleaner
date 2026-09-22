@@ -17,9 +17,14 @@ impl<'a> NonSpecialQueryIter<'a> {
         self.range_str(range).map(|x| unsafe {NonSpecialQuery::new_unchecked(x)})
     }
 
+    /// The remaining [`str`].
+    pub fn remainder_str(&self) -> Option<&'a str> {
+        self.0.remainder()
+    }
+
     /// The remaining [`NonSpecialQuery`].
     pub fn remainder(&self) -> Option<NonSpecialQuery<'a>> {
-        Some(unsafe {NonSpecialQuery::new_unchecked(self.0.remainder()?)})
+        Some(unsafe {NonSpecialQuery::new_unchecked(self.remainder_str()?)})
     }
 
     /// The [`SplitAmpersands`].

@@ -57,11 +57,13 @@ impl<'a> Scheme<'a> {
     }
 }
 
-impl<'a> TryFrom<Cow<'a, str>> for Scheme<'a> {
+
+
+impl<'a> TryFrom<Cow<'a, [u8]>> for Scheme<'a> {
     type Error = InvalidScheme;
 
-    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, value) = encode_scheme(value)?;
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        let (_, value) = encode_scheme_bytes(value)?;
 
         Ok(Self {
             details: SchemeDetails::new_unchecked(&value),
@@ -69,6 +71,8 @@ impl<'a> TryFrom<Cow<'a, str>> for Scheme<'a> {
         })
     }
 }
+
+
 
 impl From<SpecialSchemeDetails> for Scheme<'static> {
     fn from(value: SpecialSchemeDetails) -> Self {

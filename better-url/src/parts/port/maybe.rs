@@ -78,6 +78,14 @@ impl<'a> TryFrom<Option<Cow<'a, str>>> for MaybePort<'a> {
     }
 }
 
+impl<'a> TryFrom<Option<Cow<'a, [u8]>>> for MaybePort<'a> {
+    type Error = InvalidPort;
+
+    fn try_from(value: Option<Cow<'a, [u8]>>) -> Result<Self, Self::Error> {
+        Ok(Self(value.map(TryInto::try_into).transpose()?))
+    }
+}
+
 impl<'a> TryFrom<Cow<'a, str>> for MaybePort<'a> {
     type Error = InvalidPort;
 
@@ -90,7 +98,7 @@ impl<'a> TryFrom<Option<&'a str>> for MaybePort<'a> {
     type Error = InvalidPort;
 
     fn try_from(value: Option<&'a str>) -> Result<Self, Self::Error> {
-        value.map(Cow::from).try_into()
+        value.map(Cow::Borrowed).try_into()
     }
 }
 
@@ -106,7 +114,7 @@ impl TryFrom<Option<String>> for MaybePort<'static> {
     type Error = InvalidPort;
 
     fn try_from(value: Option<String>) -> Result<Self, Self::Error> {
-        value.map(Cow::from).try_into()
+        value.map(Cow::<str>::Owned).try_into()
     }
 }
 
@@ -126,6 +134,47 @@ impl FromStr for MaybePort<'static> {
     }
 }
 
+
+
+impl<'a> TryFrom<Cow<'a, [u8]>> for MaybePort<'a> {
+    type Error = InvalidPort;
+
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        Some(value).try_into()
+    }
+}
+
+impl<'a> TryFrom<Option<&'a [u8]>> for MaybePort<'a> {
+    type Error = InvalidPort;
+
+    fn try_from(value: Option<&'a [u8]>) -> Result<Self, Self::Error> {
+        value.map(Cow::Borrowed).try_into()
+    }
+}
+
+impl<'a> TryFrom<&'a [u8]> for MaybePort<'a> {
+    type Error = InvalidPort;
+
+    fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
+        Some(value).try_into()
+    }
+}
+
+impl TryFrom<Option<Vec<u8>>> for MaybePort<'static> {
+    type Error = InvalidPort;
+
+    fn try_from(value: Option<Vec<u8>>) -> Result<Self, Self::Error> {
+        value.map(Cow::<[u8]>::Owned).try_into()
+    }
+}
+
+impl TryFrom<Vec<u8>> for MaybePort<'static> {
+    type Error = InvalidPort;
+
+    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+        Some(value).try_into()
+    }
+}
 
 
 impl From<u16> for MaybePort<'static> {

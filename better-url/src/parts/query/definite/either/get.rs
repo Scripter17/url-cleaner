@@ -2,15 +2,15 @@
 
 use crate::prelude::*;
 
-impl Query<'_> {
+impl<'a> Query<'a> {
     /// The [`QueryIter`].
     pub fn iter(&self) -> QueryIter<'_> {
         self.into_iter()
     }
 
-    /// The [`QuerySegment`]s named `name`.
-    pub fn find_iter<'b>(&'b self, name: &str) -> impl DoubleEndedIterator<Item = QuerySegment<'b>> {
-        self.iter().filter(move |x| x.name() == name)
+    /// A [`DoubleEndedIterator`] of the [`QuerySegment`]s whose [`QueryName::decode`] is `name`.
+    pub fn find_iter<T: AsRef<[u8]>>(&self, name: T) -> impl DoubleEndedIterator<Item = QuerySegment<'_>> {
+        self.iter().filter(move |x| x.name().decode() == name.as_ref())
     }
 
     /// The `index`th [`QuerySegment`].
@@ -18,8 +18,8 @@ impl Query<'_> {
         self.iter().neg_nth(index)
     }
 
-    /// The `index`th [`QuerySegment`] named `name`.
-    pub fn find<'b>(&'b self, name: &str, index: isize) -> Option<QuerySegment<'b>> {
-        self.find_iter(name).neg_nth(index)
+    /// The `index`th [`QuerySegment`] whose [`QueryName::decode`] is `name`.
+    pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<QuerySegment<'_>> {
+        self.find_iter(name.as_ref()).neg_nth(index)
     }
 }

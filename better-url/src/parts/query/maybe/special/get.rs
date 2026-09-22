@@ -2,24 +2,24 @@
 
 use crate::prelude::*;
 
-impl MaybeSpecialQuery<'_> {
+impl<'a> MaybeSpecialQuery<'a> {
     /// The [`SpecialQueryIter`].
     pub fn iter(&self) -> SpecialQueryIter<'_> {
         self.into_iter()
     }
 
-    /// [`SpecialQuery::find_iter`].
-    pub fn find_iter<'b>(&'b self, name: &str) -> impl DoubleEndedIterator<Item = SpecialQuerySegment<'b>> {
-        self.0.iter().flat_map(|x| x.find_iter(name))
+    /// A [`DoubleEndedIterator`] of the [`SpecialQuerySegment`]s named `name`.
+    pub fn find_iter<T: AsRef<[u8]>>(&self, name: T) -> impl DoubleEndedIterator<Item = SpecialQuerySegment<'_>> {
+        self.iter().filter(move |x| x.name().decode() == name.as_ref())
     }
 
-    /// [`SpecialQuery::get`].
+    /// The `index`th [`SpecialQuerySegment`].
     pub fn get(&self, index: isize) -> Option<SpecialQuerySegment<'_>> {
-        self.0.as_ref()?.get(index)
+        self.iter().neg_nth(index)
     }
 
-    /// [`SpecialQuery::find`].
-    pub fn find<'b>(&'b self, name: &str, index: isize) -> Option<SpecialQuerySegment<'b>> {
-        self.0.as_ref()?.find(name, index)
+    /// The `index`th [`SpecialQuerySegment`] named `name`.
+    pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<SpecialQuerySegment<'_>> {
+        self.find_iter(name.as_ref()).neg_nth(index)
     }
 }

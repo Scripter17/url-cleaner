@@ -45,10 +45,10 @@ impl DomainHostDetails {
 
     /// Parse a domain literal without checking for validity.
     ///
-    /// Assumes that `value` is a valid output of [`encode_domain_host`].
+    /// Assumes that `value` is a valid output of [`domain_host_to_ascii`].
     #[allow(clippy::missing_panics_doc, reason = "It's a debug assert???")]
     pub fn parse_unchecked(value: &str) -> Self {
-        debug_assert_eq!(value, encode_domain_host(value).expect("The domain to be valid").1, "The domain to be encoded.");
+        debug_assert_eq!(value, domain_host_to_ascii(value).expect("The domain to be valid").1, "The domain to be ASCII.");
 
         let (segments, fq) = match value.as_bytes() {
             [value @ .., b'.'] => (value, true ),

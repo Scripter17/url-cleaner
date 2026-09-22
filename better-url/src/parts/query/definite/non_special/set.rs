@@ -3,7 +3,7 @@
 use crate::prelude::*;
 
 impl NonSpecialQuery<'_> {
-    /// Finds the `index`th segment whose [`NonSpecialQuerySegment::name`] is `name` and does stuff.
+    /// Finds the `index`th segment whose [`NonSpecialQueryName::decode`] is `name` and does stuff.
     ///
     /// - If found and `value` is `Some(Some(x))`, replaces its value with `x`.
     ///
@@ -32,10 +32,10 @@ impl NonSpecialQuery<'_> {
     /// assert!( query.set("c", -1, Some(None::<&str>)).unwrap()); assert_eq!(query,   "c&a=1&b=2&b&b=3");
     /// assert!( query.set("c", -1, None::<&str>      ).unwrap()); assert_eq!(query,     "a=1&b=2&b&b=3");
     /// ```
-    pub fn set<'b, T: Into<MaybeNonSpecialQueryValue<'b>>>(&mut self, name: &str, index: isize, value: Option<T>) -> Result<bool, SetQueryError> {
+    pub fn set<'b, N: AsRef<[u8]>, T: Into<MaybeNonSpecialQueryValue<'b>>>(&mut self, name: N, index: isize, value: Option<T>) -> Result<bool, SetQueryError> {
         Ok(match value.map(|x| x.into().into_inner()) {
             Some(Some(value)) => {
-                let temp = self.find_iter(name).try_neg_nth(index);
+                let temp = self.find_iter(name.as_ref()).try_neg_nth(index);
 
                 match temp {
                     Ok(old) => match old.value().as_str() {
@@ -43,7 +43,7 @@ impl NonSpecialQuery<'_> {
                         None      => self.0.insert_with   (old.as_str().end_addr() - self.as_str().addr(), ["=", &value]),
                     },
                     Err(0) => {
-                        let name = NonSpecialQueryName::new(name).into_inner();
+                        let name = NonSpecialQueryName::new(name.as_ref()).into_inner();
 
                         match index {
                             0.. => self.0.extend     (   ["&", &name, "=", &value     ]),
@@ -56,7 +56,7 @@ impl NonSpecialQuery<'_> {
                 true
             },
             Some(None) => {
-                let temp = self.find_iter(name).try_neg_nth(index);
+                let temp = self.find_iter(name.as_ref()).try_neg_nth(index);
 
                 match temp {
                     Ok(old) => match old.value().as_str() {
@@ -68,7 +68,7 @@ impl NonSpecialQuery<'_> {
                         None => false
                     },
                     Err(0) => {
-                        let (_, name) = encode_query_part(name);
+                        let (_, name) = encode_query_part_bytes(name.as_ref());
 
                         match index {
                             0.. => self.0.extend     (   ["&", &name]),

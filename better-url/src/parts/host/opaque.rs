@@ -65,11 +65,11 @@ impl<'a> OpaqueHost<'a> {
 
 
 
-impl<'a> TryFrom<Cow<'a, str>> for OpaqueHost<'a> {
+impl<'a> TryFrom<Cow<'a, [u8]>> for OpaqueHost<'a> {
     type Error = InvalidOpaqueHost;
 
-    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, host) = encode_opaque_host(value)?;
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        let (_, host) = encode_opaque_host_bytes(value)?;
 
         Ok(Self {
             host,
@@ -97,11 +97,7 @@ impl<'a> TryFrom<FileHost<'a>> for OpaqueHost<'a> {
     type Error = FileHost<'a>;
 
     fn try_from(value: FileHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            FileHost::Domain(x) => x.into(),
-            FileHost::Ipv4  (x) => x.into(),
-            x                   => Err(x)?,
-        })
+        Err(value)
     }
 }
 
@@ -109,11 +105,7 @@ impl<'a> TryFrom<SpecialNotFileHost<'a>> for OpaqueHost<'a> {
     type Error = SpecialNotFileHost<'a>;
 
     fn try_from(value: SpecialNotFileHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            SpecialNotFileHost::Domain(x) => x.into(),
-            SpecialNotFileHost::Ipv4  (x) => x.into(),
-            x                             => Err(x)?,
-        })
+        Err(value)
     }
 }
 
@@ -121,12 +113,14 @@ impl<'a> TryFrom<NonSpecialHost<'a>> for OpaqueHost<'a> {
     type Error = NonSpecialHost<'a>;
 
     fn try_from(value: NonSpecialHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            NonSpecialHost::Opaque(x) => x,
-            x                         => Err(x)?,
-        })
+        if let NonSpecialHost::Opaque(x) = value {
+            Ok(x)
+        } else {
+            Err(value)
+        }
     }
 }
+
 
 
 impl<'a> From<DomainHost<'a>> for OpaqueHost<'a> {fn from(value: DomainHost<'a>) -> Self {let (host, _) = value.into_parts(); Self {host, details: Default::default()}}}

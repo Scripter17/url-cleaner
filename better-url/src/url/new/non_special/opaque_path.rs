@@ -4,8 +4,8 @@ use crate::prelude::*;
 
 impl BetterUrl {
     /// `non-special:...`.
-    pub(super) fn new_ns_opaque_path(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
-        let (path, query, fragment) = split_pqf(rest);
+    pub(super) fn new_ns_opaque_path(scheme: Scheme<'_>, rest: &[u8]) -> Result<Self, InvalidUrl> {
+        let (path, query, fragment) = split_pqf_bytes(rest);
 
         let path     = OpaquePath          ::new(path    );
         let query    = MaybeNonSpecialQuery::new(query   );

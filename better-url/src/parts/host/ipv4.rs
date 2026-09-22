@@ -78,15 +78,19 @@ impl<'a> Ipv4Host<'a> {
     }
 }
 
-impl<'a> TryFrom<Cow<'a, str>> for Ipv4Host<'a> {
+
+
+impl<'a> TryFrom<Cow<'a, [u8]>> for Ipv4Host<'a> {
     type Error = InvalidIpv4Host;
 
-    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, value) = try_percent_decode(value).map_err(|_| InvalidIpv4Host)?; // TODO: Fix.
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        let (_, value) = try_percent_decode_bytes(value).map_err(|_| InvalidIpv4Host)?; // TODO: Fix.
 
         Self::new_percent_decoded(value)
     }
 }
+
+
 
 impl<'a> TryFrom<Host<'a>> for Ipv4Host<'a> {
     type Error = Host<'a>;
@@ -103,10 +107,11 @@ impl<'a> TryFrom<FileHost<'a>> for Ipv4Host<'a> {
     type Error = FileHost<'a>;
 
     fn try_from(value: FileHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            FileHost::Ipv4(x) => x,
-            x                 => Err(x)?,
-        })
+        if let FileHost::Ipv4(x) = value {
+            Ok(x)
+        } else {
+            Err(value)
+        }
     }
 }
 
@@ -114,10 +119,11 @@ impl<'a> TryFrom<SpecialNotFileHost<'a>> for Ipv4Host<'a> {
     type Error = SpecialNotFileHost<'a>;
 
     fn try_from(value: SpecialNotFileHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            SpecialNotFileHost::Ipv4(x) => x,
-            x                           => Err(x)?,
-        })
+        if let SpecialNotFileHost::Ipv4(x) = value {
+            Ok(x)
+        } else {
+            Err(value)
+        }
     }
 }
 
@@ -125,22 +131,7 @@ impl<'a> TryFrom<NonSpecialHost<'a>> for Ipv4Host<'a> {
     type Error = NonSpecialHost<'a>;
 
     fn try_from(value: NonSpecialHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            NonSpecialHost::Opaque(x) => x.try_into()?,
-            x                         => Err(x)?,
-        })
-    }
-}
-
-impl<'a> TryFrom<OpaqueHost<'a>> for Ipv4Host<'a> {
-    type Error = OpaqueHost<'a>;
-
-    fn try_from(value: OpaqueHost<'a>) -> Result<Self, Self::Error> {
-        // TODO: This is dumb.
-
-        let (host, _) = value.clone().into_parts();
-
-        host.try_into().map_err(|_| value)
+        Err(value)
     }
 }
 

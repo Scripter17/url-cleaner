@@ -15,7 +15,7 @@ publish     = false
 better-url = { version = "0.12.0-beta", path = "../better-url" }
 
 # Other.
-clap    = { version = "4.6.6", features = ["derive"] }
+clap    = { version = "4.6.7", features = ["derive"] }
 url     = "2.5.8"
 ada-url = "4.0.0"
 

@@ -74,12 +74,6 @@ ${GM.info.script.namespace}`);
 	// Clear the state and make a socket.
 	// Called again whenever the previous socket exits with an erorr.
 	function urlc_make_socket() {
-		queue = [];
-		tasks = "";
-		clearTimeout(send_timeout);
-		send_timeout = null;
-		reclick_once_clean = null;
-
 		socket = new WebSocket(socket_url);
 		socket.addEventListener("open"   , urlc_socket_open);
 		socket.addEventListener("message", urlc_socket_message);
@@ -131,6 +125,12 @@ ${GM.info.script.namespace}`);
 	// Disconnect listeners and, if the socket closed with an error, try to reconnect.
 	function urlc_socket_close(e) {
 		console.log("[URLC] Socket closed with code", e.code);
+
+		queue.length = 0;
+		tasks = "";
+		clearTimeout(send_timeout);
+		send_timeout = null;
+		reclick_once_clean = null;
 
 		href_mutation_observer.disconnect();
 		tree_mutation_observer.disconnect();

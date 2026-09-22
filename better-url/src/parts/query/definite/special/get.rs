@@ -2,24 +2,24 @@
 
 use crate::prelude::*;
 
-impl SpecialQuery<'_> {
+impl<'a> SpecialQuery<'a> {
     /// The [`SpecialQueryIter`].
     pub fn iter(&self) -> SpecialQueryIter<'_> {
         self.into_iter()
     }
 
-    /// A [`DoubleEndedIterator`] of [`SpecialQuerySegment`]s whose [`SpecialQuerySegment::name`]s are `name`.
-    pub fn find_iter<'b>(&'b self, name: &str) -> impl DoubleEndedIterator<Item = SpecialQuerySegment<'b>> {
-        self.iter().filter(move |segment| segment.name() == name)
+    /// A [`DoubleEndedIterator`] of the [`SpecialQuerySegment`]s whose [`SpecialQueryName::decode`] is `name`.
+    pub fn find_iter<T: AsRef<[u8]>>(&self, name: T) -> impl DoubleEndedIterator<Item = SpecialQuerySegment<'_>> {
+        self.iter().filter(move |x| x.name().decode() == name.as_ref())
     }
 
-    /// Gets the `index`th [`SpecialQuerySegment`].
+    /// The `index`th [`SpecialQuerySegment`].
     pub fn get(&self, index: isize) -> Option<SpecialQuerySegment<'_>> {
         self.iter().neg_nth(index)
     }
 
-    /// Gets the `index`th [`SpecialQuerySegment`] whose [`SpecialQuerySegment::name`] is `name`.
-    pub fn find<'b>(&'b self, name: &str, index: isize) -> Option<SpecialQuerySegment<'b>> {
-        self.find_iter(name).neg_nth(index)
+    /// The `index`th [`SpecialQuerySegment`] whose [`SpecialQueryName::decode`] is `name`.
+    pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<SpecialQuerySegment<'_>> {
+        self.find_iter(name.as_ref()).neg_nth(index)
     }
 }

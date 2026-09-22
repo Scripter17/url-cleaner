@@ -2,25 +2,25 @@
 
 use crate::prelude::*;
 
-impl MaybeNonSpecialQuery<'_> {
+impl<'a> MaybeNonSpecialQuery<'a> {
     /// The [`NonSpecialQueryIter`].
     pub fn iter(&self) -> NonSpecialQueryIter<'_> {
         self.into_iter()
     }
 
-    /// [`NonSpecialQuery::find_iter`].
-    pub fn find_iter<'b>(&'b self, name: &str) -> impl DoubleEndedIterator<Item = NonSpecialQuerySegment<'b>> {
-        self.0.iter().flat_map(|x| x.find_iter(name))
+    /// A [`DoubleEndedIterator`] of the [`NonSpecialQuerySegment`]s named `name`.
+    pub fn find_iter<T: AsRef<[u8]>>(&self, name: T) -> impl DoubleEndedIterator<Item = NonSpecialQuerySegment<'_>> {
+        self.iter().filter(move |x| x.name().decode() == name.as_ref())
     }
 
-    /// [`NonSpecialQuery::get`].
+    /// The `index`th [`NonSpecialQuerySegment`].
     pub fn get(&self, index: isize) -> Option<NonSpecialQuerySegment<'_>> {
-        self.0.as_ref()?.get(index)
+        self.iter().neg_nth(index)
     }
 
-    /// [`NonSpecialQuery::find`].
-    pub fn find<'b>(&'b self, name: &str, index: isize) -> Option<NonSpecialQuerySegment<'b>> {
-        self.0.as_ref()?.find(name, index)
+    /// The `index`th [`NonSpecialQuerySegment`] named `name`.
+    pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<NonSpecialQuerySegment<'_>> {
+        self.find_iter(name.as_ref()).neg_nth(index)
     }
 }
 

@@ -97,19 +97,24 @@ impl<'a> SpecialNotFileHost<'a> {
 
 
 
-impl<'a> TryFrom<Cow<'a, str>> for SpecialNotFileHost<'a> {
+impl<'a> TryFrom<Cow<'a, [u8]>> for SpecialNotFileHost<'a> {
     type Error = InvalidSpecialNotFileHost;
 
-    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        Ok(match value.as_bytes() {
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        Ok(match &*value {
             [b'[', ..] => Ipv6Host::new(value)?.into(),
             _ => {
-                let (_, value) = try_percent_decode (value).map_err(|_| InvalidSpecialNotFileHost)?;
-                let (_, value) = uts46_map_normalize(value);
+                let (_, value       ) = try_percent_decode_bytes(value).map_err(|_| InvalidSpecialNotFileHost)?;
+                let (_, value, class) = uts46_classify_map_normalize(value);
 
-                match ends_in_a_number(&value) {
-                    true  =>         Ipv4Host  ::new_normalized(value) ?.into(),
-                    false => unsafe {DomainHost::new_not_eian  (value)}?.into(),
+                if class & 0b0100_0100 == 0b0100_0000 {
+                    Err(InvalidSpecialNotFileHost)?
+                } else if class & 0b0000_0110 != 0b0000_0000 && ends_in_a_number(&value) {
+                    Ipv4Host::new_normalized(value)?.into()
+                } else if class & 0b0100_0110 == 0b0000_0000 && !value.is_empty() && value.len() <= u32::MAX as usize {
+                    unsafe {DomainHost::new_raw(value)}.into()
+                } else {
+                    unsafe {DomainHost::new_not_eian(value)}?.into()
                 }
             }
         })
@@ -127,7 +132,7 @@ impl<'a> TryFrom<Host<'a>> for SpecialNotFileHost<'a> {
             Host::Ipv6  (x) => x.into(),
             Host::Ipv4  (x) => x.into(),
             Host::Opaque(x) => x.try_into()?,
-            Host::Empty (x) => Err(x)?,
+            Host::Empty (x) => x.try_into()?,
         })
     }
 }
@@ -140,7 +145,7 @@ impl<'a> TryFrom<FileHost<'a>> for SpecialNotFileHost<'a> {
             FileHost::Domain(x) => x.into(),
             FileHost::Ipv6  (x) => x.into(),
             FileHost::Ipv4  (x) => x.into(),
-            FileHost::Empty (x) => Err(x)?,
+            FileHost::Empty (x) => x.try_into()?,
         })
     }
 }
@@ -152,7 +157,7 @@ impl<'a> TryFrom<NonSpecialHost<'a>> for SpecialNotFileHost<'a> {
         Ok(match value {
             NonSpecialHost::Ipv6  (x) => x.into(),
             NonSpecialHost::Opaque(x) => x.try_into()?,
-            NonSpecialHost::Empty (x) => Err(x)?,
+            NonSpecialHost::Empty (x) => x.try_into()?,
         })
     }
 }
@@ -164,9 +169,17 @@ impl<'a> From<Ipv6Host  <'a>> for SpecialNotFileHost<'a> {fn from(value: Ipv6Hos
 impl<'a> TryFrom<OpaqueHost<'a>> for SpecialNotFileHost<'a> {
     type Error = OpaqueHost<'a>;
 
+    /// Exists to make things like [`Host::new`] simpler but always returns [`Err`]
     fn try_from(value: OpaqueHost<'a>) -> Result<Self, Self::Error> {
-        let (host, _) = value.clone().into_parts();
+        Err(value)
+    }
+}
 
-        host.try_into().map_err(|_| value)
+impl<'a> TryFrom<EmptyHost<'a>> for SpecialNotFileHost<'a> {
+    type Error = EmptyHost<'a>;
+
+    /// Exists to make things like [`Host::new`] simpler but always returns [`Err`]
+    fn try_from(value: EmptyHost<'a>) -> Result<Self, Self::Error> {
+        Err(value)
     }
 }

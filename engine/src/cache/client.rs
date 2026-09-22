@@ -6,10 +6,36 @@ use sqlx::{Arguments, Executor, Row};
 
 use crate::prelude::*;
 
-/// A convenient name for [`sqlx::sqlite::SqliteConnectOptions`].
-///
-/// Lets you not explicitly depend on [`sqlx`].
-pub type CacheTarget = sqlx::sqlite::SqliteConnectOptions;
+/// A simple wrapper around [`sqlx::sqlite::SqliteConnectOptions`] whose [`FromStr`] includes [`sqlx::sqlite::SqliteConnectOptions::create_if_missing`] set to [`true`].
+#[derive(Debug, Clone)]
+pub struct CacheTarget {
+    /// The [`sqlx::sqlite::SqliteConnectOptions`].
+    pub options: sqlx::sqlite::SqliteConnectOptions
+}
+
+impl From<sqlx::sqlite::SqliteConnectOptions> for CacheTarget {
+    fn from(value: sqlx::sqlite::SqliteConnectOptions) -> Self {
+        Self {
+            options: value
+        }
+    }
+}
+
+impl From<CacheTarget> for sqlx::sqlite::SqliteConnectOptions {
+    fn from(value: CacheTarget) -> Self {
+        value.options
+    }
+}
+
+impl FromStr for CacheTarget {
+    type Err = <sqlx::sqlite::SqliteConnectOptions as FromStr>::Err;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self {
+            options: s.parse::<sqlx::sqlite::SqliteConnectOptions>()?.create_if_missing(true)
+        })
+    }
+}
 
 /// A connection to a SQLite cache.
 ///
@@ -80,8 +106,8 @@ impl CacheClient {
     /// [`tokio::runtime::Handle::block_on`] + [`Self::new`].
     /// # Panics
     /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
-    pub fn new_sync(options: CacheTarget, handle: tokio::runtime::Handle) -> Self {
-        handle.block_on(Self::new(options))
+    pub fn new_sync(target: CacheTarget, handle: tokio::runtime::Handle) -> Self {
+        handle.block_on(Self::new(target))
     }
 
     /// [`tokio::runtime::Handle::block_on`] + [`Self::read`].
@@ -116,9 +142,9 @@ impl CacheClient {
     /// Make a new [`Self`] using the current runtime's [`tokio::runtime::Handle`].
     /// # Panics
     /// If called outside a Tokio runtime, panics.
-    pub async fn new(options: CacheTarget) -> Self {
+    pub async fn new(target: CacheTarget) -> Self {
         Self {
-            pool       : sqlx::SqlitePool::connect_lazy_with(options),
+            pool       : sqlx::SqlitePool::connect_lazy_with(target.options),
             handle     : tokio::runtime::Handle::current(),
             assume_init: false.into(),
         }

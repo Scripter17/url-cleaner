@@ -2,79 +2,63 @@
 
 use crate::prelude::*;
 
-/// Make a [`FilePath`].
+/// encode a [`FilePath`].
 ///
-/// Specifically, [`encode_file_path`] + [`resolve_file_path`].
+/// Specifically, [`percent_encode_file_path`] + [`resolve_file_path`].
 /// # Examples
 /// ```
 /// use better_url::util::*;
 ///
-/// assert_eq!(make_file_path(""            ), (true, "/"        .into()));
+/// assert_eq!(encode_file_path(""            ), (true, "/"        .into()));
 ///
-/// assert_eq!(make_file_path("abc"         ), (true, "/abc"     .into()));
+/// assert_eq!(encode_file_path("abc"         ), (true, "/abc"     .into()));
 ///
-/// assert_eq!(make_file_path("/abc/."      ), (true, "/abc/"    .into()));
-/// assert_eq!(make_file_path("/abc/.."     ), (true, "/"        .into()));
-/// assert_eq!(make_file_path("/abc/./ghi/" ), (true, "/abc/ghi/".into()));
-/// assert_eq!(make_file_path("/abc/../ghi/"), (true, "/ghi/"    .into()));
+/// assert_eq!(encode_file_path("/abc/."      ), (true, "/abc/"    .into()));
+/// assert_eq!(encode_file_path("/abc/.."     ), (true, "/"        .into()));
+/// assert_eq!(encode_file_path("/abc/./ghi/" ), (true, "/abc/ghi/".into()));
+/// assert_eq!(encode_file_path("/abc/../ghi/"), (true, "/ghi/"    .into()));
 ///
-/// assert_eq!(make_file_path("/c:/."       ), (true, "/c:/"     .into()));
-/// assert_eq!(make_file_path("/c:/.."      ), (true, "/c:/"     .into()));
-/// assert_eq!(make_file_path("/c:/./ghi/"  ), (true, "/c:/ghi/" .into()));
-/// assert_eq!(make_file_path("/c:/../ghi/" ), (true, "/c:/ghi/" .into()));
+/// assert_eq!(encode_file_path("/c:/."       ), (true, "/c:/"     .into()));
+/// assert_eq!(encode_file_path("/c:/.."      ), (true, "/c:/"     .into()));
+/// assert_eq!(encode_file_path("/c:/./ghi/"  ), (true, "/c:/ghi/" .into()));
+/// assert_eq!(encode_file_path("/c:/../ghi/" ), (true, "/c:/ghi/" .into()));
 ///
-/// assert_eq!(make_file_path("/c|/."       ), (true, "/c:/"     .into()));
-/// assert_eq!(make_file_path("/c|/.."      ), (true, "/c:/"     .into()));
-/// assert_eq!(make_file_path("/c|/./ghi/"  ), (true, "/c:/ghi/" .into()));
-/// assert_eq!(make_file_path("/c|/../ghi/" ), (true, "/c:/ghi/" .into()));
+/// assert_eq!(encode_file_path("/c|/."       ), (true, "/c:/"     .into()));
+/// assert_eq!(encode_file_path("/c|/.."      ), (true, "/c:/"     .into()));
+/// assert_eq!(encode_file_path("/c|/./ghi/"  ), (true, "/c:/ghi/" .into()));
+/// assert_eq!(encode_file_path("/c|/../ghi/" ), (true, "/c:/ghi/" .into()));
 /// ```
-pub fn make_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = encode_file_path (value);
-    let (b, value) = resolve_file_path(value);
+pub fn encode_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    let (a, value) = percent_encode_file_path(value);
+    let (b, value) = resolve_file_path       (value);
 
     (a || b, value)
 }
 
-
 /// Do just the percent encoding and slash unbacking for a [`FilePath`].
 ///
-/// For the full process, see [`make_file_path`].
-pub fn encode_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+/// For the full process, see [`encode_file_path`].
+pub fn percent_encode_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     encode_file_path_segments(value)
 }
 
 
 
-/// Convert a [`SpecialNotFilePath`] into a [`FilePath`].
-pub fn special_not_file_path_to_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let mut value = value.into();
-    let mut changed = false;
-
-    if matches!(value.as_bytes(), [b'/', x, b'|'] | [b'/', x, b'|', b'/', ..] if x.is_ascii_alphabetic()) {
-        // SAFETY: Replacing ASCII with ASCII is always valid.
-        unsafe {
-            value.to_mut().as_mut_vec()[2] = b':';
-        }
-        changed = true;
-    }
-
-    (changed, value)
-}
-
-/// Convert a [`NonSpecialPath`] into a [`FilePath`].
-pub fn non_special_path_to_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = non_special_path_to_special_not_file_path(value);
-    let (b, value) = special_not_file_path_to_file_path       (value);
+/// encode a [`FilePath`] from bytes.
+///
+/// Specifically, [`percent_encode_file_path_bytes`] + [`resolve_file_path`].
+pub fn encode_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+    let (a, value) = percent_encode_file_path_bytes(value);
+    let (b, value) = resolve_file_path             (value);
 
     (a || b, value)
 }
 
-/// Convert an [`OpaquePath`] into a [`FilePath`].
-pub fn opaque_path_to_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = opaque_path_to_special_not_file_path(value);
-    let (b, value) = special_not_file_path_to_file_path  (value);
-
-    (a || b, value)
+/// Do just the percent encoding and slash unbacking for a [`FilePath`].
+///
+/// For the full process, see [`encode_file_path`].
+pub fn percent_encode_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+    encode_file_path_segments_bytes(value)
 }
 
 
@@ -96,6 +80,8 @@ pub fn resolve_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, 
 
     (changed, value)
 }
+
+
 
 /// Resolve an encoded file path using only the segments in `range`.
 /// # Panics
@@ -180,4 +166,69 @@ pub fn resolve_file_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<usize>>
     }
 
     (changed, unsafe {cow_bytes_to_str_unchecked(value)})
+}
+
+
+
+/// Convert a [`SpecialNotFilePath`] into a [`FilePath`].
+pub fn special_not_file_path_to_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    let mut value = value.into();
+    let mut changed = false;
+
+    if matches!(value.as_bytes(), [b'/', x, b'|'] | [b'/', x, b'|', b'/', ..] if x.is_ascii_alphabetic()) {
+        // SAFETY: Replacing ASCII with ASCII is always valid.
+        unsafe {
+            value.to_mut().as_mut_vec()[2] = b':';
+        }
+        changed = true;
+    }
+
+    (changed, value)
+}
+
+/// Convert a [`NonSpecialPath`] into a [`FilePath`].
+pub fn non_special_path_to_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    let mut value = value.into();
+    let mut changed = false;
+
+    for i in 0..value.len() {
+        if value.as_bytes()[i] == b'\\' {
+            // SAFETY: Replacing ASCII with ASCII is always valid.
+            unsafe {
+                value.to_mut().as_mut_vec()[i] = b'/';
+            }
+            changed = true;
+        }
+    }
+
+    if matches!(value.as_bytes(), [b'/', x, b'|'] | [b'/', x, b'|', b'/', ..] if x.is_ascii_alphabetic()) {
+        // SAFETY: Replacing ASCII with ASCII is always valid.
+        unsafe {
+            value.to_mut().as_mut_vec()[2] = b':';
+        }
+        changed = true;
+    }
+
+    if changed {
+        value = resolve_file_path_range(value, ..).1;
+    }
+
+    (changed, value)
+}
+
+/// Convert an [`OpaquePath`] into a [`FilePath`].
+pub fn opaque_path_to_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    let mut value = value.into();
+
+    if value.is_empty() {
+        return (false, value);
+    }
+
+    value.to_mut().insert(0, '/');
+
+    let (_, value) = forward_slashes(value);
+
+    let (_, value) = resolve_file_path_range(value, ..);
+
+    (true, value)
 }

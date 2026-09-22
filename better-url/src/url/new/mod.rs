@@ -1,4 +1,4 @@
-//! [`BetterUrl::new`].
+//! Constructor stuff.
 
 use crate::prelude::*;
 
@@ -7,8 +7,8 @@ mod special_not_file;
 mod non_special;
 
 impl BetterUrl {
-    /// The after scheme state.
-    pub(crate) fn after_scheme(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
+    /// Parse the rest of a URL given the scheme.
+    pub(crate) fn after_scheme(scheme: Scheme<'_>, rest: &[u8]) -> Result<Self, InvalidUrl> {
         match scheme.r#type() {
             SchemeType::File           => Self::new_file            (scheme, rest),
             SchemeType::SpecialNotFile => Self::new_special_not_file(scheme, rest),

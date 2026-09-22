@@ -8,9 +8,9 @@ impl<'a> QueryLike<'a> {
         self.into_iter()
     }
 
-    /// A [`DoubleEndedIterator`] of the [`QueryLikeSegment`]s named `name`.
-    pub fn find_iter<'b>(&'b self, name: &str) -> impl DoubleEndedIterator<Item = QueryLikeSegment<'b>> {
-        self.iter().filter(move |x| x.name() == name)
+    /// A [`DoubleEndedIterator`] of the [`QueryLikeSegment`]s whose [`QueryLikeName::decode`] is `name`.
+    pub fn find_iter<T: AsRef<[u8]>>(&self, name: T) -> impl DoubleEndedIterator<Item = QueryLikeSegment<'_>> {
+        self.iter().filter(move |x| x.name().decode() == name.as_ref())
     }
 
     /// The `index`th [`QueryLikeSegment`].
@@ -18,8 +18,8 @@ impl<'a> QueryLike<'a> {
         self.iter().neg_nth(index)
     }
 
-    /// The `index`th [`QueryLikeSegment`] named `name`.
-    pub fn find<'b>(&'b self, name: &str, index: isize) -> Option<QueryLikeSegment<'b>> {
-        self.find_iter(name).neg_nth(index)
+    /// The `index`th [`QueryLikeSegment`] whose [`QueryLikeName::decode`] is `name`.
+    pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<QueryLikeSegment<'_>> {
+        self.find_iter(name.as_ref()).neg_nth(index)
     }
 }

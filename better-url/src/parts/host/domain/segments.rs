@@ -19,9 +19,9 @@ impl<'a> DomainSegments<'a> {
         &self.0
     }
 
-    /// [`unchecked_decode_domain_segments`].
-    pub fn decode(self) -> Cow<'a, str> {
-        let (_, value) = unchecked_decode_domain_segments(self.0);
+    /// [`unchecked_domain_segments_to_unicode`].
+    pub fn to_unicode(self) -> Cow<'a, str> {
+        let (_, value) = unchecked_domain_segments_to_unicode(self.0);
 
         value
     }
@@ -66,15 +66,21 @@ impl<'a> DomainSegments<'a> {
     }
 }
 
-impl<'a> TryFrom<Cow<'a, str>> for DomainSegments<'a> {
+
+
+impl<'a> TryFrom<Cow<'a, [u8]>> for DomainSegments<'a> {
     type Error = InvalidDomainSegments;
 
-    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, segments) = encode_domain_segments(value)?;
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        let (_, value) = domain_segments_bytes_to_ascii(value)?;
 
-        Ok(Self(segments))
+        unsafe {
+            Ok(Self::new_unchecked(value))
+        }
     }
 }
+
+
 
 impl<'a> From<DomainSegment<'a>> for DomainSegments<'a> {
     fn from(value: DomainSegment<'a>) -> Self {

@@ -1,6 +1,7 @@
 //! Parts.
 
 mod split;
+mod split_bytes;
 mod canonize;
 mod scheme;
 mod userinfo;
@@ -11,6 +12,7 @@ mod query;
 mod fragment;
 
 pub use split::*;
+pub use split_bytes::*;
 pub use canonize::*;
 pub use scheme::*;
 pub use userinfo::*;

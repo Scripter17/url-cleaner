@@ -16,7 +16,7 @@ better-url         = { version = "0.12.0-beta", path = "../better-url", features
 url-cleaner-engine = { version = "0.12.0-beta", path = "../engine", default-features = false }
 
 # Other.
-clap      = { version = "4.6.6" , features = ["derive", "unstable-v5"] }
+clap      = { version = "4.6.7" , features = ["derive", "unstable-v5"] }
 tokio     = { version = "1.53.1", features = ["sync", "io-util", "io-std", "macros", "rt-multi-thread", "time"] }
 bytes     = "1.12.1"
 thiserror = "2.0.20"

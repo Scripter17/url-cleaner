@@ -65,15 +65,17 @@ impl<'a> SpecialNotFilePathSegments<'a> {
 
 
 
-impl<'a> From<Cow<'a, str>> for SpecialNotFilePathSegments<'a> {
-    fn from(value: Cow<'a, str>) -> Self {
-        let (_, value) = encode_special_not_file_path_segments(value);
+impl<'a> From<Cow<'a, [u8]>> for SpecialNotFilePathSegments<'a> {
+    fn from(value: Cow<'a, [u8]>) -> Self {
+        let (_, value) = encode_special_not_file_path_segments_bytes(value);
 
         unsafe {
             Self::new_unchecked(value)
         }
     }
 }
+
+
 
 impl<'a> From<PathSegments<'a>> for SpecialNotFilePathSegments<'a> {
     fn from(value: PathSegments<'a>) -> Self {

@@ -113,23 +113,23 @@ impl<'a> FileHost<'a> {
 
 
 
-impl<'a> TryFrom<Cow<'a, str>> for FileHost<'a> {
+impl<'a> TryFrom<Cow<'a, [u8]>> for FileHost<'a> {
     type Error = InvalidFileHost;
 
-    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        Ok(match value.as_bytes() {
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        Ok(match &*value {
             b""        => EmptyHost::default(     ) .into(),
             [b'[', ..] => Ipv6Host ::new    (value)?.into(),
             _ => {
-                let (_, value) = try_percent_decode (value).map_err(|_| InvalidFileHost)?;
-                let (_, value) = uts46_map_normalize(value);
+                let (_, value) = try_percent_decode_bytes(value).map_err(|_| InvalidFileHost)?;
+                let (_, value) = uts46_map_normalize     (value);
 
                 match value.as_bytes() {
                     b""          => Err(InvalidFileHost)?,
                     b"localhost" => EmptyHost::default().into(),
                     _ => match ends_in_a_number(&value) {
                         true  =>         Ipv4Host  ::new_normalized(value) ?.into(),
-                        false => unsafe {DomainHost::new_normalized(value)}?.into(),
+                        false => unsafe {DomainHost::new_not_eian  (value)}?.into(),
                     }
                 }
             }
@@ -183,11 +183,8 @@ impl<'a> From<EmptyHost <'a>> for FileHost<'a> {fn from(value: EmptyHost <'a>) -
 impl<'a> TryFrom<OpaqueHost<'a>> for FileHost<'a> {
     type Error = OpaqueHost<'a>;
 
+    /// Exists to make things like [`Host::new`] simpler but always returns [`Err`]
     fn try_from(value: OpaqueHost<'a>) -> Result<Self, Self::Error> {
-        // TOOD: This is dumb.
-
-        let (host, _) = value.clone().into_parts();
-
-        host.try_into().map_err(|_| value)
+        Err(value)
     }
 }

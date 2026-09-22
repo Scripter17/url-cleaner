@@ -125,10 +125,10 @@ pub enum StringSource {
     /** [`BetterUrl::domain_prefix_segment_str`]. **/ DomainPrefixSegment(isize),
     /** [`BetterUrl::domain_suffix_segment_str`]. **/ DomainSuffixSegment(isize),
 
-    /** [`BetterUrl::domain_segment`]        + [`DomainSegment::decode`]. **/ DecodedDomainSegment      (isize),
-    /** [`BetterUrl::domain_origin_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainOriginSegment(isize),
-    /** [`BetterUrl::domain_prefix_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainPrefixSegment(isize),
-    /** [`BetterUrl::domain_suffix_segment`] + [`DomainSegment::decode`]. **/ DecodedDomainSuffixSegment(isize),
+    /** [`BetterUrl::domain_segment`]        + [`DomainSegment::to_unicode`]. **/ DomainSegmentToUnicode      (isize),
+    /** [`BetterUrl::domain_origin_segment`] + [`DomainSegment::to_unicode`]. **/ DomainOriginSegmentToUnicode(isize),
+    /** [`BetterUrl::domain_prefix_segment`] + [`DomainSegment::to_unicode`]. **/ DomainPrefixSegmentToUnicode(isize),
+    /** [`BetterUrl::domain_suffix_segment`] + [`DomainSegment::to_unicode`]. **/ DomainSuffixSegmentToUnicode(isize),
 
     /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`].
     PathSegment(isize),
@@ -455,10 +455,10 @@ impl StringSource {
             Self::DomainPrefixSegment(index) => task_state.url.domain_prefix_segment_str(*index).map(Into::into),
             Self::DomainSuffixSegment(index) => task_state.url.domain_suffix_segment_str(*index).map(Into::into),
 
-            Self::DecodedDomainSegment      (index) => task_state.url.domain_segment       (*index).map(DomainSegment::decode),
-            Self::DecodedDomainOriginSegment(index) => task_state.url.domain_origin_segment(*index).map(DomainSegment::decode),
-            Self::DecodedDomainPrefixSegment(index) => task_state.url.domain_prefix_segment(*index).map(DomainSegment::decode),
-            Self::DecodedDomainSuffixSegment(index) => task_state.url.domain_suffix_segment(*index).map(DomainSegment::decode),
+            Self::DomainSegmentToUnicode      (index) => task_state.url.domain_segment       (*index).map(DomainSegment::to_unicode),
+            Self::DomainOriginSegmentToUnicode(index) => task_state.url.domain_origin_segment(*index).map(DomainSegment::to_unicode),
+            Self::DomainPrefixSegmentToUnicode(index) => task_state.url.domain_prefix_segment(*index).map(DomainSegment::to_unicode),
+            Self::DomainSuffixSegmentToUnicode(index) => task_state.url.domain_suffix_segment(*index).map(DomainSegment::to_unicode),
 
             Self::PathSegment         (index     ) => task_state.url.path_segment      (*index        ).map(PathSegment ::lossy_decode),
             Self::RawPathSegment      (index     ) => task_state.url.path_segment      (*index        ).map(PathSegment ::into_inner  ),

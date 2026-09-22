@@ -70,9 +70,13 @@ impl<'a> NonSpecialPathSegment<'a> {
 
 
 
-impl<'a> From<Cow<'a, str>> for NonSpecialPathSegment<'a> {
-    fn from(value: Cow<'a, str>) -> Self {
-        Self(encode_non_special_path_segment(value).1)
+impl<'a> From<Cow<'a, [u8]>> for NonSpecialPathSegment<'a> {
+    fn from(value: Cow<'a, [u8]>) -> Self {
+        let (_, value) = encode_non_special_path_segment_bytes(value);
+
+        unsafe {
+            Self::new_unchecked(value)
+        }
     }
 }
 

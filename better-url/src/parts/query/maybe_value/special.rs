@@ -57,8 +57,8 @@ impl<'a> MaybeSpecialQueryValue<'a> {
 
 
 
-impl<'a> From<Option<Cow<'a, str>>> for MaybeSpecialQueryValue<'a> {
-    fn from(value: Option<Cow<'a, str>>) -> Self {
+impl<'a> From<Option<Cow<'a, [u8]>>> for MaybeSpecialQueryValue<'a> {
+    fn from(value: Option<Cow<'a, [u8]>>) -> Self {
         Self(value.map(Into::into))
     }
 }

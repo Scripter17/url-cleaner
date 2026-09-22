@@ -5,17 +5,13 @@ use crate::prelude::*;
 /// Split an authority, a `(userinfo@)?host(:port)?`, into the component parts.
 pub fn split_auth(value: &str) -> (Option<&str>, &str, Option<&str>) {
     unsafe {
-        let (userinfo, rest) = match value.memrchr(b'@') {
-            Some(i) => (Some(value.get_unchecked(..i)), value.get_unchecked(i+1..)),
-            None    => (None                          , value                     ),
-        };
+        let (u, h, p) = split_auth_bytes(value.as_bytes());
 
-        let (host, port) = match rest.memrchr(b':') {
-            Some(i) if rest.get_unchecked(i+1..).memchr(b']').is_none() => (rest.get_unchecked(..i), Some(rest.get_unchecked(i+1..))),
-            _                                                           => (rest,                    None                           ),
-        };
-
-        (userinfo, host, port)
+        (
+            u.map(|u| str::from_utf8_unchecked(u)),
+                      str::from_utf8_unchecked(h) ,
+            p.map(|p| str::from_utf8_unchecked(p)),
+        )
     }
 }
 
@@ -29,10 +25,15 @@ pub fn split_auth(value: &str) -> (Option<&str>, &str, Option<&str>) {
 /// assert_eq!(split_pqf("/1/2"        ), ("/1/2", None       , None       ));
 /// ```
 pub fn split_pqf(value: &str) -> (&str, Option<&str>, Option<&str>) {
-    let (rest, fragment) = pop_fragment(value);
-    let (path, query   ) = pop_query   (rest );
+    unsafe {
+        let (p, q, f) = split_pqf_bytes(value.as_bytes());
 
-    (path, query, fragment)
+        (
+                      str::from_utf8_unchecked(p) ,
+            q.map(|q| str::from_utf8_unchecked(q)),
+            f.map(|f| str::from_utf8_unchecked(f)),
+        )
+    }
 }
 
 /// Pop the fragment.
@@ -43,9 +44,13 @@ pub fn split_pqf(value: &str) -> (&str, Option<&str>, Option<&str>) {
 /// assert_eq!(pop_fragment("example.com/1/2?3?4#5#6"), ("example.com/1/2?3?4", Some("5#6")));
 /// ```
 pub fn pop_fragment(value: &str) -> (&str, Option<&str>) {
-    match value.memchr(b'#') {
-        Some(i) => unsafe {(value.get_unchecked(..i), Some(value.get_unchecked(i+1..)))},
-        None    =>         (value                   , None                            ) ,
+    unsafe {
+        let (r, f) = pop_fragment_bytes(value.as_bytes());
+
+        (
+                      str::from_utf8_unchecked(r) ,
+            f.map(|f| str::from_utf8_unchecked(f)),
+        )
     }
 }
 
@@ -57,9 +62,13 @@ pub fn pop_fragment(value: &str) -> (&str, Option<&str>) {
 /// assert_eq!(pop_query("example.com/1/2?3?4"), ("example.com/1/2", Some("3?4")));
 /// ```
 pub fn pop_query(value: &str) -> (&str, Option<&str>) {
-    match value.memchr(b'?') {
-        Some(i) => unsafe {(value.get_unchecked(..i), Some(value.get_unchecked(i+1..)))},
-        None    =>         (value                   , None                            ) ,
+    unsafe {
+        let (r, q) = pop_query_bytes(value.as_bytes());
+
+        (
+                      str::from_utf8_unchecked(r) ,
+            q.map(|q| str::from_utf8_unchecked(q)),
+        )
     }
 }
 
@@ -74,9 +83,13 @@ pub fn pop_query(value: &str) -> (&str, Option<&str>) {
 /// assert_eq!(pop_special_path("example.com"      ), ("example.com", "/"     ));
 /// ```
 pub fn pop_special_path(value: &str) -> (&str, &str) {
-    match value.memchrn(*b"/\\") {
-        Some(i) => unsafe {(value.get_unchecked(..i), value.get_unchecked(i..))},
-        None    =>         (value                   , "/"                     ) ,
+    unsafe {
+        let (auth, path) = pop_special_path_bytes(value.as_bytes());
+
+        (
+            str::from_utf8_unchecked(auth),
+            str::from_utf8_unchecked(path),
+        )
     }
 }
 
@@ -91,8 +104,12 @@ pub fn pop_special_path(value: &str) -> (&str, &str) {
 /// assert_eq!(pop_non_special_path("example.com"      ), ("example.com"      , ""    ));
 /// ```
 pub fn pop_non_special_path(value: &str) -> (&str, &str) {
-    match value.memchr(b'/') {
-        Some(i) => unsafe {(value.get_unchecked(..i), value.get_unchecked(i..))},
-        None    =>         (value                   , ""                      ) ,
+    unsafe {
+        let (auth, path) = pop_non_special_path_bytes(value.as_bytes());
+
+        (
+            str::from_utf8_unchecked(auth),
+            str::from_utf8_unchecked(path),
+        )
     }
 }

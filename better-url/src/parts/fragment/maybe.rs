@@ -58,11 +58,15 @@ impl<'a> MaybeFragment<'a> {
     }
 }
 
-impl<'a> From<Option<Cow<'a, str>>> for MaybeFragment<'a> {
-    fn from(value: Option<Cow<'a, str>>) -> Self {
+
+
+impl<'a> From<Option<Cow<'a, [u8]>>> for MaybeFragment<'a> {
+    fn from(value: Option<Cow<'a, [u8]>>) -> Self {
         Self(value.map(Into::into))
     }
 }
+
+
 
 impl<'a> From<Fragment<'a>> for MaybeFragment<'a> {
     fn from(value: Fragment<'a>) -> Self {

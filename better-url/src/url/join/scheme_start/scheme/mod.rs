@@ -16,7 +16,7 @@ impl BetterUrl {
                 SchemeType::NonSpecial     => self.join_scheme_ns  (scheme, rest),
             },
             false => {
-                *self = Self::after_scheme(scheme, rest)?;
+                *self = Self::after_scheme(scheme, rest.as_bytes())?;
                 Ok(())
             }
         }

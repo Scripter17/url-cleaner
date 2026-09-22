@@ -17,9 +17,14 @@ impl<'a> SpecialQueryIter<'a> {
         self.range_str(range).map(|x| unsafe {SpecialQuery::new_unchecked(x)})
     }
 
+    /// The remaining [`str`].
+    pub fn remainder_str(&self) -> Option<&'a str> {
+        self.0.remainder()
+    }
+
     /// The remaining [`SpecialQuery`].
     pub fn remainder(&self) -> Option<SpecialQuery<'a>> {
-        Some(unsafe {SpecialQuery::new_unchecked(self.0.remainder()?)})
+        Some(unsafe {SpecialQuery::new_unchecked(self.remainder_str()?)})
     }
 
     /// The [`SplitAmpersands`].

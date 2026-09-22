@@ -3,22 +3,14 @@
 use crate::prelude::*;
 
 impl<'a> MaybeQueryLike<'a> {
-    /// The [`QueryLikeType`].
-    pub fn r#type(&self) -> QueryLikeType {
-        match self {
-            Self::Query   (x) => x.r#type().into(),
-            Self::Fragment(_) => QueryLikeType::Fragment,
-        }
-    }
-
     /// The [`QueryLikeIter`].
     pub fn iter(&self) -> QueryLikeIter<'_> {
         self.into_iter()
     }
 
     /// A [`DoubleEndedIterator`] of the [`QueryLikeSegment`]s named `name`.
-    pub fn find_iter<'b>(&'b self, name: &str) -> impl DoubleEndedIterator<Item = QueryLikeSegment<'b>> {
-        self.iter().filter(move |x| x.name() == name)
+    pub fn find_iter<T: AsRef<[u8]>>(&self, name: T) -> impl DoubleEndedIterator<Item = QueryLikeSegment<'_>> {
+        self.iter().filter(move |x| x.name().decode() == name.as_ref())
     }
 
     /// The `index`th [`QueryLikeSegment`].
@@ -27,7 +19,7 @@ impl<'a> MaybeQueryLike<'a> {
     }
 
     /// The `index`th [`QueryLikeSegment`] named `name`.
-    pub fn find<'b>(&'b self, name: &str, index: isize) -> Option<QueryLikeSegment<'b>> {
-        self.find_iter(name).neg_nth(index)
+    pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<QueryLikeSegment<'_>> {
+        self.find_iter(name.as_ref()).neg_nth(index)
     }
 }

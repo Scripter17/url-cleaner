@@ -58,11 +58,13 @@ impl<'a> Ipv6Host<'a> {
     }
 }
 
-impl<'a> TryFrom<Cow<'a, str>> for Ipv6Host<'a> {
+
+
+impl<'a> TryFrom<Cow<'a, [u8]>> for Ipv6Host<'a> {
     type Error = InvalidIpv6Host;
 
-    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, addr, host) = make_ipv6_host(value)?;
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        let (_, addr, host) = make_ipv6_host(try_cow_bytes_to_str(value).map_err(|_| InvalidIpv6Host)?)?;
 
         Ok(Self {
             host,
@@ -70,6 +72,8 @@ impl<'a> TryFrom<Cow<'a, str>> for Ipv6Host<'a> {
         })
     }
 }
+
+
 
 impl<'a> TryFrom<Host<'a>> for Ipv6Host<'a> {
     type Error = Host<'a>;
@@ -86,10 +90,11 @@ impl<'a> TryFrom<FileHost<'a>> for Ipv6Host<'a> {
     type Error = FileHost<'a>;
 
     fn try_from(value: FileHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            FileHost::Ipv6(x) => x,
-            x                 => Err(x)?,
-        })
+        if let FileHost::Ipv6(x) = value {
+            Ok(x)
+        } else {
+            Err(value)
+        }
     }
 }
 
@@ -97,10 +102,11 @@ impl<'a> TryFrom<SpecialNotFileHost<'a>> for Ipv6Host<'a> {
     type Error = SpecialNotFileHost<'a>;
 
     fn try_from(value: SpecialNotFileHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            SpecialNotFileHost::Ipv6(x) => x,
-            x                           => Err(x)?,
-        })
+        if let SpecialNotFileHost::Ipv6(x) = value {
+            Ok(x)
+        } else {
+            Err(value)
+        }
     }
 }
 
@@ -108,10 +114,11 @@ impl<'a> TryFrom<NonSpecialHost<'a>> for Ipv6Host<'a> {
     type Error = NonSpecialHost<'a>;
 
     fn try_from(value: NonSpecialHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            NonSpecialHost::Ipv6(x) => x,
-            x                       => Err(x)?,
-        })
+        if let NonSpecialHost::Ipv6(x) = value {
+            Ok(x)
+        } else {
+            Err(value)
+        }
     }
 }
 

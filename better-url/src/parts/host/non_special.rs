@@ -24,20 +24,6 @@ impl<'a> NonSpecialHost<'a> {
         }
     }
 
-    /// Make a new [`Self::Opaque`] from a [`DomainHost`].
-    /// # Errors
-    /// If [`TryInto::try_into`] returns an error, that error is returned.
-    pub fn new_domain<T: TryInto<DomainHost<'a>>>(value: T) -> Result<Self, T::Error> {
-        Ok(value.try_into()?.into())
-    }
-
-    /// Make a new [`Self::Opaque`] from an [`Ipv4Host`].
-    /// # Errors
-    /// If [`TryInto::try_into`] returns an error, that error is returned.
-    pub fn new_ipv4<T: TryInto<Ipv4Host<'a>>>(value: T) -> Result<Self, T::Error> {
-        Ok(value.try_into()?.into())
-    }
-
     /// Make a new [`Self::Ipv6`].
     /// # Errors
     /// If [`TryInto::try_into`] returns an error, that error is returned.
@@ -111,11 +97,11 @@ impl<'a> NonSpecialHost<'a> {
 
 
 
-impl<'a> TryFrom<Cow<'a, str>> for NonSpecialHost<'a> {
+impl<'a> TryFrom<Cow<'a, [u8]>> for NonSpecialHost<'a> {
     type Error = InvalidNonSpecialHost;
 
-    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        Ok(match value.as_bytes() {
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        Ok(match &*value {
             b""        => EmptyHost ::default(     ) .into(),
             [b'[', ..] => Ipv6Host  ::new    (value)?.into(),
             _          => OpaqueHost::new    (value)?.into(),
@@ -125,41 +111,63 @@ impl<'a> TryFrom<Cow<'a, str>> for NonSpecialHost<'a> {
 
 
 
-impl<'a> From<Host<'a>> for NonSpecialHost<'a> {
-    fn from(value: Host<'a>) -> Self {
-        match value {
-            Host::Domain(x) => x.into(),
-            Host::Ipv4  (x) => x.into(),
+impl<'a> TryFrom<Host<'a>> for NonSpecialHost<'a> {
+    type Error = Host<'a>;
+
+    fn try_from(value: Host<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            Host::Domain(x) => x.try_into()?,
+            Host::Ipv4  (x) => x.try_into()?,
             Host::Ipv6  (x) => x.into(),
             Host::Opaque(x) => x.into(),
             Host::Empty (x) => x.into(),
-        }
+        })
     }
 }
 
-impl<'a> From<FileHost<'a>> for NonSpecialHost<'a> {
-    fn from(value: FileHost<'a>) -> Self {
-        match value {
-            FileHost::Domain(x) => x.into(),
-            FileHost::Ipv4  (x) => x.into(),
+impl<'a> TryFrom<FileHost<'a>> for NonSpecialHost<'a> {
+    type Error = FileHost<'a>;
+
+    fn try_from(value: FileHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            FileHost::Domain(x) => x.try_into()?,
+            FileHost::Ipv4  (x) => x.try_into()?,
             FileHost::Ipv6  (x) => x.into(),
             FileHost::Empty (x) => x.into(),
-        }
+        })
     }
 }
 
-impl<'a> From<SpecialNotFileHost<'a>> for NonSpecialHost<'a> {
-    fn from(value: SpecialNotFileHost<'a>) -> Self {
-        match value {
-            SpecialNotFileHost::Domain(x) => x.into(),
-            SpecialNotFileHost::Ipv4  (x) => x.into(),
+impl<'a> TryFrom<SpecialNotFileHost<'a>> for NonSpecialHost<'a> {
+    type Error = SpecialNotFileHost<'a>;
+
+    fn try_from(value: SpecialNotFileHost<'a>) -> Result<Self, Self::Error> {
+        Ok(match value {
+            SpecialNotFileHost::Domain(x) => x.try_into()?,
+            SpecialNotFileHost::Ipv4  (x) => x.try_into()?,
             SpecialNotFileHost::Ipv6  (x) => x.into(),
-        }
+        })
     }
 }
 
-impl<'a> From<DomainHost<'a>> for NonSpecialHost<'a> {fn from(value: DomainHost<'a>) -> Self {Self::Opaque(value.into())}}
-impl<'a> From<Ipv4Host  <'a>> for NonSpecialHost<'a> {fn from(value: Ipv4Host  <'a>) -> Self {Self::Opaque(value.into())}}
 impl<'a> From<Ipv6Host  <'a>> for NonSpecialHost<'a> {fn from(value: Ipv6Host  <'a>) -> Self {Self::Ipv6  (value)}}
 impl<'a> From<OpaqueHost<'a>> for NonSpecialHost<'a> {fn from(value: OpaqueHost<'a>) -> Self {Self::Opaque(value)}}
 impl<'a> From<EmptyHost <'a>> for NonSpecialHost<'a> {fn from(value: EmptyHost <'a>) -> Self {Self::Empty (value)}}
+
+impl<'a> TryFrom<DomainHost<'a>> for NonSpecialHost<'a> {
+    type Error = DomainHost<'a>;
+
+    /// Exists to make things like [`Host::new`] simpler but always returns [`Err`]
+    fn try_from(value: DomainHost<'a>) -> Result<Self, Self::Error> {
+        Err(value)
+    }
+}
+
+impl<'a> TryFrom<Ipv4Host<'a>> for NonSpecialHost<'a> {
+    type Error = Ipv4Host<'a>;
+
+    /// Exists to make things like [`Host::new`] simpler but always returns [`Err`]
+    fn try_from(value: Ipv4Host<'a>) -> Result<Self, Self::Error> {
+        Err(value)
+    }
+}

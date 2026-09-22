@@ -72,13 +72,15 @@ impl<'a> NonSpecialQuerySegment<'a> {
 
 
 
-impl<'a> From<Cow<'a, str>> for NonSpecialQuerySegment<'a> {
-    fn from(value: Cow<'a, str>) -> Self {
-        let (_, raw, value_start) = encode_non_special_query_segment(value);
+impl<'a> From<Cow<'a, [u8]>> for NonSpecialQuerySegment<'a> {
+    fn from(value: Cow<'a, [u8]>) -> Self {
+        let (_, raw, value_start) = encode_non_special_query_segment_bytes(value);
 
         Self {raw, value_start}
     }
 }
+
+
 
 impl<'a> From<QueryLikeSegment<'a>> for NonSpecialQuerySegment<'a> {
     fn from(value: QueryLikeSegment<'a>) -> Self {

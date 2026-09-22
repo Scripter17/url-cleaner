@@ -17,9 +17,14 @@ impl<'a> FragmentQueryIter<'a> {
         self.range_str(range).map(|x| unsafe {FragmentQuery::new_unchecked(x)})
     }
 
+    /// The remaining [`str`].
+    pub fn remainder_str(&self) -> Option<&'a str> {
+        self.0.remainder()
+    }
+
     /// The remaining [`FragmentQuery`].
     pub fn remainder(&self) -> Option<FragmentQuery<'a>> {
-        Some(unsafe {FragmentQuery::new_unchecked(self.0.remainder()?)})
+        Some(unsafe {FragmentQuery::new_unchecked(self.remainder_str()?)})
     }
 
     /// The [`SplitAmpersands`].

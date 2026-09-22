@@ -31,6 +31,22 @@ pub fn try_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, 
     Ok((true, try_cow_bytes_to_str(_percent_decode(value))?))
 }
 
+/// Try to losslessly percent decode bytes.
+/// # Errors
+/// If [`try_cow_bytes_to_str`] returns an error, that error is returned.
+#[expect(clippy::type_complexity, reason = "It's fine.")]
+pub fn try_percent_decode_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<(bool, Cow<'a, str>), (std::str::Utf8Error, Cow<'a, [u8]>)> {
+    let mut value = value.into();
+
+    if value.memchr(b'%').is_none() {
+        return Ok((false, unsafe {cow_bytes_to_str_unchecked(value)}));
+    }
+
+    _percent_decode_bytes(value.to_mut());
+
+    Ok((true, try_cow_bytes_to_str(value)?))
+}
+
 /// Lossily percent decode.
 pub fn lossy_percent_decode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let value = value.into();

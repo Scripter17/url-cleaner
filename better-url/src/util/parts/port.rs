@@ -27,3 +27,21 @@ pub fn make_maybe_port<'a, T: Into<Cow<'a, str>>>(value: Option<T>) -> Result<(b
         None                        => (false  , None              ),
     })
 }
+
+/// Make a [`Port`] from bytes.
+/// # Errors
+/// If `value` is not a valid port, returns the error [`InvalidPort`].
+pub fn make_port_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<(bool, u16, Cow<'a, str>), InvalidPort> {
+    make_port(try_cow_bytes_to_str(value).map_err(|_| InvalidPort)?)
+}
+
+/// Make a [`MaybePort`] from bytes.
+/// # Errors
+/// If [`make_port_bytes`] returns an error, that error is returned.
+#[expect(clippy::type_complexity, reason = "It's fine.")]
+pub fn make_maybe_port_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: Option<T>) -> Result<(bool, Option<(u16, Cow<'a, str>)>), InvalidPort> {
+    Ok(match value.map(make_port_bytes).transpose()? {
+        Some((changed, num, value)) => (changed, Some((num, value))),
+        None                        => (false  , None              ),
+    })
+}

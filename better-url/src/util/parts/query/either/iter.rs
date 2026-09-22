@@ -22,9 +22,14 @@ impl<'a> QueryIter<'a> {
         self.range_str(range).map(|x| unsafe {Query::new_unchecked(x, self.r#type)})
     }
 
+    /// The remaining [`str`].
+    pub fn remainder_str(&self) -> Option<&'a str> {
+        self.iter.remainder()
+    }
+
     /// The remaining [`Query`].
     pub fn remainder(&self) -> Option<Query<'a>> {
-        Some(unsafe {Query::new_unchecked(self.iter.remainder()?, self.r#type)})
+        Some(unsafe {Query::new_unchecked(self.remainder_str()?, self.r#type)})
     }
 
     /// The [`SplitAmpersands`].

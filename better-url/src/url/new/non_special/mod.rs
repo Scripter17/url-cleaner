@@ -8,8 +8,8 @@ mod opaque_path;
 
 impl BetterUrl {
     /// [`SchemeType::NonSpecial`].
-    pub(super) fn new_non_special(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
-        match rest.as_bytes() {
+    pub(super) fn new_non_special(scheme: Scheme<'_>, rest: &[u8]) -> Result<Self, InvalidUrl> {
+        match rest {
             [b'/', b'/', ..]  => Self::new_ns_host       (scheme, &rest[2..]),
             [b'/',       ..]  => Self::new_ns_path       (scheme, rest),
             _                 => Self::new_ns_opaque_path(scheme, rest),

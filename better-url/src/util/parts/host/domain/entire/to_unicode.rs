@@ -8,8 +8,8 @@ use crate::prelude::*;
 ///
 /// If `value` [`ends_in_a_number`], returns the error [`InvalidDomainHost`].
 ///
-/// If [`decode_domain_segments`] returns an error, that error is returned.
-pub fn decode_domain_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainHost> {
+/// If [`domain_segments_to_unicode`] returns an error, that error is returned.
+pub fn domain_host_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainHost> {
     let value = value.into();
 
     if value.is_empty() || value.len() > u32::MAX as usize {
@@ -20,12 +20,12 @@ pub fn decode_domain_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, 
         Err(InvalidDomainHost)?;
     }
 
-    let (changed, domain) = decode_domain_segments(value)?;
+    let (changed, domain) = domain_segments_to_unicode(value)?;
 
     Ok((changed, domain))
 }
 
 /// Decode a domain host literal without any validity checks.
-pub fn unchecked_decode_domain_host<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    unchecked_decode_domain_segments(value)
+pub fn unchecked_domain_host_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    unchecked_domain_segments_to_unicode(value)
 }

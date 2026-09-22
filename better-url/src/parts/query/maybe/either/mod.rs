@@ -14,21 +14,6 @@ pub enum MaybeQuery<'a> {
 }
 
 impl<'a> MaybeQuery<'a> {
-    /// Borrow as a [`str`].
-    pub fn as_str(&self) -> Option<&str> {
-        match self {
-            Self::Special   (x) => x.as_str(),
-            Self::NonSpecial(x) => x.as_str(),
-        }
-    }
-
-    /// The length of the [`BetterUrl::canon_get_search`] for this value.
-    pub fn search_len(&self) -> usize {
-        self.len().map_or(0, |x| x + 1)
-    }
-
-
-
     /// Either [`Self::new_special`] or [`Self::new_non_special`].
     pub fn new<T: Into<MaybeSpecialQuery<'a>> + Into<MaybeNonSpecialQuery<'a>>>(value: T, r#type: QueryType) -> Self {
         match r#type {
@@ -66,6 +51,29 @@ impl<'a> MaybeQuery<'a> {
     /// [`MaybeNonSpecialQuery::new_unchecked`].
     pub unsafe fn new_non_special_unchecked<T: Into<Cow<'a, str>>>(value: Option<T>) -> Self {
         unsafe {MaybeNonSpecialQuery::new_unchecked(value).into()}
+    }
+
+
+
+    /// Borrow as a [`str`].
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            Self::Special   (x) => x.as_str(),
+            Self::NonSpecial(x) => x.as_str(),
+        }
+    }
+
+    /// The length of the [`BetterUrl::canon_get_search`] for this value.
+    pub fn search_len(&self) -> usize {
+        self.len().map_or(0, |x| x + 1)
+    }
+
+    /// The [`QueryType`].
+    pub fn r#type(&self) -> QueryType {
+        match self {
+            Self::Special   (_) => QueryType::Special   ,
+            Self::NonSpecial(_) => QueryType::NonSpecial,
+        }
     }
 
 
@@ -131,7 +139,7 @@ impl<'a> TryFrom<QueryLike<'a>> for MaybeQuery<'a> {
     fn try_from(value: QueryLike<'a>) -> Result<Self, Self::Error> {
         match value {
             QueryLike::Query   (x) => Ok (x.into()),
-            QueryLike::Fragment(x) => Err(x)
+            QueryLike::Fragment(x) => Err(x       )
         }
     }
 }
@@ -151,7 +159,7 @@ impl<'a> TryFrom<QueryLikeSegment<'a>> for MaybeQuery<'a> {
     fn try_from(value: QueryLikeSegment<'a>) -> Result<Self, Self::Error> {
         match value {
             QueryLikeSegment::Query   (x) => Ok (x.into()),
-            QueryLikeSegment::Fragment(x) => Err(x),
+            QueryLikeSegment::Fragment(x) => Err(x       ),
         }
     }
 }
@@ -165,8 +173,8 @@ impl<'a> From<QuerySegment<'a>> for MaybeQuery<'a> {
     }
 }
 
-impl<'a> From<MaybeSpecialQuery            <'a> > for MaybeQuery<'a> {fn from(value: MaybeSpecialQuery            <'a> ) -> Self {Self::Special   (value)       }}
-impl<'a> From<MaybeNonSpecialQuery         <'a> > for MaybeQuery<'a> {fn from(value: MaybeNonSpecialQuery         <'a> ) -> Self {Self::NonSpecial(value)       }}
+impl<'a> From<MaybeSpecialQuery            <'a> > for MaybeQuery<'a> {fn from(value: MaybeSpecialQuery            <'a> ) -> Self {Self::Special   (value       )}}
+impl<'a> From<MaybeNonSpecialQuery         <'a> > for MaybeQuery<'a> {fn from(value: MaybeNonSpecialQuery         <'a> ) -> Self {Self::NonSpecial(value       )}}
 
 impl<'a> From<Option<SpecialQuery          <'a>>> for MaybeQuery<'a> {fn from(value: Option<SpecialQuery          <'a>>) -> Self {Self::Special   (value.into())}}
 impl<'a> From<Option<NonSpecialQuery       <'a>>> for MaybeQuery<'a> {fn from(value: Option<NonSpecialQuery       <'a>>) -> Self {Self::NonSpecial(value.into())}}

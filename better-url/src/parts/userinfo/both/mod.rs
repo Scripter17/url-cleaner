@@ -73,9 +73,11 @@ impl<'a> Userinfo<'a> {
     }
 }
 
-impl<'a> From<Cow<'a, str>> for Userinfo<'a> {
-    fn from(value: Cow<'a, str>) -> Self {
-        let (_, userinfo, password_start) = encode_userinfo(value);
+
+
+impl<'a> From<Cow<'a, [u8]>> for Userinfo<'a> {
+    fn from(value: Cow<'a, [u8]>) -> Self {
+        let (_, userinfo, password_start) = encode_userinfo_bytes(value);
 
         unsafe {
             Self::new_unchecked(userinfo, password_start)

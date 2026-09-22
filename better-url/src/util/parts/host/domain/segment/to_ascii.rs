@@ -27,26 +27,46 @@ const DATA: [u8; 256] = get_data();
 
 /// Encode a domain segment.
 ///
-/// If you know your input will be percent decoded, see [`encode_percent_decoded_domain_segment`].
+/// If you know your input will be percent decoded, see [`percent_decoded_domain_segment_to_ascii`].
+/// # Errors
+/// If [`try_percent_decode_bytes`] returns an error, returns the error [`InvalidDomainSegment`].
+///
+/// If [`percent_decoded_domain_segment_to_ascii`] returns an error, that error is returned.
+pub fn domain_segment_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
+    let (a, value) = try_percent_decode(value).map_err(|_| InvalidDomainSegment)?;
+    let (b, value) = percent_decoded_domain_segment_to_ascii(value)?;
+    Ok((a || b, value))
+}
+
+/// Encode a domain segment from bytes.
+///
+/// If you know your input will be percent decoded, see [`percent_decoded_domain_segment_to_ascii`].
 /// # Errors
 /// If [`try_percent_decode`] returns an error, returns the error [`InvalidDomainSegment`].
 ///
-/// If [`encode_percent_decoded_domain_segment`] returns an error, that error is returned.
-pub fn encode_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
-    let (a, value) = try_percent_decode(value).map_err(|_| InvalidDomainSegment)?;
-    let (b, value) = encode_percent_decoded_domain_segment(value)?;
+/// If [`percent_decoded_domain_segment_to_ascii`] returns an error, that error is returned.
+pub fn domain_segment_bytes_to_ascii<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
+    let (a, value) = try_percent_decode_bytes(value).map_err(|_| InvalidDomainSegment)?;
+    let (b, value) = percent_decoded_domain_segment_to_ascii(value)?;
     Ok((a || b, value))
 }
 
 /// Encode a percent decoded domain segment.
 ///
-/// If you know your input will be UTS46 mapped and normalized, see [`encode_normalized_domain_segment`].
+/// If you know your input will be UTS46 mapped and normalized, see [`normalized_domain_segment_to_ascii`].
 /// # Errors
-/// If [`encode_normalized_domain_segment`] returns an error, that error is returned.
-pub fn encode_percent_decoded_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
-    let (a, value) = uts46_map_normalize(value);
-    let (b, value) = encode_normalized_domain_segment(value)?;
-    Ok((a || b, value))
+/// If [`normalized_domain_segment_to_ascii`] returns an error, that error is returned.
+pub fn percent_decoded_domain_segment_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
+    let (a, value, class) = uts46_classify_map_normalize(value);
+
+    if class & 0b0001_0100 == 0b0001_0000 {
+        Err(InvalidDomainSegment)?
+    } else if class & 0b0000_0100 == 0b0000_0000 {
+        Ok((a, value))
+    } else {
+        let (b, value) = normalized_domain_segment_to_ascii(value)?;
+        Ok((a || b, value))
+    }
 }
 
 /// Encode a percent decoded and UTS46 mapped and normalized domain segment.
@@ -60,7 +80,7 @@ pub fn encode_percent_decoded_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T
 /// - If [`BidiDetail::parse`] returns [`BidiDetail::ForceAscii`], returns the error [`InvalidDomainSegment`].
 ///
 /// - If [`encode_punycode`] returns an error, returns the error [`InvalidDomainSegment`].
-pub fn encode_normalized_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
+pub fn normalized_domain_segment_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegment> {
     let value = value.into();
 
     match value.bytes().fold(0, |acc, b| acc | DATA[b as usize]) {

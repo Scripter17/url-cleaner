@@ -62,8 +62,8 @@ impl<'a> Normalizer<'a> {
 }
 
 impl<'a> From<Cow<'a, str>> for Normalizer<'a     > {fn from(value: Cow<'a, str>) -> Self {Self {x: value, i: 0, c: false}}}
-impl<'a> From<&'a str     > for Normalizer<'a     > {fn from(value: &'a str     ) -> Self {Cow::from(value).into()}}
-impl     From<String      > for Normalizer<'static> {fn from(value: String      ) -> Self {Cow::from(value).into()}}
+impl<'a> From<&'a str     > for Normalizer<'a     > {fn from(value: &'a str     ) -> Self {Cow::Borrowed    (value).into()}}
+impl     From<String      > for Normalizer<'static> {fn from(value: String      ) -> Self {Cow::<str>::Owned(value).into()}}
 
 impl<'a> std::fmt::Write for Normalizer<'a> {
     fn write_str(&mut self, s: &str) -> Result<(), std::fmt::Error> {

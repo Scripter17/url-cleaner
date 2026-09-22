@@ -2,24 +2,24 @@
 
 use crate::prelude::*;
 
-impl MaybeFragmentQuery<'_> {
+impl<'a> MaybeFragmentQuery<'a> {
     /// The [`FragmentQueryIter`].
     pub fn iter(&self) -> FragmentQueryIter<'_> {
         self.into_iter()
     }
 
-    /// [`FragmentQuery::find_iter`].
-    pub fn find_iter<'b>(&'b self, name: &str) -> impl DoubleEndedIterator<Item = FragmentQuerySegment<'b>> {
-        self.0.iter().flat_map(|x| x.find_iter(name))
+    /// A [`DoubleEndedIterator`] of the [`FragmentQuerySegment`]s named `name`.
+    pub fn find_iter<T: AsRef<[u8]>>(&self, name: T) -> impl DoubleEndedIterator<Item = FragmentQuerySegment<'_>> {
+        self.iter().filter(move |x| x.name().decode() == name.as_ref())
     }
 
-    /// [`FragmentQuery::get`].
+    /// The `index`th [`FragmentQuerySegment`].
     pub fn get(&self, index: isize) -> Option<FragmentQuerySegment<'_>> {
-        self.0.as_ref()?.get(index)
+        self.iter().neg_nth(index)
     }
 
-    /// [`FragmentQuery::find`].
-    pub fn find<'b>(&'b self, name: &str, index: isize) -> Option<FragmentQuerySegment<'b>> {
-        self.0.as_ref()?.find(name, index)
+    /// The `index`th [`FragmentQuerySegment`] named `name`.
+    pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<FragmentQuerySegment<'_>> {
+        self.find_iter(name.as_ref()).neg_nth(index)
     }
 }

@@ -98,7 +98,7 @@ pub struct JobConfig {
 
 - All result lines will be returned before responding to a close frame.
 
-    - Consequently, for performance, task messages should each contain multiple task lines.
+    - For annoying performance reasons, this means task messages should each contain multiple task lines.
 
 - Result messages are text.
 

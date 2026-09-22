@@ -45,13 +45,11 @@ impl<'a> Host<'a> {
     /// If [`Self::new_special_not_file`] returns an error, returns the error [`InvalidHost`].
     ///
     /// If [`Self::new_non_special`] returns an error, returns the error [`InvalidHost`].
-    pub fn new<T: TryInto<FileHost<'a>> + TryInto<SpecialNotFileHost<'a>> + TryInto<NonSpecialHost<'a>>>(value: T, scheme_type: SchemeType) -> Result<Self, InvalidHost>
-        where InvalidHost: From<<T as TryInto<FileHost<'a>>>::Error> + From<<T as TryInto<SpecialNotFileHost<'a>>>::Error> + From<<T as TryInto<NonSpecialHost<'a>>>::Error>
-    {
+    pub fn new<T: TryInto<FileHost<'a>> + TryInto<SpecialNotFileHost<'a>> + TryInto<NonSpecialHost<'a>>>(value: T, scheme_type: SchemeType) -> Result<Self, InvalidHost> {
         Ok(match scheme_type {
-            SchemeType::File           => Self::new_file            (value)?,
-            SchemeType::SpecialNotFile => Self::new_special_not_file(value)?,
-            SchemeType::NonSpecial     => Self::new_non_special     (value)?,
+            SchemeType::File           => Self::new_file            (value).map_err(|_| InvalidHost)?,
+            SchemeType::SpecialNotFile => Self::new_special_not_file(value).map_err(|_| InvalidHost)?,
+            SchemeType::NonSpecial     => Self::new_non_special     (value).map_err(|_| InvalidHost)?,
         })
     }
 

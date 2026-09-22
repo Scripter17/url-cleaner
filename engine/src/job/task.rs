@@ -54,7 +54,12 @@ impl TryFrom<&[u8]> for Task {
     type Error = MakeTaskError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        str::from_utf8(value)?.parse()
+        Ok(match value {
+            [b'{' | b'"'                  , ..] => serde_json::from_slice(value)?,
+            [b'a' ..= b'z' | b'A' ..= b'Z', ..] => BetterUrl::new(value)?.into(),
+            [] => Err(MakeTaskError::IgnoreLineNotIgnored)?,
+            _  => Err(MakeTaskError::OtherwiseInvalid)?
+        })
     }
 }
 

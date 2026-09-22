@@ -61,7 +61,13 @@ impl<'a> MaybeFragmentQuery<'a> {
     }
 }
 
-impl<'a> From<Option<Cow<'a, str>>> for MaybeFragmentQuery<'a> {fn from(value: Option<Cow<'a, str>>) -> Self {Self(value.map(Into::into))}}
+
+
+impl<'a> From<Option<Cow<'a, [u8]>>> for MaybeFragmentQuery<'a> {
+    fn from(value: Option<Cow<'a, [u8]>>) -> Self {
+        Self(value.map(Into::into))
+    }
+}
 
 impl<'a> From<MaybeQueryLike<'a>> for MaybeFragmentQuery<'a> {
     fn from(value: MaybeQueryLike<'a>) -> Self {

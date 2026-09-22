@@ -21,15 +21,15 @@ pub async fn r#do(instance: BetterUrl) {
         let mut buf  = Vec::new();
         let mut tasks = 0;
 
-        while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(18)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
+        while tokio::time::timeout(std::time::Duration::from_millis(1), stdin.take(2u64.pow(17)).read_to_end(&mut buf)).await.map(Result::unwrap) != Ok(0) {
             if let Some(i) = better_url::util::memrchr(&buf, b'\n') {
-                let temp = buf.split_off(i + 1);
+                let bytes = Bytes::copy_from_slice(unsafe {buf.get_unchecked(..i)});
 
-                tasks += better_url::util::MemchrLines {remainder: Some(&buf)}.filter(|line| !line.is_empty()).count();
+                sink.send(bytes.into()).await.unwrap();
 
-                sink.send(Bytes::from_owner(buf).into()).await.unwrap();
+                tasks += better_url::util::MemchrLines {remainder: Some(unsafe {buf.get_unchecked(..i)})}.filter(|line| !line.is_empty()).count();
 
-                buf = temp;
+                buf.drain(..=i);
             }
         }
 

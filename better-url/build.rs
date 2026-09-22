@@ -31,16 +31,6 @@ fn main() {
     let mut current_valid = false;
 
     for mut line in TABLE.lines() {
-        #[cfg(debug_assertions)]
-        if let Some(idna_unicode_version) = line.strip_prefix("# Version: ") {
-            let (a, b, c) = char::UNICODE_VERSION;
-            let rust_unicode_version = format!("{a}.{b}.{c}");
-
-            if rust_unicode_version != idna_unicode_version {
-                println!("cargo::warning=Rust has Unicode version {rust_unicode_version} but IdnaMappingTable.txt is from Unicode version {idna_unicode_version}.");
-            }
-        }
-
         line = line.split('#').next().expect("???");
 
         if line.is_empty() {

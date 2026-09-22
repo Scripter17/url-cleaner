@@ -5,8 +5,10 @@
 #![expect(clippy::missing_panics_doc, reason = "Internal tool. I can fix it when it breads.")]
 
 pub mod build;
+pub mod run;
 pub mod cleaner;
 pub mod tasks;
+pub mod url;
 pub mod bench;
 pub mod foldent;
 
@@ -39,10 +41,13 @@ use prelude::*;
 #[derive(Debug, Parser)]
 pub enum Args {
     Build(build::Args),
+    Run(run::Args),
     #[command(subcommand)]
     Cleaner(cleaner::Args),
     #[command(subcommand)]
     Tasks(tasks::Args),
+    #[command(subcommand)]
+    Url(url::Args),
     #[command(subcommand)]
     Bench(bench::Args),
     Foldent(foldent::Args),
@@ -53,8 +58,10 @@ impl Args {
     pub fn r#do(self) {
         match self {
             Self::Build  (args) => args.r#do(),
+            Self::Run    (args) => args.r#do(),
             Self::Cleaner(args) => args.r#do(),
             Self::Tasks  (args) => args.r#do(),
+            Self::Url    (args) => args.r#do(),
             Self::Bench  (args) => args.r#do(),
             Self::Foldent(args) => args.r#do(),
         }

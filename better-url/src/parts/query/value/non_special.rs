@@ -64,9 +64,9 @@ impl<'a> NonSpecialQueryValue<'a> {
     }
 }
 
-impl<'a> From<Cow<'a, str>> for NonSpecialQueryValue<'a> {
-    fn from(value: Cow<'a, str>) -> Self {
-        let (_, value) = encode_query_part(value);
+impl<'a> From<Cow<'a, [u8]>> for NonSpecialQueryValue<'a> {
+    fn from(value: Cow<'a, [u8]>) -> Self {
+        let (_, value) = encode_query_part_bytes(value);
 
         unsafe {
             Self::new_unchecked(value)

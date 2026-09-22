@@ -2,7 +2,7 @@
 
 use crate::prelude::*;
 
-impl MaybeNonSpecialQuery<'_> {
+impl<'a> MaybeNonSpecialQuery<'a> {
     /// [`NonSpecialQuery::set`].
     ///
     /// If [`Self::0`] is [`None`], `index` is 0 or 1, and `value` is [`Some`], creates a new [`FragmentQuery`] with [`FragmentQuerySegment::from_pair`].

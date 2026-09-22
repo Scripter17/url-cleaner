@@ -1,4 +1,71 @@
-//! Parts.
+//! Individual parts of URLs.
+//!
+//! These APIs are the core advantage of Better URL over most other URL implementations.
+//! They allow the various setters on [`BetterUrl`] to often just be a few very cheap checks and a [`String::replace_range`].
+//!
+//! A nice ergonimic feature of part types is the ability to construct a `Part<'a>` from a `&'a Part<'_>`, as well as a `MaybePart<'a>` from a `Part<'a>`, `Option<Part<'a>>`, `&'a Part<'_>`, `&'a Option<Part<'_>>`, or `Option<&'a Part<'_>>`.
+//!
+//! ```
+//! use better_url::prelude::*;
+//!
+//! let mut url = BetterUrl::new("https://example.com").unwrap();
+//!
+//! let mut query = SpecialQuery::new("all the expensive processing happens here");
+//!
+//! assert_eq!(query, "all%20the%20expensive%20processing%20happens%20here");
+//!
+//! // Dirt cheap.
+//! url.set_query(&query).unwrap();
+//!
+//! // Because `MaybeQuery<'a>` impls `From<&'a SpecialQuery<'_>>`, this can be done as many times as you want.
+//! url.set_query(&query).unwrap();
+//!
+//! // Though setting the same URL's query to the same value 3 times is a bit redundant.
+//! url.set_query(&query).unwrap();
+//!
+//! // And you can just pass ownership.
+//! url.set_query(query).unwrap();
+//! ```
+//!
+//! However please note that the constructors for these types aren't just "what would this input result in when parsing an appropriate URL?" or "what would this input result in in an appropriate URL's setter?".
+//!
+//! Specifically, tabs, newlines, and carrage returns are not detected or removed, [`Fragment`] and co. don't remove trailing C0-or-space codepoints, and [`OpaquePath`] always percent encodes a trailing space.
+//!
+//! ```
+//! use better_url::prelude::*;
+//!
+//! let mut url = BetterUrl::new("https://example.com").unwrap();
+//!
+//! // Implicit conversion into a `SpecialQuery`.
+//! url.set_query("abc\tdef").unwrap();
+//!
+//! assert_eq!(url.query_str(), Some("abc%09def"));
+//!
+//! // The "canon" APIs do emulate this behavior.
+//! url.canon_set_search("abc\tdef").unwrap();
+//!
+//! assert_eq!(url.query_str(), Some("abcdef"));
+//! ```
+//!
+//! This is because those are stupid. For example it'd require that [`Ipv6Host`] have separate constructors/types for special and non-special URLs.
+//! 
+//! ```
+//! use better_url::prelude::*;
+//!
+//! let mut url = BetterUrl::new("https://example.com").unwrap();
+//!
+//! url.canon_set_hostname("[::1]\\removed").unwrap();
+//!
+//! assert_eq!(url, "https://[::1]/");
+//!
+//!
+//!
+//! let mut url = BetterUrl::new("non-special://example.com").unwrap();
+//!
+//! url.canon_set_hostname("[::1]\\errored").unwrap_err();
+//!
+//! assert_eq!(url, "non-special://example.com");
+//! ```
 
 use crate::prelude::*;
 
@@ -18,13 +85,17 @@ pub use path::*;
 pub use query::*;
 pub use fragment::*;
 
-from_cow_impls!(
+
+
+from_cow_bytes!(
+    root;
+
     Userinfo, Username, Password,
 
     OpaquePath,
-    FilePath          , FilePathSegment          , FilePathSegments          ,
-    SpecialNotFilePath, SpecialNotFilePathSegment, SpecialNotFilePathSegments,
-    NonSpecialPath    , NonSpecialPathSegment    , NonSpecialPathSegments    ,
+    FilePath, FilePathSegments, FilePathSegment,
+    SpecialNotFilePath, SpecialNotFilePathSegments, SpecialNotFilePathSegment,
+    NonSpecialPath, NonSpecialPathSegments, NonSpecialPathSegment,
 
     SpecialQuery   , SpecialQuerySegment   , SpecialQueryName   , SpecialQueryValue   ,
     NonSpecialQuery, NonSpecialQuerySegment, NonSpecialQueryName, NonSpecialQueryValue,
@@ -33,44 +104,52 @@ from_cow_impls!(
     Fragment
 );
 
-try_from_cow_impls!(
+from_option_cow_bytes!(
+    root;
+
+    MaybeFragment,
+    MaybeFragmentQuery     , MaybeSpecialQuery     , MaybeNonSpecialQuery     ,
+    MaybeFragmentQueryValue, MaybeSpecialQueryValue, MaybeNonSpecialQueryValue
+);
+
+try_from_cow_bytes!(
+    root;
+
     Scheme,
+
     FileHost, SpecialNotFileHost, NonSpecialHost,
-    DomainHost, DomainSegment, DomainSegments,
+
+    DomainHost, DomainSegments, DomainSegment,
     Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost
 );
 
-from_option_cow_impls!(
-    MaybeSpecialQuery, MaybeNonSpecialQuery, MaybeFragmentQuery, MaybeFragment,
-    MaybeSpecialQueryValue, MaybeNonSpecialQueryValue, MaybeFragmentQueryValue
-);
 
 
-as_str_impls!(Scheme);
+as_str!(Scheme);
 
-as_str_impls!(Userinfo);
-as_str_impls!(Username, Password);
+as_str!(Userinfo);
+as_str!(Username, Password);
 
-as_str_impls!(
+as_str!(
     Host, FileHost, SpecialNotFileHost, NonSpecialHost,
     DomainHost, DomainSegment, DomainSegments,
     Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost
 );
 
-as_str_impls!(
+as_str!(
     Path,
     OpaquePath, SegmentedPath,
     SpecialNotFilePath, FilePath, NonSpecialPath
 );
 
-as_str_impls!(
+as_str!(
     PathSegment              , PathSegments              ,
     SpecialNotFilePathSegment, SpecialNotFilePathSegments,
     FilePathSegment          , FilePathSegments          ,
     NonSpecialPathSegment    , NonSpecialPathSegments
 );
 
-as_str_impls!(
+as_str!(
     Query    , ?MaybeQuery    , QuerySegment    , QueryName    , QueryValue    , ?MaybeQueryValue    ,
     QueryLike, ?MaybeQueryLike, QueryLikeSegment, QueryLikeName, QueryLikeValue, ?MaybeQueryLikeValue,
 
@@ -81,7 +160,7 @@ as_str_impls!(
     Fragment, ?MaybeFragment
 );
 
-borrowed_impls!(
+borrowed!(
     Scheme,
 
     Userinfo,

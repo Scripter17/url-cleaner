@@ -54,13 +54,20 @@ const CONTINUE_DATA: [u8; 256] = get_continue_data();
 /// # Errors
 /// If the scheme is invalid, returns the error [`InvalidScheme`].
 pub fn encode_scheme<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidScheme> {
+    encode_scheme_bytes(cow_str_to_bytes(value))
+}
+
+/// Encode a scheme from bytes.
+/// # Errors
+/// If the scheme is invalid, returns the error [`InvalidScheme`].
+pub fn encode_scheme_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidScheme> {
     let mut value = value.into();
 
-    if matches!(&*value, "http" | "https" | "ws" | "wss" | "file") {
-        return Ok((false, value));
+    if matches!(&*value, b"http" | b"https" | b"ws" | b"wss" | b"file") {
+        return Ok((false, unsafe {cow_bytes_to_str_unchecked(value)}));
     }
 
-    let mut bytes = value.bytes();
+    let mut bytes = value.iter().copied();
 
     let mut class = START_DATA[bytes.next().ok_or(InvalidScheme)? as usize];
 
@@ -69,10 +76,10 @@ pub fn encode_scheme<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'
     }
 
     Ok(match class {
-        0 => (false, value),
+        0 => (false, unsafe {cow_bytes_to_str_unchecked(value)}),
         1 => {
             value.to_mut().make_ascii_lowercase();
-            (true, value)
+            (true, unsafe {cow_bytes_to_str_unchecked(value)})
         },
         _ => Err(InvalidScheme)?
     })

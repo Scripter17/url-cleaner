@@ -68,9 +68,9 @@ impl<'a> NonSpecialPath<'a> {
 
 
 
-impl<'a> From<Cow<'a, str>> for NonSpecialPath<'a> {
-    fn from(value: Cow<'a, str>) -> Self {
-        let (_, value) = make_non_special_path(value);
+impl<'a> From<Cow<'a, [u8]>> for NonSpecialPath<'a> {
+    fn from(value: Cow<'a, [u8]>) -> Self {
+        let (_, value) = encode_non_special_path_bytes(value);
 
         unsafe {
             Self::new_unchecked(value)

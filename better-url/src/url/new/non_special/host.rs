@@ -4,20 +4,20 @@ use crate::prelude::*;
 
 impl BetterUrl {
     /// `non_special://...`
-    pub(super) fn new_ns_host(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
-        let (rest, fragment) = pop_fragment        (rest);
-        let (rest, query   ) = pop_query           (rest);
-        let (auth, path    ) = pop_non_special_path(rest);
+    pub(super) fn new_ns_host(scheme: Scheme<'_>, rest: &[u8]) -> Result<Self, InvalidUrl> {
+        let (rest, fragment) = pop_fragment_bytes        (rest);
+        let (rest, query   ) = pop_query_bytes           (rest);
+        let (auth, path    ) = pop_non_special_path_bytes(rest);
 
-        let (userinfo, host, port ) = split_auth(auth);
+        let (userinfo, host, port ) = split_auth_bytes(auth);
 
         if host.is_empty() && (userinfo.is_some() || port.is_some()) {
             Err(InvalidUrl::EmptyHostCantHaveUserinfoOrPort)?;
         }
 
         let userinfo = match userinfo {
-            None | Some("") | Some(":") => None,
-            Some(x)                     => Some(Userinfo::new(x)),
+            None | Some(b"") | Some(b":") => None,
+            Some(x)                       => Some(Userinfo::new(x)),
         };
 
         let host     = NonSpecialHost      ::new(host    )?;

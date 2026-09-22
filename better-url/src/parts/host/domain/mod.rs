@@ -178,11 +178,15 @@ impl<'a> DomainHost<'a> {
     /// # Errors
     /// If [`Self::new_normalized`] returns an error, that error is returned.
     pub unsafe fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
-        let (_, value) = uts46_map_normalize(value);
+        let (_, value, class) = uts46_classify_map_normalize(value);
 
-        unsafe {
-            Self::new_normalized(value)
-        }
+        Ok(if class & 0b0100_0100 == 0b0100_0000 {
+            Err(InvalidDomainHost)?
+        } else if class & 0b0100_0110 == 0b0000_0000 && !value.is_empty() && value.len() <= u32::MAX as usize {
+            unsafe {Self::new_raw(value)}
+        } else {
+            unsafe {Self::new_not_eian(value)}?
+        })
     }
 
     /// Make a new [`Self`] from a percent decoded and UTS46 map normalized value.
@@ -206,9 +210,9 @@ impl<'a> DomainHost<'a> {
     /// # Safety
     /// Requires that `value` be percent decoded and UTS46 map normalized and does not end in a number.
     /// # Errors
-    /// If [`encode_not_eian_domain_host`] returns an error, that error is returned.
+    /// If [`not_eian_domain_host_to_ascii`] returns an error, that error is returned.
     pub unsafe fn new_not_eian<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
-        let (_, value) = encode_not_eian_domain_host(value)?;
+        let (_, value) = not_eian_domain_host_to_ascii(value)?;
 
         unsafe {
             Ok(Self::new_raw(value))
@@ -253,11 +257,11 @@ impl<'a> DomainHost<'a> {
         (self.host, self.details)
     }
 
-    /// [`unchecked_decode_domain_host`].
-    pub fn decode(self) -> (Cow<'a, str>, DomainHostDetails) {
-        let (_, value) = unchecked_decode_domain_host(self.host);
+    /// [`unchecked_domain_host_to_unicode`].
+    pub fn to_unicode(self) -> Cow<'a, str> {
+        let (_, value) = unchecked_domain_host_to_unicode(self.host);
 
-        (value, self.details)
+        value
     }
 
     /// Turn into an owned [`Self`].
@@ -317,17 +321,21 @@ impl<'a> DomainHost<'a> {
     }
 }
 
-impl<'a> TryFrom<Cow<'a, str>> for DomainHost<'a> {
+
+
+impl<'a> TryFrom<Cow<'a, [u8]>> for DomainHost<'a> {
     type Error = InvalidDomainHost;
 
-    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, value) = encode_domain_host(value)?;
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        let (_, value) = domain_host_bytes_to_ascii(value)?;
 
         unsafe {
             Ok(Self::new_raw(value))
         }
     }
 }
+
+
 
 impl<'a> TryFrom<DomainSegment<'a>> for DomainHost<'a> {
     type Error = DomainSegment<'a>;
@@ -363,10 +371,11 @@ impl<'a> TryFrom<FileHost<'a>> for DomainHost<'a> {
     type Error = FileHost<'a>;
 
     fn try_from(value: FileHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            FileHost::Domain(x) => x,
-            x                   => Err(x)?,
-        })
+        if let FileHost::Domain(x) = value {
+            Ok(x)
+        } else {
+            Err(value)
+        }
     }
 }
 
@@ -374,10 +383,11 @@ impl<'a> TryFrom<SpecialNotFileHost<'a>> for DomainHost<'a> {
     type Error = SpecialNotFileHost<'a>;
 
     fn try_from(value: SpecialNotFileHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            SpecialNotFileHost::Domain(x) => x,
-            x                             => Err(x)?,
-        })
+        if let SpecialNotFileHost::Domain(x) = value {
+            Ok(x)
+        } else {
+            Err(value)
+        }
     }
 }
 
@@ -385,21 +395,6 @@ impl<'a> TryFrom<NonSpecialHost<'a>> for DomainHost<'a> {
     type Error = NonSpecialHost<'a>;
 
     fn try_from(value: NonSpecialHost<'a>) -> Result<Self, Self::Error> {
-        Ok(match value {
-            NonSpecialHost::Opaque(x) => x.try_into()?,
-            x                         => Err(x)?,
-        })
-    }
-}
-
-impl<'a> TryFrom<OpaqueHost<'a>> for DomainHost<'a> {
-    type Error = OpaqueHost<'a>;
-
-    fn try_from(value: OpaqueHost<'a>) -> Result<Self, Self::Error> {
-        // TODO: This is dumb.
-
-        let (host, _) = value.clone().into_parts();
-
-        host.try_into().map_err(|_| value)
+        Err(value)
     }
 }

@@ -7,6 +7,13 @@ pub fn encode_file_path_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, C
     percent_encode(value, PATH_SEGMENT)
 }
 
+/// Encode a [`FilePathSegment`] from bytes.
+pub fn encode_file_path_segment_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+    percent_encode_bytes(value, PATH_SEGMENT)
+}
+
+
+
 /// Convert a [`SpecialNotFilePathSegment`] into a [`FilePathSegment`].
 pub fn special_not_file_path_segment_to_file_path_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     (false, value.into())

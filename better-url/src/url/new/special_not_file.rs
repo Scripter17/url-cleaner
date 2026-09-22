@@ -1,25 +1,26 @@
+
 //! Special-not-file URLs.
 
 use crate::prelude::*;
 
 impl BetterUrl {
     /// [`SchemeType::SpecialNotFile`].
-    pub(super) fn new_special_not_file(scheme: Scheme<'_>, mut rest: &str) -> Result<Self, InvalidUrl> {
-        while matches!(rest.as_bytes(), [b'/' | b'\\', ..]) {
+    pub(super) fn new_special_not_file(scheme: Scheme<'_>, mut rest: &[u8]) -> Result<Self, InvalidUrl> {
+        while matches!(rest, [b'/' | b'\\', ..]) {
             rest = unsafe {rest.get_unchecked(1..)};
         }
 
-        let (rest, fragment) = pop_fragment    (rest);
-        let (rest, query   ) = pop_query       (rest);
-        let (auth, path    ) = pop_special_path(rest);
+        let (rest, fragment) = pop_fragment_bytes    (rest);
+        let (rest, query   ) = pop_query_bytes       (rest);
+        let (auth, path    ) = pop_special_path_bytes(rest);
 
-        let (userinfo, host, port) = split_auth(auth);
+        let (userinfo, host, port) = split_auth_bytes(auth);
 
 
 
         let userinfo = match userinfo {
-            None | Some("") | Some(":") => None,
-            Some(x)                     => Some(Userinfo::new(x)),
+            None | Some(b"") | Some(b":") => None,
+            Some(x)                       => Some(Userinfo::new(x)),
         };
 
         let host     = SpecialNotFileHost::new(host)?;

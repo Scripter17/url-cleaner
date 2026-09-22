@@ -13,23 +13,23 @@ static NFC: ComposingNormalizerBorrowed = ComposingNormalizerBorrowed::new_nfc()
 /// Decode an encoded domain segment literal.
 /// # Errors
 /// If `value` contains any byte in [`FORBIDDEN_DOMAIN_SEGMENT_LITERAL`], returns the error [`InvalidDomainSegment`].
-pub fn decode_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, BidiDetail), InvalidDomainSegment> {
+pub fn domain_segment_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, BidiDetail), InvalidDomainSegment> {
     let value = value.into();
 
     if value.bytes().any(|b| FORBIDDEN_DOMAIN_SEGMENT_LITERAL.contains(b)) {
         Err(InvalidDomainSegment)?;
     }
 
-    Ok(unchecked_decode_domain_segment(value))
+    Ok(unchecked_domain_segment_to_unicode(value))
 }
 
 /// Decode a domain segment literal without any validity checks.
-pub fn unchecked_decode_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>, BidiDetail) {
+pub fn unchecked_domain_segment_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>, BidiDetail) {
     let value = value.into();
 
     match value.strip_prefix("xn--") {
         Some(punycode) => {
-            match decode_domain_segment_punycode(punycode) {
+            match domain_segment_to_unicode_punycode(punycode) {
                 Ok(decoded) => match BidiDetail::parse(&decoded) {
                     BidiDetail::ForceAscii => (false, value         , BidiDetail::ForceAscii),
                     bidi_detail            => (true , decoded.into(), bidi_detail           ),
@@ -49,7 +49,7 @@ pub fn unchecked_decode_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> (
 /// If [`decode_punycode`] returns an error, returns the error [`InvalidDomainSegment`].
 ///
 /// If [`mostly_validate_domain_segment_unicode`] returns [`false`], returns the error [`InvalidDomainSegment`].
-pub fn decode_domain_segment_punycode(value: &str) -> Result<String, InvalidDomainSegment> {
+pub fn domain_segment_to_unicode_punycode(value: &str) -> Result<String, InvalidDomainSegment> {
     // If `value` is non-ASCII, violating 4.1, [`decode_punycode`] will return an error.
     // If `value` is empty, its decoding will be empty, violating 4.3.
     // If `value` is non-ASCII and ends in a `-`, it violates 4.1 anyway, so a false positive for violating 4.3 is fine.

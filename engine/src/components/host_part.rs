@@ -15,12 +15,12 @@ pub enum HostPart {
     /** [`Host::domain_origin_str`]. **/ DomainOrigin,
     /** [`Host::domain_normal_str`]. **/ DomainNormal,
 
-    /** [`Host::domain_prefix`] + [`DomainSegments::decode`]. **/ DecodedDomainPrefix,
-    /** [`Host::domain_middle`] + [`DomainSegment::decode`].  **/ DecodedDomainMiddle,
-    /** [`Host::domain_suffix`] + [`DomainSegments::decode`]. **/ DecodedDomainSuffix,
-    /** [`Host::domain_labels`] + [`DomainSegments::decode`]. **/ DecodedDomainLabels,
-    /** [`Host::domain_origin`] + [`DomainSegments::decode`]. **/ DecodedDomainOrigin,
-    /** [`Host::domain_normal`] + [`DomainSegments::decode`]. **/ DecodedDomainNormal,
+    /** [`Host::domain_prefix`] + [`DomainSegments::to_unicode`]. **/ DomainPrefixToUnicode,
+    /** [`Host::domain_middle`] + [`DomainSegment::to_unicode`].  **/ DomainMiddleToUnicode,
+    /** [`Host::domain_suffix`] + [`DomainSegments::to_unicode`]. **/ DomainSuffixToUnicode,
+    /** [`Host::domain_labels`] + [`DomainSegments::to_unicode`]. **/ DomainLabelsToUnicode,
+    /** [`Host::domain_origin`] + [`DomainSegments::to_unicode`]. **/ DomainOriginToUnicode,
+    /** [`Host::domain_normal`] + [`DomainSegments::to_unicode`]. **/ DomainNormalToUnicode,
 }
 
 impl HostPart {
@@ -36,12 +36,12 @@ impl HostPart {
             Self::DomainOrigin => host.domain_origin_str()?.into(),
             Self::DomainNormal => host.domain_normal_str()?.into(),
 
-            Self::DecodedDomainPrefix => host.domain_prefix()?.decode(),
-            Self::DecodedDomainMiddle => host.domain_middle()?.decode(),
-            Self::DecodedDomainSuffix => host.domain_suffix()?.decode(),
-            Self::DecodedDomainLabels => host.domain_labels()?.decode(),
-            Self::DecodedDomainOrigin => host.domain_origin()?.decode(),
-            Self::DecodedDomainNormal => host.domain_normal()?.decode(),
+            Self::DomainPrefixToUnicode => host.domain_prefix()?.to_unicode(),
+            Self::DomainMiddleToUnicode => host.domain_middle()?.to_unicode(),
+            Self::DomainSuffixToUnicode => host.domain_suffix()?.to_unicode(),
+            Self::DomainLabelsToUnicode => host.domain_labels()?.to_unicode(),
+            Self::DomainOriginToUnicode => host.domain_origin()?.to_unicode(),
+            Self::DomainNormalToUnicode => host.domain_normal()?.to_unicode(),
         })
     }
 }
@@ -60,12 +60,12 @@ impl FromStr for HostPart {
             "DomainOrigin" => Ok(Self::DomainOrigin),
             "DomainNormal" => Ok(Self::DomainNormal),
 
-            "DecodedDomainPrefix" => Ok(Self::DecodedDomainPrefix),
-            "DecodedDomainMiddle" => Ok(Self::DecodedDomainMiddle),
-            "DecodedDomainSuffix" => Ok(Self::DecodedDomainSuffix),
-            "DecodedDomainLabels" => Ok(Self::DecodedDomainLabels),
-            "DecodedDomainOrigin" => Ok(Self::DecodedDomainOrigin),
-            "DecodedDomainNormal" => Ok(Self::DecodedDomainNormal),
+            "DomainPrefixToUnicode" => Ok(Self::DomainPrefixToUnicode),
+            "DomainMiddleToUnicode" => Ok(Self::DomainMiddleToUnicode),
+            "DomainSuffixToUnicode" => Ok(Self::DomainSuffixToUnicode),
+            "DomainLabelsToUnicode" => Ok(Self::DomainLabelsToUnicode),
+            "DomainOriginToUnicode" => Ok(Self::DomainOriginToUnicode),
+            "DomainNormalToUnicode" => Ok(Self::DomainNormalToUnicode),
 
             _ => Err(InvalidHostPart),
         }

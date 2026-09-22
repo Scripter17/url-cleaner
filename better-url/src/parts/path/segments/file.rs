@@ -65,15 +65,17 @@ impl<'a> FilePathSegments<'a> {
 
 
 
-impl<'a> From<Cow<'a, str>> for FilePathSegments<'a> {
-    fn from(value: Cow<'a, str>) -> Self {
-        let (_, value) = encode_file_path_segments(value);
+impl<'a> From<Cow<'a, [u8]>> for FilePathSegments<'a> {
+    fn from(value: Cow<'a, [u8]>) -> Self {
+        let (_, value) = encode_file_path_segments_bytes(value);
 
         unsafe {
             Self::new_unchecked(value)
         }
     }
 }
+
+
 
 impl<'a> From<PathSegments<'a>> for FilePathSegments<'a> {
     fn from(value: PathSegments<'a>) -> Self {

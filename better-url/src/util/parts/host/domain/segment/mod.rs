@@ -1,11 +1,11 @@
 //! [`crate::prelude::DomainSegment`].
 
-mod encode;
-mod decode;
+mod to_ascii;
+mod to_unicode;
 mod joiners;
 mod idna_table;
 
-pub use encode::*;
-pub use decode::*;
+pub use to_ascii::*;
+pub use to_unicode::*;
 pub use joiners::*;
 pub use idna_table::*;

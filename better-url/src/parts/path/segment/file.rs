@@ -70,9 +70,13 @@ impl<'a> FilePathSegment<'a> {
 
 
 
-impl<'a> From<Cow<'a, str>> for FilePathSegment<'a> {
-    fn from(value: Cow<'a, str>) -> Self {
-        Self(encode_file_path_segment(value).1)
+impl<'a> From<Cow<'a, [u8]>> for FilePathSegment<'a> {
+    fn from(value: Cow<'a, [u8]>) -> Self {
+        let (_, value) = encode_file_path_segment_bytes(value);
+
+        unsafe {
+            Self::new_unchecked(value)
+        }
     }
 }
 

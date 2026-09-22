@@ -2,32 +2,24 @@
 
 use crate::prelude::*;
 
-impl MaybeQuery<'_> {
-    /// The [`QueryType`].
-    pub fn r#type(&self) -> QueryType {
-        match self {
-            Self::Special   (_) => QueryType::Special   ,
-            Self::NonSpecial(_) => QueryType::NonSpecial,
-        }
-    }
-
+impl<'a> MaybeQuery<'a> {
     /// The [`QueryIter`].
     pub fn iter(&self) -> QueryIter<'_> {
         self.into_iter()
     }
 
-    /// [`Query::find_iter`].
-    pub fn find_iter<'b>(&'b self, name: &str) -> impl DoubleEndedIterator<Item = QuerySegment<'b>> {
-        self.iter().filter(move |x| x.name() == name)
+    /// A [`DoubleEndedIterator`] of the [`QuerySegment`]s named `name`.
+    pub fn find_iter<T: AsRef<[u8]>>(&self, name: T) -> impl DoubleEndedIterator<Item = QuerySegment<'_>> {
+        self.iter().filter(move |x| x.name().decode() == name.as_ref())
     }
 
-    /// [`Query::get`].
+    /// The `index`th [`QuerySegment`].
     pub fn get(&self, index: isize) -> Option<QuerySegment<'_>> {
         self.iter().neg_nth(index)
     }
 
-    /// [`Query::find`].
-    pub fn find<'b>(&'b self, name: &str, index: isize) -> Option<QuerySegment<'b>> {
-        self.find_iter(name).neg_nth(index)
+    /// The `index`th [`QuerySegment`] named `name`.
+    pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<QuerySegment<'_>> {
+        self.find_iter(name.as_ref()).neg_nth(index)
     }
 }

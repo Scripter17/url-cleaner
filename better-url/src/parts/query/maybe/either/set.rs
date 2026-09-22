@@ -2,7 +2,7 @@
 
 use crate::prelude::*;
 
-impl MaybeQuery<'_> {
+impl<'a> MaybeQuery<'a> {
     /// Either [`MaybeSpecialQuery::set`] or [`MaybeNonSpecialQuery::set`].
     /// # Errors
     /// If [`MaybeSpecialQuery::set`] returns an error, that error is returned.

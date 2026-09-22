@@ -73,9 +73,7 @@ impl BetterUrl {
     /// If the URL would become too long, returns the error [`TooLong`].
     ///
     /// If the URL has a visible userinfo and/or port and the host is empty, returns the error [`CantBeNone`].
-    pub fn set_host<'a, T: TryInto<FileHost<'a>> + TryInto<SpecialNotFileHost<'a>> + TryInto<NonSpecialHost<'a>>>(&mut self, value: T) -> Result<(), SetHostError>
-        where InvalidHost: From<<T as TryInto<FileHost<'a>>>::Error> + From<<T as TryInto<SpecialNotFileHost<'a>>>::Error> + From<<T as TryInto<NonSpecialHost<'a>>>::Error>
-    {
+    pub fn set_host<'a, T: TryInto<FileHost<'a>> + TryInto<SpecialNotFileHost<'a>> + TryInto<NonSpecialHost<'a>>>(&mut self, value: T) -> Result<(), SetHostError> {
         let new = Host::new(value, self.scheme_type())?;
 
         if self.cannot_be_a_base() {

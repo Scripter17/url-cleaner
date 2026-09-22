@@ -7,6 +7,24 @@
 //! ## Performance
 //!
 //! See [`better-url-bench`](https://github.com/Scripter17/url-cleaner/tree/main/better-url-bench) for performance details.
+//!
+//! TL;DR: Better URL blows Servo's URL crate (`url`) out of the water, at least as of their 2.5.8.
+//!
+//! ## Parsing from bytes
+//!
+//! Please note that in addition to parsing [`BetterUrl`] and the various [`parts`] types from strings, you are also able to parse them from bytes.
+//!
+//! When doing so, invalid UTF-8 will be ignored.
+//!
+//! For most parts, this either has no effect (such as for [`Scheme`](parts::Scheme) and [`Ipv6Host`](parts::Ipv6Host)) or will percent encode the non-ASCII bytes as usual (such as with the many [`Query`](parts::Query) types).
+//!
+//! However, for [`DomainHost`](parts::DomainHost) and [`Ipv4Host`](parts::Ipv4Host) specifically, this has the weird effect that partially percent encoded UTF-8 multibyte sequences will be percent decoded into UTF-8 and then accepted.
+//!
+//! ```
+//! use better_url::prelude::*;
+//!
+//! assert_eq!(BetterUrl::new(b"https://%C2\xA1.com").unwrap(), "https://xn--7a.com/");
+//! ```
 
 mod url;
 pub mod parts;

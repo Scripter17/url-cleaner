@@ -22,9 +22,14 @@ impl<'a> QueryLikeIter<'a> {
         self.range_str(range).map(|x| unsafe {QueryLike::new_unchecked(x, self.r#type)})
     }
 
+    /// The remaining [`str`].
+    pub fn remainder_str(&self) -> Option<&'a str> {
+        self.iter.remainder()
+    }
+
     /// The remaining [`QueryLike`].
     pub fn remainder(&self) -> Option<QueryLike<'a>> {
-        Some(unsafe {QueryLike::new_unchecked(self.iter.remainder()?, self.r#type)})
+        Some(unsafe {QueryLike::new_unchecked(self.remainder_str()?, self.r#type)})
     }
 
     /// The [`SplitAmpersands`].

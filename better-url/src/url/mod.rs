@@ -64,7 +64,7 @@ impl BetterUrl {
 
     /// Make a new [`Self`] without doing any validity checks.
     /// # Safety
-    /// `serialization`, `splits` and `details` must be a valid output of [`Self::new`] and [`Self::into_parts`].
+    /// `serialization` and `details` must be a valid output of [`Self::new`] and [`Self::into_parts`].
     pub unsafe fn from_parts(serialization: UrlString, details: DenseUrlDetails) -> Self {
         Self {serialization, details}
     }
@@ -125,13 +125,16 @@ impl BetterUrl {
 
 
 
-impl TryFrom<Cow<'_, str>> for BetterUrl {
+impl TryFrom<Cow<'_, [u8]>> for BetterUrl {
     type Error = InvalidUrl;
 
-    fn try_from(value: Cow<'_, str>) -> Result<Self, Self::Error> {
-        let (_, value) = canonize_parser_input(value);
+    fn try_from(value: Cow<'_, [u8]>) -> Result<Self, Self::Error> {
+        let (_, value) = canonize_parser_input_bytes(value);
 
-        let (scheme, rest) = value.split_once(':').ok_or(InvalidUrl::MissingScheme)?;
+        let i = value.memchr(b':').ok_or(InvalidUrl::MissingScheme)?;
+
+        let scheme = unsafe {value.get_unchecked(.. i       )};
+        let rest   = unsafe {value.get_unchecked(   i + 1 ..)};
 
         Self::after_scheme(Scheme::new(scheme)?, rest)
     }
@@ -145,29 +148,14 @@ impl FromStr for BetterUrl {
     }
 }
 
-impl TryFrom<&str> for BetterUrl {
-    type Error = InvalidUrl;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        Cow::from(value).try_into()
-    }
-}
-
-impl TryFrom<String> for BetterUrl {
-    type Error = InvalidUrl;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        Cow::from(value).try_into()
-    }
-}
-
-impl TryFrom<&String> for BetterUrl {
-    type Error = InvalidUrl;
-
-    fn try_from(value: &String) -> Result<Self, Self::Error> {
-        Cow::from(value).try_into()
-    }
-}
+impl                 TryFrom<Cow<'_, str>> for BetterUrl {type Error = InvalidUrl; fn try_from(value: Cow<'_, str>) -> Result<Self, Self::Error> {cow_str_to_bytes(value).try_into()}}
+impl                 TryFrom<&str        > for BetterUrl {type Error = InvalidUrl; fn try_from(value: &str        ) -> Result<Self, Self::Error> {Cow::Borrowed     (   value           ).try_into()}}
+impl                 TryFrom< String     > for BetterUrl {type Error = InvalidUrl; fn try_from(value: String      ) -> Result<Self, Self::Error> {Cow::<str>::Owned (   value           ).try_into()}}
+impl                 TryFrom<&String     > for BetterUrl {type Error = InvalidUrl; fn try_from(value: &String     ) -> Result<Self, Self::Error> {Cow::Borrowed     (&**value           ).try_into()}}
+impl                 TryFrom<&[u8   ]    > for BetterUrl {type Error = InvalidUrl; fn try_from(value: &[u8   ]    ) -> Result<Self, Self::Error> {Cow::Borrowed     (   value           ).try_into()}}
+impl<const N: usize> TryFrom<&[u8; N]    > for BetterUrl {type Error = InvalidUrl; fn try_from(value: &[u8; N]    ) -> Result<Self, Self::Error> {Cow::Borrowed     (   value.as_slice()).try_into()}}
+impl                 TryFrom< Vec<u8>    > for BetterUrl {type Error = InvalidUrl; fn try_from(value: Vec<u8>     ) -> Result<Self, Self::Error> {Cow::<[u8]>::Owned(   value           ).try_into()}}
+impl                 TryFrom<&Vec<u8>    > for BetterUrl {type Error = InvalidUrl; fn try_from(value: &Vec<u8>    ) -> Result<Self, Self::Error> {Cow::Borrowed     (&**value           ).try_into()}}
 
 
 

@@ -81,6 +81,14 @@ impl<'a> MaybeQueryLike<'a> {
         }
     }
 
+    /// The [`QueryLikeType`].
+    pub fn r#type(&self) -> QueryLikeType {
+        match self {
+            Self::Query   (x) => x.r#type().into(),
+            Self::Fragment(_) => QueryLikeType::Fragment,
+        }
+    }
+
 
 
     /// If it's [`Self::Query`].

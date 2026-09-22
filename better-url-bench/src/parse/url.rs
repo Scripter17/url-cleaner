@@ -8,69 +8,68 @@ use better_url::prelude::*;
 
 /// Benchmark URL parsing.
 ///
-/// Compares against Servo's and Ada's URL crates, both with and without them calculating a SchemeDetails and HostDetails
+/// Gives each line of STDIN to each requested parser and outputs a TSV of timing info and whatnot.
 ///
-/// If you care about Better URL's domain part APIs like BetterUrl::domain_prefix, columns 6-8 and 12-14 are probably more relevant to you than columns 3-5 and 9-11
+/// - The first column is the line number.
 ///
-/// If you don't, columns 3-5 and 9-11 are probably more relevant to you than columns 6-8 and 12-14
+/// - The second column is the time it took BetterUrl::new to run the specified number of times.
 ///
-/// The columns are:
+/// The remaining columns are groups of 3 representing an alternate parser being compared to.
 ///
-/// 1. The line number
+/// - A group's first column is the time it took that group's parser to run the specified number of times.
 ///
-/// 2. The time it takes BetterUrl::new to complete
+/// - A group's second column is the group's time divided by Better URL's time.
 ///
-/// If --servo
+/// - A group's third column is the current sum of the group's times divided by the current sum of Better URL's times.
 ///
-/// 3. The time it takes url::Url::parse to complete
+/// There are currently 4 parsers to compare with:
 ///
-/// 4. Column 3 divided by column 2
+/// 1. Servo's URL crate (`url`).
 ///
-/// 5. The current sum of column 3 divided by the current sum of column 2
+/// 2. Servo's URL crate plus Better URL's HostDetails::parse.
 ///
-/// 6. The time it takes url::Url::parse, SchemeDetails::new_unchecked, and HostDetails::parse to complete
+/// 3. Ada's URL crate (`ada_url`).
 ///
-/// 7. Column 6 divided by column 2
+/// 4. Ada's URL crate plus Better URL's HostDetails::parse.
 ///
-/// 8. The current sum of column 6 divided by the current sum of column 2
+/// HostDetails::parse does some extra work, most notably a lookup into the Public Suffix List for domain hosts, that is required to implement some of Better URL's APIs.
 ///
-/// If --ada
-///
-/// 9. The time it takes ada_url::Url::parse to complete
-///
-/// 10. Column 9 divided by column 2
-///
-/// 11. The current sum of column 9 divided by the current sum of column 2
-///
-/// 12. The time it takes ada_url::Url::parse, SchemeDetails::new_unchecked, and HostDetails::parse to complete
-///
-/// 13. Column 12 divided by column 2
-///
-/// 14. The current sum of column 12 divided by the current sum of column 2
+/// If you don't need those APIs then comparing without the handicap is more relevant to you, but for Servo and Ada to achieve API pairity with Better URL they'd need to add it.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// Compare to Servo's URL crate.
-    #[arg(long)]
-    pub servo: bool,
-    /// Compare to Ada's URL crate.
-    #[arg(long)]
-    pub ada: bool,
     /// The number of times to do each URL.
     #[arg(long)]
     pub num: usize,
+    /// Compare to all parsers.
+    #[arg(long)]
+    pub all: bool,
+
+    /** Compare to Servo's URL crate.                         **/ #[arg(long)] pub servo     : bool,
+    /** Compare to Servo's URL crate plus HostDetails::parse. **/ #[arg(long)] pub servo_plus: bool,
+    /** Compare to Ada's URL crate.                           **/ #[arg(long)] pub ada       : bool,
+    /** Compare to Ada's URL crate plus HostDetails::parse.   **/ #[arg(long)] pub ada_plus  : bool,
 }
 
 impl Args {
     /// Do the command.
-    pub fn r#do(self) {
+    pub fn r#do(mut self) {
         let mut burl_total       = std::time::Duration::default();
         let mut servo_total      = std::time::Duration::default();
         let mut servo_plus_total = std::time::Duration::default();
         let mut ada_total        = std::time::Duration::default();
         let mut ada_plus_total   = std::time::Duration::default();
 
+        if self.all {
+            self.servo      = true;
+            self.servo_plus = true;
+            self.ada        = true;
+            self.ada_plus   = true;
+        }
+
         for (i, line) in std::io::stdin().lock().lines().map(Result::unwrap).enumerate() {
             print!("{i}");
+
+
 
             let timer = std::time::Instant::now();
 
@@ -95,6 +94,15 @@ impl Args {
                 let servo = timer.elapsed();
                 servo_total += servo;
 
+                let servo_factor       = servo      .as_secs_f64() / burl      .as_secs_f64();
+                let servo_total_factor = servo_total.as_secs_f64() / burl_total.as_secs_f64();
+
+                print!("\t{servo:.2?}\t{servo_factor:.2}\t{servo_total_factor:.2}");
+            }
+
+
+
+            if self.servo_plus {
                 let timer = std::time::Instant::now();
 
                 for _ in 0..self.num {
@@ -110,12 +118,9 @@ impl Args {
                 let servo_plus = timer.elapsed();
                 servo_plus_total += servo_plus;
 
-                let servo_factor            = servo           .as_secs_f64() / burl      .as_secs_f64();
-                let servo_total_factor      = servo_total     .as_secs_f64() / burl_total.as_secs_f64();
                 let servo_plus_factor       = servo_plus      .as_secs_f64() / burl      .as_secs_f64();
                 let servo_plus_total_factor = servo_plus_total.as_secs_f64() / burl_total.as_secs_f64();
 
-                print!("\t{servo:.2?}\t{servo_factor:.2}\t{servo_total_factor:.2}");
                 print!("\t{servo_plus:.2?}\t{servo_plus_factor:.2}\t{servo_plus_total_factor:.2}");
             }
 
@@ -131,6 +136,15 @@ impl Args {
                 let ada = timer.elapsed();
                 ada_total += ada;
 
+                let ada_factor       = ada      .as_secs_f64() / burl      .as_secs_f64();
+                let ada_total_factor = ada_total.as_secs_f64() / burl_total.as_secs_f64();
+
+                print!("\t{ada:.2?}\t{ada_factor:.2}\t{ada_total_factor:.2}");
+            }
+
+
+
+            if self.ada_plus {
                 let timer = std::time::Instant::now();
 
                 for _ in 0..self.num {
@@ -144,12 +158,9 @@ impl Args {
                 let ada_plus = timer.elapsed();
                 ada_plus_total += ada_plus;
 
-                let ada_factor            = ada           .as_secs_f64() / burl      .as_secs_f64();
-                let ada_total_factor      = ada_total     .as_secs_f64() / burl_total.as_secs_f64();
                 let ada_plus_factor       = ada_plus      .as_secs_f64() / burl      .as_secs_f64();
                 let ada_plus_total_factor = ada_plus_total.as_secs_f64() / burl_total.as_secs_f64();
 
-                print!("\t{ada:.2?}\t{ada_factor:.2}\t{ada_total_factor:.2}");
                 print!("\t{ada_plus:.2?}\t{ada_plus_factor:.2}\t{ada_plus_total_factor:.2}");
             }
 

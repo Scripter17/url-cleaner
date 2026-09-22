@@ -86,11 +86,26 @@ impl<'a> TryFrom<Cow<'a, str>> for Port<'a> {
     }
 }
 
+impl<'a> TryFrom<Cow<'a, [u8]>> for Port<'a> {
+    type Error = InvalidPort;
+
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        let (_, num, value) = make_port_bytes(value)?;
+
+        Ok(Self {
+            port: value,
+            port_num: num,
+        })
+    }
+}
+
+
+
 impl<'a> TryFrom<&'a str> for Port<'a> {
     type Error = InvalidPort;
 
     fn try_from(value: &'a str) -> Result<Self, Self::Error> {
-        Cow::from(value).try_into()
+        Cow::Borrowed(value).try_into()
     }
 }
 
@@ -98,7 +113,7 @@ impl TryFrom<String> for Port<'static> {
     type Error = InvalidPort;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        Cow::from(value).try_into()
+        Cow::<str>::Owned(value).try_into()
     }
 }
 
@@ -107,6 +122,24 @@ impl FromStr for Port<'static> {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         Ok(Port::try_from(value)?.into_owned())
+    }
+}
+
+
+
+impl<'a> TryFrom<&'a [u8]> for Port<'a> {
+    type Error = InvalidPort;
+
+    fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
+        Cow::Borrowed(value).try_into()
+    }
+}
+
+impl TryFrom<Vec<u8>> for Port<'static> {
+    type Error = InvalidPort;
+
+    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+        Cow::<[u8]>::Owned(value).try_into()
     }
 }
 

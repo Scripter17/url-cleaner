@@ -32,7 +32,7 @@ impl Test {
     fn r#do(self) {
         println!("{self:?}");
 
-        match encode_domain_host(self.input) {
+        match domain_host_to_ascii(self.input) {
             Ok((_, encoded)) => assert_eq!(encoded, self.output.unwrap()),
             Err(_) => assert!(self.output.is_none_or(|x| x.is_empty()))
         }

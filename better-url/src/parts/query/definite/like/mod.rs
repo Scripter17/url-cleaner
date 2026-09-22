@@ -21,11 +21,6 @@ impl<'a> QueryLike<'a> {
         }
     }
 
-    /// [`Self::len`] + 1 for the `?`.
-    pub fn search_len(&self) -> usize {
-        self.len() + 1
-    }
-
     /// The [`QueryLikeType`].
     pub fn r#type(&self) -> QueryLikeType {
         match self {

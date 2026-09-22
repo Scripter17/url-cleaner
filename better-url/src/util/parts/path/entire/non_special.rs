@@ -2,62 +2,65 @@
 
 use crate::prelude::*;
 
-/// Make a [`NonSpecialPath`].
+/// encode a [`NonSpecialPath`].
 ///
-/// Specifically, [`encode_non_special_path`] + [`resolve_non_special_path`].
+/// Specifically, [`percent_encode_non_special_path`] + [`resolve_non_special_path`].
 /// # Examples
 /// ```
 /// use better_url::util::*;
 ///
-/// assert_eq!(make_non_special_path(""            ), (false, ""         .into()));
+/// assert_eq!(encode_non_special_path(""            ), (false, ""         .into()));
 ///
-/// assert_eq!(make_non_special_path("abc"         ), (true , "/abc"     .into()));
+/// assert_eq!(encode_non_special_path("abc"         ), (true , "/abc"     .into()));
 ///
-/// assert_eq!(make_non_special_path("/abc/."      ), (true , "/abc/"    .into()));
-/// assert_eq!(make_non_special_path("/abc/.."     ), (true , "/"        .into()));
-/// assert_eq!(make_non_special_path("/abc/./ghi/" ), (true , "/abc/ghi/".into()));
-/// assert_eq!(make_non_special_path("/abc/../ghi/"), (true , "/ghi/"    .into()));
+/// assert_eq!(encode_non_special_path("/abc/."      ), (true , "/abc/"    .into()));
+/// assert_eq!(encode_non_special_path("/abc/.."     ), (true , "/"        .into()));
+/// assert_eq!(encode_non_special_path("/abc/./ghi/" ), (true , "/abc/ghi/".into()));
+/// assert_eq!(encode_non_special_path("/abc/../ghi/"), (true , "/ghi/"    .into()));
 ///
-/// assert_eq!(make_non_special_path("/."          ), (true , "/"        .into()));
-/// assert_eq!(make_non_special_path("/.."         ), (true , "/"        .into()));
-/// assert_eq!(make_non_special_path("/./ghi/"     ), (true , "/ghi/"    .into()));
-/// assert_eq!(make_non_special_path("/../ghi/"    ), (true , "/ghi/"    .into()));
+/// assert_eq!(encode_non_special_path("/."          ), (true , "/"        .into()));
+/// assert_eq!(encode_non_special_path("/.."         ), (true , "/"        .into()));
+/// assert_eq!(encode_non_special_path("/./ghi/"     ), (true , "/ghi/"    .into()));
+/// assert_eq!(encode_non_special_path("/../ghi/"    ), (true , "/ghi/"    .into()));
 ///
-/// assert_eq!(make_non_special_path("/c:/."       ), (true , "/c:/"     .into()));
-/// assert_eq!(make_non_special_path("/c:/.."      ), (true , "/"        .into()));
-/// assert_eq!(make_non_special_path("/c:/./ghi/"  ), (true , "/c:/ghi/" .into()));
-/// assert_eq!(make_non_special_path("/c:/../ghi/" ), (true , "/ghi/"    .into()));
+/// assert_eq!(encode_non_special_path("/c:/."       ), (true , "/c:/"     .into()));
+/// assert_eq!(encode_non_special_path("/c:/.."      ), (true , "/"        .into()));
+/// assert_eq!(encode_non_special_path("/c:/./ghi/"  ), (true , "/c:/ghi/" .into()));
+/// assert_eq!(encode_non_special_path("/c:/../ghi/" ), (true , "/ghi/"    .into()));
 /// ```
-pub fn make_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = encode_non_special_path (value);
-    let (b, value) = resolve_non_special_path(value);
+pub fn encode_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    let (a, value) = percent_encode_non_special_path(value);
+    let (b, value) = resolve_non_special_path       (value);
 
     (a || b, value)
 }
 
 /// Do just the percent encoding for a [`NonSpecialPath`].
 ///
-/// See [`make_non_special_path`] for the full process.
-pub fn encode_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+/// For the full process, see [`encode_non_special_path`].
+pub fn percent_encode_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     encode_non_special_path_segments(value)
 }
 
 
 
-/// Convert an [`OpaquePath`] into a [`NonSpecialPath`].
-pub fn opaque_path_to_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let mut value = value.into();
+/// encode a [`NonSpecialPath`] from bytes.
+///
+/// Specifically, [`percent_encode_non_special_path`] + [`resolve_non_special_path`].
+pub fn encode_non_special_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+    let (a, value) = percent_encode_non_special_path_bytes(value);
+    let (b, value) = resolve_non_special_path             (value);
 
-    if value.is_empty() {
-        return (false, value);
-    }
-
-    value.to_mut().insert(0, '/');
-
-    let (_, value) = resolve_non_special_path_range(value, ..);
-
-    (true, value)
+    (a || b, value)
 }
+
+/// Do just the percent encoding for a [`NonSpecialPath`].
+///
+/// For the full process, see [`encode_non_special_path_bytes`].
+pub fn percent_encode_non_special_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+    encode_non_special_path_segments_bytes(value)
+}
+
 
 
 
@@ -81,6 +84,8 @@ pub fn resolve_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, C
 
     (changed, value)
 }
+
+
 
 /// Resolve an encoded non-special path using only the segments in `range`.
 /// # Panics
@@ -164,4 +169,21 @@ pub fn resolve_non_special_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<
     }
 
     (changed, unsafe {cow_bytes_to_str_unchecked(value)})
+}
+
+
+
+/// Convert an [`OpaquePath`] into a [`NonSpecialPath`].
+pub fn opaque_path_to_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    let mut value = value.into();
+
+    if value.is_empty() {
+        return (false, value);
+    }
+
+    value.to_mut().insert(0, '/');
+
+    let (_, value) = resolve_non_special_path_range(value, ..);
+
+    (true, value)
 }

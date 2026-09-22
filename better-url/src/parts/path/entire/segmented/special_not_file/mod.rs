@@ -48,9 +48,9 @@ impl<'a> SpecialNotFilePath<'a> {
 
 
 
-impl<'a> From<Cow<'a, str>> for SpecialNotFilePath<'a> {
-    fn from(value: Cow<'a, str>) -> Self {
-        let (_, value) = make_special_not_file_path(value);
+impl<'a> From<Cow<'a, [u8]>> for SpecialNotFilePath<'a> {
+    fn from(value: Cow<'a, [u8]>) -> Self {
+        let (_, value) = encode_special_not_file_path_bytes(value);
 
         unsafe {
             Self::new_unchecked(value)

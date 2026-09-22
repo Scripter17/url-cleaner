@@ -4,17 +4,34 @@ use crate::prelude::*;
 
 /// Encode a [`Username`].
 pub fn encode_username<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode(value, USERINFO)
+    encode_username_bytes(cow_str_to_bytes(value))
 }
 
 /// Encode a [`Password`].
 pub fn encode_password<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode(value, USERINFO)
+    encode_password_bytes(cow_str_to_bytes(value))
 }
 
 /// Encode a [`Userinfo`].
 pub fn encode_userinfo<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>, Option<NonZero<usize>>) {
-    let mut value = cow_str_to_bytes(value);
+    encode_userinfo_bytes(cow_str_to_bytes(value))
+}
+
+
+
+/// Encode a [`Username`] from bytes.
+pub fn encode_username_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+    percent_encode_bytes(value, USERINFO)
+}
+
+/// Encode a [`Password`] from bytes.
+pub fn encode_password_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+    percent_encode_bytes(value, USERINFO)
+}
+
+/// Encode a [`Userinfo`] from bytes.
+pub fn encode_userinfo_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>, Option<NonZero<usize>>) {
+    let mut value = value.into();
 
     let mut colon = value.memchr(b':');
 

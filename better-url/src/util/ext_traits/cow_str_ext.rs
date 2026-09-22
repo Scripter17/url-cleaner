@@ -32,12 +32,12 @@ impl CowStrExt for Cow<'_, str> {
             match self {
                 Cow::Owned(x) => {
                     match range.end_bound() {
-                        Bound::Unbounded => {},
+                        Bound::Unbounded    => {},
                         Bound::Excluded(&y) => x.as_mut_vec().set_len(y),
                         Bound::Included(&y) => x.as_mut_vec().set_len(y + 1),
                     }
                     match range.start_bound() {
-                        Bound::Unbounded => {},
+                        Bound::Unbounded    => {},
                         Bound::Excluded(&y) => {x.as_mut_vec().drain(..=y);},
                         Bound::Included(&y) => {x.as_mut_vec().drain(.. y);},
                     }

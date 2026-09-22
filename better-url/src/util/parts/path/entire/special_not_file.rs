@@ -2,44 +2,63 @@
 
 use crate::prelude::*;
 
-/// Make a [`SpecialNotFilePath`].
+/// encode a [`SpecialNotFilePath`].
 ///
-/// Specifically, [`encode_special_not_file_path`] + [`resolve_special_not_file_path`].
+/// Specifically, [`percent_encode_special_not_file_path`] + [`resolve_special_not_file_path`].
 /// # Examples
 /// ```
 /// use better_url::util::*;
 ///
-/// assert_eq!(make_special_not_file_path(""            ), (true, "/"        .into()));
+/// assert_eq!(encode_special_not_file_path(""            ), (true, "/"        .into()));
 ///
-/// assert_eq!(make_special_not_file_path("abc"         ), (true, "/abc"     .into()));
+/// assert_eq!(encode_special_not_file_path("abc"         ), (true, "/abc"     .into()));
 ///
-/// assert_eq!(make_special_not_file_path("/abc/."      ), (true, "/abc/"    .into()));
-/// assert_eq!(make_special_not_file_path("/abc/.."     ), (true, "/"        .into()));
-/// assert_eq!(make_special_not_file_path("/abc/./ghi/" ), (true, "/abc/ghi/".into()));
-/// assert_eq!(make_special_not_file_path("/abc/../ghi/"), (true, "/ghi/"    .into()));
+/// assert_eq!(encode_special_not_file_path("/abc/."      ), (true, "/abc/"    .into()));
+/// assert_eq!(encode_special_not_file_path("/abc/.."     ), (true, "/"        .into()));
+/// assert_eq!(encode_special_not_file_path("/abc/./ghi/" ), (true, "/abc/ghi/".into()));
+/// assert_eq!(encode_special_not_file_path("/abc/../ghi/"), (true, "/ghi/"    .into()));
 ///
-/// assert_eq!(make_special_not_file_path("/."          ), (true, "/"        .into()));
-/// assert_eq!(make_special_not_file_path("/.."         ), (true, "/"        .into()));
-/// assert_eq!(make_special_not_file_path("/./ghi/"     ), (true, "/ghi/"    .into()));
-/// assert_eq!(make_special_not_file_path("/../ghi/"    ), (true, "/ghi/"    .into()));
+/// assert_eq!(encode_special_not_file_path("/."          ), (true, "/"        .into()));
+/// assert_eq!(encode_special_not_file_path("/.."         ), (true, "/"        .into()));
+/// assert_eq!(encode_special_not_file_path("/./ghi/"     ), (true, "/ghi/"    .into()));
+/// assert_eq!(encode_special_not_file_path("/../ghi/"    ), (true, "/ghi/"    .into()));
 ///
-/// assert_eq!(make_special_not_file_path("/c:/."       ), (true, "/c:/"     .into()));
-/// assert_eq!(make_special_not_file_path("/c:/.."      ), (true, "/"        .into()));
-/// assert_eq!(make_special_not_file_path("/c:/./ghi/"  ), (true, "/c:/ghi/" .into()));
-/// assert_eq!(make_special_not_file_path("/c:/../ghi/" ), (true, "/ghi/"    .into()));
+/// assert_eq!(encode_special_not_file_path("/c:/."       ), (true, "/c:/"     .into()));
+/// assert_eq!(encode_special_not_file_path("/c:/.."      ), (true, "/"        .into()));
+/// assert_eq!(encode_special_not_file_path("/c:/./ghi/"  ), (true, "/c:/ghi/" .into()));
+/// assert_eq!(encode_special_not_file_path("/c:/../ghi/" ), (true, "/ghi/"    .into()));
 /// ```
-pub fn make_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = encode_special_not_file_path (value);
-    let (b, value) = resolve_special_not_file_path(value);
+pub fn encode_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    let (a, value) = percent_encode_special_not_file_path(value);
+    let (b, value) = resolve_special_not_file_path       (value);
 
     (a || b, value)
 }
 
 /// Do just the percent encoding and slash unbacking for a [`SpecialNotFilePath`].
 ///
-/// For the full process, see [`make_special_not_file_path`].
-pub fn encode_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+/// For the full process, see [`encode_special_not_file_path`].
+pub fn percent_encode_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     encode_special_not_file_path_segments(value)
+}
+
+
+
+/// encode a [`SpecialNotFilePath`] from bytes.
+///
+/// Specifically, [`percent_encode_special_not_file_path`] + [`resolve_special_not_file_path`].
+pub fn encode_special_not_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+    let (a, value) = percent_encode_special_not_file_path_bytes(value);
+    let (b, value) = resolve_special_not_file_path             (value);
+
+    (a || b, value)
+}
+
+/// Do just the percent encoding and slash unbacking for a [`SpecialNotFilePath`].
+///
+/// For the full process, see [`encode_special_not_file_path_bytes`].
+pub fn percent_encode_special_not_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+    encode_special_not_file_path_segments_bytes(value)
 }
 
 
@@ -59,15 +78,11 @@ pub fn non_special_path_to_special_not_file_path<'a, T: Into<Cow<'a, str>>>(valu
         }
     }
 
+    if changed {
+        value = resolve_special_not_file_path_range(value, ..).1;
+    }
+
     (changed, value)
-}
-
-/// Convert an [`OpaquePath`] into a [`SpecialNotFilePath`].
-pub fn opaque_path_to_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = opaque_path_to_non_special_path          (value);
-    let (b, value) = non_special_path_to_special_not_file_path(value);
-
-    (a || b, value)
 }
 
 
@@ -97,4 +112,19 @@ pub fn resolve_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bo
 pub fn resolve_special_not_file_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<usize>>(value: T, range: B) -> (bool, Cow<'a, str>) {
     // Every valid special path literal is a valid non-special path literal.
     resolve_non_special_path_range(value, range)
+}
+
+
+
+/// Convert an [`OpaquePath`] into a [`SpecialNotFilePath`].
+pub fn opaque_path_to_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    let mut value = value.into();
+
+    value.to_mut().insert(0, '/');
+
+    let (_, value) = forward_slashes(value);
+
+    let (_, value) = resolve_special_not_file_path_range(value, ..);
+
+    (true, value)
 }

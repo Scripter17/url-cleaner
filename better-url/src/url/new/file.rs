@@ -4,28 +4,28 @@ use crate::prelude::*;
 
 impl BetterUrl {
     /// [`SchemeType::File`].
-    pub(super) fn new_file(scheme: Scheme<'_>, rest: &str) -> Result<Self, InvalidUrl> {
+    pub(super) fn new_file(scheme: Scheme<'_>, rest: &[u8]) -> Result<Self, InvalidUrl> {
         // TODO: What?
-        let (host, path, query, fragment) = match rest.as_bytes() {
+        let (host, path, query, fragment) = match rest {
             [b'/' | b'\\', b'/' | b'\\', b'a'..=b'z' | b'A'..=b'Z', b':' | b'|'] |
             [b'/' | b'\\', b'/' | b'\\', b'a'..=b'z' | b'A'..=b'Z', b':' | b'|', b'/' | b'\\' | b'?' | b'#', ..] => {
-                let (path, query, fragment) = split_pqf(&rest[1..]);
+                let (path, query, fragment) = split_pqf_bytes(&rest[1..]);
 
-                ("", path, query, fragment)
+                (b"".as_slice(), path, query, fragment)
             },
             [b'/' | b'\\', b'/' | b'\\', ..] => {
                 let rest = &rest[2..];
 
-                let (rest, fragment) = pop_fragment    (rest);
-                let (rest, query   ) = pop_query       (rest);
-                let (host, path    ) = pop_special_path(rest);
+                let (rest, fragment) = pop_fragment_bytes    (rest);
+                let (rest, query   ) = pop_query_bytes       (rest);
+                let (host, path    ) = pop_special_path_bytes(rest);
 
                 (host, path, query, fragment)
             },
             _ => {
-                let (path, query, fragment) = split_pqf(rest);
+                let (path, query, fragment) = split_pqf_bytes(rest);
 
-                ("", path, query, fragment)
+                (b"".as_slice(), path, query, fragment)
             }
         };
 
