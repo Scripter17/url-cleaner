@@ -7,6 +7,14 @@ use clap::Parser;
 use better_url::prelude::*;
 
 /// Entire.
+///
+/// The columns are:
+///
+/// 1. The line number.
+///
+/// 2. Time time it took to parse a Query of type QueryType::Special the specified number of times.
+///
+/// 3. Time time it took to parse a Query of type QueryType::NonSpecial the specified number of times.
 #[derive(Debug, Parser)]
 pub struct Args {
     /// The amount to do.

@@ -4,52 +4,65 @@ A basic benchmarker for [Better URL](../better-url), including comparing it with
 
 ## Findings
 
+Please note that this is comparing against Servo's URL crate (`url`) at version 2.5.8 and Ada's URL crate (`ada-url`) at version 4.0.0.
+
+Presumably future versions of those crates will have optimizations that make the below numbers wrong.
+
+### Parsing
+
+#### URLs
+
 Please note that Better URL's parser also computes a HostDetails, which provides details for the URL's host.
 
 For domain hosts, this is based on the public suffix of the domain, and thus requires a lookup into the Public Suffix List.
 
-This is used to provide APIs like `BetterUrl::domain_prefix`.
+This is used to provide APIs like `BetterUrl::domain_prefix`, but causes performance overhead that you may or may not want to factor in when comparing with Servo and Ada.
 
-### Parsing
+That, said, in general:
 
-In general:
-
-- Better URL's parser is near universally faster than Servo's parser.
+- Better URL's parser is nearly universally faster than Servo's parser.
 
 - Better URL's parser is on average an acceptable fraction the speed of Ada's parser.
 
-  - This is due mostly to Better URL having faster percent encoding.
+  - However, the relative performance varies WILDLY depending on the URL.
 
-    - If this text is still here and [ada/ada#1230](https://github.com/ada-url/ada/pull/1230) is in a release (basically the ada_url crate has a version above 4.0.0), the below numbers for Ada are wrong.
+    - For short URLs, Better URL's parser is significantly slower than Ada's parser.
 
-- The relative performance of Better URL compared to Servo and Ada varies WILDLY depending on the URL.
+    - For long URLs, Better URL's parser can be significantly faster than Ada's parser.
 
-  - For short URLs, Better URL's parser is significantly slower than Ada's parser.
-
-  - For long URLs, Better URL's parser can be significantly faster than Ada's parser.
-
-  - The inflection point is somewhere around 100 characters.
+    - The inflection point seems to be around 100 characters.
 
 Using Ada's [`top100.txt`](https://github.com/ada-url/url-various-datasets/blob/main/top100/top100.txt), `parse url --servo --ada --num 10000`, and my personal laptop:
 
-- Better URL's parser averages 2.22x the speed of Servo's parser.
+- Better URL's parser averages 2.17x the speed of Servo's parser.
 
-  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.55x.
+  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.54x.
 
-- Better URL's parser averages 0.79x the speed of Ada's parser.
+- Better URL's parser averages 0.80x the speed of Ada's parser.
 
-  - With making Ada compute the SchemeDetails and HostDetails, this goes to 1.06x.
+  - With making Ada compute the SchemeDetails and HostDetails, this goes to 1.09x.
 
 Using smythp's [reddit links dataset](https://github.com/smythp/reddit_links_dataset) (test.db):
 
 - Better URL's parser averages 1.93x the speed of Servo's parser.
 
-  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.22x.
+  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.20x.
 
 - Better URL's parser averages 0.68x the speed of Ada's parser.
 
-  - With making Ada compute the SchemeDetails and HostDetails, this goes to 0.96x.
+  - With making Ada compute the SchemeDetails and HostDetails, this goes to 0.98x.
 
 ### Setters
 
-Unsurprisingly Better URL's type based API allows setters to be dramatically faster than Servo and Ada even with the excessive allocations I haven't gotten around to removing.
+Obviously when using Better URL's type based APIs, BetterUrl::set_query is able to use Query's invariant that it's a valid query literal to just use a String::replace.
+
+It's often a *bit* more detailed than that, but the effect is still that Better URL polishes the floor with Servo and Ada.
+
+However, when using plain strings, which I imagine is the most likely case, Better URL is either faster by a much smaller margin or, in some cases, *slower* than Servo and/or Ada.
+
+For example, I found that when setting a URL's path to `abcdef   ghijkl` Better URL is only about 80% as fast as Servo.
+Replacing it with `/abcdef   ghijkl`, despite still requiring a percent encoding, makes Better URL slightly faster than Servo.
+
+Additionally, setting part of a part, such as a query parameter or path segment, is going to be much faster (and simpler) because the rest of the part doesn't need to be re-validated.
+
+More detailed numbers are pending me being bothered to do all that.

@@ -1,4 +1,4 @@
-//! Segment.
+//! Value.
 
 use std::io::BufRead;
 
@@ -6,15 +6,15 @@ use clap::Parser;
 
 use better_url::prelude::*;
 
-/// Segment.
+/// Value.
 ///
 /// The columns are:
 ///
 /// 1. The line number.
 ///
-/// 2. Time time it took to parse a QuerySegment of type QueryType::Special the specified number of times.
+/// 2. Time time it took to parse a QueryValue of type QueryType::Special the specified number of times.
 ///
-/// 3. Time time it took to parse a QuerySegment of type QueryType::NonSpecial the specified number of times.
+/// 3. Time time it took to parse a QueryValue of type QueryType::NonSpecial the specified number of times.
 #[derive(Debug, Parser)]
 pub struct Args {
     /// The amount to do.
@@ -32,7 +32,7 @@ impl Args {
                 let timer = std::time::Instant::now();
 
                 for _ in 0..self.num {
-                    let _ = QuerySegment::new(&*value, r#type);
+                    let _ = QueryValue::new(&*value, r#type);
                 }
 
                 print!("\t{:.2?}", timer.elapsed());
@@ -42,3 +42,4 @@ impl Args {
         }
     }
 }
+

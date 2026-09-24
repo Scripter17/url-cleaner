@@ -6,57 +6,35 @@ use clap::Parser;
 
 use better_url::prelude::*;
 
-/// Benchmark setting a path segment.
+/// Benchmark setting a URL's path segment.
 ///
-/// The columns are:
+/// Parses each line of STDIN as a URL.
 ///
-/// 1. The line number
+/// Please note that both creating the PathSegment and parsing the URLs are done entirely outside of timing.
 ///
-/// 2. The time it takes to BetterUrl::set_path_segment with a precomputed PathSegment
+/// - The first column is the line number.
 ///
-/// 3. The time it takes to BetterUrl::set_path_segment with --value as-is
+/// If BetterUrl::new returns either an error or BetterUrl::segmented_path_type returns None, the rest of the columns are present but empty.
 ///
-/// 4. Column 3 divided by column 4
+/// Otherwise:
 ///
-/// 5. The curent sum of column 3 divided by the current sum of column 4
+/// - The second column is the time it takes BetterUrl::set_path_segment to run the specified number of times.
 ///
-/// If --servo
+/// The remaining columns are groups of 3 representing an alternate library being compared to.
 ///
-/// 6. The time it takes to SegmentedPath::new_unchecked, SegmentedPath::set, and servo::Url::set_path with --value as-is.
+/// - A group's first column is the time it took to set the specified path segment the specified number of times.
 ///
-/// 7. Column 6 divided by column 2
+/// - A group's second column is the group's time divided by Better URL's time.
 ///
-/// 8. The current sum of column 6 divided by the current sum of column 2
+/// - A group's third column is the current sum of the group's times divided by the current sum of Better URL's times.
 ///
-/// 9. Column 6 divided by column 3
-///
-/// 10. The current sum of column 6 divided by the current sum of column 3
-///
-/// If --ada
-///
-/// 11. The time it takes to SegmentedPath::new_unchecked, SegmentedPath::set, and ada::Url::set_pathname with --value as-is.
-///
-/// 12. Column 11 divided by column 2
-///
-/// 13. The current sum of column 11 divided by the current sum of column 2
-///
-/// 14. Column 11 divided by column 3
-///
-/// 15. The current sum of column 11 divided by the current sum of column 3
-///
-/// If BetterUrl::new returns an error, columns 2 through 15 are present but empty
-///
-/// If --servo and servo::Url::parse returns an error, columns 6 through 10 are present but empty
-///
-/// If --ada and ada::Url::parse returns an error, columns 11 through 15 are present but empty
+/// If a particular library's URL parser returns an error, its 3 columns will be present but empty.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// Compare to Servo's URL crate.
-    #[arg(long)]
-    pub servo: bool,
-    /// Compare to Ada's URL crate.
-    #[arg(long)]
-    pub ada: bool,
+    /** Compare to all libraries.     **/ #[arg(long)] pub all  : bool,
+    /** Compare to Servo's URL crate. **/ #[arg(long)] pub servo: bool,
+    /** Compare to Ada's URL crate.   **/ #[arg(long)] pub ada  : bool,
+
     /// The number of times to do each URL.
     #[arg(long)]
     pub num: usize,
@@ -70,63 +48,49 @@ pub struct Args {
 
 impl Args {
     /// Do the command.
-    pub fn r#do(self) {
-        let mut burl_t_total = std::time::Duration::default();
-        let mut burl_s_total = std::time::Duration::default();
-        let mut servo_total  = std::time::Duration::default();
-        let mut ada_total    = std::time::Duration::default();
+    pub fn r#do(mut self) {
+        let mut burl_total  = std::time::Duration::default();
+        let mut servo_total = std::time::Duration::default();
+        let mut ada_total   = std::time::Duration::default();
+
+        if self.all {
+            self.servo = true;
+            self.ada   = true;
+        }
 
         for (i, line) in std::io::stdin().lock().lines().map(Result::unwrap).enumerate() {
             print!("{i}");
 
             match BetterUrl::new(&line) {
                 Ok(url) if let Some(r#type) = url.segmented_path_type() => {
-                    let urls = (0..self.num).map(|_| url.clone()).collect::<Vec<_>>();
+                    let urls = vec![url; self.num];
 
-                    let typed = self.value.as_deref().map(|x| PathSegment::new(x, r#type));
-
-                    let timer = std::time::Instant::now();
-
-                    for mut url in urls {
-                        let _ = url.set_path_segment(self.index, typed.as_ref());
-                    }
-
-                    let burl_t = timer.elapsed();
-                    burl_t_total += burl_t;
-
-                    print!("\t{burl_t:.2?}");
-
-
-
-                    let urls = (0..self.num).map(|_| url.clone()).collect::<Vec<_>>();
+                    let value = self.value.as_deref().map(|x| PathSegment::new(x, r#type));
 
                     let timer = std::time::Instant::now();
 
                     for mut url in urls {
-                        let _ = url.set_path_segment(self.index, self.value.as_deref());
+                        let _ = url.set_path_segment(self.index, value.as_ref());
                     }
 
-                    let burl_s = timer.elapsed();
-                    burl_s_total += burl_s;
+                    let burl = timer.elapsed();
+                    burl_total += burl;
 
-                    let f  = burl_s      .as_secs_f64() / burl_t      .as_secs_f64();
-                    let tf = burl_s_total.as_secs_f64() / burl_t_total.as_secs_f64();
-
-                    print!("\t{burl_s:.2?}\t{f:.2}\t{tf:.2}");
+                    print!("\t{burl:.2?}");
 
 
 
                     if self.servo {
                         match url::Url::parse(&line) {
                             Ok(url) => {
-                                let urls = (0..self.num).map(|_| url.clone()).collect::<Vec<_>>();
+                                let urls = vec![url; self.num];
 
                                 let timer = std::time::Instant::now();
 
                                 for mut url in urls {
                                     let mut path = unsafe {SegmentedPath::new_unchecked(url.path(), r#type)};
 
-                                    let _ = path.set(self.index, self.value.as_deref());
+                                    let _ = path.set(self.index, value.as_ref());
 
                                     url.set_path(path.into_owned().as_str());
                                 }
@@ -134,14 +98,12 @@ impl Args {
                                 let servo = timer.elapsed();
                                 servo_total += servo;
 
-                                let tf  = servo      .as_secs_f64() / burl_t      .as_secs_f64();
-                                let ttf = servo_total.as_secs_f64() / burl_t_total.as_secs_f64();
-                                let sf  = servo      .as_secs_f64() / burl_s      .as_secs_f64();
-                                let stf = servo_total.as_secs_f64() / burl_s_total.as_secs_f64();
+                                let factor       = servo      .as_secs_f64() / burl      .as_secs_f64();
+                                let total_factor = servo_total.as_secs_f64() / burl_total.as_secs_f64();
 
-                                print!("\t{servo:.2?}\t{tf:.2}\t{ttf:.2}\t{sf:.2}\t{stf:.2}");
+                                print!("\t{servo:.2?}\t{factor:.2}\t{total_factor:.2}");
                             },
-                            Err(_) => print!("\t\t\t\t\t")
+                            Err(_) => print!("\t\t\t")
                         }
                     }
 
@@ -150,14 +112,14 @@ impl Args {
                     if self.ada {
                         match ada_url::Url::parse(&line, None) {
                             Ok(url) => {
-                                let urls = (0..self.num).map(|_| url.clone()).collect::<Vec<_>>();
+                                let urls = vec![url; self.num];
 
                                 let timer = std::time::Instant::now();
 
                                 for mut url in urls {
                                     let mut path = unsafe {SegmentedPath::new_unchecked(url.pathname(), r#type)};
 
-                                    let _ = path.set(self.index, self.value.as_deref());
+                                    let _ = path.set(self.index, value.as_ref());
 
                                     let _ = url.set_pathname(Some(path.into_owned().as_str()));
                                 }
@@ -165,21 +127,19 @@ impl Args {
                                 let ada = timer.elapsed();
                                 ada_total += ada;
 
-                                let tf  = ada      .as_secs_f64() / burl_t      .as_secs_f64();
-                                let ttf = ada_total.as_secs_f64() / burl_t_total.as_secs_f64();
-                                let sf  = ada      .as_secs_f64() / burl_s      .as_secs_f64();
-                                let stf = ada_total.as_secs_f64() / burl_s_total.as_secs_f64();
+                                let factor       = ada      .as_secs_f64() / burl      .as_secs_f64();
+                                let total_factor = ada_total.as_secs_f64() / burl_total.as_secs_f64();
 
-                                print!("\t{ada:.2?}\t{tf:.2}\t{ttf:.2}\t{sf:.2}\t{stf:.2}");
+                                print!("\t{ada:.2?}\t{factor:.2}\t{total_factor:.2}");
                             },
-                            Err(_) => print!("\t\t\t\t\t")
+                            Err(_) => print!("\t\t\t")
                         }
                     }
                 },
                 _ => {
-                    print!("\t\t\t\t");
-                    if self.servo {print!("\t\t\t\t\t");}
-                    if self.ada   {print!("\t\t\t\t\t");}
+                    print!("\t\t");
+                    if self.servo {print!("\t\t\t");}
+                    if self.ada   {print!("\t\t\t");}
                 }
             }
 
