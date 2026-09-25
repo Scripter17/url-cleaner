@@ -2,9 +2,7 @@
 
 use crate::prelude::*;
 
-/// encode a [`FilePath`].
-///
-/// Specifically, [`percent_encode_file_path`] + [`resolve_file_path`].
+/// Encode a [`FilePath`].
 /// # Examples
 /// ```
 /// use better_url::util::*;
@@ -29,65 +27,85 @@ use crate::prelude::*;
 /// assert_eq!(encode_file_path("/c|/../ghi/" ), (true, "/c:/ghi/" .into()));
 /// ```
 pub fn encode_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = percent_encode_file_path(value);
-    let (b, value) = resolve_file_path       (value);
-
-    (a || b, value)
-}
-
-/// Do just the percent encoding and slash unbacking for a [`FilePath`].
-///
-/// For the full process, see [`encode_file_path`].
-pub fn percent_encode_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    encode_file_path_segments(value)
+    encode_file_path_bytes(cow_str_to_bytes(value))
 }
 
 
 
-/// encode a [`FilePath`] from bytes.
-///
-/// Specifically, [`percent_encode_file_path_bytes`] + [`resolve_file_path`].
+/// Encode a [`FilePath`] from bytes.
 pub fn encode_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = percent_encode_file_path_bytes(value);
-    let (b, value) = resolve_file_path             (value);
+    let value = value.into();
 
-    (a || b, value)
-}
+    let prepend_slash = !matches!(&*value, [b'/' | b'\\', ..]);
+    let mut to_encode = 0;
 
-/// Do just the percent encoding and slash unbacking for a [`FilePath`].
-///
-/// For the full process, see [`encode_file_path`].
-pub fn percent_encode_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    encode_file_path_segments_bytes(value)
-}
-
-
-/// Resolve an encoded file path from the start.
-///
-/// Ensures a leading `/`.
-pub fn resolve_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let mut value = value.into();
-    let mut changed = false;
-
-    if !matches!(value.as_bytes(), [b'/', ..]) {
-        value.to_mut().insert(0, '/');
-        changed = true;
+    for &b in &*value {
+        if PATH.contains(b) {
+            to_encode += 1;
+        }
     }
 
-    let (a, value) = resolve_file_path_range(value, ..);
 
-    changed |= a;
 
-    (changed, value)
+    let value = match to_encode {
+        0 => match prepend_slash {
+            true  => unsafe {cow_bytes_to_str_unchecked(value)}.with_insert_str(0, "/"),
+            false => unsafe {cow_bytes_to_str_unchecked(value)},
+        },
+        _ => {
+            let len = value.len() + to_encode * 2 + prepend_slash as usize;
+
+            let mut ret = String::with_capacity(len);
+
+            if prepend_slash {
+                unsafe {
+                    *ret.as_mut_ptr() = b'/';
+                }
+            }
+
+            let mut w = prepend_slash as usize;
+
+            unsafe {
+                for &b in &*value {
+                    if PATH.contains(b) {
+                        *ret.as_mut_ptr().add(w    ) = b'%';
+                        *ret.as_mut_ptr().add(w + 1) = NIBBLES[b as usize >> 4];
+                        *ret.as_mut_ptr().add(w + 2) = NIBBLES[b as usize & 15];
+
+                        w += 3;
+                    } else {
+                        *ret.as_mut_ptr().add(w) = b;
+
+                        w += 1;
+                    }
+                }
+
+                ret.as_mut_vec().set_len(len);
+            }
+
+            ret.into()
+        }
+    };
+
+    let (forwarded_slashes, value) = forward_slashes(value);
+
+    let (needed_resolve, value) = resolve_file_path(value);
+
+    (prepend_slash || to_encode != 0 || forwarded_slashes || needed_resolve, value)
 }
 
 
 
-/// Resolve an encoded file path using only the segments in `range`.
+/// [`resolve_non_special_path_range`] with the full range.
+pub fn resolve_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    resolve_file_path_range(value, ..)
+}
+
+/// Resolve an encoded file path using only the segments in the range of bytes.
 /// # Panics
 /// May or may not panic if the range does not begin with a `/` and/or does not end after the end of a segment.
 pub fn resolve_file_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<usize>>(value: T, range: B) -> (bool, Cow<'a, str>) {
-    let mut value = cow_str_to_bytes(value.into());
+    let mut value = cow_str_to_bytes(value);
     let mut changed = false;
 
     let start = match range.start_bound() {
@@ -104,7 +122,7 @@ pub fn resolve_file_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<usize>>
 
     assert!(start <= after && after <= value.len());
 
-    debug_assert_eq!(value[start], b'/');
+    debug_assert!(start == value.len() || value[start] == b'/');
     debug_assert!(after == value.len() || value[after] == b'/');
 
     let mut i = start;
@@ -173,62 +191,59 @@ pub fn resolve_file_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<usize>>
 /// Convert a [`SpecialNotFilePath`] into a [`FilePath`].
 pub fn special_not_file_path_to_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let mut value = value.into();
-    let mut changed = false;
 
-    if matches!(value.as_bytes(), [b'/', x, b'|'] | [b'/', x, b'|', b'/', ..] if x.is_ascii_alphabetic()) {
-        // SAFETY: Replacing ASCII with ASCII is always valid.
-        unsafe {
-            value.to_mut().as_mut_vec()[2] = b':';
-        }
-        changed = true;
+    match value.as_bytes() {
+        [b'/', x, b'|'] | [b'/', x, b'|', b'/', ..] if x.is_ascii_alphabetic() => {
+            unsafe {
+                *value.to_mut().as_mut_vec().get_unchecked_mut(2) = b':';
+            }
+            (true, value)
+        },
+        _ => (false, value)
     }
-
-    (changed, value)
 }
 
 /// Convert a [`NonSpecialPath`] into a [`FilePath`].
+/// # Examples
+/// ```
+/// use better_url::util::*;
+///
+/// assert_eq!(non_special_path_to_file_path("/abc/def"     ), (false, "/abc/def".into()));
+/// assert_eq!(non_special_path_to_file_path("/abc\\def"    ), (true , "/abc/def".into()));
+/// assert_eq!(non_special_path_to_file_path("/abc\\.\\def" ), (true , "/abc/def".into()));
+/// assert_eq!(non_special_path_to_file_path("/abc\\..\\def"), (true , "/def"    .into()));
+/// assert_eq!(non_special_path_to_file_path("/c:\\..\\def" ), (true , "/c:/def" .into()));
+/// ```
 pub fn non_special_path_to_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let mut value = value.into();
-    let mut changed = false;
+    let (had_backslashes, mut value) = forward_slashes(value);
 
-    for i in 0..value.len() {
-        if value.as_bytes()[i] == b'\\' {
-            // SAFETY: Replacing ASCII with ASCII is always valid.
+    match value.as_bytes() {
+        [] => (true, "/".into()),
+        [b'/', x, b'|'] | [b'/', x, b'|', b'/', ..] if x.is_ascii_alphabetic() => {
             unsafe {
-                value.to_mut().as_mut_vec()[i] = b'/';
+                *value.to_mut().as_mut_vec().get_unchecked_mut(2) = b':';
             }
-            changed = true;
+
+            if had_backslashes {
+                value = resolve_file_path(value).1;
+            }
+
+            (true, value)
+        },
+        _ => match had_backslashes {
+            true  => (true, resolve_file_path(value).1),
+            false => (false, value)
         }
     }
-
-    if matches!(value.as_bytes(), [b'/', x, b'|'] | [b'/', x, b'|', b'/', ..] if x.is_ascii_alphabetic()) {
-        // SAFETY: Replacing ASCII with ASCII is always valid.
-        unsafe {
-            value.to_mut().as_mut_vec()[2] = b':';
-        }
-        changed = true;
-    }
-
-    if changed {
-        value = resolve_file_path_range(value, ..).1;
-    }
-
-    (changed, value)
 }
 
 /// Convert an [`OpaquePath`] into a [`FilePath`].
 pub fn opaque_path_to_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let mut value = value.into();
-
-    if value.is_empty() {
-        return (false, value);
-    }
-
-    value.to_mut().insert(0, '/');
+    let value = value.into().with_insert_str(0, "/");
 
     let (_, value) = forward_slashes(value);
 
-    let (_, value) = resolve_file_path_range(value, ..);
+    let (_, value) = resolve_file_path(value);
 
     (true, value)
 }

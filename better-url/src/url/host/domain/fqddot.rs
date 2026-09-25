@@ -5,12 +5,12 @@ use crate::prelude::*;
 impl BetterUrl {
     /// If it has a domain FQDdot.
     pub fn has_fqddot(&self) -> bool {
-        self.domain_details().is_some_and(|x| x.fq)
+        self.domain_details().is_some_and(DomainHostDetails::is_fqdn)
     }
 
     /// If the host is a fully qualified domain name.
     pub fn is_fqdn(&self) -> bool {
-        self.domain_details().is_some_and(|x| x.fq)
+        self.domain_details().is_some_and(DomainHostDetails::is_fqdn)
     }
 
 
@@ -19,7 +19,7 @@ impl BetterUrl {
         let ha = self.host_after    ()?;
         let dd = self.domain_details()?;
 
-        match dd.fq {
+        match dd.is_fqdn() {
             false => None,
             true  => Some(ha - 1 .. ha),
         }
@@ -40,7 +40,7 @@ impl BetterUrl {
     ///
     /// If [`Self::set_host`] reutrns an error, that error is returned.
     pub fn set_fqdn(&mut self, value: bool) -> Result<bool, SetHostError> {
-        if self.domain_details().ok_or(NoDomain)?.fq != value {
+        if self.domain_details().ok_or(NoDomain)?.is_fqdn() != value {
             let mut domain = self.domain().ok_or(NoDomain)?;
             domain.set_fqdn(value)?;
             self.set_host(domain.into_owned())?;

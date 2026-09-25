@@ -5,25 +5,19 @@ use crate::prelude::*;
 impl DomainHost<'_> {
     /// If it has an origin.
     pub fn has_origin(&self) -> bool {
-        self.details.ss != 0
+        self.has_middle()
     }
 
 
 
     /// The [`Range::start`] of the origin.
     fn origin_start(&self) -> Option<usize> {
-        match self.details.ss {
-            0 => None,
-            _ => Some(self.details.ms as usize)
-        }
+        self.middle_start()
     }
 
     /// The [`Range::end`] of the origin.
     fn origin_after(&self) -> Option<usize> {
-        match self.details.ss {
-            0 => None,
-            _ => Some(self.len() - self.details.fq as usize)
-        }
+        self.has_middle().then_some(self.suffix_after())
     }
 
     /// The [`Range`] of the origin.
@@ -90,8 +84,6 @@ impl DomainHost<'_> {
         match value.map(TryInto::try_into).transpose()? {
             Some(new) if replace == new => return Ok(false),
 
-            Some(new) if self.len() - replace.len() + new.len() > u32::MAX as usize => Err(TooLong)?,
-
             Some(new) => match self.host.split_around_substr(replace) {
                 ("", "" ) if new.is_empty        () => Err(CantBeEmpty)?,
                 (_ , "" ) if new.last_is_empty   () => Err(NonFqdnCantEndInEmpty)?,
@@ -128,9 +120,6 @@ impl DomainHost<'_> {
 
         match (temp1.split('.').try_neg_nth(index), value.map(TryInto::try_into).transpose()?) {
             (Ok(old), Some(new)) if old == new => return Ok(false),
-
-            (Ok (old), Some(new)) if self.len() - old.len() + new.len()     > u32::MAX as usize => Err(TooLong)?,
-            (Err(_  ), Some(new)) if self.len()             + new.len() + 1 > u32::MAX as usize => Err(TooLong)?,
 
             (Err(1..), Some(_)) => Err(InsertNotFound )?,
             (Err(_  ), None   ) => return Ok(false),
@@ -176,8 +165,6 @@ impl DomainHost<'_> {
         match new {
             Some(new) if old == new => return Ok(false),
 
-            Some(new) if self.len() - old.len() + new.len() > u32::MAX as usize => Err(TooLong)?,
-
             Some(new) => match self.host.split_around_substr(old.as_str()) {
                 ("", "" ) if new.is_empty()         => Err(CantBeEmpty)?,
                 (_ , "" ) if new.last_is_empty()    => Err(NonFqdnCantEndInEmpty)?,
@@ -207,10 +194,6 @@ impl DomainHost<'_> {
     /// See [`Self`]'s documentation.
     pub fn insert_origin_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
         let new = value.try_into()?;
-
-        if self.len() + new.len() + 1 > u32::MAX as usize {
-            Err(TooLong)?;
-        }
 
         let temp1 = self.origin_str().unwrap_or(self.suffix_str());
 
@@ -242,10 +225,6 @@ impl DomainHost<'_> {
     /// See [`Self`]'s documentation.
     pub fn insert_origin_segments<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
         let new = value.try_into()?;
-
-        if self.len() + new.len() + 1 > u32::MAX as usize {
-            Err(TooLong)?;
-        }
 
         let temp1 = self.origin_str().unwrap_or(self.suffix_str());
 

@@ -24,7 +24,7 @@ tokio-tungstenite = { version = "0.28.0", features = ["native-tls", "url"] }
 
 # HTTP.
 hyper          = { version = "1.11.1", features = ["http1", "client"       ] }
-hyper-util     = { version = "0.1.20", features = ["http1", "client-legacy"] }
+hyper-util     = { version = "0.1.21", features = ["http1", "client-legacy"] }
 hyper-tls      = "0.6.0"
 http-body-util = "0.1.5"
 

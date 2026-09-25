@@ -14,6 +14,7 @@ Licensed under the AGPL 3.0 or later.
 - `no_network`: Don't make any network requests. Some redirect websites will still work because they include the destination in the URL.
 - `remove_unused_search_query`: Remove search queries from URLs that aren't search results (for example, posts).
 - `tor2web2tor`: Change `**.onion.**` hosts to `**.onion`.
+- `apple-news-app`: Don't expand apple.news URLs, letting them be opened in the apple news app.
 - `instagram_unprofilecard`: Change `instagram.com/username/profilecard` to `instagram.com/username`.
 - `tumblr_unsubdomain_blog`: Change `blog.tumblr.com` to `tumblr.com/blog`.
 - `youtube_unplaylist`: Remove the `list` query param from `youtube.com/watch` URLs.
@@ -99,7 +100,7 @@ Licensed under the AGPL 3.0 or later.
   - `nitter`: Always set it to the `nitter_host` var. Defaults to unset.
 - `twitter_embed_host`: The twitter embed host to use.
   - Required: true.
-  - Default: `fixupx.com`.
+  - Default: `vxtwitter.com`.
 - `twitter_embed_lang`: The language to use for the twitter embed host.
   - Required: false.
 - `nitter_host`: The Nitter host to use.

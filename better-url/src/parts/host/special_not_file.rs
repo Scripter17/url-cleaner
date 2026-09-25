@@ -107,11 +107,11 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for SpecialNotFileHost<'a> {
                 let (_, value       ) = try_percent_decode_bytes(value).map_err(|_| InvalidSpecialNotFileHost)?;
                 let (_, value, class) = uts46_classify_map_normalize(value);
 
-                if class & 0b0100_0100 == 0b0100_0000 {
+                if class & 0b0010_0100 == 0b0010_0000 {
                     Err(InvalidSpecialNotFileHost)?
                 } else if class & 0b0000_0110 != 0b0000_0000 && ends_in_a_number(&value) {
                     Ipv4Host::new_normalized(value)?.into()
-                } else if class & 0b0100_0110 == 0b0000_0000 && !value.is_empty() && value.len() <= u32::MAX as usize {
+                } else if class & 0b0010_0110 == 0b0000_0000 && !value.is_empty() {
                     unsafe {DomainHost::new_raw(value)}.into()
                 } else {
                     unsafe {DomainHost::new_not_eian(value)}?.into()

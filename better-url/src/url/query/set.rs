@@ -35,7 +35,7 @@ impl BetterUrl {
                 }
             },
 
-            (Some(range), None     ) => {
+            (Some(range), None) => {
                 unsafe {
                     self.serialization.modify(|x| x.replace_range(range.start - 1 .. range.end, ""));
                 }

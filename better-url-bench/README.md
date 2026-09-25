@@ -34,23 +34,23 @@ That, said, in general:
 
 Using Ada's [`top100.txt`](https://github.com/ada-url/url-various-datasets/blob/main/top100/top100.txt), `parse url --servo --ada --num 10000`, and my personal laptop:
 
-- Better URL's parser averages 2.17x the speed of Servo's parser.
+- Better URL's parser averages 2.25x the speed of Servo's parser.
 
-  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.54x.
+  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.56x.
 
-- Better URL's parser averages 0.80x the speed of Ada's parser.
+- Better URL's parser averages 0.91x the speed of Ada's parser.
 
-  - With making Ada compute the SchemeDetails and HostDetails, this goes to 1.09x.
+  - With making Ada compute the SchemeDetails and HostDetails, this goes to 1.16x.
 
 Using smythp's [reddit links dataset](https://github.com/smythp/reddit_links_dataset) (test.db):
 
 - Better URL's parser averages 1.93x the speed of Servo's parser.
 
-  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.20x.
+  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.18x.
 
-- Better URL's parser averages 0.68x the speed of Ada's parser.
+- Better URL's parser averages 0.77x the speed of Ada's parser.
 
-  - With making Ada compute the SchemeDetails and HostDetails, this goes to 0.98x.
+  - With making Ada compute the SchemeDetails and HostDetails, this goes to 1.04x.
 
 ### Setters
 

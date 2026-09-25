@@ -5,25 +5,19 @@ use crate::prelude::*;
 impl DomainHost<'_> {
     /// If it has a prefix.
     pub fn has_prefix(&self) -> bool {
-        self.details.ms != 0
+        self.details.has_prefix()
     }
 
 
 
     /// The [`Range::start`] of the prefix.
     fn prefix_start(&self) -> Option<usize> {
-        match self.details.ms {
-            0 => None,
-            _ => Some(0)
-        }
+        self.has_prefix().then_some(0)
     }
 
     /// The [`Range::end`] of the prefix.
     fn prefix_after(&self) -> Option<usize> {
-        match self.details.ms {
-            0 => None,
-            x => Some(x as usize - 1)
-        }
+        self.middle_start().and_then(|x| x.checked_sub(1))
     }
 
     /// The [`Range`] of the prefix.
@@ -91,15 +85,12 @@ impl DomainHost<'_> {
             (None     , None     )               => return Ok(false),
             (Some(old), Some(new)) if old == new => return Ok(false),
 
-            (None     , Some(new)) if self.len()             + new.len() + 1 > u32::MAX as usize => Err(TooLong)?,
-            (Some(old), Some(new)) if self.len() - old.len() + new.len()     > u32::MAX as usize => Err(TooLong)?,
-
             (None, Some(new)) => {
                 self.host.insert_with(0, [new.as_str(), "."]);
 
-                self.details.ms += new.len() as u32 + 1;
-                self.details.ss += new.len() as u32 + 1;
-                self.details.wp  = new == "www";
+                self.details.data1 += new.len() + 1;
+                self.details.data2 += new.len() + 1;
+                self.details.set_prefix_is_www(new == "www");
             },
 
             (Some(old), None) => {
@@ -109,9 +100,9 @@ impl DomainHost<'_> {
                     self.host.retain_range_unchecked(ol + 1..);
                 }
 
-                self.details.ms -= ol as u32 + 1;
-                self.details.ss -= ol as u32 + 1;
-                self.details.wp  = false;
+                self.details.data1 -= ol + 1;
+                self.details.data2 -= ol + 1;
+                self.details.set_prefix_is_www(false);
             },
 
             (Some(old), Some(new)) => {
@@ -119,9 +110,9 @@ impl DomainHost<'_> {
 
                 self.host.replace_range(..ol, new.as_str());
 
-                self.details.ms = self.details.ms - ol as u32 + new.len() as u32;
-                self.details.ss = self.details.ss - ol as u32 + new.len() as u32;
-                self.details.wp = new == "www";
+                self.details.data1 = self.details.data1 - ol + new.len();
+                self.details.data2 = self.details.data2 - ol + new.len();
+                self.details.set_prefix_is_www(new == "www");
             }
         }
 
@@ -152,9 +143,6 @@ impl DomainHost<'_> {
             (Ok (old), Some(new)) if old == new => return Ok(false),
             (Err(0  ), None     )               => return Ok(false),
 
-            (Ok (old), Some(new)) if self.len() - old.len() + new.len()     > u32::MAX as usize => Err(TooLong)?,
-            (Err(0  ), Some(new)) if self.len()             + new.len() + 1 > u32::MAX as usize => Err(TooLong)?,
-
             (Err(1..), Some(_)) => Err(InsertNotFound)?,
             (Err(_  ), None   ) => return Ok(false),
 
@@ -163,8 +151,8 @@ impl DomainHost<'_> {
 
                 self.host.replace_range(range.clone(), new.as_str());
 
-                self.details.ms = self.details.ms - range.len() as u32 + new.len() as u32;
-                self.details.ss = self.details.ss - range.len() as u32 + new.len() as u32;
+                self.details.data1 = self.details.data1 - range.len() + new.len();
+                self.details.data2 = self.details.data2 - range.len() + new.len();
             },
 
             (Ok(old), None) => {
@@ -173,8 +161,8 @@ impl DomainHost<'_> {
 
                 self.host.replace_range(range.clone(), "");
 
-                self.details.ms -= range.len() as u32;
-                self.details.ss -= range.len() as u32;
+                self.details.data1 -= range.len();
+                self.details.data2 -= range.len();
             },
 
             (Err(0), Some(new)) => {
@@ -185,12 +173,12 @@ impl DomainHost<'_> {
                     ..0 => self.host.insert_with(0 , [new.as_str(), "."]),
                 }
 
-                self.details.ms = self.details.ms + new.len() as u32 + 1;
-                self.details.ss = self.details.ss + new.len() as u32 + 1;
+                self.details.data1 = self.details.data1 + new.len() + 1;
+                self.details.data2 = self.details.data2 + new.len() + 1;
             },
         }
 
-        self.details.wp = self.prefix_str() == Some("www");
+        self.details.set_prefix_is_www(self.prefix_str() == Some("www"));
 
         Ok(true)
     }
@@ -205,15 +193,13 @@ impl DomainHost<'_> {
         match new {
             Some(new) if old == new => return Ok(false),
 
-            Some(new) if self.len() - old.len() + new.len() > u32::MAX as usize => Err(TooLong)?,
-
             Some(new) => {
                 let range = self.as_str().my_substr_range(old.as_str());
 
                 self.host.replace_range(range.clone(), new.as_str());
 
-                self.details.ms = self.details.ms - range.len() as u32 + new.len() as u32;
-                self.details.ss = self.details.ss - range.len() as u32 + new.len() as u32;
+                self.details.data1 = self.details.data1 - range.len() + new.len();
+                self.details.data2 = self.details.data2 - range.len() + new.len();
             },
             None => {
                 let mut range = self.as_str().my_substr_range(old.as_str());
@@ -221,12 +207,12 @@ impl DomainHost<'_> {
 
                 self.host.replace_range(range.clone(), "");
 
-                self.details.ms -= range.len() as u32;
-                self.details.ss -= range.len() as u32;
+                self.details.data1 -= range.len();
+                self.details.data2 -= range.len();
             }
         }
 
-        self.details.wp = self.prefix_str() == Some("www");
+        self.details.set_prefix_is_www(self.prefix_str() == Some("www"));
 
         Ok(true)
     }
@@ -251,10 +237,6 @@ impl DomainHost<'_> {
 
         let new = value.try_into()?;
 
-        if self.len() + new.len() + 1 > u32::MAX as usize {
-            Err(TooLong)?;
-        }
-
         let temp = self.prefix_segments().into_iter().flatten().try_neg_nth(index).map(|x| self.as_str().my_substr_range(x.as_str()));
 
         match (temp, index) {
@@ -265,10 +247,10 @@ impl DomainHost<'_> {
             _ => Err(InsertNotFound)?
         }
 
-        self.details.ms += new.len() as u32 + 1;
-        self.details.ss += new.len() as u32 + 1;
+        self.details.data1 += new.len() + 1;
+        self.details.data2 += new.len() + 1;
 
-        self.details.wp = unsafe {self.host.get_unchecked(..ms)} == "www.";
+        self.details.set_prefix_is_www(unsafe {self.host.get_unchecked(..self.details.data1 & (isize::MAX as usize))} == "www.");
 
         Ok(())
     }
@@ -293,10 +275,6 @@ impl DomainHost<'_> {
 
         let new = value.try_into()?;
 
-        if self.len() + new.len() + 1 > u32::MAX as usize {
-            Err(TooLong)?;
-        }
-
         let temp = self.prefix_segments().into_iter().flatten().try_neg_nth(index).map(|x| self.as_str().my_substr_range(x.as_str()));
 
         match (temp, index) {
@@ -307,10 +285,10 @@ impl DomainHost<'_> {
             _ => Err(InsertNotFound)?
         }
 
-        self.details.ms += new.len() as u32 + 1;
-        self.details.ss += new.len() as u32 + 1;
+        self.details.data1 += new.len() + 1;
+        self.details.data2 += new.len() + 1;
 
-        self.details.wp = unsafe {self.host.get_unchecked(..ms)} == "www.";
+        self.details.set_prefix_is_www(unsafe {self.host.get_unchecked(..self.details.data1 & (isize::MAX as usize))} == "www.");
 
         Ok(())
     }

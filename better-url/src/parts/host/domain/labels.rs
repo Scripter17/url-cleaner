@@ -17,7 +17,7 @@ impl DomainHost<'_> {
 
     /// The [`Range::end`] of the labels.
     fn labels_after(&self) -> usize {
-        self.len() - self.details.fq as usize
+        self.len() - self.is_fqdn() as usize
     }
 
     /// The [`Range`] of the labels.
@@ -82,8 +82,6 @@ impl DomainHost<'_> {
         match (self.labels(), value.try_into()?) {
             (old, new) if old == new => return Ok(false),
 
-            (old, new) if self.len() - old.len() + new.len() > u32::MAX as usize => Err(TooLong)?,
-
             (_  , new) if new.     is_empty() && !self.is_fqdn() => Err(CantBeEmpty)?,
             (_  , new) if new.last_is_empty() && !self.is_fqdn() => Err(NonFqdnCantEndInEmpty)?,
 
@@ -123,9 +121,6 @@ impl DomainHost<'_> {
 
         match (old, new) {
             (Ok (old), Some(new)) if old == new => return Ok(false),
-
-            (Ok (old), Some(new)) if self.len() - old.len() + new.len()     > u32::MAX as usize => Err(TooLong)?,
-            (Err(0  ), Some(new)) if self.len()             + new.len() + 1 > u32::MAX as usize => Err(TooLong)?,
 
             (Err(1..), Some(_)) => Err(InsertNotFound )?,
             (Err(_  ), None   ) => return Ok(false),
@@ -185,8 +180,6 @@ impl DomainHost<'_> {
         match new {
             Some(new) if old == new => return Ok(false),
 
-            Some(new) if self.len() - old.len() + new.len() > u32::MAX as usize => Err(TooLong)?,
-
             Some(new) => match self.host.split_around_substr(old.as_str()) {
                 ("", "" ) if new.is_empty()         => Err(CantBeEmpty)?,
                 (_ , "" ) if new.last_is_empty()    => Err(NonFqdnCantEndInEmpty)?,
@@ -233,10 +226,6 @@ impl DomainHost<'_> {
     pub fn insert_labels_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
         let new = value.try_into()?;
 
-        if self.len() + new.len() + 1 > u32::MAX as usize {
-            Err(TooLong)?;
-        }
-
         let temp = self.segments().try_neg_nth(index).map(|x| self.as_str().my_substr_range(x.as_str()));
 
         match (temp, index) {
@@ -278,10 +267,6 @@ impl DomainHost<'_> {
     /// ```
     pub fn insert_labels_segments<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
         let new = value.try_into()?;
-
-        if self.len() + new.len() + 1 > u32::MAX as usize {
-            Err(TooLong)?;
-        }
 
         let temp = self.segments().try_neg_nth(index).map(|x| self.as_str().my_substr_range(x.as_str()));
 

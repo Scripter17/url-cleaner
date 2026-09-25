@@ -437,12 +437,12 @@
 				}
 			},
 			"tests": [
-				{"task": "https://twitter.com/username/status/1"  , "expect": "https://fixupx.com/username/status/1"},
-				{"task": "https://x.com/username/status/1"        , "expect": "https://fixupx.com/username/status/1"},
-				{"task": "https://fixupx.com/username/status/1"   , "expect": "https://fixupx.com/username/status/1"},
-				{"task": "https://fixupx.com/username/status/1/en", "expect": "https://fixupx.com/username/status/1"},
-				{"task": "https://nitter.net/username/status/1"   , "expect": "https://fixupx.com/username/status/1"},
-				{"task": "https://xcancel.com/username/status/1"  , "expect": "https://fixupx.com/username/status/1"}
+				{"task": "https://twitter.com/username/status/1"  , "expect": "https://vxtwitter.com/username/status/1"},
+				{"task": "https://x.com/username/status/1"        , "expect": "https://vxtwitter.com/username/status/1"},
+				{"task": "https://fixupx.com/username/status/1"   , "expect": "https://vxtwitter.com/username/status/1"},
+				{"task": "https://fixupx.com/username/status/1/en", "expect": "https://vxtwitter.com/username/status/1"},
+				{"task": "https://nitter.net/username/status/1"   , "expect": "https://vxtwitter.com/username/status/1"},
+				{"task": "https://xcancel.com/username/status/1"  , "expect": "https://vxtwitter.com/username/status/1"}
 			]
 		},
 		{
@@ -454,12 +454,12 @@
 				}
 			},
 			"tests": [
-				{"task": "https://twitter.com/username/status/1"  , "expect": "https://fixupx.com/username/status/1/en"},
-				{"task": "https://x.com/username/status/1"        , "expect": "https://fixupx.com/username/status/1/en"},
-				{"task": "https://fixupx.com/username/status/1"   , "expect": "https://fixupx.com/username/status/1/en"},
-				{"task": "https://fixupx.com/username/status/1/en", "expect": "https://fixupx.com/username/status/1/en"},
-				{"task": "https://nitter.net/username/status/1"   , "expect": "https://fixupx.com/username/status/1/en"},
-				{"task": "https://xcancel.com/username/status/1"  , "expect": "https://fixupx.com/username/status/1/en"}
+				{"task": "https://twitter.com/username/status/1"  , "expect": "https://vxtwitter.com/username/status/1/en"},
+				{"task": "https://x.com/username/status/1"        , "expect": "https://vxtwitter.com/username/status/1/en"},
+				{"task": "https://fixupx.com/username/status/1"   , "expect": "https://vxtwitter.com/username/status/1/en"},
+				{"task": "https://fixupx.com/username/status/1/en", "expect": "https://vxtwitter.com/username/status/1/en"},
+				{"task": "https://nitter.net/username/status/1"   , "expect": "https://vxtwitter.com/username/status/1/en"},
+				{"task": "https://xcancel.com/username/status/1"  , "expect": "https://vxtwitter.com/username/status/1/en"}
 			]
 		},
 		{

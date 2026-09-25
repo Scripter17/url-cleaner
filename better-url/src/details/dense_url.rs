@@ -18,7 +18,7 @@ use crate::prelude::*;
 /// use better_url::prelude::*;
 ///
 /// assert_eq!(std::mem::size_of::<DenseUrlDetails>(), 48);
-/// assert_eq!(std::mem::size_of::<     UrlDetails>(), 52);
+/// assert_eq!(std::mem::size_of::<     UrlDetails>(), 56);
 /// ```
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

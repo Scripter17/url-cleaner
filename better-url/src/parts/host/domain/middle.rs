@@ -5,25 +5,19 @@ use crate::prelude::*;
 impl DomainHost<'_> {
     /// If it has a middle..
     pub fn has_middle(&self) -> bool {
-        self.details.ss != 0
+        self.details.has_middle()
     }
 
 
 
     /// The [`Range::start`] of the middle.
     pub(crate) fn middle_start(&self) -> Option<usize> {
-        match self.details.ss {
-            0 => None,
-            _ => Some(self.details.ms as usize)
-        }
+        self.details.middle_start()
     }
 
     /// The [`Range::end`] of the middle.
     fn middle_after(&self) -> Option<usize> {
-        match self.details.ss {
-            0 => None,
-            x => Some(x as usize - 1)
-        }
+        self.details.suffix_start().checked_sub(1)
     }
 
     /// The [`Range`] of the middle.
@@ -52,9 +46,6 @@ impl DomainHost<'_> {
         match (self.middle(), value.map(TryInto::try_into).transpose()?) {
             (None     , None     )               => return Ok(false),
             (Some(old), Some(new)) if old == new => return Ok(false),
-
-            (None     , Some(new)) if self.len()             + new.len() + 1 > u32::MAX as usize => Err(TooLong)?,
-            (Some(old), Some(new)) if self.len() - old.len() + new.len()     > u32::MAX as usize => Err(TooLong)?,
 
             (Some(old), Some(new)) => self.host.replace_substr(old.as_str(), new.as_str()),
 

@@ -7,6 +7,8 @@ env:
 
 jobs:
   build:
+    if: ${{ !github.event.act }}
+
     strategy:
       matrix:
         oses: [
@@ -24,7 +26,6 @@ jobs:
       run: cargo build -r --bin url-cleaner --bin url-cleaner-site --bin url-cleaner-site-client --bin url-cleaner-discord
 
     - name: Upload
-      if: runner.environment == 'github-hosted'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ runner.os }}

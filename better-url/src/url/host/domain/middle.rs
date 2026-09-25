@@ -5,7 +5,7 @@ use crate::prelude::*;
 impl BetterUrl {
     /// If it has a domain middle.
     pub fn has_domain_middle(&self) -> bool {
-        self.domain_details().is_some_and(|x| x.ss != 0)
+        self.domain_details().is_some_and(DomainHostDetails::has_middle)
     }
 
 
@@ -15,10 +15,7 @@ impl BetterUrl {
         let hs = self.host_start    ()?;
         let dd = self.domain_details()?;
 
-        match dd.ss {
-            0 => None,
-            _ => Some(hs + dd.ms as usize .. hs + dd.ss as usize - 1),
-        }
+        Some(dd.middle_start()? + hs .. dd.middle_after()? + hs)
     }
 
     /// The domain middle as a [`str`].

@@ -16,7 +16,7 @@ impl BetterUrl {
         let ha = self.host_after    ()?;
         let dd = self.domain_details()?;
 
-        Some(hs + dd.ss as usize .. ha - dd.fq as usize)
+        Some(hs + dd.suffix_start() .. ha - dd.is_fqdn() as usize)
     }
 
     /// The domain suffix as a [`str`].

@@ -15,7 +15,7 @@ impl ByteSet {
     pub const fn new() -> Self {
         Self([false; 256])
     }
-    
+
     /// If it contains `b`.
     pub const fn contains(self, b: u8) -> bool {
         self.0[b as usize]
@@ -122,3 +122,9 @@ impl Default for ByteSet {
 /** [`FORBIDDEN_DOMAIN_SEGMENT_INPUT`] with non-ASCII.  **/ pub const FORBIDDEN_DOMAIN_SEGMENT_LITERAL : ByteSet = FORBIDDEN_DOMAIN_SEGMENT_INPUT .add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 /** [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] with non-ASCII. **/ pub const FORBIDDEN_DOMAIN_SEGMENTS_LITERAL: ByteSet = FORBIDDEN_DOMAIN_SEGMENTS_INPUT.add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 /** [`FORBIDDEN_DOMAIN_HOST_INPUT`] with non-ASCII.     **/ pub const FORBIDDEN_DOMAIN_HOST_LITERAL    : ByteSet = FORBIDDEN_DOMAIN_HOST_INPUT    .add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+
+/// The set of bytes forbidden from being used in a decimal IPv4 host.
+pub const FORBIDDEN_IPV4_DEC_INPUT: ByteSet = ByteSet::new().add_many(b"0123456789."              ).invert();
+/// The set of bytes forbidden from being used in an IPv4 host.
+pub const FORBIDDEN_IPV4_INPUT    : ByteSet = ByteSet::new().add_many(b"0123456789.abcdefABCDEFxX").invert();

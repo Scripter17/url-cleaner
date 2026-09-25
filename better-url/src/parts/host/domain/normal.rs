@@ -12,15 +12,15 @@ impl DomainHost<'_> {
 
     /// The [`Range::start`] of the normal.
     fn normal_start(&self) -> usize {
-        match self.details.wp {
+        match self.details.prefix_is_www() {
             false => 0,
-            true  => self.details.ms as usize
+            true  => self.details.data1 & (isize::MAX as usize),
         }
     }
 
     /// The [`Range::end`] of the normal.
     fn normal_after(&self) -> usize {
-        self.len() - self.details.fq as usize
+        self.len() - self.is_fqdn() as usize
     }
 
     /// The [`Range`] of the normal.
@@ -82,7 +82,7 @@ impl DomainHost<'_> {
     /// # Errors
     /// See [`Self`]'s documentation.
     pub fn set_normal<'b, T: TryInto<DomainSegments<'b>>>(&mut self, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
-        match self.details.wp {
+        match self.details.prefix_is_www() {
             true  => self.set_origin(value                    ),
             false => self.set_labels(value.ok_or(CantBeEmpty)?),
         }
@@ -92,7 +92,7 @@ impl DomainHost<'_> {
     /// # Errors
     /// See [`Self`]'s documentation.
     pub fn set_normal_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
-        match self.details.wp {
+        match self.details.prefix_is_www() {
             true  => self.set_origin_segment(index, value),
             false => self.set_labels_segment(index, value),
         }
@@ -102,7 +102,7 @@ impl DomainHost<'_> {
     /// # Errors
     /// See [`Self`]'s documentation.
     pub fn set_normal_range<'b, T: TryInto<DomainSegments<'b>>, B: RangeBounds<isize>>(&mut self, range: B, value: Option<T>) -> Result<bool, SetDomainError> where SetDomainError: From<T::Error> {
-        match self.details.wp {
+        match self.details.prefix_is_www() {
             true  => self.set_origin_range(range, value),
             false => self.set_labels_range(range, value),
         }
@@ -112,7 +112,7 @@ impl DomainHost<'_> {
     /// # Errors
     /// See [`Self`]'s documentation.
     pub fn insert_normal_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
-        match self.details.wp {
+        match self.details.prefix_is_www() {
             true  => self.insert_origin_segment(index, value),
             false => self.insert_labels_segment(index, value),
         }
@@ -122,7 +122,7 @@ impl DomainHost<'_> {
     /// # Errors
     /// See [`Self`]'s documentation.
     pub fn insert_normal_segments<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
-        match self.details.wp {
+        match self.details.prefix_is_www() {
             true  => self.insert_origin_segments(index, value),
             false => self.insert_labels_segments(index, value),
         }

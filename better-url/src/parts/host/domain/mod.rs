@@ -180,9 +180,9 @@ impl<'a> DomainHost<'a> {
     pub unsafe fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
         let (_, value, class) = uts46_classify_map_normalize(value);
 
-        Ok(if class & 0b0100_0100 == 0b0100_0000 {
+        Ok(if class & 0b0010_0100 == 0b0010_0000 {
             Err(InvalidDomainHost)?
-        } else if class & 0b0100_0110 == 0b0000_0000 && !value.is_empty() && value.len() <= u32::MAX as usize {
+        } else if class & 0b0010_0110 == 0b0000_0000 && !value.is_empty() {
             unsafe {Self::new_raw(value)}
         } else {
             unsafe {Self::new_not_eian(value)}?
@@ -345,10 +345,8 @@ impl<'a> TryFrom<DomainSegment<'a>> for DomainHost<'a> {
             true  => Err(value),
             false => Ok(Self {
                 details: DomainHostDetails {
-                    ms: 0,
-                    ss: 0,
-                    fq: false,
-                    wp: false,
+                    data1: 0,
+                    data2: 0,
                 },
                 host: value.0
             })

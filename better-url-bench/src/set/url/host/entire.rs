@@ -1,4 +1,4 @@
-//! Benchmark setting a path.
+//! Entire.
 
 use std::io::BufRead;
 
@@ -6,8 +6,7 @@ use clap::Parser;
 
 use better_url::prelude::*;
 
-
-/// Benchmark setting a URL's path.
+/// Benchmark setting a URL's host.
 ///
 /// Parses each line of STDIN as a URL and processes it --num times for each datapoint.
 ///
@@ -19,9 +18,9 @@ use better_url::prelude::*;
 ///
 /// Otherwise:
 ///
-/// 2. The second column is the time it takes BetterUrl::set_path to run using the precomputed Path.
+/// 2. The second column is the time it takes BetterUrl::set_host to run using the precomputed Host.
 ///
-/// 3. The third column is the time it takes BetterUrl::set_path to run using the raw --value.
+/// 3. The third column is the time it takes BetterUrl::set_host to run using the raw --value.
 ///
 /// 4. Column 3 divided by column 2.
 ///
@@ -31,13 +30,13 @@ use better_url::prelude::*;
 ///
 /// For each group, the columns are:
 ///
-/// 1. The time it took to set the path using the precomputed Path.
+/// 1. The time it took to set the host using the precomputed Host.
 ///
 /// 2. The group's column 1 divided by column 2.
 ///
 /// 3. The current sum of the group's column 1 divided by the current sum of column 2.
 ///
-/// 4. The time it took to set the path using the raw --value.
+/// 4. The time it took to set the host using the raw --value.
 ///
 /// 5. The group's column 4 divided by column 3.
 ///
@@ -75,16 +74,14 @@ impl Args {
             print!("{i}");
 
             match BetterUrl::new(&line) {
-                Ok(url) => {
-                    let value = Path::new(&self.value, url.path_type());
-
+                Ok(url) if let Ok(value) = Host::new(&self.value, url.scheme_type()) => {
                     let temp = url.clone();
                     let urls = vec![temp; self.num];
 
                     let timer = std::time::Instant::now();
 
                     for mut url in urls {
-                        let _ = url.set_path(&value);
+                        let _ = url.set_host(value.borrowed());
                     }
 
                     let burl = timer.elapsed();
@@ -99,7 +96,7 @@ impl Args {
                     let timer = std::time::Instant::now();
 
                     for mut url in urls {
-                        let _ = url.set_path(&self.value);
+                        let _ = url.set_host(&self.value);
                     }
 
                     let burl_untyped = timer.elapsed();
@@ -121,7 +118,7 @@ impl Args {
                                 let timer = std::time::Instant::now();
 
                                 for mut url in urls {
-                                    url.set_path(value.as_str());
+                                    let _ = url.set_host(Some(value.as_str()));
                                 }
 
                                 let servo = timer.elapsed();
@@ -139,7 +136,7 @@ impl Args {
                                 let timer = std::time::Instant::now();
 
                                 for mut url in urls {
-                                    url.set_path(&self.value);
+                                    let _ = url.set_host(Some(&self.value));
                                 }
 
                                 let servo_untyped = timer.elapsed();
@@ -165,7 +162,7 @@ impl Args {
                                 let timer = std::time::Instant::now();
 
                                 for mut url in urls {
-                                    let _ = url.set_pathname(Some(value.as_str()));
+                                    let _ = url.set_hostname(Some(value.as_str()));
                                 }
 
                                 let ada = timer.elapsed();
@@ -183,7 +180,7 @@ impl Args {
                                 let timer = std::time::Instant::now();
 
                                 for mut url in urls {
-                                    let _ = url.set_pathname(Some(&self.value));
+                                    let _ = url.set_hostname(Some(&self.value));
                                 }
 
                                 let ada_untyped = timer.elapsed();
@@ -198,7 +195,7 @@ impl Args {
                         }
                     }
                 },
-                Err(_) => {
+                _ => {
                     print!("\t\t\t\t");
                     if servo {print!("\t\t\t\t\t\t");}
                     if ada   {print!("\t\t\t\t\t\t");}

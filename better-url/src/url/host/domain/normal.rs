@@ -16,9 +16,9 @@ impl BetterUrl {
         let ha = self.host_after    ()?;
         let dd = self.domain_details()?;
 
-        Some(match dd.wp {
-            false => hs                  .. ha - dd.fq as usize,
-            true  => hs + dd.ms as usize .. ha - dd.fq as usize,
+        Some(match dd.prefix_is_www() {
+            false => hs                                      .. ha - dd.is_fqdn() as usize,
+            true  => hs + (dd.data1 & (isize::MAX as usize)) .. ha - dd.is_fqdn() as usize,
         })
     }
 

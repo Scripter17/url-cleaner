@@ -2,9 +2,7 @@
 
 use crate::prelude::*;
 
-/// encode a [`SpecialNotFilePath`].
-///
-/// Specifically, [`percent_encode_special_not_file_path`] + [`resolve_special_not_file_path`].
+/// Encode a [`SpecialNotFilePath`].
 /// # Examples
 /// ```
 /// use better_url::util::*;
@@ -29,88 +27,104 @@ use crate::prelude::*;
 /// assert_eq!(encode_special_not_file_path("/c:/../ghi/" ), (true, "/ghi/"    .into()));
 /// ```
 pub fn encode_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = percent_encode_special_not_file_path(value);
-    let (b, value) = resolve_special_not_file_path       (value);
-
-    (a || b, value)
-}
-
-/// Do just the percent encoding and slash unbacking for a [`SpecialNotFilePath`].
-///
-/// For the full process, see [`encode_special_not_file_path`].
-pub fn percent_encode_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    encode_special_not_file_path_segments(value)
+    encode_special_not_file_path_bytes(cow_str_to_bytes(value))
 }
 
 
 
-/// encode a [`SpecialNotFilePath`] from bytes.
-///
-/// Specifically, [`percent_encode_special_not_file_path`] + [`resolve_special_not_file_path`].
+/// Encode a [`SpecialNotFilePath`] from bytes.
 pub fn encode_special_not_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = percent_encode_special_not_file_path_bytes(value);
-    let (b, value) = resolve_special_not_file_path             (value);
+    let value = value.into();
 
-    (a || b, value)
-}
+    let prepend_slash = !matches!(&*value, [b'/' | b'\\', ..]);
+    let mut to_encode = 0;
 
-/// Do just the percent encoding and slash unbacking for a [`SpecialNotFilePath`].
-///
-/// For the full process, see [`encode_special_not_file_path_bytes`].
-pub fn percent_encode_special_not_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    encode_special_not_file_path_segments_bytes(value)
+    for &b in &*value {
+        if PATH.contains(b) {
+            to_encode += 1;
+        }
+    }
+
+
+
+    let value = match to_encode {
+        0 => match prepend_slash {
+            true  => unsafe {cow_bytes_to_str_unchecked(value)}.with_insert_str(0, "/"),
+            false => unsafe {cow_bytes_to_str_unchecked(value)},
+        },
+        _ => {
+            let len = value.len() + to_encode * 2 + prepend_slash as usize;
+
+            let mut ret = String::with_capacity(len);
+
+            if prepend_slash {
+                unsafe {
+                    *ret.as_mut_ptr() = b'/';
+                }
+            }
+
+            let mut w = prepend_slash as usize;
+
+            unsafe {
+                for &b in &*value {
+                    if PATH.contains(b) {
+                        *ret.as_mut_ptr().add(w    ) = b'%';
+                        *ret.as_mut_ptr().add(w + 1) = NIBBLES[b as usize >> 4];
+                        *ret.as_mut_ptr().add(w + 2) = NIBBLES[b as usize & 15];
+
+                        w += 3;
+                    } else {
+                        *ret.as_mut_ptr().add(w) = b;
+
+                        w += 1;
+                    }
+                }
+
+                ret.as_mut_vec().set_len(len);
+            }
+
+            ret.into()
+        }
+    };
+
+    let (forwarded_slashes, value) = forward_slashes(value);
+
+    let (needed_resolve, value) = resolve_special_not_file_path(value);
+
+    (prepend_slash || to_encode != 0 || forwarded_slashes || needed_resolve, value)
 }
 
 
 
 /// Convert a [`NonSpecialPath`] into a [`SpecialNotFilePath`].
-pub fn non_special_path_to_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let mut value = value.into();
-    let mut changed = false;
-
-    for i in 0..value.len() {
-        if value.as_bytes()[i] == b'\\' {
-            // SAFETY: Replacing ASCII with ASCII is always valid.
-            unsafe {
-                value.to_mut().as_mut_vec()[i] = b'/';
-            }
-            changed = true;
-        }
-    }
-
-    if changed {
-        value = resolve_special_not_file_path_range(value, ..).1;
-    }
-
-    (changed, value)
-}
-
-
-
-/// Resolve an encoded special not file path.
+/// # Examples
+/// ```
+/// use better_url::util::*;
 ///
-/// Ensures a leading `/`.
-pub fn resolve_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let mut value = value.into();
-    let mut changed = false;
-
-    if !matches!(value.as_bytes(), [b'/', ..]) {
-        value.to_mut().insert(0, '/');
-        changed = true;
+/// assert_eq!(non_special_path_to_special_not_file_path("/abc/def"     ), (false, "/abc/def".into()));
+/// assert_eq!(non_special_path_to_special_not_file_path("/abc\\def"    ), (true , "/abc/def".into()));
+/// assert_eq!(non_special_path_to_special_not_file_path("/abc\\.\\def" ), (true , "/abc/def".into()));
+/// assert_eq!(non_special_path_to_special_not_file_path("/abc\\..\\def"), (true , "/def"    .into()));
+/// assert_eq!(non_special_path_to_special_not_file_path("/c:\\..\\def" ), (true , "/def"    .into()));
+/// ```
+pub fn non_special_path_to_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    match forward_slashes(value) {
+        (true , value) => (true , resolve_special_not_file_path(value).1),
+        (false, value) => (false, value),
     }
-
-    let (a, value) = resolve_special_not_file_path_range(value, ..);
-
-    changed |= a;
-
-    (changed, value)
 }
 
-/// Resolve an encoded special not file path using only the segments in `range`.
+
+
+/// [`resolve_non_special_path_range`] with the full range.
+pub fn resolve_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    resolve_special_not_file_path_range(value, ..)
+}
+
+/// Resolve an encoded special not file path using only the segments in the range of bytes.
 /// # Panics
 /// May or may not panic if the range does not begin with a `/` and/or does not end after the end of a segment.
 pub fn resolve_special_not_file_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<usize>>(value: T, range: B) -> (bool, Cow<'a, str>) {
-    // Every valid special path literal is a valid non-special path literal.
     resolve_non_special_path_range(value, range)
 }
 
@@ -118,13 +132,11 @@ pub fn resolve_special_not_file_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBo
 
 /// Convert an [`OpaquePath`] into a [`SpecialNotFilePath`].
 pub fn opaque_path_to_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let mut value = value.into();
-
-    value.to_mut().insert(0, '/');
+    let value = value.into().with_insert_str(0, "/");
 
     let (_, value) = forward_slashes(value);
 
-    let (_, value) = resolve_special_not_file_path_range(value, ..);
+    let (_, value) = resolve_special_not_file_path(value);
 
     (true, value)
 }

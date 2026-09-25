@@ -5,20 +5,16 @@ use crate::prelude::*;
 impl BetterUrl {
     /// If it has a domain prefix.
     pub fn has_domain_prefix(&self) -> bool {
-        self.domain_details().is_some_and(|x| x.ms != 0)
+        self.domain_details().is_some_and(DomainHostDetails::has_prefix)
     }
 
 
 
     /// The [`Range`] of the domain prefix.
     fn domain_prefix_thing(&self) -> Option<Range<usize>> {
-        let hs = self.host_start    ()?;
-        let dd = self.domain_details()?;
+        let hs = self.host_start()?;
 
-        match dd.ms {
-            0 => None,
-            _ => Some(hs .. hs + dd.ms as usize - 1),
-        }
+        Some(hs .. self.domain_details()?.prefix_after()? + hs)
     }
 
     /// The domain prefix as a [`str`].

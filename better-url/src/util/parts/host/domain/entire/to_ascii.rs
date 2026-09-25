@@ -56,13 +56,11 @@ pub fn normalized_domain_host_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> R
 /// # Errors
 /// If [`normalized_domain_segments_to_ascii`] returns an error, that error is returned.
 ///
-/// If the resulting domain is empty or larger than [`u32::MAX`] bytes, returns the error [`InvalidDomainHost`].
-///
 /// If the resulting domain [`ends_in_a_number`], returns the error [`InvalidDomainHost`].
 pub fn not_eian_domain_host_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainHost> {
     let (changed, domain) = normalized_domain_segments_to_ascii(value)?;
 
-    if domain.is_empty() || domain.len() > u32::MAX as usize {
+    if domain.is_empty() {
         Err(InvalidDomainHost)?
     }
 

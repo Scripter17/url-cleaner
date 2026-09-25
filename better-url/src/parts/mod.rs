@@ -29,7 +29,9 @@
 //!
 //! However please note that the constructors for these types aren't just "what would this input result in when parsing an appropriate URL?" or "what would this input result in in an appropriate URL's setter?".
 //!
-//! Specifically, tabs, newlines, and carrage returns are not detected or removed, [`Fragment`] and co. don't remove trailing C0-or-space codepoints, and [`OpaquePath`] always percent encodes a trailing space.
+//! Specifically, tabs, newlines, and carrage returns are not detected or removed,
+//! [`Fragment`] and co. don't remove trailing C0-or-space codepoints, [`OpaquePath`] always percent encodes a trailing space,
+//! and the 4GiB length limit that [`BetterUrl`] enforces is completely ignored.
 //!
 //! ```
 //! use better_url::prelude::*;
@@ -138,7 +140,7 @@ as_str!(
 
 as_str!(
     Path,
-    OpaquePath, SegmentedPath,
+    SegmentedPath, OpaquePath,
     SpecialNotFilePath, FilePath, NonSpecialPath
 );
 

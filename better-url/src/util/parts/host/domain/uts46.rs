@@ -31,7 +31,8 @@ const fn get_data() -> [u8; 256] {
     while i < 256 {
         if FORBIDDEN_DOMAIN_SEGMENT_INPUT .contains(i as u8) { ret[i as usize] |= 0b0001_0000; }
         if FORBIDDEN_DOMAIN_SEGMENTS_INPUT.contains(i as u8) { ret[i as usize] |= 0b0010_0000; }
-        if FORBIDDEN_DOMAIN_HOST_INPUT    .contains(i as u8) { ret[i as usize] |= 0b0100_0000; }
+        if FORBIDDEN_IPV4_DEC_INPUT       .contains(i as u8) { ret[i as usize] |= 0b0100_0000; }
+        if FORBIDDEN_IPV4_INPUT           .contains(i as u8) { ret[i as usize] |= 0b1000_0000; }
         i += 1;
     }
 
@@ -98,7 +99,9 @@ pub fn uts46_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a
 ///
 /// - If a [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] byte was found.
 ///
-/// - If a [`FORBIDDEN_DOMAIN_HOST_INPUT`] byte was found.
+/// - If a [`FORBIDDEN_IPV4_DEC_INPUT`] byte was found.
+///
+/// - If a [`FORBIDDEN_IPV4_INPUT`] byte was found.
 ///
 /// - Unused.
 pub fn uts46_classify_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>, u8) {

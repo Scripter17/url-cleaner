@@ -2,9 +2,7 @@
 
 use crate::prelude::*;
 
-/// encode a [`NonSpecialPath`].
-///
-/// Specifically, [`percent_encode_non_special_path`] + [`resolve_non_special_path`].
+/// Encode a [`NonSpecialPath`].
 /// # Examples
 /// ```
 /// use better_url::util::*;
@@ -29,70 +27,87 @@ use crate::prelude::*;
 /// assert_eq!(encode_non_special_path("/c:/../ghi/" ), (true , "/ghi/"    .into()));
 /// ```
 pub fn encode_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = percent_encode_non_special_path(value);
-    let (b, value) = resolve_non_special_path       (value);
-
-    (a || b, value)
-}
-
-/// Do just the percent encoding for a [`NonSpecialPath`].
-///
-/// For the full process, see [`encode_non_special_path`].
-pub fn percent_encode_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    encode_non_special_path_segments(value)
+    encode_non_special_path_bytes(cow_str_to_bytes(value))
 }
 
 
 
-/// encode a [`NonSpecialPath`] from bytes.
-///
-/// Specifically, [`percent_encode_non_special_path`] + [`resolve_non_special_path`].
+/// Encode a [`NonSpecialPath`] from bytes.
 pub fn encode_non_special_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = percent_encode_non_special_path_bytes(value);
-    let (b, value) = resolve_non_special_path             (value);
-
-    (a || b, value)
-}
-
-/// Do just the percent encoding for a [`NonSpecialPath`].
-///
-/// For the full process, see [`encode_non_special_path_bytes`].
-pub fn percent_encode_non_special_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    encode_non_special_path_segments_bytes(value)
-}
-
-
-
-
-/// Resolve an encoded special not file path.
-pub fn resolve_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let mut value = value.into();
-    let mut changed = false;
+    let value = value.into();
 
     if value.is_empty() {
-        return (false, value)
+        return (false, unsafe {cow_bytes_to_str_unchecked(value)});
     }
 
-    if !matches!(value.as_bytes(), [b'/', ..]) {
-        value.to_mut().insert(0, '/');
-        changed = true;
+    let prepend_slash = !matches!(&*value, [b'/', ..]);
+    let mut to_encode = 0;
+
+    for &b in &*value {
+        if PATH.contains(b) {
+            to_encode += 1;
+        }
     }
 
-    let (a, value) = resolve_non_special_path_range(value, ..);
 
-    changed |= a;
 
-    (changed, value)
+    let value = match to_encode {
+        0 => match prepend_slash {
+            true  => unsafe {cow_bytes_to_str_unchecked(value)}.with_insert_str(0, "/"),
+            false => unsafe {cow_bytes_to_str_unchecked(value)},
+        },
+        _ => {
+            let len = value.len() + to_encode * 2 + prepend_slash as usize;
+
+            let mut ret = String::with_capacity(len);
+
+            if prepend_slash {
+                unsafe {
+                    *ret.as_mut_ptr() = b'/';
+                }
+            }
+
+            let mut w = prepend_slash as usize;
+
+            unsafe {
+                for &b in &*value {
+                    if PATH.contains(b) {
+                        *ret.as_mut_ptr().add(w    ) = b'%';
+                        *ret.as_mut_ptr().add(w + 1) = NIBBLES[b as usize >> 4];
+                        *ret.as_mut_ptr().add(w + 2) = NIBBLES[b as usize & 15];
+
+                        w += 3;
+                    } else {
+                        *ret.as_mut_ptr().add(w) = b;
+
+                        w += 1;
+                    }
+                }
+
+                ret.as_mut_vec().set_len(len);
+            }
+
+            ret.into()
+        }
+    };
+
+    let (needed_resolve, value) = resolve_non_special_path(value);
+
+    (prepend_slash || to_encode != 0 || needed_resolve, value)
 }
 
 
 
-/// Resolve an encoded non-special path using only the segments in `range`.
+/// [`resolve_non_special_path_range`] with the full range.
+pub fn resolve_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    resolve_non_special_path_range(value, ..)
+}
+
+/// Resolve an encoded non-special path using only the segments in the range of bytes.
 /// # Panics
 /// May or may not panic if the range does not begin with a `/` and/or does not end after the end of a segment.
 pub fn resolve_non_special_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<usize>>(value: T, range: B) -> (bool, Cow<'a, str>) {
     let value = value.into();
-
     let mut changed = false;
 
     let start = match range.start_bound() {
@@ -109,7 +124,7 @@ pub fn resolve_non_special_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<
 
     assert!(start <= after && after <= value.len());
 
-    debug_assert_eq!(value.as_bytes()[start], b'/');
+    debug_assert!(start == value.len() || value.as_bytes()[start] == b'/');
     debug_assert!(after == value.len() || value.as_bytes()[after] == b'/');
 
     if unsafe {value.get_unchecked(start .. after)}.memchrn(*b".%").is_none() {
@@ -181,7 +196,7 @@ pub fn opaque_path_to_non_special_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (
         return (false, value);
     }
 
-    value.to_mut().insert(0, '/');
+    value = value.with_insert_str(0, "/");
 
     let (_, value) = resolve_non_special_path_range(value, ..);
 

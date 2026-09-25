@@ -12,12 +12,12 @@ impl DomainHost<'_> {
 
     /// The [`Range::start`] of the suffix.
     pub(crate) fn suffix_start(&self) -> usize {
-        self.details.ss as usize
+        self.details.suffix_start()
     }
 
     /// The [`Range::end`] of the suffix.
     pub(crate) fn suffix_after(&self) -> usize {
-        self.len() - self.details.fq as usize
+        self.len() - self.details.is_fqdn() as usize
     }
 
     /// The [`Range`] of the suffix.
@@ -94,8 +94,6 @@ impl DomainHost<'_> {
         match value.map(TryInto::try_into).transpose()? {
             Some(new) if old == new => return Ok(false),
 
-            Some(new) if self.len() - old.len() + new.len() > u32::MAX as usize => Err(TooLong)?,
-
             Some(new) => match self.host.split_around_substr(old) {
                 ("", "" ) if new.is_empty        () => Err(CantBeEmpty)?,
                 (_ , "" ) if new.last_is_empty   () => Err(NonFqdnCantEndInEmpty)?,
@@ -147,9 +145,6 @@ impl DomainHost<'_> {
         match (temp, value.map(TryInto::try_into).transpose()?) {
             (Ok (old), Some(new)) if old == new => return Ok(false),
 
-            (Ok (old), Some(new)) if self.len() - old.len() + new.len()     > u32::MAX as usize => Err(TooLong)?,
-            (Err(0  ), Some(new)) if self.len()             + new.len() + 1 > u32::MAX as usize => Err(TooLong)?,
-
             (Err(1..), Some(_)) => Err(InsertNotFound )?,
             (Err(_  ), None   ) => return Ok(false),
 
@@ -193,8 +188,6 @@ impl DomainHost<'_> {
 
         match new {
             Some(new) if old == new => return Ok(false),
-
-            Some(new) if self.len() - old.len() + new.len() > u32::MAX as usize => Err(TooLong)?,
 
             Some(new) => match self.host.split_around_substr(old.as_str()) {
                 ("", "" ) if new.is_empty()         => Err(CantBeEmpty)?,
@@ -241,10 +234,6 @@ impl DomainHost<'_> {
     pub fn insert_suffix_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
         let new = value.try_into()?;
 
-        if self.len() + new.len() + 1 > u32::MAX as usize {
-            Err(TooLong)?;
-        }
-
         let temp = self.suffix_segments().try_neg_nth(index).map(|x| self.host.my_substr_range(x.as_str()));
 
         match (temp, index) {
@@ -285,10 +274,6 @@ impl DomainHost<'_> {
     /// ```
     pub fn insert_suffix_segments<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetDomainError> where SetDomainError: From<T::Error> {
         let new = value.try_into()?;
-
-        if self.len() + new.len() + 1 > u32::MAX as usize {
-            Err(TooLong)?;
-        }
 
         let temp = self.suffix_segments().try_neg_nth(index).map(|x| self.host.my_substr_range(x.as_str()));
 
