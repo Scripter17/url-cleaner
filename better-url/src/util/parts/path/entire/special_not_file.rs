@@ -31,7 +31,7 @@ pub fn encode_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (boo
 }
 
 
-
+/// Get [`PATH_BYTE_CLASS`].
 const fn get_path_byte_class() -> [u8; 256] {
     let mut ret = [0; 256];
 
@@ -51,6 +51,13 @@ const fn get_path_byte_class() -> [u8; 256] {
     ret
 }
 
+/// A byte classifier whose bits are, from lowest to highest:
+///
+/// - If the byte is in [`PATH`].
+///
+/// - If the byte is `%` or `.`, possibly requiring resolving.
+///
+/// - If the byte is `|` or `:`, possibly requiring resolving in the current kinda bad [`FilePath`] resolver.
 pub(crate) const PATH_BYTE_CLASS: [u8; 256] = get_path_byte_class();
 
 
