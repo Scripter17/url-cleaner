@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// A fragment string.
 #[derive(Debug, Clone)]
-pub struct Fragment<'a>(pub(crate) Cow<'a, str>);
+pub struct Fragment<'a>(Cow<'a, str>);
 
 impl<'a> Fragment<'a> {
     /// Make a new [`Self`] without doing any validity checks.

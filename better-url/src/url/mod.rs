@@ -129,14 +129,7 @@ impl TryFrom<Cow<'_, [u8]>> for BetterUrl {
     type Error = InvalidUrl;
 
     fn try_from(value: Cow<'_, [u8]>) -> Result<Self, Self::Error> {
-        let (_, value) = canonize_parser_input_bytes(value);
-
-        let i = value.memchr(b':').ok_or(InvalidUrl::MissingScheme)?;
-
-        let scheme = unsafe {value.get_unchecked(.. i       )};
-        let rest   = unsafe {value.get_unchecked(   i + 1 ..)};
-
-        Self::after_scheme(Scheme::new(scheme)?, rest)
+        Self::new_bytes(value)
     }
 }
 
@@ -148,7 +141,7 @@ impl FromStr for BetterUrl {
     }
 }
 
-impl                 TryFrom<Cow<'_, str>> for BetterUrl {type Error = InvalidUrl; fn try_from(value: Cow<'_, str>) -> Result<Self, Self::Error> {cow_str_to_bytes(value).try_into()}}
+impl                 TryFrom<Cow<'_, str>> for BetterUrl {type Error = InvalidUrl; fn try_from(value: Cow<'_, str>) -> Result<Self, Self::Error> {Self::new_str(value)}}
 impl                 TryFrom<&str        > for BetterUrl {type Error = InvalidUrl; fn try_from(value: &str        ) -> Result<Self, Self::Error> {Cow::Borrowed     (   value           ).try_into()}}
 impl                 TryFrom< String     > for BetterUrl {type Error = InvalidUrl; fn try_from(value: String      ) -> Result<Self, Self::Error> {Cow::<str>::Owned (   value           ).try_into()}}
 impl                 TryFrom<&String     > for BetterUrl {type Error = InvalidUrl; fn try_from(value: &String     ) -> Result<Self, Self::Error> {Cow::Borrowed     (&**value           ).try_into()}}

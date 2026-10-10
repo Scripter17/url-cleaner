@@ -39,6 +39,7 @@ impl VecBytesExt for Vec<u8> {
             self.set_len(len - (after - start) + with.len());
         }
     }
+
     unsafe fn replace_range_with_unchecked<B: RangeBounds<usize>>(&mut self, range: B, with: &[&[u8]]) {
         let start = match range.start_bound() {
             Bound::Unbounded    => 0,

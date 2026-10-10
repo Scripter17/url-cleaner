@@ -17,10 +17,11 @@ serde = { version = "1.0.229", optional = true, features = ["derive"] }
 # Other.
 icu_normalizer = { version = "2.3.0", default-features = false, features = ["compiled_data"] }
 icu_properties = "2.3.0"
-psl            = "2.1.238"
+psl            = { version = "2.1.239", optional = true }
 thiserror      = "2.0.21"
 include_data   = "1.0.1"
-libc           = "0.2.189"
+libc           = "0.2.190"
+smallvec       = "1.16.2"
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 memchr = "2.8.3"
@@ -31,6 +32,7 @@ serde_json = "1.0.151"
 
 [features]
 serde = ["dep:serde"]
+psl = ["dep:psl"]
 
 [lints]
 workspace = true

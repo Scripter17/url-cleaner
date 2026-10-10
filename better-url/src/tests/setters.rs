@@ -3,11 +3,11 @@
 use crate::prelude::*;
 
 /// The test data.
-const DATA: &str = include_str!("data/setters_tests.json");
+const WPT_SETTERS_TESTS: &str = include_str!("data/setters_tests.json");
 
 #[test]
-fn test_setters() {
-    serde_json::from_str::<Tests>(DATA).expect("To parse the tests.").r#do()
+fn wpt_setters_tests() {
+    serde_json::from_str::<Tests>(WPT_SETTERS_TESTS).expect("To parse the tests.").r#do()
 }
 
 /// The [`Test`]s.

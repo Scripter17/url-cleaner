@@ -32,64 +32,104 @@ pub fn encode_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (boo
 
 
 
+const fn get_path_byte_class() -> [u8; 256] {
+    let mut ret = [0; 256];
+
+    let mut i = 0;
+    while i < 256 {
+        if PATH.contains(i as u8) {ret[i as usize] |= 1;}
+
+        i += 1;
+    }
+
+    ret[b'\\' as usize] |= 2;
+    ret[b'%'  as usize] |= 4;
+    ret[b'.'  as usize] |= 4;
+    ret[b':'  as usize] |= 8;
+    ret[b'|'  as usize] |= 8;
+
+    ret
+}
+
+pub(crate) const PATH_BYTE_CLASS: [u8; 256] = get_path_byte_class();
+
+
+
 /// Encode a [`SpecialNotFilePath`] from bytes.
 pub fn encode_special_not_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
     let value = value.into();
 
     let prepend_slash = !matches!(&*value, [b'/' | b'\\', ..]);
     let mut to_encode = 0;
+    let mut class = 0;
 
     for &b in &*value {
-        if PATH.contains(b) {
-            to_encode += 1;
+        class |= PATH_BYTE_CLASS[b as usize];
+    }
+
+    if class & 1 == 1 {
+        for &b in &*value {
+            to_encode += PATH.contains(b) as usize;
         }
     }
 
+    #[cold]
+    fn outline<'a>(value: Cow<'a, [u8]>, to_encode: usize, prepend_slash: bool) -> Cow<'a, str> {
+        match to_encode {
+            0 => match prepend_slash {
+                true  => unsafe {cow_bytes_to_str_unchecked(value)}.with_insert_str(0, "/"),
+                false => unsafe {cow_bytes_to_str_unchecked(value)},
+            },
+            _ => {
+                let len = value.len() + to_encode * 2 + prepend_slash as usize;
 
+                let mut ret = String::with_capacity(len);
 
-    let value = match to_encode {
-        0 => match prepend_slash {
-            true  => unsafe {cow_bytes_to_str_unchecked(value)}.with_insert_str(0, "/"),
-            false => unsafe {cow_bytes_to_str_unchecked(value)},
-        },
-        _ => {
-            let len = value.len() + to_encode * 2 + prepend_slash as usize;
-
-            let mut ret = String::with_capacity(len);
-
-            if prepend_slash {
-                unsafe {
-                    *ret.as_mut_ptr() = b'/';
-                }
-            }
-
-            let mut w = prepend_slash as usize;
-
-            unsafe {
-                for &b in &*value {
-                    if PATH.contains(b) {
-                        *ret.as_mut_ptr().add(w    ) = b'%';
-                        *ret.as_mut_ptr().add(w + 1) = NIBBLES[b as usize >> 4];
-                        *ret.as_mut_ptr().add(w + 2) = NIBBLES[b as usize & 15];
-
-                        w += 3;
-                    } else {
-                        *ret.as_mut_ptr().add(w) = b;
-
-                        w += 1;
+                if prepend_slash {
+                    unsafe {
+                        *ret.as_mut_ptr() = b'/';
                     }
                 }
 
-                ret.as_mut_vec().set_len(len);
-            }
+                let mut w = prepend_slash as usize;
 
-            ret.into()
+                unsafe {
+                    for &b in &*value {
+                        if PATH.contains(b) {
+                            *ret.as_mut_ptr().add(w    ) = b'%';
+                            *ret.as_mut_ptr().add(w + 1) = NIBBLES[b as usize >> 4];
+                            *ret.as_mut_ptr().add(w + 2) = NIBBLES[b as usize & 15];
+
+                            w += 3;
+                        } else {
+                            *ret.as_mut_ptr().add(w) = b;
+
+                            w += 1;
+                        }
+                    }
+
+                    ret.as_mut_vec().set_len(len);
+                }
+
+                ret.into()
+            }
         }
+    }
+
+    let value = match to_encode != 0 || prepend_slash {
+        false => unsafe {cow_bytes_to_str_unchecked(value)},
+        true => outline(value, to_encode, prepend_slash),
     };
 
-    let (forwarded_slashes, value) = forward_slashes(value);
+    let (forwarded_slashes, value) = match class & 2 {
+        0 => (false, value),
+        _ => forward_slashes(value),
+    };
 
-    let (needed_resolve, value) = resolve_special_not_file_path(value);
+    let (needed_resolve, value) = match class & 4 {
+        0 => (false, value),
+        _ => resolve_special_not_file_path(value),
+    };
 
     (prepend_slash || to_encode != 0 || forwarded_slashes || needed_resolve, value)
 }

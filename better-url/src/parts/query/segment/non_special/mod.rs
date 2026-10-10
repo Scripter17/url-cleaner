@@ -9,9 +9,9 @@ mod value;
 #[derive(Debug, Clone)]
 pub struct NonSpecialQuerySegment<'a> {
     /// The raw segment.
-    pub(crate) raw: Cow<'a, str>,
+    raw: Cow<'a, str>,
     /// If non-zero, the start of the value.
-    pub(crate) value_start: Option<NonZero<usize>>,
+    value_start: Option<NonZero<usize>>,
 }
 
 impl<'a> NonSpecialQuerySegment<'a> {
@@ -68,6 +68,11 @@ impl<'a> NonSpecialQuerySegment<'a> {
     pub fn into_inner(self) -> Cow<'a, str> {
         self.raw
     }
+
+    /// Turn into the inner [`Cow`] and the start index of the value.
+    pub fn into_parts(self) -> (Cow<'a, str>, Option<NonZero<usize>>) {
+        (self.raw, self.value_start)
+    }
 }
 
 
@@ -102,18 +107,20 @@ impl<'a> From<QuerySegment<'a>> for NonSpecialQuerySegment<'a> {
 
 impl<'a> From<SpecialQuerySegment<'a>> for NonSpecialQuerySegment<'a> {
     fn from(value: SpecialQuerySegment<'a>) -> Self {
+        let (raw, value_start) = value.into_parts();
+
         Self {
-            raw: value.raw,
-            value_start: value.value_start,
+            raw,
+            value_start,
         }
     }
 }
 
 impl<'a> From<FragmentQuerySegment<'a>> for NonSpecialQuerySegment<'a> {
     fn from(value: FragmentQuerySegment<'a>) -> Self {
-        let old_vs = value.value_start;
+        let (raw, old_vs) = value.into_parts();
 
-        match fragment_to_non_special_query(value.into_inner()) {
+        match fragment_to_non_special_query(raw) {
             (true , raw) => Self {value_start: raw.memchr(b'=').and_then(|x| NonZero::new(x + 1)), raw},
             (false, raw) => Self {value_start: old_vs, raw}
         }

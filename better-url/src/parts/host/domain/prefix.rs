@@ -34,7 +34,7 @@ impl DomainHost<'_> {
 
     /// The prefix as a [`DomainSegments`].
     pub fn prefix(&self) -> Option<DomainSegments<'_>> {
-        Some(DomainSegments(self.prefix_str()?.into()))
+        Some(unsafe {DomainSegments::new_unchecked(self.prefix_str()?)})
     }
 
 

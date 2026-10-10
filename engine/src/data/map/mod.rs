@@ -26,6 +26,22 @@ pub struct Map<T> {
 }
 
 impl<T> Map<T> {
+    /// If it contains `key`.
+    pub fn contains(&self, key: Option<&str>) -> bool {
+        match key {
+            Some(key) => self.map.contains_key(key),
+            None => self.if_none.is_some()
+        }
+    }
+
+    /// Insert or replace `key` to `value`.
+    pub fn insert(&mut self, key: Option<String>, value: T) -> Option<T> {
+        match key {
+            Some(key) => self.map.insert(key, value),
+            None => self.if_none.replace(value)
+        }
+    }
+
     /// [`FxHashMap::get`].
     ///
     /// If [`Some`], returns the corresponding value from [`Self::map`].

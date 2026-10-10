@@ -3,19 +3,27 @@
 use crate::prelude::*;
 
 /// The empty host.
+///
+/// Doesn't contain any data, but keeps the `'a` lifetime the rest of the part types have for consistency.
+///
+/// ```
+/// use better_url::parts::*;
+///
+/// assert_eq!(std::mem::size_of::<EmptyHost<'_>>(), 0);
+/// ```
 #[derive(Debug, Clone, Copy, Default)]
 pub struct EmptyHost<'a> {
     /// Fake having a host string.
-    pub(crate) phantom: std::marker::PhantomData<&'a ()>,
+    phantom: std::marker::PhantomData<&'a ()>,
     /// The [`EmptyHostDetails`].
-    pub(crate) details: EmptyHostDetails
+    details: EmptyHostDetails
 }
 
 impl<'a> EmptyHost<'a> {
     /// Make a new [`Self`] with zero validity checks.
     /// # Safety
     /// `value` must be a valid empty host literal and `details` must be its [`OpaqueHostDetails`].
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: EmptyHostDetails) -> Self {
+    pub unsafe fn from_parts<T: Into<Cow<'a, str>>>(value: T, details: EmptyHostDetails) -> Self {
         let _ = value.into();
 
         Self {

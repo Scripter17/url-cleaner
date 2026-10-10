@@ -47,26 +47,38 @@ impl CowBytesExt for Cow<'_, [u8]> {
     }
 
     fn replace_range<B: RangeBounds<usize>>(&mut self, range: B, with: &[u8]) {
+        let start = match range.start_bound() {
+            Bound::Unbounded    => 0,
+            Bound::Included(&x) => x,
+            Bound::Excluded(&x) => x + 1,
+        };
+
+        let after = match range.end_bound() {
+            Bound::Unbounded    => self.len(),
+            Bound::Included(&x) => x + 1,
+            Bound::Excluded(&x) => x,
+        };
+
+        assert!(start <= after && after <= self.len());
+
         match self {
-            Cow::Owned   (x) => {x.splice(range, with.iter().copied());},
-            Cow::Borrowed(x) => {
-                let start = match range.start_bound() {
-                    Bound::Unbounded    => 0,
-                    Bound::Included(&x) => x,
-                    Bound::Excluded(&x) => x + 1,
-                };
+            Cow::Owned(x) if x.capacity() >= x.len() - (after - start) + with.len() => unsafe {
+                std::ptr::copy(x.as_ptr().add(after), x.as_mut_ptr().add(start + with.len()), x.len() - after);
 
-                let after = match range.end_bound() {
-                    Bound::Unbounded    => x.len(),
-                    Bound::Included(&x) => x + 1,
-                    Bound::Excluded(&x) => x,
-                };
+                std::ptr::copy_nonoverlapping(with.as_ptr(), x.as_mut_ptr().add(start), with.len());
 
-                let mut ret = Vec::with_capacity(x.len() - (after - start) + with.len());
+                x.set_len(x.len() - (after - start) + with.len());
+            },
+            _ => {
+                let mut ret = Vec::with_capacity(self.len() - (after - start) + with.len());
 
-                ret.extend_from_slice(&x[..start]);
-                ret.extend_from_slice(with);
-                ret.extend_from_slice(&x[after..]);
+                unsafe {
+                    std::ptr::copy_nonoverlapping(self.as_ptr()           , ret.as_mut_ptr()                        , start             );
+                    std::ptr::copy_nonoverlapping(with.as_ptr()           , ret.as_mut_ptr().add(start             ), with.len()        );
+                    std::ptr::copy_nonoverlapping(self.as_ptr().add(after), ret.as_mut_ptr().add(start + with.len()), self.len() - after);
+
+                    ret.set_len(self.len() - (after - start) + with.len());
+                }
 
                 *self = ret.into();
             }

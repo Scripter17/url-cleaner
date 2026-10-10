@@ -34,7 +34,7 @@ impl DomainHost<'_> {
 
     /// The suffix as a [`DomainSegments`].
     pub fn suffix(&self) -> DomainSegments<'_> {
-        DomainSegments(self.suffix_str().into())
+        unsafe {DomainSegments::new_unchecked(self.suffix_str())}
     }
 
 

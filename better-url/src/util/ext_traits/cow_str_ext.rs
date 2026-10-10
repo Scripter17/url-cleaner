@@ -19,6 +19,9 @@ pub(crate) trait CowStrExt {
     /// Extend with multiple [`str`]s without unnecessary allocations.
     fn extend<const N: usize>(&mut self, strings: [&str; N]);
 
+    /// Push a [`str`].
+    fn push_str(&mut self, value: &str);
+
     /// Insert a string at `idx` without unnecessary allocations.
     fn with_insert_str(self, idx: usize, string: &str) -> Cow<'static, str>;
 
@@ -31,16 +34,23 @@ impl CowStrExt for Cow<'_, str> {
         unsafe {
             match self {
                 Cow::Owned(x) => {
-                    match range.end_bound() {
-                        Bound::Unbounded    => {},
-                        Bound::Excluded(&y) => x.as_mut_vec().set_len(y),
-                        Bound::Included(&y) => x.as_mut_vec().set_len(y + 1),
-                    }
-                    match range.start_bound() {
-                        Bound::Unbounded    => {},
-                        Bound::Excluded(&y) => {x.as_mut_vec().drain(..=y);},
-                        Bound::Included(&y) => {x.as_mut_vec().drain(.. y);},
-                    }
+                    let start = match range.start_bound() {
+                        Bound::Unbounded    => 0,
+                        Bound::Excluded(&y) => y + 1,
+                        Bound::Included(&y) => y,
+                    };
+
+                    let after = match range.end_bound() {
+                        Bound::Unbounded    => x.len(),
+                        Bound::Excluded(&y) => y,
+                        Bound::Included(&y) => y + 1,
+                    };
+
+                    let x = x.as_mut_vec();
+
+                    std::ptr::copy(x.as_ptr().add(start), x.as_mut_ptr(), after - start);
+
+                    x.set_len(x.len() - start - (x.len() - after));
                 },
                 Cow::Borrowed(x) => *x = x.get_unchecked((range.start_bound().cloned(), range.end_bound().cloned()))
             }
@@ -99,6 +109,20 @@ impl CowStrExt for Cow<'_, str> {
 
                 ret.push_str(x);
                 ret.extend(strings);
+
+                *self = ret.into();
+            }
+        }
+    }
+
+    fn push_str(&mut self, value: &str) {
+        match self {
+            Cow::Owned(x) => x.push_str(value),
+            Cow::Borrowed(x) => {
+                let mut ret = String::with_capacity(x.len() + value.len());
+
+                ret.push_str(x);
+                ret.push_str(value);
 
                 *self = ret.into();
             }

@@ -111,6 +111,14 @@ impl<'a> QuerySegment<'a> {
             Self::NonSpecial(x) => x.into_inner(),
         }
     }
+
+    /// Turn into the inner [`Cow`] and the start index of the value.
+    pub fn into_parts(self) -> (Cow<'a, str>, Option<NonZero<usize>>) {
+        match self {
+            Self::Special   (x) => x.into_parts(),
+            Self::NonSpecial(x) => x.into_parts(),
+        }
+    }
 }
 
 impl<'a> TryFrom<QueryLikeSegment<'a>> for QuerySegment<'a> {

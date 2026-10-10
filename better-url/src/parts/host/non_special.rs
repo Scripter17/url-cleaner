@@ -14,12 +14,12 @@ impl<'a> NonSpecialHost<'a> {
     /// Make a new [`Self`] without doing any validity checks.
     /// # Safety
     /// `value` must be a valid [`Self`] literal and `details` must be its details.
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: NonSpecialHostDetails) -> Self {
+    pub unsafe fn from_parts<T: Into<Cow<'a, str>>>(value: T, details: NonSpecialHostDetails) -> Self {
         unsafe {
             match details {
-                NonSpecialHostDetails::Ipv6  (x) => Ipv6Host  ::new_unchecked(value, x).into(),
-                NonSpecialHostDetails::Opaque(x) => OpaqueHost::new_unchecked(value, x).into(),
-                NonSpecialHostDetails::Empty (x) => EmptyHost ::new_unchecked(value, x).into(),
+                NonSpecialHostDetails::Ipv6  (x) => Ipv6Host  ::from_parts(value, x).into(),
+                NonSpecialHostDetails::Opaque(x) => OpaqueHost::from_parts(value, x).into(),
+                NonSpecialHostDetails::Empty (x) => EmptyHost ::from_parts(value, x).into(),
             }
         }
     }

@@ -16,6 +16,8 @@ pub fn cow_str_to_bytes<'a, T: Into<Cow<'a, str>>>(value: T) -> Cow<'a, [u8]> {
 pub fn try_cow_bytes_to_str<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<Cow<'a, str>, (std::str::Utf8Error, Cow<'a, [u8]>)> {
     let value = value.into();
 
+    // TODO: Find a faster UTF-8 validator.
+
     match str::from_utf8(&value) {
         Ok (_) => Ok(unsafe {cow_bytes_to_str_unchecked(value)}),
         Err(e) => Err((e, value)),

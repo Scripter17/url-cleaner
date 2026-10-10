@@ -2,28 +2,22 @@
 
 /// A simple wrapper around [`libc`]'s memchr.
 pub fn memchr(haystack: &[u8], needle: u8) -> Option<usize> {
-    match unsafe {libc::memchr(
+    unsafe {libc::memchr(
         haystack.as_ptr() as _,
         needle as _,
         haystack.len()
-    )}.addr() {
-        0 => None,
-        x => Some(x - haystack.as_ptr().addr())
-    }
+    )}.addr().checked_sub(haystack.as_ptr().addr())
 }
 
 /// A simple wrapper around [`libc`]'s memrchr.
 pub fn memrchr(haystack: &[u8], needle: u8) -> Option<usize> {
     cfg_select! {
         target_os = "linux" => {
-            match unsafe {libc::memrchr(
+            unsafe {libc::memrchr(
                 haystack.as_ptr() as _,
                 needle as _,
                 haystack.len()
-            )}.addr() {
-                0 => None,
-                x => Some(x - haystack.as_ptr().addr())
-            }
+            )}.addr().checked_sub(haystack.as_ptr().addr())
         },
         _ => memchr::memrchr(needle, haystack)
     }
@@ -79,12 +73,12 @@ pub fn memchrn(haystack: &[u8], needles: &[u8]) -> Option<usize> {
 /// ```
 pub fn memrchrn(haystack: &[u8], needles: &[u8]) -> Option<usize> {
     let mut ret = None;
-    let mut x = 0;
+    let mut i = 0;
 
     for &needle in needles {
-        if let Some(found) = memrchr(unsafe {haystack.get_unchecked(x..)}, needle) {
-            x += found;
-            ret = Some(x);
+        if let Some(found) = memrchr(unsafe {haystack.get_unchecked(i..)}, needle) {
+            i += found;
+            ret = Some(i);
         }
     }
 

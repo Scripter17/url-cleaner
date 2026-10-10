@@ -7,6 +7,7 @@ mod non_special;
 mod ipv4;
 mod ipv6;
 mod domain;
+mod bidi;
 mod opaque;
 mod empty;
 
@@ -17,5 +18,6 @@ pub use non_special::*;
 pub use ipv4::*;
 pub use ipv6::*;
 pub use domain::*;
+pub use bidi::*;
 pub use opaque::*;
 pub use empty::*;

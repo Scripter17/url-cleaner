@@ -5,8 +5,12 @@
 
 use clap::Parser;
 
-mod parse;
-mod set;
+pub mod parse;
+pub mod set;
+pub mod idna;
+pub mod psl;
+pub mod utils;
+pub mod util;
 
 /// Benchmarking tool for Better URL.
 #[expect(missing_docs, reason = "Makes clap inherit the docs.")]
@@ -14,6 +18,9 @@ mod set;
 pub enum Args {
     #[command(subcommand)] Parse(parse::Args),
     #[command(subcommand)] Set  (set  ::Args),
+    #[command(subcommand)] Idna (idna ::Args),
+    Psl(psl::Args),
+    #[command(subcommand)] Utils(utils::Args),
 }
 
 impl Args {
@@ -22,6 +29,9 @@ impl Args {
         match self {
             Self::Parse(args) => args.r#do(),
             Self::Set  (args) => args.r#do(),
+            Self::Idna (args) => args.r#do(),
+            Self::Psl  (args) => args.r#do(),
+            Self::Utils(args) => args.r#do(),
         }
     }
 }

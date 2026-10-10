@@ -34,7 +34,7 @@ impl DomainHost<'_> {
 
     /// The middle as a [`DomainSegment`].
     pub fn middle(&self) -> Option<DomainSegment<'_>> {
-        Some(DomainSegment(self.middle_str()?.into()))
+        Some(unsafe {DomainSegment::new_unchecked(self.middle_str()?)})
     }
 
 

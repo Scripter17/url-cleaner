@@ -76,10 +76,7 @@ impl SpecialNotFileSchemeDetails {
 
     /// The default [`Port`].
     pub fn default_port(self) -> Port<'static> {
-        Port {
-            port: self.default_port_str().into(),
-            port_num: self.default_port_num()
-        }
+        unsafe {Port::new_unchecked(self.default_port_str(), self.default_port_num())}
     }
 
     /// The default port as a [`u16`].

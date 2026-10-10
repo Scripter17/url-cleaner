@@ -11,6 +11,7 @@ pub fn make_port<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, u16, Cow<
     let num = value.parse().map_err(|_| InvalidPort)?;
 
     Ok(match (num, value.as_bytes()) {
+        (_,   [b'+',    ..]) => Err(InvalidPort)?,
         (0  , [b'0', _, ..]) => (true , 0  , "0".into()            ),
         (1.., [b'0'   , ..]) => (true , num, num.to_string().into()),
         _                    => (false, num, value                 ),

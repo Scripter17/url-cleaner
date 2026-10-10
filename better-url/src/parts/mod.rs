@@ -90,14 +90,12 @@ pub use fragment::*;
 
 
 from_cow_bytes!(
-    root;
-
     Userinfo, Username, Password,
 
-    OpaquePath,
-    FilePath, FilePathSegments, FilePathSegment,
+    FilePath          , FilePathSegments          , FilePathSegment          ,
     SpecialNotFilePath, SpecialNotFilePathSegments, SpecialNotFilePathSegment,
-    NonSpecialPath, NonSpecialPathSegments, NonSpecialPathSegment,
+    NonSpecialPath    , NonSpecialPathSegments    , NonSpecialPathSegment    ,
+    OpaquePath,
 
     SpecialQuery   , SpecialQuerySegment   , SpecialQueryName   , SpecialQueryValue   ,
     NonSpecialQuery, NonSpecialQuerySegment, NonSpecialQueryName, NonSpecialQueryValue,
@@ -107,22 +105,25 @@ from_cow_bytes!(
 );
 
 from_option_cow_bytes!(
-    root;
-
     MaybeFragment,
     MaybeFragmentQuery     , MaybeSpecialQuery     , MaybeNonSpecialQuery     ,
     MaybeFragmentQueryValue, MaybeSpecialQueryValue, MaybeNonSpecialQueryValue
 );
 
 try_from_cow_bytes!(
-    root;
-
     Scheme,
 
-    FileHost, SpecialNotFileHost, NonSpecialHost,
+    NonSpecialHost,
 
-    DomainHost, DomainSegments, DomainSegment,
-    Ipv4Host, Ipv6Host, OpaqueHost, EmptyHost
+    Ipv6Host, OpaqueHost, EmptyHost
+);
+
+try_from_cow_bytes_or_str!(
+    FileHost, SpecialNotFileHost,
+
+    DomainSegments, DomainHost, DomainSegment,
+
+    Ipv4Host
 );
 
 

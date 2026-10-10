@@ -58,7 +58,7 @@ impl Args {
             self.ada   = true;
         }
 
-        for (i, line) in std::io::stdin().lock().lines().map(Result::unwrap).enumerate() {
+        for (i, line) in (1..).zip(std::io::stdin().lock().lines().map(Result::unwrap)) {
             print!("{i}");
 
             match BetterUrl::new(&line) {

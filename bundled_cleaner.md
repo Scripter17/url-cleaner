@@ -35,7 +35,7 @@ Licensed under the AGPL 3.0 or later.
   - `canon`: Always set it to `bsky.app`.
   - `embed`: Always set it to the `bluesky_embed_host` var.
 - `bluesky_embed_host`: The Bluesky embed host to use.
-  - Required: true.
+  - Required: false.
   - Default: `fxbsky.app`.
 - `fandom_mode`: Decides what to replace Fandom/Breezewiki URLs with.
   - Required: false.
@@ -43,7 +43,7 @@ Licensed under the AGPL 3.0 or later.
   - `canon`: Set to fandom.
   - `breezewiki`: Set to the `breezewiki_host` var.
 - `breezewiki_host`: The Breezewiki host to use.
-  - Required: true.
+  - Required: false.
   - Default: `breezewiki.com`.
 - `furaffinity_mode`: Decides what host to replace Furaffinity/Furaffinity embed hosts with.
   - Required: false.
@@ -52,7 +52,7 @@ Licensed under the AGPL 3.0 or later.
   - `sfw`: Set to `sfw.furaffinity.net`.
   - `embed`: Set to the `furaffinity_embed_host` var.
 - `furaffinity_embed_host`: The Furaffinity embed host to use.
-  - Required: true.
+  - Required: false.
   - Default: `xfuraffinity.net`.
 - `instagram_mode`: Decides what host to replace instagram/instagram embed hosts with.
   - Required: false.
@@ -67,7 +67,7 @@ Licensed under the AGPL 3.0 or later.
   - `canon`: Always set it to `www.pixiv.net`.
   - `embed`: Always set it to the `pixiv_embed_host` var.
 - `pixiv_embed_host`: The pixiv embed host to use.
-  - Required: true.
+  - Required: false.
   - Default: `phixiv.net`.
 - `reddit_mode`: Decides what host to replace reddit hosts with.
   - Required: false.
@@ -82,15 +82,22 @@ Licensed under the AGPL 3.0 or later.
   - `canon`: Always set to `www.tiktok.com`.
   - `embed`: Always set to the `tiktok_embed_host` var.
 - `tiktok_embed_host`: The tiktok embed host to use.
-  - Required: true.
+  - Required: false.
   - Default: `tfxktok.com`.
+- `threads_mode`: Decides what host to replace threads/threads embed hosts with.
+  - Required: false.
+  - Unset: Set threads and threads embed hosts to `www.threads.com`.
+  - `canon`: Always set to `www.threads.com`.
+  - `embed`: Always set to the `threads_embed_host` var.
+- `threads_embed_host`: The threads embed host to use.
+  - Required: false.
 - `tumblr_mode`: Decides what host to replace tumblr/tumblr embed hosts with.
   - Required: false.
   - Unset: Set tumblr and tumblr embed hosts to `tumblr.com`
   - `canon`: Always set to `tumblr.com`
   - `embed`: Always set to the `tumblr_embed_host` var
 - `tumblr_embed_host`: The tumblr embed host to use.
-  - Required: true.
+  - Required: false.
   - Default: `txtumblr.com`.
 - `twitter_mode`: Decides what host to replace twitter/twitter embed/Nitter hosts with.
   - Required: false.
@@ -99,12 +106,12 @@ Licensed under the AGPL 3.0 or later.
   - `embed`: Always set it to the `twitter_embed_host` var.
   - `nitter`: Always set it to the `nitter_host` var. Defaults to unset.
 - `twitter_embed_host`: The twitter embed host to use.
-  - Required: true.
+  - Required: false.
   - Default: `vxtwitter.com`.
 - `twitter_embed_lang`: The language to use for the twitter embed host.
   - Required: false.
 - `nitter_host`: The Nitter host to use.
-  - Required: true.
+  - Required: false.
   - Default: `nitter.net`.
 - `youtube_mode`: Decides what host to replace youtube/Invidious hosts with.
   - Required: false.
@@ -112,7 +119,7 @@ Licensed under the AGPL 3.0 or later.
   - `canon`: Always set it to `www.youtube.com`.
   - `invidious`: Always set it to the `invidious_host` var.
 - `invidious_host`: The Invidious host to use.
-  - Required: true.
+  - Required: false.
   - Default: `yewtu.be`.
 
 ### Sets

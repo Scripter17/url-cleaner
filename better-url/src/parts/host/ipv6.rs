@@ -8,16 +8,16 @@ use crate::prelude::*;
 #[derive(Debug, Clone)]
 pub struct Ipv6Host<'a> {
     /// The host string.
-    pub(crate) host: Cow<'a, str>,
+    host: Cow<'a, str>,
     /// The [`Ipv6HostDetails`].
-    pub(crate) details: Ipv6HostDetails
+    details: Ipv6HostDetails
 }
 
 impl<'a> Ipv6Host<'a> {
     /// Make a new [`Self`] with zero validity checks.
     /// # Safety
     /// `value` must be a valid IPv6 host literal and `details` must be its [`Ipv6HostDetails`].
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: Ipv6HostDetails) -> Self {
+    pub unsafe fn from_parts<T: Into<Cow<'a, str>>>(value: T, details: Ipv6HostDetails) -> Self {
         Self {
             host: value.into(),
             details,
@@ -64,13 +64,12 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for Ipv6Host<'a> {
     type Error = InvalidIpv6Host;
 
     fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        let (_, addr, host) = make_ipv6_host(try_cow_bytes_to_str(value).map_err(|_| InvalidIpv6Host)?)?;
+        let (_, value, addr) = make_ipv6_host(try_cow_bytes_to_str(value).map_err(|_| InvalidIpv6Host)?)?;
 
-        Ok(Self {
-            host,
-            details: addr.into(),
+        Ok(unsafe {
+            Self::from_parts(value, addr.into())
         })
-    }
+   }
 }
 
 

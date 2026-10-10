@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// A username.
 #[derive(Debug, Clone)]
-pub struct Username<'a>(pub(crate) Cow<'a, str>);
+pub struct Username<'a>(Cow<'a, str>);
 
 impl<'a> Username<'a> {
     /// Make a new [`Self`] without doing any validity checks.

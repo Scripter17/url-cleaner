@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// A single domain segment.
 #[derive(Debug, Clone)]
-pub struct DomainSegment<'a>(pub(crate) Cow<'a, str>);
+pub struct DomainSegment<'a>(Cow<'a, str>);
 
 impl<'a> DomainSegment<'a> {
     /// Make a new [`Self`] with zero validity checks.
@@ -19,12 +19,23 @@ impl<'a> DomainSegment<'a> {
         &self.0
     }
 
-    /// [`unchecked_domain_segment_to_unicode`].
-    pub fn to_unicode(self) -> Cow<'a, str> {
-        let (_, value, _) = unchecked_domain_segment_to_unicode(self.0);
-
-        value
+    /// [`uts46_domain_segment_to_unicode`].
+    /// # Errors
+    /// If [`uts46_domain_segment_to_unicode`] returns an error, that error is returned.
+    #[expect(clippy::type_complexity, reason = "It's fine.")]
+    pub fn into_unicode(self) -> Result<(Cow<'a, str>, Option<String>, BidiDetail), (Cow<'a, str>, Option<String>)> {
+        uts46_domain_segment_to_unicode(self.into_inner())
     }
+
+    /// [`Self::into_unicode`] without taking ownership.
+    /// # Errors
+    /// If [`uts46_domain_segment_to_unicode`] returns an error, that error is returned.
+    #[expect(clippy::type_complexity, reason = "It's fine.")]
+    pub fn to_unicode(&self) -> Result<(Cow<'_, str>, Option<String>, BidiDetail), (Cow<'_, str>, Option<String>)> {
+        uts46_domain_segment_to_unicode(self.as_str())
+    }
+
+
 
     /// If it [`is_a_number`].
     pub fn is_a_number(&self) -> bool {
@@ -55,7 +66,19 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for DomainSegment<'a> {
     type Error = InvalidDomainSegment;
 
     fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        let (_, value) = domain_segment_bytes_to_ascii(value)?;
+        let (_, value) = encode_domain_segment_bytes(value)?;
+
+        unsafe {
+            Ok(Self::new_unchecked(value))
+        }
+    }
+}
+
+impl<'a> TryFrom<Cow<'a, str>> for DomainSegment<'a> {
+    type Error = InvalidDomainSegment;
+
+    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
+        let (_, value) = encode_domain_segment(value)?;
 
         unsafe {
             Ok(Self::new_unchecked(value))

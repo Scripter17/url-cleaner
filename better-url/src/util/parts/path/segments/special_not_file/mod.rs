@@ -38,15 +38,11 @@ pub fn forward_slashes<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, st
     let mut value = value.into();
 
     match value.memchr(b'\\') {
-        Some(mut i) => unsafe {
-            let x = value.to_mut().as_mut_vec();
-
-            *x.get_unchecked_mut(i) = b'/';
-
-            while let Some(j) = x.get_unchecked(i + 1..).memchr(b'\\') {
-                i += j + 1;
-
-                *x.get_unchecked_mut(i) = b'/';
+        Some(i) => unsafe {
+            for b in value.to_mut().as_mut_vec().get_unchecked_mut(i..) {
+                if *b == b'\\' {
+                    *b = b'/'
+                }
             }
 
             (true, value)

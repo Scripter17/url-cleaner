@@ -2,12 +2,17 @@
 
 use crate::prelude::*;
 
+#[cfg(feature = "psl")]
 mod prefix;
+#[cfg(feature = "psl")]
 mod middle;
+#[cfg(feature = "psl")]
 mod suffix;
 mod fqddot;
-mod origin;
 mod labels;
+#[cfg(feature = "psl")]
+mod origin;
+#[cfg(feature = "psl")]
 mod normal;
 
 impl BetterUrl {
@@ -42,10 +47,7 @@ impl BetterUrl {
 
     /// The [`DomainHost`].
     pub fn domain(&self) -> Option<DomainHost<'_>> {
-        Some(DomainHost {
-            host: self.host_str()?.into(),
-            details: self.domain_details()?,
-        })
+        Some(unsafe {DomainHost::from_parts(self.host_str()?, self.domain_details()?)})
     }
 
     /// Shorthand for [`Self::domain_labels_segments`].

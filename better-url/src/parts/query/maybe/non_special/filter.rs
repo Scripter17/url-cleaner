@@ -51,7 +51,7 @@ impl MaybeNonSpecialQuery<'_> {
                         ret.push('&');
                         ret.push_str(&query.as_str()[range.clone()]);
                     }
-                    query.0 = ret.into();
+                    *query = unsafe {NonSpecialQuery::new_unchecked(ret)};
                 }
             }
         }

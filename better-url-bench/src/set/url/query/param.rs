@@ -63,7 +63,7 @@ impl Args {
         let index = self.index;
         let value = self.value.as_ref().map(Option::as_deref);
 
-        for (i, line) in std::io::stdin().lock().lines().map(Result::unwrap).enumerate() {
+        for (i, line) in (1..).zip(std::io::stdin().lock().lines().map(Result::unwrap)) {
             print!("{i}");
 
             match BetterUrl::new(&line) {

@@ -5,30 +5,16 @@ use crate::prelude::*;
 /// A UTS46 normalizer.
 pub(crate) static UTS46: icu_normalizer::uts46::Uts46MapperBorrowed = icu_normalizer::uts46::Uts46MapperBorrowed::new();
 
-/// Get [`DATA`].
+/// Get [`DOMAIN_CLASS_DATA`].
 const fn get_data() -> [u8; 256] {
     let mut ret = [0; 256];
 
-    let mut i = b'A';
-    while i <= b'Z' {
-        ret[i as usize] |= 0b0001;
-        i += 1;
-    }
-
-    let mut i = b'0';
-    while i <= b'9' {
-        ret[i as usize] |= 0b0010;
-        i += 1;
-    }
-
-    let mut i = 128;
-    while i < 256 {
-        ret[i as usize] |= 0b0100;
-        i += 1;
-    }
-
     let mut i = 0;
     while i < 256 {
+        if  (i as u8).is_ascii_uppercase() { ret[i as usize] |= 0b0000_0001; }
+        if  (i as u8).is_ascii_digit    () { ret[i as usize] |= 0b0000_0010; }
+        if !(i as u8).is_ascii          () { ret[i as usize] |= 0b0000_0100; }
+
         if FORBIDDEN_DOMAIN_SEGMENT_INPUT .contains(i as u8) { ret[i as usize] |= 0b0001_0000; }
         if FORBIDDEN_DOMAIN_SEGMENTS_INPUT.contains(i as u8) { ret[i as usize] |= 0b0010_0000; }
         if FORBIDDEN_IPV4_DEC_INPUT       .contains(i as u8) { ret[i as usize] |= 0b0100_0000; }
@@ -39,12 +25,30 @@ const fn get_data() -> [u8; 256] {
     ret
 }
 
-/// For each byte, `0` if inert, `1` if ASCII uppercase, `2` if non-ASCII.
-const DATA: [u8; 256] = get_data();
-
-/// Do UTS46 normalization, in-place if possible.
+/// A map from a [`u8`] to a bitfield whose bits are, from lowest to highest:
 ///
-/// See [`uts46_classify_map_normalize`] if you're using this for domain segments/hosts.
+/// - If an ASCII uppercase letter was found.
+///
+/// - If an ASCII number was found.
+///
+/// - If a non-ASCII byte was found.
+///
+/// - Unused.
+///
+/// - If a [`FORBIDDEN_DOMAIN_SEGMENT_INPUT`] byte was found.
+///
+/// - If a [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] byte was found.
+///
+/// - If a [`FORBIDDEN_IPV4_DEC_INPUT`] byte was found.
+///
+/// - If a [`FORBIDDEN_IPV4_INPUT`] byte was found.
+pub const DOMAIN_CLASS_DATA: [u8; 256] = get_data();
+
+/// Do UTS46 mapping and normalization, in-place if possible.
+///
+/// Effectively a wrapper [`icu_normalizer::uts46::Uts46MapperBorrowed`] that should in theory be faster for ASCII input.
+///
+/// See [`uts46_classify_map_normalize`] if you're using this for domain/IPv4 stuff.
 /// # Examples
 /// ```
 /// use better_url::util::*;
@@ -77,73 +81,118 @@ const DATA: [u8; 256] = get_data();
 /// assert_eq!(uts46_map_normalize("MajiでKoiする5秒前" ), (true , "majiでkoiする5秒前" .into()));
 /// assert_eq!(uts46_map_normalize("「bücher」"         ), (false, "「bücher」"         .into()));
 /// ```
+#[inline]
 pub fn uts46_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let (changed, value, _) = uts46_classify_map_normalize(value);
 
     (changed, value)
 }
 
-/// Like [`uts46_map_normalize`] but returns additional info about the *input* value in a [`u8`].
+/// Like [`uts46_map_normalize`] but returns the "class" of the input.
 ///
-/// The info is a bitfield where the bits are, from lowest to highest:
+/// The "class" is the result of the bitwise OR of each byte's value in [`DOMAIN_CLASS_DATA`].
 ///
-/// - If an ASCII uppercase letter was found.
+/// ***Please*** note that this is about the ***input***.
 ///
-/// - If an ASCII number was found.
+/// If the unicode bit is set, you can't assume the output will be described by the class.
 ///
-/// - If a non-ASCII byte was found.
+/// This function exists because:
 ///
-/// - Unused.
+/// 1. To fast path ASCII input, this function already has to compute the "contains Unicode" and "contains ASCII uppercase" bits of the class.
 ///
-/// - If a [`FORBIDDEN_DOMAIN_SEGMENT_INPUT`] byte was found.
+/// 2. It is free to compute up to 8 bits of information.
 ///
-/// - If a [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] byte was found.
-///
-/// - If a [`FORBIDDEN_IPV4_DEC_INPUT`] byte was found.
-///
-/// - If a [`FORBIDDEN_IPV4_INPUT`] byte was found.
-///
-/// - Unused.
+/// 3. The extra computed bits are useful elsewhere for additional fast paths.
+#[inline]
 pub fn uts46_classify_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>, u8) {
     let mut value = value.into();
+    let class = value.bytes().fold(0, |acc, b| acc | DOMAIN_CLASS_DATA[b as usize]);
 
-    let class = value.bytes().fold(0, |acc, b| acc | DATA[b as usize]);
-
-    match class & 0b0000_0101 {
-        0b0000 => (false, value, class),
-        0b0001 => {
+    match class & 0b101 {
+        0b000 => (false, value, class),
+        0b001 => {
             value.to_mut().make_ascii_lowercase();
             (true, value, class)
         },
         _ => {
-            let mut a = value.char_indices();
-            let mut b = UTS46.map_normalize(value.chars());
+            #[cold]
+            fn outline<'a>(value: Cow<'a, str>, class: u8) -> (bool, Cow<'a, str>, u8) {
+                // By using the fact that `.` is "inert" under NFC we can do UTS46 normalization purely per-segment.
+                // It does involve effectively computing the input's class twice but it's fine.
+                // Credit to Servo for this trick.
 
-            loop {
-                match (a.next(), b.next()) {
-                    (None, None) => {
-                        drop(b);
-                        return (false, value, class);
-                    },
-                    (None, Some(y)) => {
-                        let mut ret = value.to_string();
-                        ret.extend(std::iter::once(y).chain(b));
-                        return (true, ret.into(), class);
-                    },
-                    (Some((i, _)), None) => {
-                        drop(b);
-                        unsafe {
-                            value.truncate_unchecked(i);
+                let mut ret = String::new();
+                let mut changed = false;
+
+                for segment in SplitDots(Some(&value)) {
+                    if changed {
+                        ret.push('.');
+                    }
+
+                    let segment_class = segment.bytes().fold(0, |acc, b| acc | DOMAIN_CLASS_DATA[b as usize]);
+
+                    match segment_class & 0b101 {
+                        0b000 => if changed {ret.push_str(segment)},
+                        0b001 => {
+                            if changed {
+                                ret.push_str(segment);
+                            } else {
+                                ret.reserve(value.len());
+                                ret.push_str(&value[.. segment.end_addr() - value.addr()]);
+                                changed = true;
+                            }
+                        },
+                        _ => 'a: {
+                            let mut a = segment;
+                            let mut b = UTS46.map_normalize(segment.chars());
+
+                            while let Some(c) = b.next() {
+                                match a.strip_prefix(c) {
+                                    Some(x) => a = x,
+                                    None => {
+                                        if changed {
+                                            ret.push_str(&segment[..a.addr() - segment.addr()]);
+                                        } else {
+                                            ret.reserve(value.len());
+                                            ret.push_str(&value[.. a.addr() - value.addr()]);
+                                            changed = true;
+                                        }
+
+                                        ret.push(c);
+                                        ret.extend(b);
+
+                                        break 'a;
+                                    }
+                                }
+                            }
+
+                            match a.is_empty() {
+                                true  => if changed {ret.push_str(segment);},
+                                false => {
+                                    if changed {
+                                        ret.push_str(&segment[..a.addr() - segment.addr()]);
+                                    } else {
+                                        ret.reserve(value.len());
+                                        ret.push_str(&value[.. a.addr() - value.addr()]);
+                                        changed = true;
+                                    }
+                                }
+                            }
                         }
-                        return (true, value, class);
-                    },
-                    (Some((i, x)), Some(y)) => if x != y {
-                        let mut ret = value[..i].to_string();
-                        ret.extend(std::iter::once(y).chain(b));
-                        return (true, ret.into(), class);
-                    },
+                    }
+                }
+
+                if class & 1 == 1 {
+                    ret.make_ascii_lowercase();
+                }
+
+                match changed {
+                    false => (false, value     , class),
+                    true  => (true , ret.into(), class),
                 }
             }
+
+            outline(value, class)
         }
     }
 }

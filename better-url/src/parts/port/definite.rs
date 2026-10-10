@@ -8,9 +8,9 @@ use crate::prelude::*;
 #[derive(Debug, Clone)]
 pub struct Port<'a> {
     /// The port as a string.
-    pub(crate) port: Cow<'a, str>,
+    port: Cow<'a, str>,
     /// The port as a [`u16`].
-    pub(crate) port_num: u16
+    port_num: u16
 }
 
 impl<'a> Port<'a> {

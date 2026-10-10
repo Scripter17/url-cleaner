@@ -13,16 +13,16 @@ use crate::prelude::*;
 #[derive(Debug, Clone)]
 pub struct OpaqueHost<'a> {
     /// The host.
-    pub(crate) host: Cow<'a, str>,
+    host: Cow<'a, str>,
     /// The [`OpaqueHostDetails`].
-    pub(crate) details: OpaqueHostDetails
+    details: OpaqueHostDetails
 }
 
 impl<'a> OpaqueHost<'a> {
     /// Make a new [`Self`] with zero validity checks.
     /// # Safety
     /// `value` must be a valid opaque host literal and `details` must be its [`OpaqueHostDetails`].
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: OpaqueHostDetails) -> Self {
+    pub unsafe fn from_parts<T: Into<Cow<'a, str>>>(value: T, details: OpaqueHostDetails) -> Self {
         Self {
             host: value.into(),
             details,
@@ -85,8 +85,6 @@ impl<'a> TryFrom<Host<'a>> for OpaqueHost<'a> {
 
     fn try_from(value: Host<'a>) -> Result<Self, Self::Error> {
         Ok(match value {
-            Host::Domain(x) => x.into(),
-            Host::Ipv4  (x) => x.into(),
             Host::Opaque(x) => x,
             x               => Err(x)?,
         })
@@ -120,8 +118,3 @@ impl<'a> TryFrom<NonSpecialHost<'a>> for OpaqueHost<'a> {
         }
     }
 }
-
-
-
-impl<'a> From<DomainHost<'a>> for OpaqueHost<'a> {fn from(value: DomainHost<'a>) -> Self {let (host, _) = value.into_parts(); Self {host, details: Default::default()}}}
-impl<'a> From<Ipv4Host  <'a>> for OpaqueHost<'a> {fn from(value: Ipv4Host  <'a>) -> Self {let (host, _) = value.into_parts(); Self {host, details: Default::default()}}}

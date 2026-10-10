@@ -26,14 +26,14 @@ impl<'a> Host<'a> {
     /// Make a new [`Self`] without doing any validity checks.
     /// # Safety
     /// `value` must be a valid [`Self`] literal and `details` must be its details.
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: HostDetails) -> Self {
+    pub unsafe fn from_parts<T: Into<Cow<'a, str>>>(value: T, details: HostDetails) -> Self {
         unsafe {
             match details {
-                HostDetails::Domain(x) => DomainHost::new_unchecked(value, x).into(),
-                HostDetails::Ipv4  (x) => Ipv4Host  ::new_unchecked(value, x).into(),
-                HostDetails::Ipv6  (x) => Ipv6Host  ::new_unchecked(value, x).into(),
-                HostDetails::Opaque(x) => OpaqueHost::new_unchecked(value, x).into(),
-                HostDetails::Empty (x) => EmptyHost ::new_unchecked(value, x).into(),
+                HostDetails::Domain(x) => DomainHost::from_parts(value, x).into(),
+                HostDetails::Ipv4  (x) => Ipv4Host  ::from_parts(value, x).into(),
+                HostDetails::Ipv6  (x) => Ipv6Host  ::from_parts(value, x).into(),
+                HostDetails::Opaque(x) => OpaqueHost::from_parts(value, x).into(),
+                HostDetails::Empty (x) => EmptyHost ::from_parts(value, x).into(),
             }
         }
     }
@@ -193,19 +193,19 @@ impl<'a> Host<'a> {
     /** The [`EmptyHost`].  **/ pub fn empty (self) -> Option<EmptyHost <'a>> {self.try_into().ok()}
 
 
-    /** The [`DomainHost::prefix_str`]. **/ pub fn domain_prefix_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.prefix_thing()?])}
-    /** The [`DomainHost::middle_str`]. **/ pub fn domain_middle_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.middle_thing()?])}
-    /** The [`DomainHost::suffix_str`]. **/ pub fn domain_suffix_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.suffix_thing() ])}
-    /** The [`DomainHost::labels_str`]. **/ pub fn domain_labels_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.labels_thing() ])}
-    /** The [`DomainHost::origin_str`]. **/ pub fn domain_origin_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.origin_thing()?])}
-    /** The [`DomainHost::normal_str`]. **/ pub fn domain_normal_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.normal_thing() ])}
+    /** The [`DomainHost::prefix_str`]. **/ #[cfg(feature = "psl")] pub fn domain_prefix_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.prefix_thing()?])}
+    /** The [`DomainHost::middle_str`]. **/ #[cfg(feature = "psl")] pub fn domain_middle_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.middle_thing()?])}
+    /** The [`DomainHost::suffix_str`]. **/ #[cfg(feature = "psl")] pub fn domain_suffix_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.suffix_thing() ])}
+    /** The [`DomainHost::labels_str`]. **/ #[cfg(feature = "psl")] pub fn domain_labels_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.labels_thing() ])}
+    /** The [`DomainHost::origin_str`]. **/ #[cfg(feature = "psl")] pub fn domain_origin_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.origin_thing()?])}
+    /** The [`DomainHost::normal_str`]. **/ #[cfg(feature = "psl")] pub fn domain_normal_str(&self) -> Option<&str> {Some(&self.as_str()[self.as_domain()?.normal_thing() ])}
 
-    /** The [`DomainHost::prefix`]. **/ pub fn domain_prefix(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_prefix_str()?.into()))}
-    /** The [`DomainHost::middle`]. **/ pub fn domain_middle(&self) -> Option<DomainSegment <'_>> {Some(DomainSegment (self.domain_middle_str()?.into()))}
-    /** The [`DomainHost::suffix`]. **/ pub fn domain_suffix(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_suffix_str()?.into()))}
-    /** The [`DomainHost::labels`]. **/ pub fn domain_labels(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_labels_str()?.into()))}
-    /** The [`DomainHost::origin`]. **/ pub fn domain_origin(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_origin_str()?.into()))}
-    /** The [`DomainHost::normal`]. **/ pub fn domain_normal(&self) -> Option<DomainSegments<'_>> {Some(DomainSegments(self.domain_normal_str()?.into()))}
+    /** The [`DomainHost::prefix`]. **/ #[cfg(feature = "psl")] pub fn domain_prefix(&self) -> Option<DomainSegments<'_>> {Some(unsafe {DomainSegments::new_unchecked(self.domain_prefix_str()?)})}
+    /** The [`DomainHost::middle`]. **/ #[cfg(feature = "psl")] pub fn domain_middle(&self) -> Option<DomainSegment <'_>> {Some(unsafe {DomainSegment ::new_unchecked(self.domain_middle_str()?)})}
+    /** The [`DomainHost::suffix`]. **/ #[cfg(feature = "psl")] pub fn domain_suffix(&self) -> Option<DomainSegments<'_>> {Some(unsafe {DomainSegments::new_unchecked(self.domain_suffix_str()?)})}
+    /** The [`DomainHost::labels`]. **/ #[cfg(feature = "psl")] pub fn domain_labels(&self) -> Option<DomainSegments<'_>> {Some(unsafe {DomainSegments::new_unchecked(self.domain_labels_str()?)})}
+    /** The [`DomainHost::origin`]. **/ #[cfg(feature = "psl")] pub fn domain_origin(&self) -> Option<DomainSegments<'_>> {Some(unsafe {DomainSegments::new_unchecked(self.domain_origin_str()?)})}
+    /** The [`DomainHost::normal`]. **/ #[cfg(feature = "psl")] pub fn domain_normal(&self) -> Option<DomainSegments<'_>> {Some(unsafe {DomainSegments::new_unchecked(self.domain_normal_str()?)})}
 }
 
 impl<'a> From<DomainHost<'a>> for Host<'a> {fn from(value: DomainHost<'a>) -> Self {Self::Domain(value)}}

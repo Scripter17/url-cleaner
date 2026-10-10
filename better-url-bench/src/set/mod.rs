@@ -5,7 +5,7 @@ use clap::Parser;
 mod url;
 
 /// Set.
-#[expect(clippy::missing_docs_in_private_items, reason = "Makes clap inherit the docs.")]
+#[expect(missing_docs, reason = "Makes clap inherit the docs.")]
 #[derive(Debug, Parser)]
 pub enum Args {
     #[command(subcommand)]

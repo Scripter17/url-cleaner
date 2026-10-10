@@ -12,11 +12,11 @@ Presumably future versions of those crates will have optimizations that make the
 
 #### URLs
 
-Please note that Better URL's parser also computes a HostDetails, which provides details for the URL's host.
+These benchmarks are done with Better URL's `psl` feature enabled, which adds a lookup into the Public Suffix List to every URL with a domain host.
 
-For domain hosts, this is based on the public suffix of the domain, and thus requires a lookup into the Public Suffix List.
+This enables APIs that are very useful in URL Cleaner and I'm honestly not sure how to make Better URL Bench not use that feature given URL Cleaner Engine unconditionally enables it.
 
-This is used to provide APIs like `BetterUrl::domain_prefix`, but causes performance overhead that you may or may not want to factor in when comparing with Servo and Ada.
+If you use Better URL with the `psl` feature disabled, your performance factors should be closer to (but not quite due to Reasons) the "With making XYZ compute the SchemeDetails and HostDetails" numbers.
 
 That, said, in general:
 
@@ -34,23 +34,23 @@ That, said, in general:
 
 Using Ada's [`top100.txt`](https://github.com/ada-url/url-various-datasets/blob/main/top100/top100.txt), `parse url --servo --ada --num 10000`, and my personal laptop:
 
-- Better URL's parser averages 2.25x the speed of Servo's parser.
+- Better URL's parser averages 2.73x the speed of Servo's parser.
 
-  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.56x.
+  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.95x.
 
-- Better URL's parser averages 0.91x the speed of Ada's parser.
+- Better URL's parser averages 1.05x the speed of Ada's parser.
 
-  - With making Ada compute the SchemeDetails and HostDetails, this goes to 1.16x.
+  - With making Ada compute the SchemeDetails and HostDetails, this goes to 1.34x.
 
 Using smythp's [reddit links dataset](https://github.com/smythp/reddit_links_dataset) (test.db):
 
-- Better URL's parser averages 1.93x the speed of Servo's parser.
+- Better URL's parser averages 2.41x the speed of Servo's parser.
 
-  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.18x.
+  - With making Servo compute the SchemeDetails and HostDetails, this goes to 2.65x.
 
-- Better URL's parser averages 0.77x the speed of Ada's parser.
+- Better URL's parser averages 0.91x the speed of Ada's parser.
 
-  - With making Ada compute the SchemeDetails and HostDetails, this goes to 1.04x.
+  - With making Ada compute the SchemeDetails and HostDetails, this goes to 1.21x.
 
 ### Setters
 

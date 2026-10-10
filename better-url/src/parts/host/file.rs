@@ -15,13 +15,13 @@ impl<'a> FileHost<'a> {
     /// Make a new [`Self`] without doing any validity checks.
     /// # Safety
     /// `value` must be a valid [`Self`] literal and `details` must be its details.
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: FileHostDetails) -> Self {
+    pub unsafe fn from_parts<T: Into<Cow<'a, str>>>(value: T, details: FileHostDetails) -> Self {
         unsafe {
             match details {
-                FileHostDetails::Domain(x) => DomainHost::new_unchecked(value, x).into(),
-                FileHostDetails::Ipv4  (x) => Ipv4Host  ::new_unchecked(value, x).into(),
-                FileHostDetails::Ipv6  (x) => Ipv6Host  ::new_unchecked(value, x).into(),
-                FileHostDetails::Empty (x) => EmptyHost ::new_unchecked(value, x).into(),
+                FileHostDetails::Domain(x) => DomainHost::from_parts(value, x).into(),
+                FileHostDetails::Ipv4  (x) => Ipv4Host  ::from_parts(value, x).into(),
+                FileHostDetails::Ipv6  (x) => Ipv6Host  ::from_parts(value, x).into(),
+                FileHostDetails::Empty (x) => EmptyHost ::from_parts(value, x).into(),
             }
         }
     }
@@ -121,15 +121,57 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for FileHost<'a> {
             b""        => EmptyHost::default(     ) .into(),
             [b'[', ..] => Ipv6Host ::new    (value)?.into(),
             _ => {
-                let (_, value) = try_percent_decode_bytes(value).map_err(|_| InvalidFileHost)?;
-                let (_, value) = uts46_map_normalize     (value);
+                let (_, value       ) = try_percent_decode_bytes(value).map_err(|_| InvalidFileHost)?;
+                let (_, value, class) = uts46_classify_map_normalize(value);
 
                 match value.as_bytes() {
                     b""          => Err(InvalidFileHost)?,
                     b"localhost" => EmptyHost::default().into(),
-                    _ => match ends_in_a_number(&value) {
-                        true  =>         Ipv4Host  ::new_normalized(value) ?.into(),
-                        false => unsafe {DomainHost::new_not_eian  (value)}?.into(),
+                    _ => {
+                        if class & 0b0010_0100 == 0b0010_0000 {
+                            Err(InvalidFileHost)?
+                        } else if class & 0b0000_0110 != 0b0000_0000 && ends_in_a_number(&value) {
+                            Ipv4Host::new_normalized(value)?.into()
+                        } else if class & 0b0010_0110 == 0b0000_0000 && !value.is_empty() {
+                            let details = DomainHostDetails::parse_unchecked(&value);
+
+                            unsafe {DomainHost::from_parts(value, details)}.into()
+                        } else {
+                            unsafe {DomainHost::new_not_eian(value)}?.into()
+                        }
+                    }
+                }
+            }
+        })
+    }
+}
+
+impl<'a> TryFrom<Cow<'a, str>> for FileHost<'a> {
+    type Error = InvalidFileHost;
+
+    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
+        Ok(match value.as_bytes() {
+            b""        => EmptyHost::default(     ) .into(),
+            [b'[', ..] => Ipv6Host ::new    (value)?.into(),
+            _ => {
+                let (_, value       ) = try_percent_decode(value).map_err(|_| InvalidFileHost)?;
+                let (_, value, class) = uts46_classify_map_normalize(value);
+
+                match value.as_bytes() {
+                    b""          => Err(InvalidFileHost)?,
+                    b"localhost" => EmptyHost::default().into(),
+                    _ => {
+                        if class & 0b0010_0100 == 0b0010_0000 {
+                            Err(InvalidFileHost)?
+                        } else if class & 0b0000_0110 != 0b0000_0000 && ends_in_a_number(&value) {
+                            Ipv4Host::new_normalized(value)?.into()
+                        } else if class & 0b0010_0110 == 0b0000_0000 && !value.is_empty() {
+                            let details = DomainHostDetails::parse_unchecked(&value);
+
+                            unsafe {DomainHost::from_parts(value, details)}.into()
+                        } else {
+                            unsafe {DomainHost::new_not_eian(value)}?.into()
+                        }
                     }
                 }
             }

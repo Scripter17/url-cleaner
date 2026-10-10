@@ -8,3 +8,6 @@ logs
 /bench
 /keys
 profiles.json
+burl-bench*.txt
+/better-url-bench/out/
+/better-url-bench/tmp/

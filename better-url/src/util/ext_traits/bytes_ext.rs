@@ -12,6 +12,9 @@ pub(crate) trait BytesExt {
 
     /// The index of the first occurence of any byte in `bs`. 
     fn memchrn<const N: usize>(&self, bs: [u8; N]) -> Option<usize>;
+
+    /// [`Self::memchr`] without position.
+    fn memhas(&self, b: u8) -> bool;
 }
 
 impl BytesExt for [u8] {
@@ -25,5 +28,15 @@ impl BytesExt for [u8] {
 
     fn memchrn<const N: usize>(&self, bs: [u8; N]) -> Option<usize> {
         memchrn(self, &bs)
+    }
+
+    fn memhas(&self, b: u8) -> bool {
+        unsafe {
+            libc::memchr(
+                self.as_ptr() as _,
+                b as _,
+                self.len(),
+            ).addr() != 0
+        }
     }
 }

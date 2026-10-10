@@ -3,11 +3,17 @@
 use crate::prelude::*;
 
 /// The test data.
-const DATA: &str = include_str!("data/urltestdata.json");
+const URL_TEST_DATA: &str = include_str!("data/urltestdata.json");
+const ADA_EXTRA_URL_TEST_DATA: &str = include_str!("data/ada_extra_urltestdata.json");
 
 #[test]
-fn test_parser() {
-    serde_json::from_str::<Tests>(DATA).expect("To parse the tests.").r#do()
+fn wpt_urltestdata() {
+    serde_json::from_str::<Tests>(URL_TEST_DATA).expect("To parse the tests.").r#do()
+}
+
+#[test]
+fn ada_extra_urltestdata_json() {
+    serde_json::from_str::<Tests>(ADA_EXTRA_URL_TEST_DATA).expect("To parse the tests.").r#do()
 }
 
 /// [`TestOrComment`]s.
@@ -57,7 +63,7 @@ struct SuccessTest {
 #[derive(Debug, Deserialize)]
 struct FailureTest {
     /** The input. **/ input: String,
-    /** The base.  **/ base : Option<BetterUrl>,
+    /** The base.  **/ base : Option<String>,
 }
 
 impl Tests {
@@ -141,12 +147,15 @@ impl FailureTest {
     /// If the test fails, panics.
     fn r#do(self) {
         println!("Fail");
-        println!("  base : {}", self.base.as_ref().map_or("(None)", BetterUrl::as_str));
+        println!("  base : {}", self.base.as_deref().unwrap_or("(None)"));
         println!("  input: {:?}", self.input);
 
         match self.base {
-            Some(mut url) => {url      .join(&self.input).expect_err("Input shouldn't be a valid join.");},
-            None          => {BetterUrl::new(&self.input).expect_err("Input shouldn't be a valid URL." );},
+            Some(url) => match BetterUrl::new(url) {
+                Ok (mut url) => {url.join(&self.input).expect_err("Input shouldn't be a valid join.");},
+                Err(_      ) => {},
+            },
+            None => {BetterUrl::new(&self.input).expect_err("Input shouldn't be a valid URL." );},
         }
     }
 }

@@ -12,12 +12,15 @@ publish     = false
 
 [dependencies]
 # URL Cleaner.
-better-url = { version = "0.12.0-beta", path = "../better-url" }
+better-url = { version = "0.12.0-beta", path = "../better-url", features = ["psl"] }
 
 # Other.
-clap    = { version = "4.6.7", features = ["derive"] }
+icu_normalizer = { version = "2.3.0", default-features = false }
+clap           = { version = "4.6.7", features = ["derive"] }
 url     = "2.5.8"
 ada-url = "4.0.0"
+idna    = "1.1.0"
+psl     = "2.1.239"
 
 [lints]
 workspace = true

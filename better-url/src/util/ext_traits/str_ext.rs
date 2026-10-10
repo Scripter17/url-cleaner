@@ -39,7 +39,7 @@ impl StrExt for str {
     }
 
     fn addr(&self) -> usize {
-        (self as *const str).addr()
+        self.as_ptr().addr()
     }
 
     fn end_addr(&self) -> usize {

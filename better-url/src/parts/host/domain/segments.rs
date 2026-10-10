@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// A sequence of domain segments.
 #[derive(Debug, Clone)]
-pub struct DomainSegments<'a>(pub(crate) Cow<'a, str>);
+pub struct DomainSegments<'a>(Cow<'a, str>);
 
 impl<'a> DomainSegments<'a> {
     /// Make a new [`Self`] with zero validity checks.
@@ -19,11 +19,20 @@ impl<'a> DomainSegments<'a> {
         &self.0
     }
 
-    /// [`unchecked_domain_segments_to_unicode`].
-    pub fn to_unicode(self) -> Cow<'a, str> {
-        let (_, value) = unchecked_domain_segments_to_unicode(self.0);
+    /// [`uts46_domain_segments_to_unicode`].
+    /// # Errors
+    /// If [`uts46_domain_segments_to_unicode`] returns an error, that error is returned.
+    #[expect(clippy::type_complexity, reason = "It's fine.")]
+    pub fn into_unicode(self) -> Result<(Cow<'a, str>, Option<String>, BidiDetail), (Cow<'a, str>, Option<String>)> {
+        uts46_domain_segments_to_unicode(self.into_inner())
+    }
 
-        value
+    /// [`Self::into_unicode`] without taking ownership.
+    /// # Errors
+    /// If [`uts46_domain_segments_to_unicode`] returns an error, that error is returned.
+    #[expect(clippy::type_complexity, reason = "It's fine.")]
+    pub fn to_unicode(&self) -> Result<(Cow<'_, str>, Option<String>, BidiDetail), (Cow<'_, str>, Option<String>)> {
+        uts46_domain_segments_to_unicode(self.as_str())
     }
 
 
@@ -72,7 +81,19 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for DomainSegments<'a> {
     type Error = InvalidDomainSegments;
 
     fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        let (_, value) = domain_segments_bytes_to_ascii(value)?;
+        let (_, value) = encode_domain_segments_bytes(value)?;
+
+        unsafe {
+            Ok(Self::new_unchecked(value))
+        }
+    }
+}
+
+impl<'a> TryFrom<Cow<'a, str>> for DomainSegments<'a> {
+    type Error = InvalidDomainSegments;
+
+    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
+        let (_, value) = encode_domain_segments(value)?;
 
         unsafe {
             Ok(Self::new_unchecked(value))
@@ -84,6 +105,8 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for DomainSegments<'a> {
 
 impl<'a> From<DomainSegment<'a>> for DomainSegments<'a> {
     fn from(value: DomainSegment<'a>) -> Self {
-        Self(value.0)
+        unsafe {
+            Self::new_unchecked(value.into_inner())
+        }
     }
 }

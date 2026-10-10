@@ -34,7 +34,7 @@ impl DomainHost<'_> {
 
     /// The origin as a [`DomainSegments`].
     pub fn origin(&self) -> Option<DomainSegments<'_>> {
-        Some(DomainSegments(self.origin_str()?.into()))
+        Some(unsafe {DomainSegments::new_unchecked(self.origin_str()?)})
     }
 
 

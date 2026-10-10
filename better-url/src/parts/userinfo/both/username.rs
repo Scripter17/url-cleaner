@@ -25,7 +25,7 @@ impl<'a> Userinfo<'a> {
 
     /// Make a [`Username`].
     pub fn username(&self) -> Username<'_> {
-        Username(self.username_str().into())
+        unsafe {Username::new_unchecked(self.username_str())}
     }
 
     /// Set the username.

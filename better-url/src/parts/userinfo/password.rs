@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// A password.
 #[derive(Debug, Clone)]
-pub struct Password<'a>(pub(crate) Cow<'a, str>);
+pub struct Password<'a>(Cow<'a, str>);
 
 impl<'a> Password<'a> {
     /// Make a new [`Self`] without doing any validity checks.

@@ -8,27 +8,18 @@ use crate::prelude::*;
 #[derive(Debug, Clone)]
 pub struct Ipv4Host<'a> {
     /// The host string.
-    pub(crate) host: Cow<'a, str>,
+    host: Cow<'a, str>,
     /// The [`Ipv4HostDetails`].
-    pub(crate) details: Ipv4HostDetails
+    details: Ipv4HostDetails
 }
 
 impl<'a> Ipv4Host<'a> {
-    /// Make a new [`Self`] with zero validity checks.
-    /// # Safety
-    /// `value` must be a valid IPv4 host literal and `details` must be its [`Ipv4HostDetails`].
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: Ipv4HostDetails) -> Self {
-        Self {
-            host: value.into(),
-            details,
-        }
-    }
-
     /// Make a new [`Self`] from a percent decoded value.
     /// # Errors
     /// If [`Self::new_normalized`] returns an error, that error is returned.
     pub fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
         let (_, value) = uts46_map_normalize(value);
+
         Self::new_normalized(value)
     }
 
@@ -36,12 +27,21 @@ impl<'a> Ipv4Host<'a> {
     /// # Errors
     /// If [`parse_ipv4_host`] returns an error, that error is returned.
     pub fn new_normalized<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
-        let (_, addr, host) = make_ipv4_host(value)?;
+        let (_, value, addr) = make_ipv4_host(value)?;
 
-        Ok(Self {
-            host,
-            details: addr.into(),
+        Ok(unsafe {
+            Self::from_parts(value, addr.into())
         })
+    }
+
+    /// Make a new [`Self`] with zero validity checks.
+    /// # Safety
+    /// `value` must be a valid IPv4 host literal and `details` must be its [`Ipv4HostDetails`].
+    pub unsafe fn from_parts<T: Into<Cow<'a, str>>>(value: T, details: Ipv4HostDetails) -> Self {
+        Self {
+            host: value.into(),
+            details,
+        }
     }
 
     /// The host as a [`str`].
@@ -84,7 +84,17 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for Ipv4Host<'a> {
     type Error = InvalidIpv4Host;
 
     fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        let (_, value) = try_percent_decode_bytes(value).map_err(|_| InvalidIpv4Host)?; // TODO: Fix.
+        let (_, value) = try_percent_decode_bytes(value).map_err(|_| InvalidIpv4Host)?;
+
+        Self::new_percent_decoded(value)
+    }
+}
+
+impl<'a> TryFrom<Cow<'a, str>> for Ipv4Host<'a> {
+    type Error = InvalidIpv4Host;
+
+    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
+        let (_, value) = try_percent_decode(value).map_err(|_| InvalidIpv4Host)?;
 
         Self::new_percent_decoded(value)
     }

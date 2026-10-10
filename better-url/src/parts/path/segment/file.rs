@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// A [`FilePath`] segment.
 #[derive(Debug, Clone)]
-pub struct FilePathSegment<'a>(pub(crate) Cow<'a, str>);
+pub struct FilePathSegment<'a>(Cow<'a, str>);
 
 impl<'a> FilePathSegment<'a> {
     /// Make a new [`Self`] without doing any validity checks.

@@ -1,9 +1,10 @@
 //! Macros.
 
-mod as_str               ; pub(crate) use as_str               ::*;
-mod from_cow_bytes       ; pub(crate) use from_cow_bytes       ::*;
-mod from_option_cow_bytes; pub(crate) use from_option_cow_bytes::*;
-mod try_from_cow_bytes   ; pub(crate) use try_from_cow_bytes   ::*;
+mod as_str                   ; pub(crate) use as_str                   ::*;
+mod from_cow_bytes           ; pub(crate) use from_cow_bytes           ::*;
+mod from_option_cow_bytes    ; pub(crate) use from_option_cow_bytes    ::*;
+mod try_from_cow_bytes       ; pub(crate) use try_from_cow_bytes       ::*;
+mod try_from_cow_bytes_or_str; pub(crate) use try_from_cow_bytes_or_str::*;
 
 /// Impls for `T::borrowed`.
 macro_rules! borrowed {

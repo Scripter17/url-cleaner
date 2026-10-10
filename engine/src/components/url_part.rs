@@ -93,77 +93,6 @@ pub enum UrlPart {
 
 
 
-    /** [`BetterUrl::domain_prefix`] + [`DomainSegments::to_unicode`]. **/ DomainPrefixToUnicode,
-    /** [`BetterUrl::domain_middle`] + [`DomainSegment::to_unicode`].  **/ DomainMiddleToUnicode,
-    /** [`BetterUrl::domain_suffix`] + [`DomainSegments::to_unicode`]. **/ DomainSuffixToUnicode,
-    /** [`BetterUrl::domain_origin`] + [`DomainSegments::to_unicode`]. **/ DomainOriginToUnicode,
-    /** [`BetterUrl::domain_labels`] + [`DomainSegments::to_unicode`]. **/ DomainLabelsToUnicode,
-    /** [`BetterUrl::domain_normal`] + [`DomainSegments::to_unicode`]. **/ DomainNormalToUnicode,
-
-    /** [`BetterUrl::domain_segment`]        + [`DomainSegment::to_unicode`]. **/ DomainSegmentToUnicode      (isize),
-    /** [`BetterUrl::domain_prefix_segment`] + [`DomainSegment::to_unicode`]. **/ DomainPrefixSegmentToUnicode(isize),
-    /** [`BetterUrl::domain_suffix_segment`] + [`DomainSegment::to_unicode`]. **/ DomainSuffixSegmentToUnicode(isize),
-    /** [`BetterUrl::domain_origin_segment`] + [`DomainSegment::to_unicode`]. **/ DomainOriginSegmentToUnicode(isize),
-    /** [`BetterUrl::domain_normal_segment`] + [`DomainSegment::to_unicode`]. **/ DomainNormalSegmentToUnicode(isize),
-
-    /// [`BetterUrl::domain_range`] + [`DomainSegments::to_unicode`].
-    DomainSegmentRangeToUnicode {
-        /// The start of the range.
-        ///
-        /// Defaults to [`Bound::Unbounded`].
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
-        /// The end of the range.
-        ///
-        /// Defaults to [`Bound::Unbounded`].
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
-    },
-    /// [`BetterUrl::domain_prefix_range`] + [`DomainSegments::to_unicode`].
-    DomainPrefixSegmentRangeToUnicode {
-        /// The start of the range.
-        ///
-        /// Defaults to [`Bound::Unbounded`].
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
-        /// The end of the range.
-        ///
-        /// Defaults to [`Bound::Unbounded`].
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
-    },
-    /// [`BetterUrl::domain_suffix_range`] + [`DomainSegments::to_unicode`].
-    DomainSuffixSegmentRangeToUnicode {
-        /// The start of the range.
-        ///
-        /// Defaults to [`Bound::Unbounded`].
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
-        /// The end of the range.
-        ///
-        /// Defaults to [`Bound::Unbounded`].
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
-    },
-    /// [`BetterUrl::domain_origin_range`] + [`DomainSegments::to_unicode`].
-    DomainOriginSegmentRangeToUnicode {
-        /// The start of the range.
-        ///
-        /// Defaults to [`Bound::Unbounded`].
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
-        /// The end of the range.
-        ///
-        /// Defaults to [`Bound::Unbounded`].
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
-    },
-    /// [`BetterUrl::domain_normal_range`] + [`DomainSegments::to_unicode`].
-    DomainNormalSegmentRangeToUnicode {
-        /// The start of the range.
-        ///
-        /// Defaults to [`Bound::Unbounded`].
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] start: Bound<isize>,
-        /// The end of the range.
-        ///
-        /// Defaults to [`Bound::Unbounded`].
-        #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
-    },
-
-
-
     /** [`BetterUrl::port_str`]. **/ Port,
 
 
@@ -232,25 +161,6 @@ impl UrlPart {
             Self::DomainSuffixSegmentRange {start, end} => url.domain_suffix_range_str((*start, *end))?.into(),
             Self::DomainOriginSegmentRange {start, end} => url.domain_origin_range_str((*start, *end))?.into(),
             Self::DomainNormalSegmentRange {start, end} => url.domain_normal_range_str((*start, *end))?.into(),
-
-            Self::DomainPrefixToUnicode => url.domain_prefix()?.to_unicode(),
-            Self::DomainMiddleToUnicode => url.domain_middle()?.to_unicode(),
-            Self::DomainSuffixToUnicode => url.domain_suffix()?.to_unicode(),
-            Self::DomainOriginToUnicode => url.domain_origin()?.to_unicode(),
-            Self::DomainLabelsToUnicode => url.domain_labels()?.to_unicode(),
-            Self::DomainNormalToUnicode => url.domain_normal()?.to_unicode(),
-
-            Self::DomainSegmentToUnicode      (index) => url.domain_segment       (*index)?.to_unicode(),
-            Self::DomainPrefixSegmentToUnicode(index) => url.domain_prefix_segment(*index)?.to_unicode(),
-            Self::DomainSuffixSegmentToUnicode(index) => url.domain_suffix_segment(*index)?.to_unicode(),
-            Self::DomainOriginSegmentToUnicode(index) => url.domain_origin_segment(*index)?.to_unicode(),
-            Self::DomainNormalSegmentToUnicode(index) => url.domain_normal_segment(*index)?.to_unicode(),
-
-            Self::DomainSegmentRangeToUnicode       {start, end} => url.domain_range       ((*start, *end))?.to_unicode(),
-            Self::DomainPrefixSegmentRangeToUnicode {start, end} => url.domain_prefix_range((*start, *end))?.to_unicode(),
-            Self::DomainSuffixSegmentRangeToUnicode {start, end} => url.domain_suffix_range((*start, *end))?.to_unicode(),
-            Self::DomainOriginSegmentRangeToUnicode {start, end} => url.domain_origin_range((*start, *end))?.to_unicode(),
-            Self::DomainNormalSegmentRangeToUnicode {start, end} => url.domain_normal_range((*start, *end))?.to_unicode(),
 
             Self::Port => url.port_str()?.into(),
 

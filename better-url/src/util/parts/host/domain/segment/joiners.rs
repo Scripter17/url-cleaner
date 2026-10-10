@@ -19,9 +19,9 @@ static JT: CodePointMapDataBorrowed<JoiningType> = CodePointMapDataBorrowed::new
 
 /// [Validity Criteria 8](https://www.unicode.org/reports/tr46/#Validity_Criteria) (CheckJoiners), specifically [RFC 5982](https://www.rfc-editor.org/info/rfc5892/)'s [Appendix A.1](https://www.rfc-editor.org/info/rfc5892/#appendix-A.1) and [Appendix A.2](https://www.rfc-editor.org/info/rfc5892/#appendix-A.2).
 pub fn validate_domain_segment_joiners(value: &str) -> bool {
-    // Appendix A.1
+    if value.memchr(b'\xE2').is_some() {
+        // Appendix A.1
 
-    if value.contains('\u{200C}') {
         let mut x = value.split('\u{200C}').peekable();
 
         while let Some((l, &r)) = x.next().zip(x.peek()) {
@@ -33,11 +33,9 @@ pub fn validate_domain_segment_joiners(value: &str) -> bool {
                 return false;
             }
         }
-    }
 
-    // Appendix A.2
+        // Appendix A.2
 
-    if value.contains('\u{200D}') {
         let mut x = value.split('\u{200D}').peekable();
 
         while let Some((l, _)) = x.next().zip(x.peek()) {

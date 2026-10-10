@@ -10,7 +10,7 @@ use crate::prelude::*;
 /// assert_eq!(OpaquePath::new("  "), " %20");
 /// ```
 #[derive(Debug, Clone)]
-pub struct OpaquePath<'a>(pub(crate) Cow<'a, str>);
+pub struct OpaquePath<'a>(Cow<'a, str>);
 
 impl<'a> OpaquePath<'a> {
     /// Make a new [`Self`] without doing any validity checks.

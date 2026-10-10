@@ -8,68 +8,20 @@ mod segments;
 pub use segment::*;
 pub use segments::*;
 
+#[cfg(feature = "psl")]
 mod prefix;
+#[cfg(feature = "psl")]
 mod middle;
+#[cfg(feature = "psl")]
 mod suffix;
 mod fqddot;
 mod labels;
+#[cfg(feature = "psl")]
 mod origin;
+#[cfg(feature = "psl")]
 mod normal;
 
 /// A domain host.
-///
-/// # Setters
-///
-/// Please note that setters work by taking the domain as a list of segments, extracting a sublist, modifying that sublist, and then replacing the original sublist with the modified sublist.
-///
-/// Additionally, domains without middles can have [`Self::set_middle`] insert them and domains with middles but no prefixes can have [`Self::set_prefix`] insert them.
-///
-/// In general this should be fine, but this does have surprising effects you need to remember:
-///
-/// ```
-/// use better_url::prelude::*;
-///
-/// let mut domain = DomainHost::new("example.com").unwrap();
-///
-/// domain.set_suffix(Some("co.uk")).unwrap();
-///
-/// assert_eq!(domain         , "example.co.uk");
-/// assert_eq!(domain.suffix(),         "co.uk");
-///
-/// domain.set_suffix(Some("middle.co.uk")).unwrap();
-///
-/// assert_eq!(domain         , "example.middle.co.uk");
-/// assert_eq!(domain.suffix(),                "co.uk");
-///
-/// domain.set_suffix_segment(0, Some("new-middle")).unwrap();
-///
-/// assert_eq!(domain             , "example.middle.new-middle.uk");
-/// assert_eq!(domain.suffix    (),                           "uk");
-/// assert_eq!(domain.middle_str(),           Some("new-middle")  );
-///
-/// domain.set_middle(None::<&str>).unwrap();
-///
-/// assert_eq!(domain             , "example.middle.uk");
-/// assert_eq!(domain.middle_str(),    Some("middle")  );
-///
-/// domain.set_prefix_segment(1, None::<&str>).unwrap();
-///
-/// assert_eq!(domain, "example.middle.uk");
-///
-/// domain.set_prefix_segment(1000, None::<&str>).unwrap();
-///
-/// assert_eq!(domain, "example.middle.uk");
-///
-/// domain.set_middle(Some("co")).unwrap();
-///
-/// assert_eq!(domain, "example.co.uk");
-/// assert_eq!(domain.prefix(), None);
-///
-/// domain.set_prefix(Some("www")).unwrap();
-///
-/// assert_eq!(domain             ,      "www.example.co.uk");
-/// assert_eq!(domain.prefix_str(), Some("www")             );
-/// ```
 ///
 /// # Parts
 ///
@@ -78,37 +30,40 @@ mod normal;
 /// ```
 /// use better_url::prelude::*;
 ///
-/// // The prefix, the segments below the middle.
-/// assert_eq!(DomainHost::new("abc.def.example.co.uk" ).unwrap().prefix_str(), Some("abc.def"                ));
-/// assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().prefix_str(), Some("abc.def"                ));
+/// #[cfg(feature = "psl")]
+/// {
+///     // The prefix, the segments below the middle.
+///     assert_eq!(DomainHost::new("abc.def.example.co.uk" ).unwrap().prefix_str(), Some("abc.def"                ));
+///     assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().prefix_str(), Some("abc.def"                ));
 ///
-/// // The middle, the segment just below the suffix.
-/// assert_eq!(DomainHost::new("abc.def.example.co.uk" ).unwrap().middle_str(), Some(        "example"        ));
-/// assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().middle_str(), Some(        "example"        ));
+///     // The middle, the segment just below the suffix.
+///     assert_eq!(DomainHost::new("abc.def.example.co.uk" ).unwrap().middle_str(), Some(        "example"        ));
+///     assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().middle_str(), Some(        "example"        ));
 ///
-/// // The suffix, as defined by the PSL.
-/// assert_eq!(DomainHost::new("abc.def.example.co.uk" ).unwrap().suffix_str(),                      "co.uk"   );
-/// assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().suffix_str(),                      "co.uk"   );
+///     // The suffix, as defined by the PSL.
+///     assert_eq!(DomainHost::new("abc.def.example.co.uk" ).unwrap().suffix_str(),                      "co.uk"   );
+///     assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().suffix_str(),                      "co.uk"   );
 ///
-/// // The labels (better name pending), everything but the FQDDot.
-/// assert_eq!(DomainHost::new(                     ".").unwrap().labels_str(),                      "");
-/// assert_eq!(DomainHost::new(                "co.uk.").unwrap().labels_str(),                 "co.uk");
-/// assert_eq!(DomainHost::new(        "example.co.uk.").unwrap().labels_str(),         "example.co.uk");
-/// assert_eq!(DomainHost::new(    "www.example.co.uk.").unwrap().labels_str(),     "www.example.co.uk");
-/// assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().labels_str(), "abc.def.example.co.uk");
+///     // The labels (better name pending), everything but the FQDDot.
+///     assert_eq!(DomainHost::new(                     ".").unwrap().labels_str(),                      "");
+///     assert_eq!(DomainHost::new(                "co.uk.").unwrap().labels_str(),                 "co.uk");
+///     assert_eq!(DomainHost::new(        "example.co.uk.").unwrap().labels_str(),         "example.co.uk");
+///     assert_eq!(DomainHost::new(    "www.example.co.uk.").unwrap().labels_str(),     "www.example.co.uk");
+///     assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().labels_str(), "abc.def.example.co.uk");
 ///
-/// // The origin, the suffix and the middle.
-/// // Also called the registerable domain but that doesn't have a 6 letter equivalent.
-/// assert_eq!(DomainHost::new(                "co.uk.").unwrap().origin_str(), None                 );
-/// assert_eq!(DomainHost::new(        "example.co.uk.").unwrap().origin_str(), Some("example.co.uk"));
-/// assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().origin_str(), Some("example.co.uk"));
+///     // The origin, the suffix and the middle.
+///     // Also called the registerable domain but that doesn't have a 6 letter equivalent.
+///     assert_eq!(DomainHost::new(                "co.uk.").unwrap().origin_str(), None                 );
+///     assert_eq!(DomainHost::new(        "example.co.uk.").unwrap().origin_str(), Some("example.co.uk"));
+///     assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().origin_str(), Some("example.co.uk"));
 ///
-/// // The normal, the labels (better name still pending), excluding the prefix if it's `www`.
-/// assert_eq!(DomainHost::new(                     ".").unwrap().normal_str(),                      "");
-/// assert_eq!(DomainHost::new(                "co.uk.").unwrap().normal_str(),                 "co.uk");
-/// assert_eq!(DomainHost::new(        "example.co.uk.").unwrap().normal_str(),         "example.co.uk");
-/// assert_eq!(DomainHost::new(    "www.example.co.uk.").unwrap().normal_str(),         "example.co.uk");
-/// assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().normal_str(), "abc.def.example.co.uk");
+///     // The normal, the labels (better name still pending), excluding the prefix if it's `www`.
+///     assert_eq!(DomainHost::new(                     ".").unwrap().normal_str(),                      "");
+///     assert_eq!(DomainHost::new(                "co.uk.").unwrap().normal_str(),                 "co.uk");
+///     assert_eq!(DomainHost::new(        "example.co.uk.").unwrap().normal_str(),         "example.co.uk");
+///     assert_eq!(DomainHost::new(    "www.example.co.uk.").unwrap().normal_str(),         "example.co.uk");
+///     assert_eq!(DomainHost::new("abc.def.example.co.uk.").unwrap().normal_str(), "abc.def.example.co.uk");
+/// }
 /// ```
 ///
 /// # Setters
@@ -118,12 +73,15 @@ mod normal;
 /// ```
 /// use better_url::prelude::*;
 ///
-/// let mut domain = DomainHost::new("example.com").unwrap();
+/// #[cfg(feature = "psl")]
+/// {
+///     let mut domain = DomainHost::new("example.com").unwrap();
 ///
-/// domain.set_suffix(Some("example.com")).unwrap();
+///     domain.set_suffix(Some("example.com")).unwrap();
 ///
-/// assert_eq!(domain         , "example.example.com");
-/// assert_eq!(domain.suffix(),                 "com");
+///     assert_eq!(domain         , "example.example.com");
+///     assert_eq!(domain.suffix(),                 "com");
+/// }
 /// ```
 ///
 /// However, they do ensure that the result is a valid domain host.
@@ -131,19 +89,22 @@ mod normal;
 /// ```
 /// use better_url::prelude::*;
 ///
-/// // Domains can't "end in a number".
-/// DomainHost::new("example.com" ).unwrap().set_suffix(Some("123")).unwrap_err();
-/// DomainHost::new("example.com.").unwrap().set_suffix(Some("123")).unwrap_err();
+/// #[cfg(feature = "psl")]
+/// {
+///     // Domains can't "end in a number".
+///     DomainHost::new("example.com" ).unwrap().set_suffix(Some("123")).unwrap_err();
+///     DomainHost::new("example.com.").unwrap().set_suffix(Some("123")).unwrap_err();
 ///
-/// // Unicode segments are IDNA'd.
-/// let mut domain = DomainHost::new("example.com").unwrap();
-/// domain.set_suffix(Some("δοκιμή")).unwrap();
-/// assert_eq!(domain, "example.xn--jxalpdlp");
+///     // Unicode segments are IDNA'd.
+///     let mut domain = DomainHost::new("example.com").unwrap();
+///     domain.set_suffix(Some("δοκιμή")).unwrap();
+///     assert_eq!(domain, "example.xn--jxalpdlp");
 ///
-/// // IDNA segment literals are accepted.
-/// let mut domain = DomainHost::new("example.com").unwrap();
-/// domain.set_suffix(Some("xn--jxalpdlp")).unwrap();
-/// assert_eq!(domain, "example.xn--jxalpdlp");
+///     // IDNA segment literals are accepted.
+///     let mut domain = DomainHost::new("example.com").unwrap();
+///     domain.set_suffix(Some("xn--jxalpdlp")).unwrap();
+///     assert_eq!(domain, "example.xn--jxalpdlp");
+/// }
 /// ```
 ///
 /// Additionally, attempting to set the suffix of a non-FQDN domain to end in an empty segment returns an error.
@@ -151,24 +112,27 @@ mod normal;
 /// ```
 /// use better_url::prelude::*;
 ///
-/// DomainHost::new("example.com").unwrap().set_suffix(Some(    "")).unwrap_err();
-/// DomainHost::new("example.com").unwrap().set_suffix(Some(   ".")).unwrap_err();
-/// DomainHost::new("example.com").unwrap().set_suffix(Some("com.")).unwrap_err();
+/// #[cfg(feature = "psl")]
+/// {
+///     DomainHost::new("example.com").unwrap().set_suffix(Some(    "")).unwrap_err();
+///     DomainHost::new("example.com").unwrap().set_suffix(Some(   ".")).unwrap_err();
+///     DomainHost::new("example.com").unwrap().set_suffix(Some("com.")).unwrap_err();
 ///
-/// DomainHost::new("example..com").unwrap().set_suffix(None::<&str>).unwrap_err();
+///     DomainHost::new("example..com").unwrap().set_suffix(None::<&str>).unwrap_err();
 ///
-/// let mut domain = DomainHost::new("example.com.").unwrap();
-/// domain.set_suffix(Some("com.")).unwrap();
-/// assert_eq!(domain, "example.com..");
+///     let mut domain = DomainHost::new("example.com.").unwrap();
+///     domain.set_suffix(Some("com.")).unwrap();
+///     assert_eq!(domain, "example.com..");
+/// }
 /// ```
 ///
 /// This is to ensure that if you have a domain with X segments and replace a range of Y segments with Z segments (and the setter returns [`Ok`]), you always end up with a domain with X-Y+Z segments.
 #[derive(Debug, Clone)]
 pub struct DomainHost<'a> {
     /// The host string.
-    pub(crate) host: Cow<'a, str>,
+    host: Cow<'a, str>,
     /// The [`DomainHostDetails`].
-    pub(crate) details: DomainHostDetails,
+    details: DomainHostDetails,
 }
 
 impl<'a> DomainHost<'a> {
@@ -210,9 +174,23 @@ impl<'a> DomainHost<'a> {
     /// # Safety
     /// Requires that `value` be percent decoded and UTS46 map normalized and does not end in a number.
     /// # Errors
-    /// If [`not_eian_domain_host_to_ascii`] returns an error, that error is returned.
+    /// If [`uts46_domain_host_to_ascii`] returns an error, that erorr is returned.
+    ///
+    /// If the UTS46 mapped and normalized value contains a byte in [`FORBIDDEN_DOMAIN_HOST_LITERAL`], returns the error [`InvalidDomainHost`].
+    ///
+    /// If the UTS46 mapped and normalized value is empty, returns the error [`InvalidDomainHost`].
     pub unsafe fn new_not_eian<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
-        let (_, value) = not_eian_domain_host_to_ascii(value)?;
+        let (raw, ascii) = uts46_domain_host_to_ascii(value, false)?;
+
+        let value = ascii.map_or(raw, Into::into);
+
+        if value.bytes().any(|b| FORBIDDEN_DOMAIN_HOST_LITERAL.contains(b)) {
+            Err(InvalidDomainSegment)?;
+        }
+
+        if value.is_empty() {
+            Err(InvalidDomainHost)?
+        }
 
         unsafe {
             Ok(Self::new_raw(value))
@@ -228,14 +206,14 @@ impl<'a> DomainHost<'a> {
         let details = DomainHostDetails::parse_unchecked(&value);
 
         unsafe {
-            Self::new_unchecked(value, details)
+            Self::from_parts(value, details)
         }
     }
 
     /// Make a new [`Self`] with zero validity checks.
     /// # Safety
     /// `value` must be a valid domain literal and `details` must be its [`DomainHostDetails`].
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: DomainHostDetails) -> Self {
+    pub unsafe fn from_parts<T: Into<Cow<'a, str>>>(value: T, details: DomainHostDetails) -> Self {
         Self {
             host: value.into(),
             details
@@ -252,16 +230,32 @@ impl<'a> DomainHost<'a> {
         self.details
     }
 
+    /// Unwrap into the inner [`Cow`].
+    ///
+    /// To get the [`DomainHostDetails`] too, see [`Self::into_parts`].
+    pub fn into_inner(self) -> Cow<'a, str> {
+        self.host
+    }
+
     /// Unwrap into the host and details.
     pub fn into_parts(self) -> (Cow<'a, str>, DomainHostDetails) {
         (self.host, self.details)
     }
 
-    /// [`unchecked_domain_host_to_unicode`].
-    pub fn to_unicode(self) -> Cow<'a, str> {
-        let (_, value) = unchecked_domain_host_to_unicode(self.host);
+    /// [`uts46_domain_host_to_unicode`].
+    /// # Errors
+    /// If [`uts46_domain_host_to_unicode`] returns an error, that error is returned.
+    #[expect(clippy::type_complexity, reason = "It's fine.")]
+    pub fn into_unicode(self) -> Result<(Cow<'a, str>, Option<String>, BidiDetail), (Cow<'a, str>, Option<String>)> {
+        uts46_domain_host_to_unicode(self.into_inner())
+    }
 
-        value
+    /// [`Self::into_unicode`] without taking ownership.
+    /// # Errors
+    /// If [`uts46_domain_host_to_unicode`] returns an error, that error is returned.
+    #[expect(clippy::type_complexity, reason = "It's fine.")]
+    pub fn to_unicode(&self) -> Result<(Cow<'_, str>, Option<String>, BidiDetail), (Cow<'_, str>, Option<String>)> {
+        uts46_domain_host_to_unicode(self.as_str())
     }
 
     /// Turn into an owned [`Self`].
@@ -327,7 +321,19 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for DomainHost<'a> {
     type Error = InvalidDomainHost;
 
     fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        let (_, value) = domain_host_bytes_to_ascii(value)?;
+        let (_, value) = encode_domain_host_bytes(value)?;
+
+        unsafe {
+            Ok(Self::new_raw(value))
+        }
+    }
+}
+
+impl<'a> TryFrom<Cow<'a, str>> for DomainHost<'a> {
+    type Error = InvalidDomainHost;
+
+    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
+        let (_, value) = encode_domain_host(value)?;
 
         unsafe {
             Ok(Self::new_raw(value))
@@ -348,7 +354,7 @@ impl<'a> TryFrom<DomainSegment<'a>> for DomainHost<'a> {
                     data1: 0,
                     data2: 0,
                 },
-                host: value.0
+                host: value.into_inner()
             })
         }
     }

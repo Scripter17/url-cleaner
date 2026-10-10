@@ -1,137 +1,122 @@
 //! Encoding.
 
-use std::fmt::Write;
-
 use crate::prelude::*;
 
-/// Get [`DATA`].
-const fn get_data() -> [u8; 256] {
-    let mut ret = [0; 256];
-
-    let mut i = 0;
-    while i < 256 {
-        if FORBIDDEN_DOMAIN_SEGMENTS_LITERAL.contains(i as u8) {
-            ret[i as usize] = 1;
-        }
-
-        if FORBIDDEN_DOMAIN_SEGMENTS_INPUT.contains(i as u8) {
-            ret[i as usize] = 2;
-        }
-
-        i += 1;
-    }
-
-    ret
-}
-
-/// For each byte, `0` if a valid domain segments literal, `1` if a valid domain segments input, and `2` if an invalid domain segments input.
-const DATA: [u8; 256] = get_data();
-
-/// Encode domain segments.
-///
-/// If you know your input will be percent decoded, see [`percent_decoded_domain_segments_to_ascii`].
+/// Steps 5, 6, 7, and 9 of the [host parser](https://url.spec.whatwg.org/#host-parsing) algorithm.
 /// # Errors
-/// If [`try_percent_decode`] returns an error, returns the error [`InvalidDomainSegments`].
+/// If [`try_percent_decode`] returns an error, that error is returned.
 ///
-/// If [`percent_decoded_domain_segments_to_ascii`] returns an error, that error is returned.
-pub fn domain_segments_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
-    let (a, value) = try_percent_decode(value).map_err(|_| InvalidDomainSegments)?;
-    let (b, value) = percent_decoded_domain_segments_to_ascii(value)?;
+/// If [`encode_percent_decoded_domain_segments`] returns an error, that error is returned.
+pub fn encode_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
+    let (a, value) = try_percent_decode                    (value).map_err(|_| InvalidDomainSegments)?;
+    let (b, value) = encode_percent_decoded_domain_segments(value)?;
+
     Ok((a || b, value))
 }
 
-/// Encode domain segments from bytes.
-///
-/// If you know your input will be percent decoded, see [`percent_decoded_domain_segments_to_ascii`].
+/// Steps 5, 6, 7, and 9 of the [host parser](https://url.spec.whatwg.org/#host-parsing) algorithm.
 /// # Errors
-/// If [`try_percent_decode_bytes`] returns an error, returns the error [`InvalidDomainSegments`].
+/// If [`try_percent_decode_bytes`] returns an error, that error is returned.
 ///
-/// If [`percent_decoded_domain_segments_to_ascii`] returns an error, that error is returned.
-pub fn domain_segments_bytes_to_ascii<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
-    let (a, value) = try_percent_decode_bytes(value).map_err(|_| InvalidDomainSegments)?;
-    let (b, value) = percent_decoded_domain_segments_to_ascii(value)?;
+/// If [`encode_percent_decoded_domain_segments`] returns an error, that error is returned.
+pub fn encode_domain_segments_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
+    let (a, value) = try_percent_decode_bytes              (value).map_err(|_| InvalidDomainSegments)?;
+    let (b, value) = encode_percent_decoded_domain_segments(value)?;
+
     Ok((a || b, value))
 }
 
-/// Encode percent decoded domain segments.
-///
-/// If you know your input will be UTS46 mapped and normalized, see [`normalized_domain_segments_to_ascii`].
+/// Common code for both [`encode_domain_segments`] and [`encode_domain_segments_bytes`].
 /// # Errors
-/// If [`normalized_domain_segments_to_ascii`] returns an error, that error is returned.
-pub fn percent_decoded_domain_segments_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
+/// If [`uts46_domain_segments_to_ascii`] returns an error, that error is returned.
+///
+/// If `value` is otherwise not a valid [`DomainSegments`], returns the error [`InvalidDomainSegments`]
+pub fn encode_percent_decoded_domain_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
     let (a, value, class) = uts46_classify_map_normalize(value);
 
+    // If the input contained a [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] but no Unicode, then the output must also contain a [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`].
     if class & 0b0010_0100 == 0b0010_0000 {
-        Err(InvalidDomainSegments)?
-    } else if class & 0b0000_0100 == 0b0000_0000 {
-        Ok((a, value))
-    } else {
-        let (b, value) = normalized_domain_segment_to_ascii(value)?;
-        Ok((a || b, value))
+        Err(InvalidDomainSegments)?;
     }
+
+    // If the output contained no [`INVALID_DOMAIN_SEGMENTS_INPUT`], no Unicode, and no ASCII numbers, then it's a valid [`DomainSegments`] literal.
+    if class & 0b0010_0110 == 0b0000_0000 {
+        return Ok((a, value));
+    }
+
+    let (raw, ascii) = uts46_domain_segments_to_ascii(value, false)?;
+
+    let b = ascii.is_some();
+
+    let value = ascii.map_or(raw, Into::into);
+
+    // I don't think this is required since it'd only trigger if UTS46 mapping and normalizing could add a new [`FORBIDDEN_DOMAIN_SEGMENTS_LITERAL`], but better safe than sorry.
+    if value.bytes().any(|b| FORBIDDEN_DOMAIN_SEGMENTS_LITERAL.contains(b)) {
+        Err(InvalidDomainSegments)?;
+    }
+
+    Ok((a || b, value))
 }
 
-/// Encode percent decoded and UTS46 mapped and normalized domain segments.
+
+
+/// The URL spec's [domain parser ToASCII](https://url.spec.whatwg.org/#domain-parser-toascii) algorithm, but with a name that clarifies it's being used on just a list of domain segments rather than a full domain.
+///
+/// Please note that this may return values that are later rejected by [`encode_domain_segments`].
 /// # Errors
-/// If `value` contains any ASCII bytes in [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`], returns the error [`InvalidDomainSegments`].
+/// If [`uts46_domain_segments_to_ascii`] returns an error, that error is returned.
+pub fn domain_segments_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T, be_strict: bool) -> Result<(Cow<'a, str>, Option<String>), InvalidDomainSegments> {
+    let (_, value, class) = uts46_classify_map_normalize(value);
+
+    // If the output contained no [`INVALID_DOMAIN_SEGMENTS_INPUT`], no Unicode, and no ASCII numbers, then it's a valid [`DomainSegments`] literal.
+    if class & 0b0010_0110 == 0b0000_0000 {
+        return Ok((value, None));
+    }
+
+    uts46_domain_segments_to_ascii(value, be_strict)
+}
+
+/// [`domain_segments_to_ascii`] assuming `value` has already been through [`uts46_map_normalize`].
 ///
-/// If `value` is not ASCII:
+/// Please note that this may return values that are later rejected by [`encode_domain_segments`].
+/// # Errors
+/// If `be_strict` is [`true`] and/or `value` is not ASCII:
 ///
-/// - If any call to [`BidiDetail::parse`] returns [`BidiDetail::ForceAscii`], returns the error [`InvalidDomainSegments`].
+/// - If [`uts46_domain_segment_to_unicode`] returns an error, returns the error [`InvalidDomainSegments`].
 ///
-/// - If any call to [`BidiDetail::parse`] returns [`BidiDetail::ForceLtr`] and any other call to [`BidiDetail::parse`] returns [`BidiDetail::Rtl`], returns the error [`InvalidDomainSegments`].
-///
-/// - If any call to [`domain_segment_to_ascii`] returns an error, that error is returned.
-#[expect(clippy::missing_panics_doc, reason = "Normalizer::write_str can't panic (unless String::push_str panics (at which point there's nothing to do.).).")]
-pub fn normalized_domain_segments_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidDomainSegments> {
-    let mut value = value.into();
+/// - If [`BidiDetail::join`] returns [`BidiDetail::ForceAscii`], returns the error [`InvalidDomainSegments`].
+pub fn uts46_domain_segments_to_ascii<'a, T: Into<Cow<'a, str>>>(value: T, be_strict: bool) -> Result<(Cow<'a, str>, Option<String>), InvalidDomainSegments> {
+    let value = value.into();
 
-    match value.bytes().fold(0, |acc, b| acc | DATA[b as usize]) {
-        0 => Ok((false, value)),
-        1 => {
-            let mut ret = Normalizer::new(&*value);
+    if be_strict || !value.is_ascii() {
+        let mut ret = String::with_capacity(value.len());
+        let mut segments = SplitDots(Some(&value)).peekable();
+        let mut sum_bidi_detail = BidiDetail::Ltr;
 
-            let mut segments = value.split('.').peekable();
+        while let Some(raw_segment) = segments.next() {
+            let (raw_segment, unicode_segment, bidi_detail) = uts46_domain_segment_to_unicode(raw_segment).map_err(|_| InvalidDomainSegments)?;
 
-            let mut force_ltr = false;
-            let mut rtl       = false;
+            sum_bidi_detail = sum_bidi_detail.join(bidi_detail);
 
-            while let Some(segment) = segments.next() {
-                let (_, segment, bidi_detail) = match segment.starts_with("xn--") {
-                    true  => domain_segment_to_unicode(segment)?,
-                    false => (false, segment.into(), segment.parse()?),
-                };
-
-                match bidi_detail {
-                    BidiDetail::Ltr        => {},
-                    BidiDetail::ForceLtr   => force_ltr = true,
-                    BidiDetail::Rtl        => rtl       = true,
-                    BidiDetail::ForceAscii => Err(InvalidDomainSegments)?
-                }
-
-                if force_ltr && rtl {
-                    Err(InvalidDomainSegments)?;
-                }
-
-                let (_, encoded) = normalized_domain_segment_to_ascii(segment)?;
-
-                ret.write_str(&encoded).expect("???");
-
-                if segments.peek().is_some() {
-                    ret.write_str(".").expect("???");
-                }
+            if sum_bidi_detail == BidiDetail::ForceAscii {
+                Err(InvalidDomainSegments)?;
             }
 
-            Ok(match ret.done() {
-                (changed, Cow::Owned   (x)) => (changed, x.into()),
-                (changed, Cow::Borrowed(x)) => {
-                    unsafe {
-                        value.truncate_unchecked(x.len());
-                    }
-                    (changed, value)
-                }
-            })
-        },
-        _ => Err(InvalidDomainSegments)?,
+            if raw_segment.is_ascii() {
+                ret.push_str(&raw_segment);
+            } else {
+                ret.push_str("xn--");
+
+                encode_punycode_into(&unicode_segment.map_or(raw_segment, Into::into), &mut ret);
+            }
+
+            if segments.peek().is_some() {
+                ret.push('.');
+            }
+        }
+
+        Ok((value, Some(ret)))
+    } else {
+        Ok((value, None))
     }
 }

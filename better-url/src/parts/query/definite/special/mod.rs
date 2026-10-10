@@ -95,9 +95,9 @@ impl<'a> From<QuerySegment<'a>> for SpecialQuery<'a> {
     }
 }
 
-impl<'a> From<NonSpecialQuery<'a>> for SpecialQuery<'a> {fn from(value: NonSpecialQuery<'a>) -> Self {Self(non_special_query_to_special_query(value.0).1)}}
-impl<'a> From<Fragment       <'a>> for SpecialQuery<'a> {fn from(value: Fragment       <'a>) -> Self {Self(fragment_to_special_query         (value.0).1)}}
-impl<'a> From<FragmentQuery  <'a>> for SpecialQuery<'a> {fn from(value: FragmentQuery  <'a>) -> Self {Self(fragment_to_special_query         (value.0).1)}}
+impl<'a> From<NonSpecialQuery<'a>> for SpecialQuery<'a> {fn from(value: NonSpecialQuery<'a>) -> Self {Self(non_special_query_to_special_query(value.into_inner()).1)}}
+impl<'a> From<Fragment       <'a>> for SpecialQuery<'a> {fn from(value: Fragment       <'a>) -> Self {Self(fragment_to_special_query         (value.into_inner()).1)}}
+impl<'a> From<FragmentQuery  <'a>> for SpecialQuery<'a> {fn from(value: FragmentQuery  <'a>) -> Self {Self(fragment_to_special_query         (value.into_inner()).1)}}
 
 impl<'a> From<SpecialQuerySegment   <'a>> for SpecialQuery<'a> {fn from(value: SpecialQuerySegment   <'a>) -> Self {Self(                                   value.into_inner()   )}}
 impl<'a> From<NonSpecialQuerySegment<'a>> for SpecialQuery<'a> {fn from(value: NonSpecialQuerySegment<'a>) -> Self {Self(non_special_query_to_special_query(value.into_inner()).1)}}

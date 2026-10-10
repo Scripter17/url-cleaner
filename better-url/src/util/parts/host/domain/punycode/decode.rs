@@ -1,12 +1,14 @@
 //! [`decode_punycode`].
 
-use std::iter::{Peekable, Enumerate, Copied};
-
 use crate::prelude::*;
 
 /// Decode Punycode.
+///
+/// Please note that, per [Appendic C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
+///
+/// In practice this means nothing but someone's going to complain so I figured I'd explain myself early.
 /// # Errors
-/// If the input is invalid, returns the error [`InvalidPunycode`].
+/// If [`decode_punycode_into`] returns an error, that error is returned.
 /// # Examples
 /// ```
 /// use better_url::util::*;
@@ -25,103 +27,105 @@ use crate::prelude::*;
 /// assert_eq!(decode_punycode("b1abfaaepdrnnbgefbadotcwatmq2g4l"                                     ).unwrap(), "почемужеонинеговорятпорусски"                                            );
 /// assert_eq!(decode_punycode("PorqunopuedensimplementehablarenEspaol-fmd56a"                        ).unwrap(), "PorquénopuedensimplementehablarenEspañol"                                );
 /// assert_eq!(decode_punycode("TisaohkhngthchnitingVit-kjcr8268qyxafd2f1b9g"                         ).unwrap(), "TạisaohọkhôngthểchỉnóitiếngViệt"                                         );
+///
+/// assert_eq!(decode_punycode("--rmckbbajlc6dj7bxne2c").unwrap(), "وزارة-الأتصالات");
 /// ```
 pub fn decode_punycode(value: &str) -> Result<String, InvalidPunycode> {
-    decode_punycode_bytes(value.as_bytes())
+    let mut ret = String::new();
+
+    decode_punycode_into(value, &mut ret)?;
+
+    Ok(ret)
 }
 
-/// Decode punycode bytes.
+/// Decode Punycode into an existing [`String`] and return a [`str`] to it.
+///
+/// Please note that, per [Appendic C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
+///
+/// In practice this means nothing but someone's going to complain so I figured I'd explain myself early.
 /// # Errors
-/// If the input is invalid, returns the error [`InvalidPunycode`].
-pub fn decode_punycode_bytes(value: &[u8]) -> Result<String, InvalidPunycode> {
-    Ok(decode_punycode_base_bytes(value)?.collect())
-}
-
-/// An [`Iterator`] over the [`char`]s of a Punycode decoding.
-#[derive(Debug)]
-struct PunycodeDecoder<'a> {
-    /// The base chars.
-    bcs: Peekable<Enumerate<Copied<std::slice::Iter<'a, u8>>>>,
-    /// The insert chars.
-    ics: Peekable<Enumerate<std::vec::IntoIter<(u32, char)>>>,
-}
-
-impl Iterator for PunycodeDecoder<'_> {
-    type Item = char;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match (self.bcs.peek(), self.ics.peek()) {
-            (Some(&(bi, bc)), Some(&(a, (ii, _)))) if bi + a < ii as usize => {
-                let _ = self.bcs.next();
-                Some(bc as char)
-            },
-
-            (Some(&(_ , bc)), None                ) => {let _ = self.bcs.next(); Some(bc as char)},
-            (_              , Some(&(_, (_ , ic)))) => {let _ = self.ics.next(); Some(ic)},
-
-            (None, None) => None,
-        }
-    }
-}
-
-/// Decode Punycode encoded bytes into a [`PunycodeDecoder`].
-fn decode_punycode_base_bytes(value: &[u8]) -> Result<PunycodeDecoder<'_>, InvalidPunycode> {
-    if value.len() > u32::MAX as usize {
-        Err(InvalidPunycode)?;
-    }
-
-    if !value.is_ascii() {
-        Err(InvalidPunycode)?;
-    }
-
-    let mut insertions = Vec::<(u32, char)>::new();
-
-    let (base, input) = match value.memchr(b'-') {
+/// If `value` is invalid Punycode, returns the error [`InvalidPunycode`].
+///
+/// If an error is returend, `out` is left unmodified.
+pub fn decode_punycode_into<'a>(value: &str, out: &'a mut String) -> Result<&'a str, InvalidPunycode> {
+    let (base, input) = match value.memrchr(b'-') {
         Some(i) => (&value[..i], &value[i+1..]),
         None    => (&value[..0],  value       ),
     };
 
-    let mut length     = base.len() as u32;
-    let mut code_point = 0x80u32;
-    let mut bias       = 72u32;
-    let mut i          = 0u32;
-    let mut iter       = input.iter().copied();
+    if !base.is_ascii() || input.bytes().any(|b| !b.is_ascii_alphanumeric()) {
+        Err(InvalidPunycode)?;
+    }
+
+    let mut insertions = smallvec::SmallVec::<[(usize, char); 10]>::new();
+
+    let mut insert_points = base.len() + 1;
+    let mut code_point    = 0x80usize;
+    let mut bias          = 72usize;
+    let mut iter          = input.bytes();
+    let mut reserve       = base.len();
+    let mut new_decode    = 0usize;
+    let mut first         = true;
+    let mut delta         = 0usize;
 
     while let Some(mut byte) = iter.next() {
-        let previous_i = i;
         let mut weight = 1;
-        let mut k = 36u32;
 
-        loop {
+        for i in 1usize.. {
             let digit = match byte {
                 b'0'..=b'9' => byte - b'0' + 26,
                 b'a'..=b'z' => byte - b'a',
                 b'A'..=b'Z' => byte - b'A',
-                _ => Err(InvalidPunycode)?
+                _ => unsafe {std::hint::unreachable_unchecked()},
             };
-            let product = (digit as u32).checked_mul(weight).ok_or(InvalidPunycode)?;
 
-            i = i.checked_add(product).ok_or(InvalidPunycode)?;
+            delta += (digit as usize) * weight;
 
-            let t = k.saturating_sub(bias).clamp(1, 26) as u8;
+            let t = (i * 36).saturating_sub(bias).clamp(1, 26) as u8;
 
             if digit < t {
                 break;
             }
 
-            weight = weight.checked_mul(36 - t as u32).ok_or(InvalidPunycode)?;
-            k += 36;
+            weight *= 36 - t as usize;
             byte = iter.next().ok_or(InvalidPunycode)?;
         }
 
-        let mut delta = i - previous_i;
 
-        match previous_i {
-            0 => delta /= 700,
-            _ => delta /= 2
+
+        new_decode += delta;
+
+        code_point += new_decode / insert_points;
+
+        let insert_i = new_decode % insert_points;
+
+        let insert_c = char::from_u32(code_point as u32).ok_or(InvalidPunycode)?;
+
+        reserve += insert_c.len_utf8();
+
+        let mut insert_n = insertions.len();
+
+        for (i, (idx, _)) in insertions.iter_mut().enumerate().rev() {
+            if *idx < insert_i {
+                break;
+            }
+
+            insert_n = i;
+            *idx += 1;
         }
 
-        delta += delta / (length + 1);
+        insertions.insert(insert_n, (insert_i, insert_c));
+
+        new_decode = insert_i + 1;
+
+
+
+        match first {
+            true  => delta /= 700,
+            false => delta /= 2,
+        }
+
+        delta += delta / insert_points;
 
         bias = 0;
 
@@ -132,30 +136,40 @@ fn decode_punycode_base_bytes(value: &[u8]) -> Result<PunycodeDecoder<'_>, Inval
 
         bias += (delta * 36) / (delta + 38);
 
-        code_point = code_point.checked_add(i / (length + 1)).ok_or(InvalidPunycode)?;
 
-        i %= length + 1;
-        let c = char::from_u32(code_point).ok_or(InvalidPunycode)?;
 
-        let mut a = None;
-
-        for (b, (idx, _)) in insertions.iter_mut().enumerate() {
-            if *idx >= i {
-                if a.is_none() {
-                    a = Some(b);
-                }
-                *idx += 1;
-            }
-        }
-
-        insertions.insert(a.unwrap_or(insertions.len()), (i, c));
-
-        length += 1;
-        i += 1;
+        insert_points += 1;
+        delta = 0;
+        first = false;
     }
 
-    Ok(PunycodeDecoder {
-        bcs: base.iter().copied().enumerate().peekable(),
-        ics: insertions.into_iter().enumerate().peekable(),
-    })
+
+
+    let new_start = out.len();
+
+    out.reserve(reserve);
+
+
+
+    if base.is_empty() {
+        out.extend(insertions.into_iter().map(|(_, c)| c));
+    } else {
+        let mut old_read_idx = 0;
+
+        for (i, (idx, c)) in insertions.into_iter().enumerate() {
+            let read_idx = idx - i;
+
+            out.push_str(&base[old_read_idx .. read_idx]);
+
+            old_read_idx = read_idx;
+
+            out.push(c);
+        }
+
+        out.push_str(&base[old_read_idx..]);
+    }
+
+
+
+    Ok(&out[new_start..])
 }

@@ -18,7 +18,7 @@ use crate::prelude::*;
 /// assert_eq!(path, "/abc/ghi");
 /// ```
 #[derive(Debug, Clone)]
-pub struct NonSpecialPathSegments<'a>(pub(crate) Cow<'a, str>);
+pub struct NonSpecialPathSegments<'a>(Cow<'a, str>);
 
 impl<'a> NonSpecialPathSegments<'a> {
     /// Make a new [`Self`] without doing any validity checks.
@@ -87,8 +87,8 @@ impl<'a> From<PathSegments<'a>> for NonSpecialPathSegments<'a> {
     }
 }
 
-impl<'a> From<FilePathSegments          <'a>> for NonSpecialPathSegments<'a> {fn from(value: FilePathSegments          <'a>) -> Self {Self(value.0)}}
-impl<'a> From<SpecialNotFilePathSegments<'a>> for NonSpecialPathSegments<'a> {fn from(value: SpecialNotFilePathSegments<'a>) -> Self {Self(value.0)}}
+impl<'a> From<FilePathSegments          <'a>> for NonSpecialPathSegments<'a> {fn from(value: FilePathSegments          <'a>) -> Self {Self(value.into_inner())}}
+impl<'a> From<SpecialNotFilePathSegments<'a>> for NonSpecialPathSegments<'a> {fn from(value: SpecialNotFilePathSegments<'a>) -> Self {Self(value.into_inner())}}
 
 impl<'a> From<PathSegment              <'a>> for NonSpecialPathSegments<'a> {fn from(value: PathSegment              <'a>) -> Self {Self(value.into_inner())}}
 impl<'a> From<FilePathSegment          <'a>> for NonSpecialPathSegments<'a> {fn from(value: FilePathSegment          <'a>) -> Self {Self(value.into_inner())}}

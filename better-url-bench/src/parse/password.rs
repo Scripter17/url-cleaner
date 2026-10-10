@@ -23,7 +23,7 @@ pub struct Args {
 impl Args {
     /// Do the comand.
     pub fn r#do(self) {
-        for (i, value) in std::io::stdin().lock().lines().map(Result::unwrap).enumerate() {
+        for (i, value) in (1..).zip(std::io::stdin().lock().lines().map(Result::unwrap)) {
             print!("{i}");
 
             let timer = std::time::Instant::now();

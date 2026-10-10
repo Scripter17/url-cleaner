@@ -283,7 +283,6 @@ pub enum Condition {
 
     /** [`BetterUrl::has_host`].       **/ UrlHasHost,
     /** [`BetterUrl::host_is_domain`]. **/ HostIsDomain,
-    /** [`BetterUrl::host_is_ip`].     **/ HostIsIp,
     /** [`BetterUrl::host_is_ipv4`].   **/ HostIsIpv4,
     /** [`BetterUrl::host_is_ipv6`].   **/ HostIsIpv6,
     /** [`BetterUrl::host_is_opaque`]. **/ HostIsOpaque,
@@ -848,7 +847,6 @@ impl Condition {
 
             Self::UrlHasHost   => task_state.url.has_host(),
             Self::HostIsDomain => task_state.url.host_is_domain(),
-            Self::HostIsIp     => task_state.url.host_is_ip    (),
             Self::HostIsIpv4   => task_state.url.host_is_ipv4  (),
             Self::HostIsIpv6   => task_state.url.host_is_ipv6  (),
             Self::HostIsOpaque => task_state.url.host_is_opaque(),

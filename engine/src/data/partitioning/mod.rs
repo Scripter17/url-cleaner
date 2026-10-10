@@ -39,28 +39,17 @@ pub use source::*;
 /// assert_eq!(digits.get(Some("a")), None);
 /// ```
 #[derive(Debug, Default, Clone, PartialEq, Eq, Suitability)]
-pub struct Partitioning {
-    /// The map from values to their partitions.
-    pub map: FxHashMap<String, Arc<str>>,
-    /// The partition to put [`None`] into.
-    pub if_none: Option<Arc<str>>
-}
+pub struct Partitioning(pub Map<Arc<str>>);
 
 impl Partitioning {
     /// If `element` is in `self`, return [`true`].
     pub fn contains(&self, element: Option<&str>) -> bool {
-        match element {
-            Some(element) => self.map.contains_key(element),
-            None          => self.if_none.is_some()
-        }
+        self.0.contains(element)
     }
 
     /// If `element` is in `self`, return the partition it belongs to.
     pub fn get<'a>(&'a self, element: Option<&str>) -> Option<&'a str> {
-        match element {
-            Some(element) => self.map.get(element).map(|x| &**x),
-            None          => self.if_none.as_deref()
-        }
+        self.0.get(element).map(|x| &**x)
     }
 }
 
@@ -78,10 +67,7 @@ impl Extend<(String, Vec<Option<String>>)> for Partitioning {
             let name = Arc::<str>::from(name);
 
             for item in items {
-                match item {
-                    Some(item) => {self.map.insert(item, name.clone());},
-                    None       => self.if_none = Some(name.clone()),
-                }
+                self.0.insert(item, name.clone());
             }
         }
     }
@@ -94,11 +80,52 @@ impl<'de> Visitor<'de> for PartitioningVisitor {
     type Value = Partitioning;
 
     fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
-        std::iter::from_fn(|| map.next_entry().transpose()).collect::<Result<Self::Value, _>>()
+        let mut ret = Self::Value::default();
+
+        while let Some(key) = map.next_key::<String>()? {
+            map.next_value_seed(ExtendPartitioning {
+                partitioning: &mut ret,
+                name: Arc::from(key),
+            })?;
+        }
+
+        Ok(ret)
     }
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(formatter, "Expected a map")
+    }
+}
+
+/// A thing to allow deserializing [`Partitioning`]s more efficiently.
+struct ExtendPartitioning<'a> {
+    /// The [`Partitioning`] being deserialized.
+    partitioning: &'a mut Partitioning,
+    /// The name of the current partition.
+    name: Arc<str>,
+}
+
+impl<'de, 'a> serde::de::DeserializeSeed<'de> for ExtendPartitioning<'a> {
+    type Value = ();
+
+    fn deserialize<D: Deserializer<'de>>(self, deserializer: D) -> Result<Self::Value, D::Error> {
+        deserializer.deserialize_seq(self)
+    }
+}
+
+impl<'de, 'a> Visitor<'de> for ExtendPartitioning<'a> {
+    type Value = ();
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(formatter, "an array of strings")
+    }
+
+    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<(), A::Error> {
+        while let Some(x) = seq.next_element()? {
+            self.partitioning.0.insert(x, self.name.clone());
+        }
+
+        Ok(())
     }
 }
 
@@ -112,12 +139,8 @@ impl Serialize for Partitioning {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut x = FxHashMap::<&str, Vec<Option<&str>>>::with_hasher(Default::default());
 
-        for (element, partition) in self.map.iter() {
-            x.entry(partition).or_default().push(Some(element));
-        }
-
-        if let Some(ref partition) = self.if_none {
-            x.entry(partition).or_default().push(None);
+        for (element, partition) in &self.0 {
+            x.entry(partition).or_default().push(element.map(|x| &**x));
         }
 
         let mut serializer = serializer.serialize_map(Some(x.len()))?;

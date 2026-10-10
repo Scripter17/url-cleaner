@@ -48,7 +48,7 @@
 				},
 				"bluesky_embed_host": {
 					"desc": "The Bluesky embed host to use.",
-					"required": true
+					"required": false
 				},
 
 				"fandom_mode": {
@@ -62,7 +62,7 @@
 				},
 				"breezewiki_host": {
 					"desc": "The Breezewiki host to use.",
-					"required": true
+					"required": false
 				},
 
 				"furaffinity_mode": {
@@ -77,7 +77,7 @@
 				},
 				"furaffinity_embed_host": {
 					"desc": "The Furaffinity embed host to use.",
-					"required": true
+					"required": false
 				},
 
 				"instagram_mode": {
@@ -105,7 +105,7 @@
 				},
 				"pixiv_embed_host": {
 					"desc": "The pixiv embed host to use.",
-					"required": true
+					"required": false
 				},
 
 				"reddit_mode": {
@@ -133,7 +133,21 @@
 				},
 				"tiktok_embed_host": {
 					"desc": "The tiktok embed host to use.",
-					"required": true
+					"required": false
+				},
+
+				"threads_mode": {
+					"desc": "Decides what host to replace threads/threads embed hosts with.",
+					"required": false,
+					"unset": "Set threads and threads embed hosts to `www.threads.com`.",
+					"variants": {
+						"canon": "Always set to `www.threads.com`.",
+						"embed": "Always set to the `threads_embed_host` var."
+					}
+				},
+				"threads_embed_host": {
+					"desc": "The threads embed host to use.",
+					"required": false
 				},
 
 				"tumblr_mode": {
@@ -147,7 +161,7 @@
 				},
 				"tumblr_embed_host": {
 					"desc": "The tumblr embed host to use.",
-					"required": true
+					"required": false
 				},
 
 				"twitter_mode": {
@@ -162,7 +176,7 @@
 				},
 				"twitter_embed_host": {
 					"desc": "The twitter embed host to use.",
-					"required": true
+					"required": false
 				},
 				"twitter_embed_lang": {
 					"desc": "The language to use for the twitter embed host.",
@@ -170,7 +184,7 @@
 				},
 				"nitter_host": {
 					"desc": "The Nitter host to use.",
-					"required": true
+					"required": false
 				},
 
 				"youtube_mode": {
@@ -184,7 +198,7 @@
 				},
 				"invidious_host": {
 					"desc": "The Invidious host to use.",
-					"required": true
+					"required": false
 				}
 			},
 			"sets": {
@@ -292,7 +306,7 @@
 		"partitionings": {
 			"dn_categories": {
 				"bluesky": ["bsky.app"],
-				"bluesky_embed_hosts": ["fxbsky.app"],
+				"bluesky_embed_hosts": ["fxbsky.app", "bskx.app", "bsyy.app", "bskye.app", "vxbsky.app"],
 
 				"deviantart_embed_hosts": ["fxdeviantart.com"],
 
@@ -300,25 +314,26 @@
 				"furaffinity_embed_hosts": ["xfuraffinity.net"],
 
 				"instagram": ["instagram.com"],
-				"instagram_embed_hosts": ["vxinstagram.com", "ddinstagram.com", "fxinstagram.com", "ddinstagram.com", "instafix.com", "vxinst.com"],
+				"instagram_embed_hosts": ["vxinstagram.com", "ddinstagram.com", "fxinstagram.com", "ddinstagram.com", "instafix.com", "vxinst.com", "kkinstagram.com", "ezinstagram.com", "instagramez.com"],
 
 				"pixiv": ["pixiv.net"],
 				"pixiv_embed_hosts": ["phixiv.net"],
 
 				"reddit": ["reddit.com", "old.reddit.com"],
 				"reddit_abnormal": ["new.reddit.com"],
-				"reddit_embed_hosts": ["rxddit.com", "old.rxddit.com"],
+				"reddit_embed_hosts": ["rxddit.com", "old.rxddit.com", "rxyddit.com", "old.rxyddit.com", "redditez.com"],
 
 				"tiktok": ["tiktok.com"],
-				"tiktok_embed_hosts": ["tfxktok.com"],
+				"tiktok_embed_hosts": ["tfxktok.com", "tnktok.com", "tiktxk.com", "vxtiktok.com", "tiktokez.com"],
 
 				"threads": ["threads.com", "threads.net"],
+				"threads_embed_hosts": ["fixthreads.net"],
 
 				"tumblr_embed_hosts": ["tpmblr.com", "txtumblr.com"],
 
 				"twitter": ["x.com"],
 				"twitter_abnormal": ["twitter.com", "mobile.x.com", "mobile.twitter.com"],
-				"twitter_embed_hosts": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com", "mpregx.com"],
+				"twitter_embed_hosts": ["fixupx.com", "fixvx.com", "fxtwitter.com", "girlcockx.com", "stupidpenisx.com", "vxtwitter.com", "yiffx.com", "mpregx.com", "twitterez.com"],
 				"nitter": [
 					"bird.habedieeh.re", "nitter.holo-mix.com", "nitter.io.lol", "nitter.kavin.rocks", "nitter.kylrth.com", "nitter.lucabased.xyz", "nitter.lunar.icu",
 					"nitter.moomoo.me", "nitter.net", "nitter.poast.org", "nitter.privacydev.net", "nitter.priv.loki", "nitter.qwik.space", "nitter.rawbit.ninja",
@@ -532,8 +547,8 @@
 					"bit.ly", "bityl.co", "blizz.ly", "blockclubchi.co", "bloom.bg", "boxd.it", "buff.ly", "bzfd.it", "c.org", "cbr.sh", "cbsn.ws", "cfl.re", "chatter.one",
 					"chn.ge", "chng.it", "cj.dotomi.com", "clckhl.co", "click.email.pcoptimum.ca", "click.fan", "click.linksynergy.com", "cnb.cx", "cons.lv", "cp2077.ly",
 					"crnch.it", "cutt.ly", "dareqr.info", "db.tt", "dcdr.me", "delivr.com", "diplo.de", "dis.gd", "dlvr.it", "dotomi.com", "econ.st", "eepurl.com", "emjcd.com",
-					"etsy.me", "f24.my", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "flowcode.com", "flowsto.com", "flyac.ca", "fn.gg", "forms.gle", "g.co", "gh.io",
-					"glo.bo", "go.flexispot.com", "go.forbes.com", "go.france24.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "go.undp.org",
+					"etsy.me", "f24.my", "facet.ing", "fal.cn", "fanga.me", "fb.me", "fdip.fr", "flip.it", "flowcode.com", "flowsto.com", "flyac.ca", "fn.gg", "forms.gle", "g.co",
+					"gh.io", "glo.bo", "go.flexispot.com", "go.forbes.com", "go.france24.com", "go.icj-cij.org", "go.microsoft.com", "go.nasa.gov", "go.nature.com", "go.undp.org",
 					"gofund.me", "goo.gl", "goo.gle", "goo.su", "goodsmile.link", "got.cr", "gum.co", "hmstr.fr", "hov.to", "howl.link", "hubs.la", "hulu.tv", "ift.tt", "ind.pd",
 					"intel.ly", "interc.pt", "iwe.one", "ja.ma", "jbgm.es", "k00.fr", "kck.st", "kre.pe", "l.bfmtv.com", "l.ead.me", "l.euronews.com", "l.ledauphine.com",
 					"l.leparisien.fr", "l.prageru.com", "l.tf1info.fr", "l8r.it", "li.famillefontaine.ca", "line.ee", "link.animaapp.com", "link.chtbl.com", "link.europa.eu",
@@ -561,7 +576,7 @@
 					"e.newsletters.cnn.com", "fans.ly", "fansly.com", "fb.com", "fiverr.com", "furaffinity.net", "get-qr.com", "getpaint.net", "global.temu.com", "go.bsky.app",
 					"go.shopyourlikes.com", "go.skimresources.com", "goodreads.com", "goto.walmart.com", "gprivate.com", "gznmedia.go2cloud.org", "href.li", "instagr.am", "is.gd",
 					"j.mp", "jrnl.ie", "kcpt.org", "l.instagram.com", "l.mlive.com", "l.threads.com", "lego.com", "li.cnn.com", "link.blissy.com", "link.sfchronicle.com",
-					"link.streamelements.com", "linkprotect.cudasvc.com", "linktr.ee", "lk.cmte.fyi", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "lu.ma",
+					"link.streamelements.com", "linkprotect.cudasvc.com", "linktr.ee", "lk.cmte.fyi", "lmddgtfy.net", "lmgtfy2.com", "lnk.bio", "lnkd.in", "lu.ma", "mc.wiki",
 					"mcdonalds-survey.ca", "media.igram.world", "mel.sc", "messagenes.com", "mfy.gg", "myproduct.info", "nas.cr", "nyer.cm", "nyp.st", "o93x.net", "on.msnbc.com",
 					"on.theatln.tc", "open-api.tiktok.com", "open.substack.com", "out.reddit.com", "p.liadm.com", "pixiv.net", "preview.tinyurl.com", "proxy.notsobot.com",
 					"qr.link", "qr1.be", "qrcc.me", "qrcodes.pro", "qrtiger.com", "r.amzlink.to", "rd.bizrate.com", "rd.goodreads.com", "redirect.viglink.com", "reurl.cc",
@@ -654,8 +669,8 @@
 				{"If": {
 					"if": {"All": [
 						"SchemeIsHttp",
+						"HostIsDomain",
 						{"FlagIsNotSet": "keep_http"},
-						{"Not": "HostIsIp"},
 						{"Not": {"DomainNormalIsInSet": "dn_keep_http"}}
 					]},
 					"then": {"SetScheme": "https"}
@@ -905,7 +920,7 @@
 
 			"instagram": {"All": [
 				{"HandleParams": {
-					"names": ["igshid", "igsh", "xmt", "ig_mid", "e", "g", "hl", "slof"],
+					"names": ["igshid", "igsh", "xmt", "ig_mid", "e", "g", "hl", "slof", "stkn"],
 					"prefixes": ["xmt=", "source_", "igsh"]
 				}},
 				{"StringMap": {
@@ -969,6 +984,17 @@
 
 
 
+			"threads": {"StringMap": {
+				"value": {"Var": "threads_mode"},
+				"map": {
+					"canon": {"SetHost": "www.threads.com"},
+					"embed": {"SetHost": {"Var": "threads_embed_host"}}
+				},
+				"if_none": {"FunctionArg": "modeless"}
+			}},
+
+
+
 			"tumblr": {"StringMap": {
 				"value": {"Var": "tumblr_mode"},
 				"map": {
@@ -1021,7 +1047,7 @@
 
 
 			"youtube": {"All": [
-				{"RemoveQueryParams": ["si", "feature", "pp", "app", "ab_channel", "pbjreload", "sub_confirmation", "is"]},
+				{"RemoveQueryParams": ["si", "feature", "pp", "app", "ab_channel", "pbjreload", "sub_confirmation", "is", "ra"]},
 				{"If": {
 					"if": {"PartMap": {
 						"part": {"PathSegment": 0},
@@ -1889,6 +1915,13 @@
 										}
 									}},
 									"lu.ma": {"SetHost": "luma.com"},
+									"mc.wiki": {"All": [
+										{"SetHost": "minecraft.wiki"},
+										{"InsertPathSegment": {
+											"index": 0,
+											"value": "w"
+										}}
+									]},
 									"mcdonalds-survey.ca": {"SetWhole": "https://survey.medallia.ca/?McD-GSS-FeedlessSurvey"},
 									"media.igram.world": {"GetUrlFromQueryParam": "uri"},
 									"mel.sc": {"SetHost": "melscience.com"},
@@ -2470,6 +2503,17 @@
 							"then": {"SetHost": "www.threads.com"}
 						}}
 					]},
+					"threads_embed_hosts": {"If": {
+						"if": {"Not": {"PathIs": "/"}},
+						"then": {"Function": {
+							"name": "threads",
+							"args": {
+								"actions": {
+									"modeless": {"SetHost": "www.threads.com"}
+								}
+							}
+						}}
+					}},
 
 					"tumblr_embed_hosts": {"If": {
 						"if": {"Not": {"PathIs": "/"}},
@@ -2910,6 +2954,10 @@
 					"in.blissy.com": "RemoveQuery",
 					"info.blissy.com": "RemoveQuery",
 					"jamanetwork.com": {"RemoveQueryParams": ["guestAccessKey", "linkId"]},
+					"joplinapp.org": {"If": {
+						"if": {"FlagIsNotSet": "keep_affiliate"},
+						"then": {"RemoveQueryParam": "source"}
+					}},
 					"landing.streamily.com": {"If": {
 						"if": {"FlagIsNotSet": "keep_affiliate"},
 						"then": {"RemoveQueryParam": "hss_channel"}
@@ -2947,6 +2995,10 @@
 						]},
 						"then": {"RemoveQueryParam": "avangate_src"}
 					}},
+					"mrlsexdoll.com": {"If": {
+						"if": {"FlagIsNotSet": "keep_affiliate"},
+						"then": {"RemoveQueryParam": "sca_ref"}
+					}},
 					"newegg.com": {"RemoveQueryParam": "cm_sp"},
 					"of.com": {"SetHost": "onlyfans.com"},
 					"onet.pl": {"RemoveQueryParam": "src"},
@@ -2960,7 +3012,7 @@
 						}}
 					]},
 					"playstation.com": {"RemoveQueryParam": "emcid"},
-					"reuters.com": {"RemoveQueryParam": "taid"},
+					"reuters.com": {"RemoveQueryParams": ["taid", "link_source"]},
 					"sfchronicle.com": {"RemoveQueryParams": ["hash", "time", "rid", "sid", "ss", "st_rid", "sharecount"]},
 					"soundcloud.com": {"RemoveQueryParams": ["p", "c", "si"]},
 					"spotfund.com": {"RemoveQueryParams": ["referral_id", "source", "share_location", "SFID"]},

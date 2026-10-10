@@ -4,21 +4,17 @@ use crate::prelude::*;
 
 /// A [`UrlDetails`] that optimizes for space.
 ///
-/// Specifically, instead of storing a [`HostDetails`], this stores a [`HostType`] and [`HostData`].
+/// By splitting [`HostDetails`] into [`HostType`] and [`HostData`], we can save 7 bytes of padding,
+/// which can then be used to store one of the [`u32`]s, [`Self::scheme`], and [`Self::port`],
+/// which then saves one more byte of padding, which lets us get down to 48 bytes.
 ///
-/// This lets [`Self::scheme`] and [`Self::port`] live in the 3 bytes of padding in [`UrlDetails::host`].
-///
-/// This then saves 1 more byte of padding, making this 4 bytes smaller than [`UrlDetails`].
-///
-/// However, as of Rust 1.98.1, the codegen of [`Self::host_details`] is significantly worse than I think it should be.
-///
-/// [`Self::domain_details`] and whatnot are still fast.
+/// The tradeoff is that this is slightly more annoying to work with and, for some reason, making a [`HostDetails`] from a [`HostType`] and [`HostData`] has worse codegen than it should.
 /// # Examples
 /// ```
 /// use better_url::prelude::*;
 ///
-/// assert_eq!(std::mem::size_of::<DenseUrlDetails>(), 48);
-/// assert_eq!(std::mem::size_of::<     UrlDetails>(), 56);
+/// #[cfg(target_width = "64")] assert_eq!(std::mem::size_of::<DenseUrlDetails>(), 48);
+/// #[cfg(target_width = "64")] assert_eq!(std::mem::size_of::<     UrlDetails>(), 56);
 /// ```
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -39,7 +35,7 @@ pub struct DenseUrlDetails {
 
 /// The variant of a [`HostDetails`].
 ///
-/// Used in [`DenseUrlDetails`] to avoid 4 bytes of padding.
+/// Used in [`DenseUrlDetails`] to avoid 8 bytes of padding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum HostType {
@@ -52,7 +48,7 @@ pub enum HostType {
 
 /// The data for a [`HostDetails`].
 ///
-/// Used in [`DenseUrlDetails`] to avoid 4 bytes of padding.
+/// Used in [`DenseUrlDetails`] to avoid 8 bytes of padding.
 #[derive(Clone, Copy)]
 pub union HostData {
     /** [`DomainHostDetails`]. **/ pub domain: DomainHostDetails,
@@ -105,11 +101,6 @@ impl DenseUrlDetails {
     /** If the host is [`Ipv6Host`].   **/ pub fn host_is_ipv6  (&self) -> bool {self.host_type == Some(HostType::Ipv6  )}
     /** If the host is [`OpaqueHost`]. **/ pub fn host_is_opaque(&self) -> bool {self.host_type == Some(HostType::Opaque)}
     /** If the host is [`EmptyHost`].  **/ pub fn host_is_empty (&self) -> bool {self.host_type == Some(HostType::Empty )}
-
-    /// If the host is [`Ipv4Host`] or [`Ipv6Host`].
-    pub fn host_is_ip(&self) -> bool {
-        matches!(self.host_type, Some(HostType::Ipv4 | HostType::Ipv6))
-    }
 }
 
 impl std::fmt::Debug for DenseUrlDetails {
@@ -142,8 +133,8 @@ impl From<UrlDetails> for DenseUrlDetails {
             query_mark    : value.query_mark    ,
             fragment_mark : value.fragment_mark ,
             scheme        : value.scheme        ,
-            host_type,
-            host_data,
+            host_type                           ,
+            host_data                           ,
             port          : value.port          ,
         }
     }
@@ -162,7 +153,7 @@ impl From<DenseUrlDetails> for UrlDetails {
             query_mark    : value.query_mark    ,
             fragment_mark : value.fragment_mark ,
             scheme        : value.scheme        ,
-            host,
+            host                                ,
             port          : value.port          ,
         }
     }

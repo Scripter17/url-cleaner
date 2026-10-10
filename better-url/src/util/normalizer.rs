@@ -53,17 +53,19 @@ impl<'a> Normalizer<'a> {
     /// Truncate if needed and return the final result.
     pub fn done(mut self) -> (bool, Cow<'a, str>) {
         let changed = self.c || self.i != self.x.len();
+
         match &mut self.x {
             Cow::Owned   (x) => unsafe {x.as_mut_vec().set_len(self.i);},
             Cow::Borrowed(x) => *x = unsafe {x.get_unchecked(..self.i)}
         }
+
         (changed, self.x)
     }
 }
 
 impl<'a> From<Cow<'a, str>> for Normalizer<'a     > {fn from(value: Cow<'a, str>) -> Self {Self {x: value, i: 0, c: false}}}
-impl<'a> From<&'a str     > for Normalizer<'a     > {fn from(value: &'a str     ) -> Self {Cow::Borrowed    (value).into()}}
-impl     From<String      > for Normalizer<'static> {fn from(value: String      ) -> Self {Cow::<str>::Owned(value).into()}}
+impl<'a> From<&'a str     > for Normalizer<'a     > {fn from(value: &'a str     ) -> Self {Cow       ::Borrowed(value).into()}}
+impl     From<String      > for Normalizer<'static> {fn from(value: String      ) -> Self {Cow::<str>::Owned   (value).into()}}
 
 impl<'a> std::fmt::Write for Normalizer<'a> {
     fn write_str(&mut self, s: &str) -> Result<(), std::fmt::Error> {
@@ -71,9 +73,11 @@ impl<'a> std::fmt::Write for Normalizer<'a> {
             unsafe {
                 self.x.to_mut().as_mut_vec().set_len(self.i);
             }
+
             self.x.to_mut().push_str(s);
             self.c = true;
         }
+
         self.i += s.len();
 
         Ok(())

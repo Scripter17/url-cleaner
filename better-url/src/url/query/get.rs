@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 impl BetterUrl {
     /// The [`Range::start`] of the query.
-    fn query_start(&self) -> Option<usize> {
+    pub fn query_start(&self) -> Option<usize> {
         Some(self.details.query_mark?.get() as usize + 1)
     }
 

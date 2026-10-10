@@ -2,7 +2,7 @@
 
 /// Impls for types that impl [`From`] of [`Option`] of [`std::borrow::Cow`] of [`[u8]`].
 macro_rules! from_option_cow_bytes {
-    (root; $($t:ident),*) => {
+    ($($t:ident),*) => {
         $(
             #[cfg(feature = "serde")]
             impl<'de> Deserialize<'de> for $t<'de> {
@@ -17,25 +17,31 @@ macro_rules! from_option_cow_bytes {
                     value.into()
                 }
             }
-        )*
 
-        from_option_cow_bytes!($($t),*);
-    };
-    ($($t:ident),*) => {
-        $(
-            impl<'a> From<Cow<'a, [u8]>> for $t<'a> {fn from(value: Cow<'a, [u8]>) -> Self {Some(value).into()}}
 
-            impl<'a                > From<Option<&'a [u8   ]         >> for $t<'a> {fn from(value: Option<&'a [u8   ]>         ) -> Self {value.map(Cow::Borrowed).into()}}
-            impl<'a, const N: usize> From<Option<&'a [u8; N]         >> for $t<'a> {fn from(value: Option<&'a [u8; N]>         ) -> Self {value.map(|x| Cow::Borrowed(   x.as_slice())).into()}}
-            impl<'a                > From<Option<&'a Vec<u8>         >> for $t<'a> {fn from(value: Option<&'a Vec<u8>>         ) -> Self {value.map(|x| Cow::Borrowed(&**x           )).into()}}
-            impl<'a                > From<Option<&'a Cow<'_, [u8   ]>>> for $t<'a> {fn from(value: Option<&'a Cow<'_, [u8   ]>>) -> Self {value.map(|x| Cow::Borrowed(&**x           )).into()}}
-            impl<'a, const N: usize> From<Option<&'a Cow<'_, [u8; N]>>> for $t<'a> {fn from(value: Option<&'a Cow<'_, [u8; N]>>) -> Self {value.map(|x| Cow::Borrowed(   x.as_slice())).into()}}
 
-            impl<'a                > From<&'a Option<&[u8   ]        >> for $t<'a> {fn from(value: &'a Option<&[u8   ]>        ) -> Self {value.as_deref().into()}}
-            impl<'a, const N: usize> From<&'a Option<&[u8; N]        >> for $t<'a> {fn from(value: &'a Option<&[u8; N]>        ) -> Self {value.as_deref().into()}}
-            impl<'a                > From<&'a Option<Vec<u8>         >> for $t<'a> {fn from(value: &'a Option<Vec<u8>>         ) -> Self {value.as_deref().into()}}
-            impl<'a                > From<&'a Option<Cow<'_, [u8   ]>>> for $t<'a> {fn from(value: &'a Option<Cow<'_, [u8   ]>>) -> Self {value.as_deref().into()}}
-            impl<'a, const N: usize> From<&'a Option<Cow<'_, [u8; N]>>> for $t<'a> {fn from(value: &'a Option<Cow<'_, [u8; N]>>) -> Self {value.as_deref().into()}}
+            impl<'a                > From<&'a [u8   ]         > for $t<'a     > {fn from(value: &'a [u8   ]         ) -> Self {Some(value).into()}}
+            impl<'a, const N: usize> From<&'a [u8; N]         > for $t<'a     > {fn from(value: &'a [u8; N]         ) -> Self {Some(value).into()}}
+            impl                     From<    Vec<u8>         > for $t<'static> {fn from(value:     Vec<u8>         ) -> Self {Some(value).into()}}
+            impl<'a                > From<&'a Vec<u8>         > for $t<'a     > {fn from(value: &'a Vec<u8>         ) -> Self {Some(value).into()}}
+            impl<'a                > From<    Cow<'a, [u8   ]>> for $t<'a     > {fn from(value:     Cow<'a, [u8   ]>) -> Self {Some(value).into()}}
+            impl<'a                > From<&'a Cow<'_, [u8   ]>> for $t<'a     > {fn from(value: &'a Cow<'_, [u8   ]>) -> Self {Some(value).into()}}
+            impl<'a, const N: usize> From<&'a Cow<'_, [u8; N]>> for $t<'a     > {fn from(value: &'a Cow<'_, [u8; N]>) -> Self {Some(value).into()}}
+
+            impl<'a                > From<Option<&'a [u8   ]         >> for $t<'a     > {fn from(value: Option<&'a [u8   ]>         ) -> Self {value.map(    Cow::<[u8]>::Borrowed      ).into()}}
+            impl<'a, const N: usize> From<Option<&'a [u8; N]         >> for $t<'a     > {fn from(value: Option<&'a [u8; N]>         ) -> Self {value.map(|x| Cow::<[u8]>::Borrowed(   x)).into()}}
+            impl                     From<Option<    Vec<u8>         >> for $t<'static> {fn from(value: Option<Vec<u8>>             ) -> Self {value.map(    Cow::<[u8]>::Owned         ).into()}}
+            impl<'a                > From<Option<&'a Vec<u8>         >> for $t<'a     > {fn from(value: Option<&'a Vec<u8>>         ) -> Self {value.map(|x| Cow::<[u8]>::Borrowed(   x)).into()}}
+            impl<'a                > From<Option<&'a Cow<'_, [u8   ]>>> for $t<'a     > {fn from(value: Option<&'a Cow<'_, [u8   ]>>) -> Self {value.map(|x| Cow::<[u8]>::Borrowed(   x)).into()}}
+            impl<'a, const N: usize> From<Option<&'a Cow<'_, [u8; N]>>> for $t<'a     > {fn from(value: Option<&'a Cow<'_, [u8; N]>>) -> Self {value.map(|x| Cow::<[u8]>::Borrowed(&**x)).into()}}
+
+            impl<'a                > From<&'a Option<&[u8   ]        >> for $t<'a     > {fn from(value: &'a Option<&[u8   ]>        ) -> Self {value.as_deref().into()}}
+            impl<'a, const N: usize> From<&'a Option<&[u8; N]        >> for $t<'a     > {fn from(value: &'a Option<&[u8; N]>        ) -> Self {value.as_deref().into()}}
+            impl<'a                > From<&'a Option<Vec<u8>         >> for $t<'a     > {fn from(value: &'a Option<Vec<u8>>         ) -> Self {value.as_deref().into()}}
+            impl<'a                > From<&'a Option<Cow<'_, [u8   ]>>> for $t<'a     > {fn from(value: &'a Option<Cow<'_, [u8   ]>>) -> Self {value.as_deref().into()}}
+            impl<'a, const N: usize> From<&'a Option<Cow<'_, [u8; N]>>> for $t<'a     > {fn from(value: &'a Option<Cow<'_, [u8; N]>>) -> Self {value.as_deref().into()}}
+
+
 
             impl<'a> From<Option<Cow<'a, str>>> for $t<'a> {
                 fn from(value: Option<Cow<'a, str>>) -> Self {
@@ -43,17 +49,29 @@ macro_rules! from_option_cow_bytes {
                 }
             }
 
-            impl<'a> From<Option<&'a str         >> for $t<'a     > {fn from(value: Option<&'a str         >) -> Self {value.map(Cow::Borrowed    ).into()}}
-            impl     From<Option<String          >> for $t<'static> {fn from(value: Option<String          >) -> Self {value.map(Cow::<str>::Owned).into()}}
-            impl<'a> From<Option<&'a String      >> for $t<'a     > {fn from(value: Option<&'a String      >) -> Self {value.map(|x| Cow::Borrowed(&**x)).into()}}
-            impl<'a> From<Option<&'a Cow<'_, str>>> for $t<'a     > {fn from(value: Option<&'a Cow<'_, str>>) -> Self {value.map(|x| Cow::Borrowed(&**x)).into()}}
+            impl<'a> From<    Cow<'a, str>> for $t<'a     > {fn from(value:     Cow<'a, str>) -> Self {Some(value).into()}}
+            impl<'a> From<&'a str         > for $t<'a     > {fn from(value: &'a str         ) -> Self {Some(value).into()}}
+            impl     From<    String      > for $t<'static> {fn from(value:     String      ) -> Self {Some(value).into()}}
+            impl<'a> From<&'a String      > for $t<'a     > {fn from(value: &'a String      ) -> Self {Some(value).into()}}
+            impl<'a> From<&'a Cow<'_, str>> for $t<'a     > {fn from(value: &'a Cow<'_, str>) -> Self {Some(value).into()}}
+
+            impl<'a> From<Option<&'a str         >> for $t<'a     > {fn from(value: Option<&'a str         >) -> Self {value.map(    Cow::<str>::Borrowed   ).into()}}
+            impl     From<Option<    String      >> for $t<'static> {fn from(value: Option<String          >) -> Self {value.map(    Cow::<str>::Owned      ).into()}}
+            impl<'a> From<Option<&'a String      >> for $t<'a     > {fn from(value: Option<&'a String      >) -> Self {value.map(|x| Cow::<str>::Borrowed(x)).into()}}
+            impl<'a> From<Option<&'a Cow<'_, str>>> for $t<'a     > {fn from(value: Option<&'a Cow<'_, str>>) -> Self {value.map(|x| Cow::<str>::Borrowed(x)).into()}}
 
             impl<'a> From<&'a Option<&str        >> for $t<'a     > {fn from(value: &'a Option<&str        >) -> Self {value.as_deref().into()}}
             impl<'a> From<&'a Option<String      >> for $t<'a     > {fn from(value: &'a Option<String      >) -> Self {value.as_deref().into()}}
             impl<'a> From<&'a Option<Cow<'_, str>>> for $t<'a     > {fn from(value: &'a Option<Cow<'_, str>>) -> Self {value.as_deref().into()}}
-        )*
 
-        from_cow_bytes!($($t),*);
+            impl FromStr for $t<'static> {
+                type Err = std::convert::Infallible;
+
+                fn from_str(s: &str) -> Result<Self, Self::Err> {
+                    Ok(s.to_string().into())
+                }
+            }
+        )*
     };
 }
 

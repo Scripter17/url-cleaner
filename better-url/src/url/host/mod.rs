@@ -39,7 +39,7 @@ impl BetterUrl {
 
     /// The [`Host`].
     pub fn host(&self) -> Option<Host<'_>> {
-        unsafe {Some(Host::new_unchecked(self.host_str()?, self.host_details()?))}
+        unsafe {Some(Host::from_parts(self.host_str()?, self.host_details()?))}
     }
 
 
@@ -56,11 +56,6 @@ impl BetterUrl {
     /** If the host is [`Ipv6Host`].   **/ pub fn host_is_ipv6  (&self) -> bool {self.details.host_is_ipv6  ()}
     /** If the host is [`OpaqueHost`]. **/ pub fn host_is_opaque(&self) -> bool {self.details.host_is_opaque()}
     /** If the host is [`EmptyHost`].  **/ pub fn host_is_empty (&self) -> bool {self.details.host_is_empty ()}
-
-    /// If the host is [`Ipv4Host`] or [`Ipv6Host`].
-    pub fn host_is_ip(&self) -> bool {
-        matches!(self.details.host_type(), Some(HostType::Ipv4 | HostType::Ipv6))
-    }
 
 
 
@@ -90,10 +85,12 @@ impl BetterUrl {
                     }
 
                     unsafe {
-                        self.serialization.modify(|x| x.as_mut_vec()[self.details.scheme_mark as usize + 2] = b'/');
-
-                        self.serialization.modify(|x| x.insert_str(self.details.scheme_mark as usize + 3, new.as_str()));
+                        self.serialization.modify(|x| {
+                            x.as_mut_vec()[self.details.scheme_mark as usize + 2] = b'/';
+                            x.insert_str(self.details.scheme_mark as usize + 3, new.as_str());
+                        });
                     };
+
                     self.details.set_host_details(Some(new.details()));
 
                     self.details.host_start = NonZero::new(self.details.scheme_mark + 3);
@@ -112,6 +109,7 @@ impl BetterUrl {
                     unsafe {
                         self.serialization.modify(|x| x.insert_with(self.details.scheme_mark as usize + 1, ["//", new.as_str()]));
                     }
+
                     self.details.set_host_details(Some(new.details()));
 
                     self.details.host_start = NonZero::new(self.details.scheme_mark + 3);
@@ -140,6 +138,7 @@ impl BetterUrl {
                 unsafe {
                     self.serialization.modify(|x| x.as_mut_vec().replace_range_unchecked(range.clone(), new.as_str().as_bytes()));
                 }
+
                 self.details.set_host_details(Some(new.details()));
 
                 self.details.path_start = self.details.path_start.wrapping_add(diff);

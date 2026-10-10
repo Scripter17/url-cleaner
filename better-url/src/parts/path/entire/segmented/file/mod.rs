@@ -8,7 +8,7 @@ mod remove;
 
 /// A [`SchemeType::File`] path.
 #[derive(Debug, Clone)]
-pub struct FilePath<'a>(pub(crate) Cow<'a, str>);
+pub struct FilePath<'a>(Cow<'a, str>);
 
 impl<'a> FilePath<'a> {
     /// Make a new [`Self`] without doing any validity checks.

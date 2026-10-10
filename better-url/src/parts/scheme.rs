@@ -6,9 +6,9 @@ use crate::prelude::*;
 #[derive(Debug, Clone)]
 pub struct Scheme<'a> {
     /// The scheme.
-    pub(crate) scheme: Cow<'a, str>,
+    scheme: Cow<'a, str>,
     /// The [`SchemeDetails`].
-    pub(crate) details: SchemeDetails,
+    details: SchemeDetails,
 }
 
 impl<'a> Scheme<'a> {

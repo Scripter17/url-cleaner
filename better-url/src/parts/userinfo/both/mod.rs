@@ -21,9 +21,9 @@ mod password;
 #[derive(Debug, Clone)]
 pub struct Userinfo<'a> {
     /// The userinfo string.
-    pub(crate) userinfo: Cow<'a, str>,
+    userinfo: Cow<'a, str>,
     /// The [`Range::start`] of the password.
-    pub(crate) password_start: Option<NonZero<usize>>,
+    password_start: Option<NonZero<usize>>,
 }
 
 impl<'a> Userinfo<'a> {

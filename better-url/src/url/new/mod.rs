@@ -1,18 +1,32 @@
-//! Constructor stuff.
+//! Constructors.
+
+mod bytes;
+mod str;
 
 use crate::prelude::*;
 
-mod file;
-mod special_not_file;
-mod non_special;
-
 impl BetterUrl {
-    /// Parse the rest of a URL given the scheme.
-    pub(crate) fn after_scheme(scheme: Scheme<'_>, rest: &[u8]) -> Result<Self, InvalidUrl> {
-        match scheme.r#type() {
-            SchemeType::File           => Self::new_file            (scheme, rest),
-            SchemeType::SpecialNotFile => Self::new_special_not_file(scheme, rest),
-            SchemeType::NonSpecial     => Self::new_non_special     (scheme, rest),
-        }
+    /// Construct from bytes.
+    pub(super) fn new_bytes(value: Cow<'_, [u8]>) -> Result<Self, InvalidUrl> {
+        let (_, value) = canonize_parser_input_bytes(value);
+
+        let i = value.memchr(b':').ok_or(InvalidUrl::MissingScheme)?;
+
+        let scheme = unsafe {value.get_unchecked(.. i       )};
+        let rest   = unsafe {value.get_unchecked(   i + 1 ..)};
+
+        Self::after_scheme_bytes(Scheme::new(scheme)?, rest)
+    }
+
+    /// Construct from a string.
+    pub(super) fn new_str(value: Cow<'_, str>) -> Result<Self, InvalidUrl> {
+        let (_, value) = canonize_parser_input(value);
+
+        let i = value.memchr(b':').ok_or(InvalidUrl::MissingScheme)?;
+
+        let scheme = unsafe {value.get_unchecked(.. i       )};
+        let rest   = unsafe {value.get_unchecked(   i + 1 ..)};
+
+        Self::after_scheme_str(Scheme::new(scheme)?, rest)
     }
 }

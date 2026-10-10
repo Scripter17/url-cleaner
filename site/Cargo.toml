@@ -20,7 +20,7 @@ axum         = { version = "0.8.9", features = ["http2", "ws"] }
 axum-server  = { version = "0.8.0", features = ["tls-rustls-no-provider"] }
 
 # Async.
-tokio        = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
+tokio        = { version = "1.53.2", features = ["macros", "rt-multi-thread"] }
 futures-util = { version = "0.3.34", features = ["io"] }
 tokio-stream = "0.1.19"
 async-stream = "0.3.6"

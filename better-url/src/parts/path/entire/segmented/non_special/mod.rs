@@ -28,7 +28,7 @@ mod remove;
 /// assert_eq!(url.segmented_path().unwrap().iter().count(), 0);
 /// ```
 #[derive(Debug, Clone)]
-pub struct NonSpecialPath<'a>(pub(crate) Cow<'a, str>);
+pub struct NonSpecialPath<'a>(Cow<'a, str>);
 
 impl<'a> NonSpecialPath<'a> {
     /// Make a new [`Self`] without doing any validity checks.

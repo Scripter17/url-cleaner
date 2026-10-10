@@ -42,56 +42,72 @@ pub fn encode_non_special_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (b
 
     let prepend_slash = !matches!(&*value, [b'/', ..]);
     let mut to_encode = 0;
+    let mut class = 0;
 
     for &b in &*value {
-        if PATH.contains(b) {
-            to_encode += 1;
+        class |= PATH_BYTE_CLASS[b as usize];
+    }
+
+    if class & 1 == 1 {
+        for &b in &*value {
+            to_encode += PATH.contains(b) as usize;
         }
     }
 
 
 
-    let value = match to_encode {
-        0 => match prepend_slash {
-            true  => unsafe {cow_bytes_to_str_unchecked(value)}.with_insert_str(0, "/"),
-            false => unsafe {cow_bytes_to_str_unchecked(value)},
-        },
-        _ => {
-            let len = value.len() + to_encode * 2 + prepend_slash as usize;
+    #[cold]
+    fn outline<'a>(value: Cow<'a, [u8]>, to_encode: usize, prepend_slash: bool) -> Cow<'a, str> {
+        match to_encode {
+            0 => match prepend_slash {
+                true  => unsafe {cow_bytes_to_str_unchecked(value)}.with_insert_str(0, "/"),
+                false => unsafe {cow_bytes_to_str_unchecked(value)},
+            },
+            _ => {
+                let len = value.len() + to_encode * 2 + prepend_slash as usize;
 
-            let mut ret = String::with_capacity(len);
+                let mut ret = String::with_capacity(len);
 
-            if prepend_slash {
-                unsafe {
-                    *ret.as_mut_ptr() = b'/';
-                }
-            }
-
-            let mut w = prepend_slash as usize;
-
-            unsafe {
-                for &b in &*value {
-                    if PATH.contains(b) {
-                        *ret.as_mut_ptr().add(w    ) = b'%';
-                        *ret.as_mut_ptr().add(w + 1) = NIBBLES[b as usize >> 4];
-                        *ret.as_mut_ptr().add(w + 2) = NIBBLES[b as usize & 15];
-
-                        w += 3;
-                    } else {
-                        *ret.as_mut_ptr().add(w) = b;
-
-                        w += 1;
+                if prepend_slash {
+                    unsafe {
+                        *ret.as_mut_ptr() = b'/';
                     }
                 }
 
-                ret.as_mut_vec().set_len(len);
-            }
+                let mut w = prepend_slash as usize;
 
-            ret.into()
+                unsafe {
+                    for &b in &*value {
+                        if PATH.contains(b) {
+                            *ret.as_mut_ptr().add(w    ) = b'%';
+                            *ret.as_mut_ptr().add(w + 1) = NIBBLES[b as usize >> 4];
+                            *ret.as_mut_ptr().add(w + 2) = NIBBLES[b as usize & 15];
+
+                            w += 3;
+                        } else {
+                            *ret.as_mut_ptr().add(w) = b;
+
+                            w += 1;
+                        }
+                    }
+
+                    ret.as_mut_vec().set_len(len);
+                }
+
+                ret.into()
+            }
         }
+    }
+
+    let value = match to_encode != 0 || prepend_slash {
+        false => unsafe {cow_bytes_to_str_unchecked(value)},
+        true => outline(value, to_encode, prepend_slash),
     };
 
-    let (needed_resolve, value) = resolve_non_special_path(value);
+    let (needed_resolve, value) = match class & 4 {
+        0 => (false, value),
+        _ => resolve_non_special_path(value)
+    };
 
     (prepend_slash || to_encode != 0 || needed_resolve, value)
 }
@@ -126,10 +142,6 @@ pub fn resolve_non_special_path_range<'a, T: Into<Cow<'a, str>>, B: RangeBounds<
 
     debug_assert!(start == value.len() || value.as_bytes()[start] == b'/');
     debug_assert!(after == value.len() || value.as_bytes()[after] == b'/');
-
-    if unsafe {value.get_unchecked(start .. after)}.memchrn(*b".%").is_none() {
-        return (false, value);
-    }
 
     let mut value = cow_str_to_bytes(value);
 

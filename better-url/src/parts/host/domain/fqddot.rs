@@ -36,11 +36,11 @@ impl DomainHost<'_> {
     pub fn set_fqdn(&mut self, value: bool) -> Result<bool, SetDomainError> {
         match (self.is_fqdn(), value) {
             // Assumes a trailing empty label is always the entire suffix.
-            (true , false) if self.suffix_thing().is_empty() => Err(NonFqdnCantEndInEmpty)?,
+            (true , false) if ends_in_empty(self.as_str()) => Err(NonFqdnCantEndInEmpty)?,
 
             (false, false) => return Ok(false),
             (false, true ) => self.host.extend(["."]),
-            (true , false) => unsafe {self.host.truncate_unchecked(self.suffix_after())},
+            (true , false) => unsafe {self.host.truncate_unchecked(self.len() - 1)},
             (true , true ) => return Ok(false),
         }
 

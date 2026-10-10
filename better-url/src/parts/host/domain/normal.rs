@@ -37,7 +37,7 @@ impl DomainHost<'_> {
 
     /// The normal as a [`DomainSegments`].
     pub fn normal(&self) -> DomainSegments<'_> {
-        DomainSegments(self.normal_str().into())
+        unsafe {DomainSegments::new_unchecked(self.normal_str())}
     }
 
 

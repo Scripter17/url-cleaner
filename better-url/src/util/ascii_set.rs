@@ -105,18 +105,3 @@ pub const SPECIAL_QUERY_SEGMENT             : AsciiSet = SPECIAL_QUERY.add(b'&')
 pub const FRAGMENT                          : AsciiSet = C0.add_many(b" \"<>`");
 /// [`FRAGMENT`] + `&`.
 pub const FRAGMENT_QUERY_SEGMENT            : AsciiSet = FRAGMENT.add(b'&');
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a() {
-        for b in 0..=255 {
-            if NON_SPECIAL_QUERY.contains(b) {assert!(QUERY_PART.contains(b));}
-            if SPECIAL_QUERY    .contains(b) {assert!(QUERY_PART.contains(b));}
-            if FRAGMENT         .contains(b) {assert!(QUERY_PART.contains(b));}
-        }
-    }
-}

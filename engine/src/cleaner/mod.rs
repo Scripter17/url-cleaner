@@ -191,4 +191,18 @@ mod tests {
 
         assert!(minified.len() < unminified.len(), "The minified version isn't minified???");
     }
+
+    #[test]
+    #[cfg(feature = "bundled-cleaner")]
+    fn serde_test() {
+        use super::*;
+
+        let minified = include_str!(concat!(env!("OUT_DIR"), "/bundled-cleaner.json.minified"));
+
+        let a = serde_json::from_str::<Cleaner>(minified).expect("???");
+        let b = serde_json::to_string(&a).expect("???");
+        let c = serde_json::from_str::<Cleaner>(&b).expect("???");
+
+        assert_eq!(a, c);
+    }
 }

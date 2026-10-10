@@ -17,10 +17,7 @@ impl BetterUrl {
 
     /// The [`Scheme`].
     pub fn scheme(&self) -> Scheme<'_> {
-        Scheme {
-            scheme : self.scheme_str().into(),
-            details: self.scheme_details(),
-        }
+        unsafe {Scheme::new_unchecked(self.scheme_str(), self.scheme_details())}
     }
 
     /** [`SchemeDetails::type`].                **/ pub fn scheme_type        (&self) -> SchemeType {self.details.scheme.r#type             ()}

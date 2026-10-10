@@ -17,19 +17,19 @@ use crate::prelude::*;
 ///
 /// // Normalized inputs aren't allocated.
 ///
-/// let (changed, _, host) = make_ipv6_host("[1:2::3]").unwrap();
+/// let (changed, host, _) = make_ipv6_host("[1:2::3]").unwrap();
 ///
 /// assert!(!changed);
 /// assert_matches!(host, Cow::Borrowed("[1:2::3]"));
 ///
 /// // Only unnormalized inputs are allocated.
 ///
-/// let (changed, _, host) = make_ipv6_host("[1:2:0::3]").unwrap();
+/// let (changed, host, _) = make_ipv6_host("[1:2:0::3]").unwrap();
 ///
 /// assert!(changed);
 /// assert_matches!(host, Cow::Owned(x) if x == "[1:2::3]");
 /// ```
-pub fn make_ipv6_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Ipv6Addr, Cow<'a, str>), InvalidIpv6Host> {
+pub fn make_ipv6_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, Ipv6Addr), InvalidIpv6Host> {
     let value = value.into();
 
     match value.as_bytes() {
@@ -41,7 +41,7 @@ pub fn make_ipv6_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Ipv6
 
             let (changed, host) = normalizer.done();
 
-            Ok((changed, addr, host))
+            Ok((changed, host, addr))
         },
         _ => Err(InvalidIpv6Host)?,
     }

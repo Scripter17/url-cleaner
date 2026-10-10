@@ -37,17 +37,15 @@ use better_url::prelude::*;
 /// If you don't need those APIs then comparing without the handicap is more relevant to you, but for Servo and Ada to achieve API pairity with Better URL they'd need to add it.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// The number of times to do each URL.
-    #[arg(long)]
-    pub num: usize,
-    /// Compare to all parsers.
-    #[arg(long)]
-    pub all: bool,
-
+    /** Compare to all parsers.                               **/ #[arg(long)] pub all       : bool,
     /** Compare to Servo's URL crate.                         **/ #[arg(long)] pub servo     : bool,
     /** Compare to Servo's URL crate plus HostDetails::parse. **/ #[arg(long)] pub servo_plus: bool,
     /** Compare to Ada's URL crate.                           **/ #[arg(long)] pub ada       : bool,
     /** Compare to Ada's URL crate plus HostDetails::parse.   **/ #[arg(long)] pub ada_plus  : bool,
+
+    /// The number of times to do each URL.
+    #[arg(long)]
+    pub num: usize,
 }
 
 impl Args {
@@ -66,7 +64,7 @@ impl Args {
             self.ada_plus   = true;
         }
 
-        for (i, line) in std::io::stdin().lock().lines().map(Result::unwrap).enumerate() {
+        for (i, line) in (1..).zip(std::io::stdin().lock().lines().map(Result::unwrap)) {
             print!("{i}");
 
 
@@ -74,7 +72,7 @@ impl Args {
             let timer = std::time::Instant::now();
 
             for _ in 0..self.num {
-                let _ = BetterUrl::new(&*line);
+                let _ = std::hint::black_box(BetterUrl::new(&*line));
             }
 
             let burl = timer.elapsed();
@@ -88,7 +86,7 @@ impl Args {
                 let timer = std::time::Instant::now();
 
                 for _ in 0..self.num {
-                    let _ = url::Url::parse(&line);
+                    let _ = std::hint::black_box(url::Url::parse(&line));
                 }
 
                 let servo = timer.elapsed();
@@ -110,7 +108,7 @@ impl Args {
                         let scheme_type = SchemeDetails::new_unchecked(url.scheme()).r#type();
 
                         if let Some(host) = url.host_str() {
-                            let _ = HostDetails::parse(host, scheme_type);
+                            let _ = std::hint::black_box(HostDetails::parse(host, scheme_type));
                         }
                     }
                 }
@@ -130,7 +128,7 @@ impl Args {
                 let timer = std::time::Instant::now();
 
                 for _ in 0..self.num {
-                    let _ = ada_url::Url::parse(&line, None);
+                    let _ = std::hint::black_box(ada_url::Url::parse(&line, None));
                 }
 
                 let ada = timer.elapsed();
@@ -151,7 +149,7 @@ impl Args {
                     if let Ok(url) = ada_url::Url::parse(&line, None) {
                         let scheme_type = SchemeDetails::new_unchecked(url.protocol().strip_suffix(':').unwrap()).r#type();
 
-                        let _ = HostDetails::parse(url.hostname(), scheme_type);
+                        let _ = std::hint::black_box(HostDetails::parse(url.hostname(), scheme_type));
                     }
                 }
 

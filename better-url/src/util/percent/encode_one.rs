@@ -15,17 +15,9 @@ use crate::prelude::*;
 /// assert_eq!(unsafe {percent_encode_one("abc", b'd')}, (false, "abc"  .into()));
 /// ```
 pub unsafe fn percent_encode_one<'a, T: Into<Cow<'a, str>>>(value: T, byte: u8) -> (bool, Cow<'a, str>) {
-    debug_assert!(byte.is_ascii());
+    let (changed, value) = percent_encode_one_bytes(cow_str_to_bytes(value), byte);
 
-    let value = value.into();
-
-    // TODO: Make faster.
-    let to_reserve = value.bytes().filter(|&b| b == byte).count() * 2;
-
-    match to_reserve {
-        0 => (false, value),
-        _ => (true, unsafe {cow_bytes_to_str_unchecked(_percent_encode_one(value.as_bytes(), byte, to_reserve))}),
-    }
+    (changed, unsafe {cow_bytes_to_str_unchecked(value)})
 }
 
 /// Percent encode just `byte`.
@@ -41,39 +33,41 @@ pub unsafe fn percent_encode_one<'a, T: Into<Cow<'a, str>>>(value: T, byte: u8) 
 pub fn percent_encode_one_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T, byte: u8) -> (bool, Cow<'a, [u8]>) {
     let value = value.into();
 
-    // TODO: Make faster.
-    let to_reserve = value.iter().filter(|&&b| b == byte).count() * 2;
+    match value.memchr(byte) {
+        None => (false, value),
+        Some(i) => {
+            let mut to_encode = 1;
 
-    match to_reserve {
-        0 => (false, value),
-        _ => (true, _percent_encode_one(&value, byte, to_reserve).into()),
-    }
-}
-
-/// Percent encode just `byte`.
-fn _percent_encode_one(value: &[u8], byte: u8, to_reserve: usize) -> Vec<u8> {
-    let mut ret = Vec::<u8>::with_capacity(value.len() + to_reserve);
-
-    let h = NIBBLES[byte as usize >> 4];
-    let l = NIBBLES[byte as usize & 15];
-
-    unsafe {
-        let mut w = 0;
-
-        for &b in value {
-            if b == byte {
-                *ret.as_mut_ptr().add(w    ) = b'%';
-                *ret.as_mut_ptr().add(w + 1) = h;
-                *ret.as_mut_ptr().add(w + 2) = l;
-                w += 3;
-            } else {
-                *ret.as_mut_ptr().add(w) = b;
-                w += 1;
+            for &b in unsafe {value.get_unchecked(i+1..)} {
+                if b == byte {
+                    to_encode += 1;
+                }
             }
-        }
 
-        ret.set_len(value.len() + to_reserve)
+            let mut ret = Vec::<u8>::with_capacity(value.len() + to_encode * 2);
+
+            let h = NIBBLES[byte as usize >> 4];
+            let l = NIBBLES[byte as usize & 15];
+
+            unsafe {
+                let mut w = 0;
+
+                for &b in &*value {
+                    if b == byte {
+                        *ret.as_mut_ptr().add(w    ) = b'%';
+                        *ret.as_mut_ptr().add(w + 1) = h;
+                        *ret.as_mut_ptr().add(w + 2) = l;
+                        w += 3;
+                    } else {
+                        *ret.as_mut_ptr().add(w) = b;
+                        w += 1;
+                    }
+                }
+
+                ret.set_len(value.len() + to_encode * 2)
+            }
+
+            (true, ret.into())
+        },
     }
-
-    ret
 }

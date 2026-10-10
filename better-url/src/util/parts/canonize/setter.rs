@@ -21,7 +21,7 @@ pub fn canonize_part_setter_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool
     let mut value = value.into();
     let mut changed = false;
 
-    if value.memchr(b'\t').is_some() || value.memchr(b'\r').is_some() || value.memchr(b'\n').is_some() {
+    if value.memhas(b'\t') || value.memhas(b'\r') || value.memhas(b'\n') {
         value.to_mut().retain(|&b| KEEPS.contains(b));
         changed = true;
     }

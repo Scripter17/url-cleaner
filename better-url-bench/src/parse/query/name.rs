@@ -25,7 +25,7 @@ pub struct Args {
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        for (i, value) in std::io::stdin().lock().lines().map(Result::unwrap).enumerate() {
+        for (i, value) in (1..).zip(std::io::stdin().lock().lines().map(Result::unwrap)) {
             print!("{i}");
 
             for r#type in [QueryType::Special, QueryType::NonSpecial] {

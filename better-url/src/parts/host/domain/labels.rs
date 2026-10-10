@@ -34,7 +34,7 @@ impl DomainHost<'_> {
 
     /// The labels as a [`DomainSegments`].
     pub fn labels(&self) -> DomainSegments<'_> {
-        DomainSegments(self.labels_str().into())
+        unsafe {DomainSegments::new_unchecked(self.labels_str())}
     }
 
 
@@ -146,8 +146,8 @@ impl DomainHost<'_> {
             (Err(0), Some(new)) => match index {
                 0.. if new.is_a_number() => Err(CantEndInANumber)?,
 
-                0.. => {let i = self.suffix_after(); self.host.insert_with(i, [".", new.as_str()]);},
-                ..0 =>                               self.host.insert_with(0, [new.as_str(), "."]),
+                0.. => {let i = self.len() - self.is_fqdn() as usize; self.host.insert_with(i, [".", new.as_str()]);},
+                ..0 =>                                                self.host.insert_with(0, [new.as_str(), "."]),
             },
         }
 
@@ -237,8 +237,8 @@ impl DomainHost<'_> {
             (Ok(Range {start, ..}), 0..) => self.host.insert_with(start, [new.as_str(), "."]),
             (Ok(Range {end  , ..}), ..0) => self.host.insert_with(end  , [".", new.as_str()]),
 
-            (Err(0), 0..) => {let i = self.suffix_after(); self.host.insert_with(i, [".", new.as_str()]);},
-            (Err(0), ..0) =>                               self.host.insert_with(0, [new.as_str(), "."]),
+            (Err(0), 0..) => {let i = self.len() - self.is_fqdn() as usize; self.host.insert_with(i, [".", new.as_str()]);},
+            (Err(0), ..0) =>                                                self.host.insert_with(0, [new.as_str(), "."]),
         }
 
         self.details = DomainHostDetails::parse_unchecked(&self.host);
@@ -280,8 +280,8 @@ impl DomainHost<'_> {
             (Ok(Range {start, ..}), 0..) => self.host.insert_with(start, [new.as_str(), "."]),
             (Ok(Range {end  , ..}), ..0) => self.host.insert_with(end  , [".", new.as_str()]),
 
-            (Err(0), 0..) => {let i = self.suffix_after(); self.host.insert_with(i, [".", new.as_str()]);},
-            (Err(0), ..0) =>                               self.host.insert_with(0, [new.as_str(), "."]),
+            (Err(0), 0..) => {let i = self.len() - self.is_fqdn() as usize; self.host.insert_with(i, [".", new.as_str()]);},
+            (Err(0), ..0) =>                                                self.host.insert_with(0, [new.as_str(), "."]),
         }
 
         self.details = DomainHostDetails::parse_unchecked(&self.host);

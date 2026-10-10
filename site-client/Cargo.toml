@@ -15,7 +15,7 @@ rust-version = "1.96.1"
 better-url = { version = "0.12.0-beta", path = "../better-url", features = ["serde"]}
 
 # Async.
-tokio        = { version = "1.53.1", features = ["io-std", "macros", "rt-multi-thread"] }
+tokio        = { version = "1.53.2", features = ["io-std", "macros", "rt-multi-thread"] }
 async-stream = "0.3.6"
 futures-util = "0.3.34"
 
