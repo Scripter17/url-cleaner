@@ -13,9 +13,9 @@ pub use into_iter::*;
 /// A `FxHashSet<Option<T>>` that allows indexing with `Option<&Q>` where `T: Borrow<Q>`.
 #[derive(Debug, Clone, Suitability)]
 pub struct Set<T> {
-    /// The set of `T`.
+    /// The [`FxHashSet`] of `T`.
     pub set: FxHashSet<T>,
-    /// If [`true`], act like [`None`] is in [`Self::set`].
+    /// what [`Self::contains`] should return for [`None`].
     pub if_none: bool
 }
 
@@ -52,6 +52,7 @@ impl<T: Hash + Eq> Set<T> {
     /// Keep only elements satisfying `f`.
     pub fn retain<F: FnMut(Option<&T>) -> bool>(&mut self, mut f: F) {
         self.set.retain(|x| f(Some(x)));
+
         if self.if_none && !f(None) {
             self.if_none = false;
         }
@@ -72,7 +73,7 @@ impl<T> Default for Set<T> {
     fn default() -> Self {
         Self {
             set    : Default::default(),
-            if_none: Default::default()
+            if_none: Default::default(),
         }
     }
 }
@@ -88,9 +89,10 @@ impl<T: Hash + Eq> Eq for Set<T> {}
 
 impl<T: Eq + Hash> FromIterator<T> for Set<T> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self{
-        let mut ret = Self::default();
-        ret.extend(iter);
-        ret
+        Self {
+            set: iter.into_iter().collect(),
+            if_none: false,
+        }
     }
 }
 
@@ -113,10 +115,7 @@ impl<T: Eq + Hash> FromIterator<Option<T>> for Set<T> {
 impl<T: Hash + Eq> Extend<Option<T>> for Set<T> {
     fn extend<I: IntoIterator<Item = Option<T>>>(&mut self, iter: I) {
         for x in iter {
-            match x {
-                Some(x) => {self.set.insert(x);},
-                None    => self.if_none = true
-            }
+            self.insert(x);
         }
     }
 }
@@ -137,34 +136,27 @@ impl<T: Serialize + Eq + Hash> Serialize for Set<T> {
 
 impl<'de, T: Deserialize<'de> + Eq + Hash> Deserialize<'de> for Set<T> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        deserializer.deserialize_any(SetDeserializer::default())
-    }
-}
+        struct V<T>(std::marker::PhantomData<T>);
 
-/// Y'know, I don't actually understand why serde uses this structure.
-#[derive(Debug)]
-struct SetDeserializer<T>(std::marker::PhantomData<T>);
+        impl<'de, T: Deserialize<'de> + Eq + Hash> Visitor<'de> for V<T> {
+            type Value = Set<T>;
 
-impl<T> Default for SetDeserializer<T> {
-    fn default() -> Self {
-        Self(Default::default())
-    }
-}
+            fn expecting(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(fmt, "A sequence of type {}", std::any::type_name::<Option<T>>())
+            }
 
-impl<'de, T: Deserialize<'de> + Eq + Hash> Visitor<'de> for SetDeserializer<T> {
-    type Value = Set<T>;
+            fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+                let mut ret = Self::Value::default();
 
-    fn expecting(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(fmt, "A sequence of type {}", std::any::type_name::<Option<T>>())
-    }
+                while let Some(x) = seq.next_element()? {
+                    ret.insert(x);
+                }
 
-    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
-        let mut ret = Self::Value::default();
-
-        while let Some(x) = seq.next_element()? {
-            ret.insert(x);
+                Ok(ret)
+            }
         }
 
-        Ok(ret)
+        deserializer.deserialize_any(V(std::marker::PhantomData))
     }
 }
+

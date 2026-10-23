@@ -2,6 +2,8 @@
 
 use clap::Parser;
 
+use crate::util::BasicBenchThing;
+
 /// ToUnicode.
 #[derive(Debug, Parser)]
 pub struct Args {
@@ -9,9 +11,7 @@ pub struct Args {
     /** Compare to Servo's URL crate. **/ #[arg(long)] pub servo: bool,
     /** Compare to Ada's URL crate.   **/ #[arg(long)] pub ada  : bool,
 
-    /// The number of times to do each input.
-    #[arg(long)]
-    pub num: usize,
+    /** The [`BasicBenchThing`]. **/ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
 }
 
 impl Args {
@@ -27,13 +27,7 @@ impl Args {
         for (i, line) in (1..).zip(std::io::stdin().lines().map(Result::unwrap)) {
             print!("{i}");
 
-            let timer = std::time::Instant::now();
-
-            for _ in 0..self.num {
-                let _ = std::hint::black_box(better_url::util::domain_host_to_unicode(&*line));
-            }
-
-            let burl = timer.elapsed();
+            let burl = self.basic_bench_thing.bench_with_input(better_url::util::domain_host_to_unicode, &line);
             burl_total += burl;
 
             print!("\t{burl:.2?}");
@@ -41,13 +35,7 @@ impl Args {
 
 
             if servo {
-                let timer = std::time::Instant::now();
-
-                for _ in 0..self.num {
-                    let _ = std::hint::black_box(idna::domain_to_unicode(&line));
-                }
-
-                let servo = timer.elapsed();
+                let servo = self.basic_bench_thing.bench_with_input(idna::domain_to_unicode, &line);
                 servo_total += servo;
 
                 let factor       = servo      .as_secs_f64() / burl      .as_secs_f64();
@@ -59,13 +47,7 @@ impl Args {
 
 
             if ada {
-                let timer = std::time::Instant::now();
-
-                for _ in 0..self.num {
-                    let _ = std::hint::black_box(ada_url::Idna::unicode(&line));
-                }
-
-                let ada = timer.elapsed();
+                let ada = self.basic_bench_thing.bench_with_input(ada_url::Idna::unicode, &line);
                 ada_total += ada;
 
                 let factor       = ada      .as_secs_f64() / burl      .as_secs_f64();

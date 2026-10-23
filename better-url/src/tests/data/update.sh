@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+cd "$(dirname "$0")"
+
 echo 'Updating tests from WPT'
 curl 'https://raw.githubusercontent.com/web-platform-tests/wpt/refs/heads/master/url/resources/urltestdata.json'   -so urltestdata.json
 curl 'https://raw.githubusercontent.com/web-platform-tests/wpt/refs/heads/master/url/resources/setters_tests.json' -so setters_tests.json

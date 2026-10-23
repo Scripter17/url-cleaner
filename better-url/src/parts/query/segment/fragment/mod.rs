@@ -79,7 +79,7 @@ impl<'a> FragmentQuerySegment<'a> {
 
 impl<'a> From<Cow<'a, [u8]>> for FragmentQuerySegment<'a> {
     fn from(value: Cow<'a, [u8]>) -> Self {
-        let (_, raw, value_start) = encode_fragment_query_segment_bytes(value);
+        let (_, raw, value_start) = make_fragment_query_segment_bytes(value);
 
         Self {raw, value_start}
     }

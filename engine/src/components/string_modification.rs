@@ -36,7 +36,7 @@ pub enum StringModification {
         /// The try.
         r#try: Box<Self>,
         /// The else.
-        r#else: Box<Self>
+        r#else: Box<Self>,
     },
     /// All contained [`Self`]s.
     All(Vec<Self>),
@@ -61,7 +61,7 @@ pub enum StringModification {
         ///
         /// Defaults to [`Self::None`].
         #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Box<Self>
+        r#else: Box<Self>,
     },
     /// Index the [`Map`] with the [`StringSource`] and use that or [`Self::StringMap::else`].
     StringMap {
@@ -178,14 +178,14 @@ pub enum StringModification {
         /// The value to replace instances of [`Self::Replacen::find`] with.
         replace: StringSource,
         /// The maximum amount of instances to replace.
-        count: usize
+        count: usize,
     },
     /// Replace all instances of [`Self::ReplaceAll::find`] with [`Self::ReplaceAll::replace`].
     ReplaceAll {
         /// The value to replace with [`Self::ReplaceAll::replace`].
         find: StringSource,
         /// The value to replace instances of [`Self::ReplaceAll::find`] with.
-        replace: StringSource
+        replace: StringSource,
     },
 
 
@@ -203,30 +203,30 @@ pub enum StringModification {
         /// The [`LazyRegex`].
         regex: LazyRegex,
         /// The [`RegexExpansion`].
-        expansion: Box<RegexExpansion>
+        expansion: Box<RegexExpansion>,
     },
     /// [`Regex::replace`]s the first match of [`Self::RegexReplaceOne::regex`] with [`Self::RegexReplaceOne::replace`].
     RegexReplaceOne {
         /// The [`LazyRegex`] to search with.
-        regex: LazyRegex,
+        regex: Box<LazyRegex>,
         /// The format string to expand the capture with.
-        replace: StringSource
+        replace: StringSource,
     },
     /// [`Regex::replace`]s the all matches of [`Self::RegexReplaceAll::regex`] with [`Self::RegexReplaceAll::replace`].
     RegexReplaceAll {
         /// The [`LazyRegex`] to search with.
-        regex: LazyRegex,
+        regex: Box<LazyRegex>,
         /// The format string to expand the captures with.
-        replace: StringSource
+        replace: StringSource,
     },
     /// [`Regex::replacen`]s the first [`Self::RegexReplacen::n`] of [`Self::RegexReplacen::regex`] with [`Self::RegexReplacen::replace`].
     RegexReplacen {
         /// The [`LazyRegex`] to search with.
-        regex: LazyRegex,
+        regex: Box<LazyRegex>,
         /// The number of captures to find and replace.
         n: usize,
         /// The format string to expand the captures with.
-        replace: StringSource
+        replace: StringSource,
     },
 
 
@@ -249,6 +249,11 @@ pub enum StringModification {
 
 
 
+    /// [`BetterUrl::new`] + [`UrlPart::get`].
+    ExtractPart(UrlPart),
+
+
+
     /// Uses a [`Self`] from [`Cleaner::functions`].
     Function(Box<FunctionCall>),
     /// Uses a [`Self`] from [`FunctionArgs`].
@@ -260,19 +265,14 @@ pub enum StringModification {
     /// Additionally, using a function pointer means this variant cannot be [`Serialize`]d or [`Deserialize`]d.
     #[suitable(never)]
     #[serde(skip)]
-    Extern(StringModificationExtern)
+    Extern(StringModificationExtern),
 }
 
 impl StringModification {
     /// Modified a string.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn apply<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>, to: &mut Option<Cow<'t, str>>) -> Result<bool, StringModificationError> {
-        debug!(StringModification::apply, self, args, to; self._apply(task_state, args, to))
-    }
-
-    /// [`Self::apply`].
-    fn _apply<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>, to: &mut Option<Cow<'t, str>>) -> Result<bool, StringModificationError> {
+    pub fn apply<'j: 't, 't>(&'j self, ts: &'t TaskState<'j>, args: Option<&'j FunctionArgs>, to: &mut Option<Cow<'t, str>>) -> Result<bool, StringModificationError> {
         Ok(match self {
             // Debug/constants
 
@@ -281,11 +281,11 @@ impl StringModification {
 
             // Error handling
 
-            Self::IgnoreError(modification) => modification.apply(task_state, args, to).unwrap_or(true),
+            Self::IgnoreError(modification) => modification.apply(ts, args, to).unwrap_or(true),
             Self::IgnoreAndRevertOnError(modification) => {
                 let old_to = to.clone();
 
-                match modification.apply(task_state, args, to) {
+                match modification.apply(ts, args, to) {
                     Ok(x) => x,
                     Err(_) => {
                         *to = old_to;
@@ -296,7 +296,7 @@ impl StringModification {
             Self::RevertOnError(modification) => {
                 let old_to = to.clone();
 
-                match modification.apply(task_state, args, to) {
+                match modification.apply(ts, args, to) {
                     Ok(x) => x,
                     Err(e) => {
                         *to = old_to;
@@ -304,9 +304,9 @@ impl StringModification {
                     }
                 }
             },
-            Self::TryElse {r#try, r#else} => match r#try.apply(task_state, args, to) {
+            Self::TryElse {r#try, r#else} => match r#try.apply(ts, args, to) {
                 Ok(x) => x,
-                Err(try_error) => match r#else.apply(task_state, args, to) {
+                Err(try_error) => match r#else.apply(ts, args, to) {
                     Ok(_) => true,
                     Err(else_error) => Err(TryElseError {try_error, else_error})?
                 }
@@ -318,7 +318,7 @@ impl StringModification {
                 let mut changed = false;
 
                 for modification in modifications {
-                    changed |= modification.apply(task_state, args, to)?;
+                    changed |= modification.apply(ts, args, to)?;
                 }
 
                 changed
@@ -327,7 +327,7 @@ impl StringModification {
                 let mut errors = Vec::new();
 
                 for modification in modifications {
-                    match modification.apply(task_state, args, to) {
+                    match modification.apply(ts, args, to) {
                         Ok (x) => return Ok(x || !errors.is_empty()),
                         Err(e) => errors.push(e),
                     }
@@ -335,55 +335,55 @@ impl StringModification {
 
                 Err(FirstNotErrorErrors(errors))?
             },
-            Self::IfSome(modification) => if to.is_some() {modification.apply(task_state, args, to)?} else {false},
-            Self::IfMatches {matcher, then, r#else} => match matcher.check(task_state, args, to.as_deref())? {
-                true  =>   then.apply(task_state, args, to)?,
-                false => r#else.apply(task_state, args, to)?,
+            Self::IfSome(modification) => if to.is_some() {modification.apply(ts, args, to)?} else {false},
+            Self::IfMatches {matcher, then, r#else} => match matcher.check(ts, args, to.as_deref())? {
+                true  =>   then.apply(ts, args, to)?,
+                false => r#else.apply(ts, args, to)?,
             },
 
-            Self::StringMap {value, map, r#else} => map.get(get!(?&value)                       ).unwrap_or(r#else).apply(task_state, args, to)?,
-            Self::PartMap   {part , map, r#else} => map.get(part.get(&task_state.url).as_deref()).unwrap_or(r#else).apply(task_state, args, to)?,
+            Self::StringMap {value, map, r#else} => map.get(value.get(ts, args)?.as_deref()).unwrap_or(r#else).apply(ts, args, to)?,
+            Self::PartMap   {part , map, r#else} => map.get(part .get(&ts.url ) .as_deref()).unwrap_or(r#else).apply(ts, args, to)?,
 
 
 
-            Self::Set    (value) => {*to = get!(?value); true},
-            Self::Append (value) => {to.as_mut().ok_or(SubjectIsNone)?.push_str  (   get!(&value)); true},
-            Self::Prepend(value) => {to.as_mut().ok_or(SubjectIsNone)?.insert_str(0, get!(&value)); true},
+            Self::Set    (value) => {*to = value.get(ts, args)?; true},
+            Self::Append (value) => {to.as_mut().ok_or(SubjectIsNone)?.push_str  (   &value.get_some(ts, args)??); true},
+            Self::Prepend(value) => {to.as_mut().ok_or(SubjectIsNone)?.insert_str(0, &value.get_some(ts, args)??); true},
 
             Self::Lowercase => {*to = Some(Cow::Owned(to.as_ref().ok_or(SubjectIsNone)?.to_lowercase())); true},
             Self::Uppercase => {*to = Some(Cow::Owned(to.as_ref().ok_or(SubjectIsNone)?.to_uppercase())); true},
 
 
 
-            Self::StripPrefix        (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_prefix(get!(&x)) {to.retain_range(  to.len() - x.len()..); true} else {Err(StringModificationError::PrefixNotFound)?}},
-            Self::StripSuffix        (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_suffix(get!(&x)) {to.retain_range(..x .len()            ); true} else {Err(StringModificationError::SuffixNotFound)?}},
-            Self::TrimPrefix         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_prefix(get!(&x)) {to.retain_range(  to.len() - x.len()..); true} else {false}},
-            Self::TrimSuffix         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_suffix(get!(&x)) {to.retain_range(..x .len()            ); true} else {false}},
+            Self::StripPrefix       (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_prefix(&*x.get_some(ts, args)??) {to.retain_range(  to.len() - x.len()..); true} else {Err(StringModificationError::PrefixNotFound)?}},
+            Self::StripSuffix       (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_suffix(&*x.get_some(ts, args)??) {to.retain_range(..x .len()            ); true} else {Err(StringModificationError::SuffixNotFound)?}},
+            Self::TrimPrefix        (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_prefix(&*x.get_some(ts, args)??) {to.retain_range(  to.len() - x.len()..); true} else {false}},
+            Self::TrimSuffix        (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(x) = to.strip_suffix(&*x.get_some(ts, args)??) {to.retain_range(..x .len()            ); true} else {false}},
 
-            Self::StripBefore        (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (get!(&x)) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
-            Self::StripAfter         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (get!(&x)) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
-            Self::KeepBefore         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (get!(&x)) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
-            Self::KeepAfter          (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (get!(&x)) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
+            Self::StripBefore       (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (& x.get_some(ts, args)??) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
+            Self::StripAfter        (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (& x.get_some(ts, args)??) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
+            Self::KeepBefore        (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (& x.get_some(ts, args)??) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
+            Self::KeepAfter         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (& x.get_some(ts, args)??) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
 
-            Self::StripBeforeLast    (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (get!(&x)) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
-            Self::StripAfterLast     (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (get!(&x)) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
-            Self::KeepBeforeLast     (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (get!(&x)) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
-            Self::KeepAfterLast      (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (get!(&x)) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
+            Self::StripBeforeLast   (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (& x.get_some(ts, args)??) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
+            Self::StripAfterLast    (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (& x.get_some(ts, args)??) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
+            Self::KeepBeforeLast    (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (& x.get_some(ts, args)??) {to.retain_range(..i  ); true} else {Err(SubstringNotFound)?}},
+            Self::KeepAfterLast     (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (& x.get_some(ts, args)??) {to.retain_range(  i..); true} else {Err(SubstringNotFound)?}},
 
-            Self::TrimBefore         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (get!(&x)) {to.retain_range(  i..); true} else {false}},
-            Self::TrimAfter          (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (get!(&x)) {to.retain_range(..i  ); true} else {false}},
-            Self::KeepTrimBefore     (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (get!(&x)) {to.retain_range(..i  ); true} else {false}},
-            Self::KeepTrimAfter      (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (get!(&x)) {to.retain_range(  i..); true} else {false}},
+            Self::TrimBefore        (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (& x.get_some(ts, args)??) {to.retain_range(  i..); true} else {false}},
+            Self::TrimAfter         (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (& x.get_some(ts, args)??) {to.retain_range(..i  ); true} else {false}},
+            Self::KeepTrimBefore    (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_start (& x.get_some(ts, args)??) {to.retain_range(..i  ); true} else {false}},
+            Self::KeepTrimAfter     (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to. find_after (& x.get_some(ts, args)??) {to.retain_range(  i..); true} else {false}},
 
-            Self::TrimBeforeLast     (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (get!(&x)) {to.retain_range(  i..); true} else {false}},
-            Self::TrimAfterLast      (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (get!(&x)) {to.retain_range(..i  ); true} else {false}},
-            Self::KeepTrimBeforeLast (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (get!(&x)) {to.retain_range(..i  ); true} else {false}},
-            Self::KeepTrimAfterLast  (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (get!(&x)) {to.retain_range(  i..); true} else {false}},
+            Self::TrimBeforeLast    (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (& x.get_some(ts, args)??) {to.retain_range(  i..); true} else {false}},
+            Self::TrimAfterLast     (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (& x.get_some(ts, args)??) {to.retain_range(..i  ); true} else {false}},
+            Self::KeepTrimBeforeLast(x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_start (& x.get_some(ts, args)??) {to.retain_range(..i  ); true} else {false}},
+            Self::KeepTrimAfterLast (x) => {let to = to.as_mut().ok_or(SubjectIsNone)?; if let Some(i) = to.rfind_after (& x.get_some(ts, args)??) {to.retain_range(  i..); true} else {false}},
 
 
 
-            Self::Replacen   {find, replace, count} => {*to = Some(Cow::Owned(to.as_ref().ok_or(SubjectIsNone)?.replacen(get!(&find), get!(&replace), *count))); true},
-            Self::ReplaceAll {find, replace       } => {*to = Some(Cow::Owned(to.as_ref().ok_or(SubjectIsNone)?.replace (get!(&find), get!(&replace)        ))); true},
+            Self::Replacen   {find, replace, count} => {*to = Some(Cow::Owned(to.as_ref().ok_or(SubjectIsNone)?.replacen(&*find.get_some(ts, args)??, &replace.get_some(ts, args)??, *count))); true},
+            Self::ReplaceAll {find, replace       } => {*to = Some(Cow::Owned(to.as_ref().ok_or(SubjectIsNone)?.replace (&*find.get_some(ts, args)??, &replace.get_some(ts, args)??        ))); true},
 
 
 
@@ -391,7 +391,7 @@ impl StringModification {
             Self::UnescapeHtml => {*to = Some(unescape_html(to.as_deref().ok_or(SubjectIsNone)?)?.into_owned().into()); true},
             Self::GetHtmlAttribute(name) => {
                 *to = Some(
-                    get_html_attribute(to.as_ref().ok_or(SubjectIsNone)?, get!(&name))?
+                    get_html_attribute(to.as_ref().ok_or(SubjectIsNone)?, &name.get_some(ts, args)??)?
                     .ok_or(StringModificationError::HtmlAttributeNotFound)?
                     .ok_or(StringModificationError::HtmlAttributeHasNoValue)?
                     .into_owned()
@@ -408,12 +408,12 @@ impl StringModification {
                 true
             },
             Self::RegexExpansion {regex, expansion} => {
-                *to = expansion.expand(task_state, args, &regex.get()?.captures(to.as_ref().ok_or(SubjectIsNone)?).ok_or(StringModificationError::RegexMatchNotFound)?)?.map(|x| x.into_owned().into());
+                *to = expansion.expand(ts, args, &regex.get()?.captures(to.as_ref().ok_or(SubjectIsNone)?).ok_or(StringModificationError::RegexMatchNotFound)?)?.map(|x| x.into_owned().into());
                 true
             },
             Self::RegexReplaceOne {regex, replace} => {
                 let to = to.as_mut().ok_or(SubjectIsNone)?;
-                let temp = regex.get()?.replace(to, get!(&replace));
+                let temp = regex.get()?.replace(to, &replace.get_some(ts, args)??);
                 if !std::ptr::eq::<str>(&**to, &*temp) {
                     *to = temp.into_owned().into();
                     true
@@ -423,7 +423,7 @@ impl StringModification {
             },
             Self::RegexReplaceAll {regex, replace} => {
                 let to = to.as_mut().ok_or(SubjectIsNone)?;
-                let temp = regex.get()?.replace_all(to, get!(&replace));
+                let temp = regex.get()?.replace_all(to, &replace.get_some(ts, args)??);
                 if !std::ptr::eq::<str>(&**to, &*temp) {
                     *to = temp.into_owned().into();
                     true
@@ -433,7 +433,7 @@ impl StringModification {
             },
             Self::RegexReplacen {regex, n, replace} => {
                 let to = to.as_mut().ok_or(SubjectIsNone)?;
-                let temp = regex.get()?.replacen(to, *n, get!(&replace));
+                let temp = regex.get()?.replacen(to, *n, &replace.get_some(ts, args)??);
                 if !std::ptr::eq::<str>(&**to, &*temp) {
                     *to = temp.into_owned().into();
                     true
@@ -445,7 +445,7 @@ impl StringModification {
 
 
             Self::JsonPointer(pointer) => {
-                match serde_json::from_str::<serde_json::Value>(to.as_ref().ok_or(SubjectIsNone)?)?.pointer_mut(get!(&pointer)).ok_or(StringModificationError::JsonValueNotFound)?.take() {
+                match serde_json::from_str::<serde_json::Value>(to.as_ref().ok_or(SubjectIsNone)?)?.pointer_mut(&pointer.get_some(ts, args)??).ok_or(StringModificationError::JsonValueNotFound)?.take() {
                     serde_json::Value::String(s) => {*to = Some(s.into()); true},
                     _ => Err(StringModificationError::JsonPointeeIsNotAString)?
                 }
@@ -458,14 +458,31 @@ impl StringModification {
 
 
 
-            Self::Base64Encode(config) => if let Some(x) = to.take() {*to = Some(Cow::Owned(config.make().encode(x.as_bytes())             )); true} else {false},
-            Self::Base64Decode(config) => if let Some(x) = to.take() {*to = Some(Cow::Owned(config.make().decode(x.as_bytes())?.try_into()?)); true} else {false},
+            Self::Base64Encode(config) => match to.as_mut() {
+                Some(x) => {
+                    *x = config.make().encode(x.as_bytes()).into();
+
+                    true
+                },
+                None => false
+            },
+
+            Self::Base64Decode(config) => match to.as_mut() {
+                Some(x) => {
+                    *x = String::from_utf8(config.make().decode(x.as_bytes())?).map_err(|e| e.utf8_error())?.into();
+
+                    true
+                },
+                None => false
+            },
+
+            Self::ExtractPart(part) => {*to = part.get(&BetterUrl::new(to.as_deref().ok_or(SubjectIsNone)?)?).map(|x| x.into_owned().into()); true},
 
             // Misc
 
-            Self::Function   (call    ) => task_state.job.cleaner.functions.string_modifications.get(&call.name ).ok_or(FunctionNotFound           )?.apply(task_state, Some(&call.args), to)?,
-            Self::FunctionArg(name    ) => args.ok_or(NotInFunction)?.string_modifications      .get(get!(&name)).ok_or(FunctionArgFunctionNotFound)?.apply(task_state, args            , to)?,
-            Self::Extern     (function) => function(task_state, args, to)?,
+            Self::Function   (call    ) => ts.job.cleaner.functions  .string_modifications.get(&call.name                 ).ok_or(FunctionNotFound           )?.apply(ts, Some(&call.args), to)?,
+            Self::FunctionArg(name    ) => args.ok_or(NotInFunction)?.string_modifications.get(&*name.get_some(ts, args)??).ok_or(FunctionArgFunctionNotFound)?.apply(ts, args            , to)?,
+            Self::Extern     (function) => function(ts, args, to)?,
         })
     }
 }

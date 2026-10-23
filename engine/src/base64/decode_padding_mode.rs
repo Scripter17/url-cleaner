@@ -10,14 +10,14 @@ use crate::prelude::*;
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum Base64DecodePaddingMode {
-    /// Don't care whether or not the canonical padding is present.
+    /// [`DecodePaddingMode::Indifferent`].
     ///
     /// The default.
     #[default]
     Indifferent,
-    /// Require that the canonical padding is present.
+    /// [`DecodePaddingMode::RequireCanonical`].
     RequireCanonical,
-    /// Require that the canonical padding isn't present.
+    /// [`DecodePaddingMode::RequireNone`].
     RequireNone
 }
 

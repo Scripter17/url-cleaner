@@ -49,7 +49,7 @@ impl<'a> SpecialQuery<'a> {
 
 impl<'a> From<Cow<'a, [u8]>> for SpecialQuery<'a> {
     fn from(value: Cow<'a, [u8]>) -> Self {
-        let (_, value) = encode_special_query_bytes(value);
+        let (_, value) = make_special_query_bytes(value);
 
         unsafe {
             Self::new_unchecked(value)

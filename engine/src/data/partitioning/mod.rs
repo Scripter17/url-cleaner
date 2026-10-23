@@ -53,6 +53,8 @@ impl Partitioning {
     }
 }
 
+
+
 impl FromIterator<(String, Vec<Option<String>>)> for Partitioning {
     fn from_iter<I: IntoIterator<Item = (String, Vec<Option<String>>)>>(iter: I) -> Self {
         let mut ret = Self::default();
@@ -73,61 +75,7 @@ impl Extend<(String, Vec<Option<String>>)> for Partitioning {
     }
 }
 
-/// Serde helper for deserializing [`Partitioning`].
-struct PartitioningVisitor;
 
-impl<'de> Visitor<'de> for PartitioningVisitor {
-    type Value = Partitioning;
-
-    fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
-        let mut ret = Self::Value::default();
-
-        while let Some(key) = map.next_key::<String>()? {
-            map.next_value_seed(ExtendPartitioning {
-                partitioning: &mut ret,
-                name: Arc::from(key),
-            })?;
-        }
-
-        Ok(ret)
-    }
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(formatter, "Expected a map")
-    }
-}
-
-/// A thing to allow deserializing [`Partitioning`]s more efficiently.
-struct ExtendPartitioning<'a> {
-    /// The [`Partitioning`] being deserialized.
-    partitioning: &'a mut Partitioning,
-    /// The name of the current partition.
-    name: Arc<str>,
-}
-
-impl<'de, 'a> serde::de::DeserializeSeed<'de> for ExtendPartitioning<'a> {
-    type Value = ();
-
-    fn deserialize<D: Deserializer<'de>>(self, deserializer: D) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_seq(self)
-    }
-}
-
-impl<'de, 'a> Visitor<'de> for ExtendPartitioning<'a> {
-    type Value = ();
-
-    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(formatter, "an array of strings")
-    }
-
-    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<(), A::Error> {
-        while let Some(x) = seq.next_element()? {
-            self.partitioning.0.insert(x, self.name.clone());
-        }
-
-        Ok(())
-    }
-}
 
 impl<'de> Deserialize<'de> for Partitioning {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
@@ -150,5 +98,70 @@ impl Serialize for Partitioning {
         }
 
         serializer.end()
+    }
+}
+
+
+
+/// Serde helper for deserializing [`Partitioning`].
+struct PartitioningVisitor;
+
+impl<'de> Visitor<'de> for PartitioningVisitor {
+    type Value = Partitioning;
+
+    fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+        let mut ret = Self::Value::default();
+
+        while let Some(key) = map.next_key::<String>()? {
+            map.next_value_seed(PartitioningSeedDeserializer {
+                partitioning: &mut ret,
+                name: Arc::from(key),
+            })?;
+        }
+
+        Ok(ret)
+    }
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("a map from strings to seqs of strings")
+    }
+}
+
+
+
+/// A thing to allow deserializing [`Partitioning`]s more efficiently.
+struct PartitioningSeedDeserializer<'a> {
+    /// The [`Partitioning`] being deserialized.
+    partitioning: &'a mut Partitioning,
+    /// The name of the current partition.
+    name: Arc<str>,
+}
+
+impl<'de, 'a> serde::de::DeserializeSeed<'de> for PartitioningSeedDeserializer<'a> {
+    type Value = ();
+
+    fn deserialize<D: Deserializer<'de>>(self, deserializer: D) -> Result<Self::Value, D::Error> {
+        deserializer.deserialize_seq(PartitionVisitor(self))
+    }
+}
+
+
+
+/// A [`Visitor`] for a single partition.
+struct PartitionVisitor<'a>(PartitioningSeedDeserializer<'a>);
+
+impl<'de, 'a> Visitor<'de> for PartitionVisitor<'a> {
+    type Value = ();
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("a seq of strings")
+    }
+
+    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<(), A::Error> {
+        while let Some(x) = seq.next_element()? {
+            self.0.partitioning.0.insert(x, self.0.name.clone());
+        }
+
+        Ok(())
     }
 }

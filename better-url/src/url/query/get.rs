@@ -44,10 +44,7 @@ impl BetterUrl {
 
     /// The [`QueryIter`].
     pub fn query_segments(&self) -> QueryIter<'_> {
-        QueryIter {
-            iter: self.query_segment_strs(),
-            r#type: self.query_type(),
-        }
+        unsafe {QueryIter::from_parts(self.query_segment_strs(), self.query_type())}
     }
 
     /// The `index`th query segment as a [`str`].

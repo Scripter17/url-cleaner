@@ -1,6 +1,6 @@
 //! Memchr.
 
-/// A simple wrapper around [`libc`]'s memchr.
+/// A simple wrapper around [`libc::memchr`].
 pub fn memchr(haystack: &[u8], needle: u8) -> Option<usize> {
     unsafe {libc::memchr(
         haystack.as_ptr() as _,

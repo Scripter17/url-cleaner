@@ -9,9 +9,7 @@ use crate::prelude::*;
 #[serde(deny_unknown_fields)]
 #[serde(remote = "Self")]
 pub struct RegexParts {
-    /// The regex pattern to use.
-    ///
-    /// For performance, validity is only checked at [`Self::build`] time.
+    /// The unvalidated regex pattern to use.
     pub pattern: String,
     /// Config to pass into [`RegexBuilder`].
     ///
@@ -20,7 +18,39 @@ pub struct RegexParts {
     pub config: RegexConfig
 }
 
-crate::util::string_or_struct_magic!(RegexParts);
+impl Serialize for RegexParts {
+    fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        <RegexParts>::serialize(self, serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for RegexParts {
+    fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct V;
+
+        impl<'de> serde::de::Visitor<'de> for V {
+            type Value = RegexParts;
+
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+                f.write_str("Expected a string or a map.")
+            }
+
+            fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {
+                Ok(s.into())
+            }
+
+            fn visit_string<E: serde::de::Error>(self, value: String) -> Result<Self::Value, E> {
+                Ok(value.into())
+            }
+
+            fn visit_map<M: serde::de::MapAccess<'de>>(self, map: M) -> Result<Self::Value, M::Error> {
+                Self::Value::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+            }
+        }
+
+        deserializer.deserialize_any(V)
+    }
+}
 
 impl RegexParts {
     /// Compile the regex.
@@ -59,14 +89,15 @@ impl From<String> for RegexParts {
     fn from(value: String) -> Self {
         Self {
             pattern: value,
-            config: Default::default()
+            config: Default::default(),
         }
     }
 }
 
 impl Suitability for RegexParts {
     fn assert_suitability(&self, config: &Cleaner) {
-        self.build().unwrap_or_else(|_| panic!("Regex to be buildable: {self:?}"));
+        self.build().expect("The regex to be compile.");
+
         self.config.assert_suitability(config);
     }
 }

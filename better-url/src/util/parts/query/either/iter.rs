@@ -5,13 +5,23 @@ use crate::prelude::*;
 /// A [`DoubleEndedIterator`] of [`QuerySegment`]s.
 #[derive(Debug, Clone)]
 pub struct QueryIter<'a> {
-    /// The [`SplitAmpersands`].
-    pub(crate) iter: SplitAmpersands<'a>,
-    /// The [`QueryType`].
-    pub(crate) r#type: QueryType,
+    /** The [`SplitAmpersands`]. **/ iter  : SplitAmpersands<'a>,
+    /** The [`QueryType`].       **/ r#type: QueryType,
 }
 
 impl<'a> QueryIter<'a> {
+    /// Create a new [`Self`] from a [`SplitAmpersands`] without validity checks.
+    /// # Safety
+    /// Every output of [`SplitAmpersands::next`] must be a valid input to [`QuerySegment::new_unchecked`] with the specified [`QueryType`].
+    pub unsafe fn from_parts(iter: SplitAmpersands<'a>, r#type: QueryType) -> Self {
+        Self {iter, r#type}
+    }
+
+    /// Get the inner [`SplitAmpersands`] and [`QueryType`].
+    pub fn into_parts(self) -> (SplitAmpersands<'a>, QueryType) {
+        (self.iter, self.r#type)
+    }
+
     /// The range of the remainder as a [`str`].
     pub fn range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&'a str> {
         self.iter.range(range)
@@ -30,11 +40,6 @@ impl<'a> QueryIter<'a> {
     /// The remaining [`Query`].
     pub fn remainder(&self) -> Option<Query<'a>> {
         Some(unsafe {Query::new_unchecked(self.remainder_str()?, self.r#type)})
-    }
-
-    /// The [`SplitAmpersands`].
-    pub fn inner(&self) -> &SplitAmpersands<'a> {
-        &self.iter
     }
 
     /// The [`QueryType`].
@@ -67,8 +72,8 @@ impl<'a> IntoIterator for &'a MaybeQuery<'_> {
     }
 }
 
-impl<'a> From<SpecialQueryIter   <'a>> for QueryIter<'a> {fn from(value: SpecialQueryIter   <'a>) -> Self {Self {iter: value.0, r#type: QueryType::Special   }}}
-impl<'a> From<NonSpecialQueryIter<'a>> for QueryIter<'a> {fn from(value: NonSpecialQueryIter<'a>) -> Self {Self {iter: value.0, r#type: QueryType::NonSpecial}}}
+impl<'a> From<SpecialQueryIter   <'a>> for QueryIter<'a> {fn from(value: SpecialQueryIter   <'a>) -> Self {Self {iter: value.into_inner(), r#type: QueryType::Special   }}}
+impl<'a> From<NonSpecialQueryIter<'a>> for QueryIter<'a> {fn from(value: NonSpecialQueryIter<'a>) -> Self {Self {iter: value.into_inner(), r#type: QueryType::NonSpecial}}}
 
 impl<'a> Iterator for QueryIter<'a> {
     type Item = QuerySegment<'a>;

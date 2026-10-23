@@ -46,7 +46,7 @@ impl DomainHost<'_> {
 
     /// The suffix segments as [`DomainSegment`]s.
     pub fn suffix_segments(&self) -> DomainSegmentsIter<'_> {
-        DomainSegmentsIter(self.suffix_segment_strs())
+        unsafe {DomainSegmentsIter::new_unchecked(self.suffix_segment_strs())}
     }
 
 

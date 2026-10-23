@@ -49,7 +49,7 @@ impl<'a> Fragment<'a> {
 
 impl<'a> From<Cow<'a, [u8]>> for Fragment<'a> {
     fn from(value: Cow<'a, [u8]>) -> Self {
-        let (_, value) = encode_fragment_bytes(value);
+        let (_, value) = make_fragment_bytes(value);
 
         unsafe {
             Self::new_unchecked(value)

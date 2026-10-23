@@ -6,51 +6,56 @@ use psl::Psl;
 use crate::prelude::*;
 
 /// The details of a domain host.
+/// # Examples
+/// ```
+/// use better_url::prelude::*;
+///
+/// assert!(std::mem::size_of::<DomainHostDetails>() <= std::mem::size_of::<Ipv6HostDetails>());
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DomainHostDetails {
     /// The first data usize.
     ///
-    /// When the feature `psl` is enabled, the topmost bit is if the prefix is `www` and the remaining bits are the byte index the middle (if present) starts at.
+    /// If the feature `psl` is enabled, the topmost bit is if the prefix is `www` and the remaining bits are the byte index the middle (if present) starts at.
     ///
-    /// When the feature `psl` is disabled, none of the bits have any meaning.
+    /// If the feature `psl` is disabled, none of the bits have any meaning.
     pub data1: usize,
     /// The second data usize.
     ///
-    /// When the feature `psl` is enabled, the topmost bit is if the domain is fully qualified and the remaining bits are the byte index the suffix starts at.
+    /// If the feature `psl` is enabled, the topmost bit is if the domain is fully qualified and the remaining bits are the byte index the suffix starts at.
     ///
-    /// When the feature `psl` is disabled, the topmost bit is still if the domain is fully qualified but the remaining bits have no meaning.
+    /// If the feature `psl` is disabled, the topmost bit is if the domain is fully qualified but the remaining bits have no meaning.
     pub data2: usize,
 }
 
 impl DomainHostDetails {
-    /// Parse an encoded domain.
-    /// # Errors
-    /// If [`ends_in_a_number`] returns [`true`], returns the error [`InvalidDomainHost`].
-    ///
-    /// If [`Self::parse_not_eian`] returns an error, that error is returned.
-    pub fn parse(value: &str) -> Result<Self, InvalidDomainHost> {
-        match ends_in_a_number(value) {
-            true  => Err(InvalidDomainHost),
-            false => Self::parse_not_eian(value),
-        }
-    }
-
-    /// Parse a not-[`ends_in_a_number`] encoded domain.
+    /// Parse a [`DomainHost`] literal.
     /// # Errors
     /// If `value` is empty, returns the error [`InvalidDomainHost`].
-    pub fn parse_not_eian(value: &str) -> Result<Self, InvalidDomainHost> {
-        debug_assert!(!ends_in_a_number(value), "The domain to not end in a number");
-
-        match value {
-            "" => Err(InvalidDomainHost),
-            _  => Ok(Self::parse_unchecked(value)),
+    ///
+    /// If `value`'s class under [`DOMAIN_BYTE_CLASS_DATA`] has the lowest, third lowest, and/or fifth lowest bits set, returns the error [`InvalidDomainHost`].
+    ///
+    /// If `value`'s class under [`DOMAIN_BYTE_CLASS_DATA`] has the second lowest bit set and `value` [`ends_in_a_number`], returns the error [`InvalidDomainHost`].
+    pub fn parse(value: &str) -> Result<Self, InvalidDomainHost> {
+        if value.is_empty() {
+            Err(InvalidDomainHost)?;
         }
+
+        let class = value.bytes().fold(0, |acc, b| acc | DOMAIN_BYTE_CLASS_DATA[b as usize]);
+
+        if class & 0b0001_0101 != 0 {
+            Err(InvalidDomainHost)?;
+        }
+
+        if class & 0b0000_0010 != 0 && ends_in_a_number(value) {
+            Err(InvalidDomainHost)?;
+        }
+
+        Ok(Self::parse_unchecked(value))
     }
 
-    /// Parse a domain literal without checking for validity.
-    ///
-    /// Assumes that `value` is a valid output of [`domain_host_to_ascii`].
+    /// Parse a [`DomainHost`] literal without checking if every byte is valid, if it ends in a number, or if it is empty.
     pub fn parse_unchecked(value: &str) -> Self {
         cfg_select! {
             feature = "psl" => {

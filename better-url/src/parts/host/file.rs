@@ -113,68 +113,26 @@ impl<'a> FileHost<'a> {
 
 
 
-impl<'a> TryFrom<Cow<'a, [u8]>> for FileHost<'a> {
-    type Error = InvalidFileHost;
-
-    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        Ok(match &*value {
-            b""        => EmptyHost::default(     ) .into(),
-            [b'[', ..] => Ipv6Host ::new    (value)?.into(),
-            _ => {
-                let (_, value       ) = try_percent_decode_bytes(value).map_err(|_| InvalidFileHost)?;
-                let (_, value, class) = uts46_classify_map_normalize(value);
-
-                match value.as_bytes() {
-                    b""          => Err(InvalidFileHost)?,
-                    b"localhost" => EmptyHost::default().into(),
-                    _ => {
-                        if class & 0b0010_0100 == 0b0010_0000 {
-                            Err(InvalidFileHost)?
-                        } else if class & 0b0000_0110 != 0b0000_0000 && ends_in_a_number(&value) {
-                            Ipv4Host::new_normalized(value)?.into()
-                        } else if class & 0b0010_0110 == 0b0000_0000 && !value.is_empty() {
-                            let details = DomainHostDetails::parse_unchecked(&value);
-
-                            unsafe {DomainHost::from_parts(value, details)}.into()
-                        } else {
-                            unsafe {DomainHost::new_not_eian(value)}?.into()
-                        }
-                    }
-                }
-            }
-        })
-    }
-}
-
 impl<'a> TryFrom<Cow<'a, str>> for FileHost<'a> {
     type Error = InvalidFileHost;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        Ok(match value.as_bytes() {
-            b""        => EmptyHost::default(     ) .into(),
-            [b'[', ..] => Ipv6Host ::new    (value)?.into(),
-            _ => {
-                let (_, value       ) = try_percent_decode(value).map_err(|_| InvalidFileHost)?;
-                let (_, value, class) = uts46_classify_map_normalize(value);
+        let (_, value, details) = make_file_host(value)?;
 
-                match value.as_bytes() {
-                    b""          => Err(InvalidFileHost)?,
-                    b"localhost" => EmptyHost::default().into(),
-                    _ => {
-                        if class & 0b0010_0100 == 0b0010_0000 {
-                            Err(InvalidFileHost)?
-                        } else if class & 0b0000_0110 != 0b0000_0000 && ends_in_a_number(&value) {
-                            Ipv4Host::new_normalized(value)?.into()
-                        } else if class & 0b0010_0110 == 0b0000_0000 && !value.is_empty() {
-                            let details = DomainHostDetails::parse_unchecked(&value);
+        Ok(unsafe {
+            Self::from_parts(value, details)
+        })
+    }
+}
 
-                            unsafe {DomainHost::from_parts(value, details)}.into()
-                        } else {
-                            unsafe {DomainHost::new_not_eian(value)}?.into()
-                        }
-                    }
-                }
-            }
+impl<'a> TryFrom<Cow<'a, [u8]>> for FileHost<'a> {
+    type Error = InvalidFileHost;
+
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        let (_, value, details) = make_file_host_bytes(value)?;
+
+        Ok(unsafe {
+            Self::from_parts(value, details)
         })
     }
 }

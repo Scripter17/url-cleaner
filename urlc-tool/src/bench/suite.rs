@@ -154,6 +154,13 @@ impl Args {
             println!("### {table}");
             println!();
 
+            println!("{}", match table {
+                Table::Cli        {tool, ..} => tool.description(),
+                Table::Site       {tool, ..} => tool.description(),
+                Table::SiteClient {tool, ..} => tool.description(),
+            });
+            println!();
+
             print!("|Task|");
             for &num in &self.nums {
                 print!("`{}`|", format_int(num));

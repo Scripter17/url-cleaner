@@ -1,16 +1,19 @@
 //! Benchmark URL parsing.
 
 use std::io::BufRead;
+use std::time::Duration;
 
 use clap::Parser;
 
 use better_url::prelude::*;
 
+use crate::util::BasicBenchThing;
+
 /// Benchmark URL parsing.
 ///
-/// Gives each line of STDIN to each requested parser and outputs a TSV of timing info and whatnot.
+/// For each line of input, the output is a TSV.
 ///
-/// - The first column is the line number.
+/// - The first column is the line number, starting at 1.
 ///
 /// - The second column is the time it took BetterUrl::new to run the specified number of times.
 ///
@@ -26,36 +29,32 @@ use better_url::prelude::*;
 ///
 /// 1. Servo's URL crate (`url`).
 ///
-/// 2. Servo's URL crate plus Better URL's HostDetails::parse.
+/// 2. Servo's URL crate plus Better URL's DomainHostDetails::parse_unchecked.
 ///
 /// 3. Ada's URL crate (`ada_url`).
 ///
-/// 4. Ada's URL crate plus Better URL's HostDetails::parse.
+/// 4. Ada's URL crate plus Better URL's DomainHostDetails::parse_unchecked.
 ///
-/// HostDetails::parse does some extra work, most notably a lookup into the Public Suffix List for domain hosts, that is required to implement some of Better URL's APIs.
-///
-/// If you don't need those APIs then comparing without the handicap is more relevant to you, but for Servo and Ada to achieve API pairity with Better URL they'd need to add it.
+/// Because Better URL Bench enables Better URL's `psl` feature, comparisons 2 and 4 are going to be closer (but probably a bit above) the "actual" performance factor.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /** Compare to all parsers.                               **/ #[arg(long)] pub all       : bool,
-    /** Compare to Servo's URL crate.                         **/ #[arg(long)] pub servo     : bool,
-    /** Compare to Servo's URL crate plus HostDetails::parse. **/ #[arg(long)] pub servo_plus: bool,
-    /** Compare to Ada's URL crate.                           **/ #[arg(long)] pub ada       : bool,
-    /** Compare to Ada's URL crate plus HostDetails::parse.   **/ #[arg(long)] pub ada_plus  : bool,
+    /** Compare to all parsers.                                               */ #[arg(long)] pub all       : bool,
+    /** Compare to Servo's URL crate.                                         */ #[arg(long)] pub servo     : bool,
+    /** Compare to Servo's URL crate plus DomainHostDetails::parse_unchecked. */ #[arg(long)] pub servo_plus: bool,
+    /** Compare to Ada's URL crate.                                           */ #[arg(long)] pub ada       : bool,
+    /** Compare to Ada's URL crate plus DomainHostDetails::parse_unchecked.   */ #[arg(long)] pub ada_plus  : bool,
 
-    /// The number of times to do each URL.
-    #[arg(long)]
-    pub num: usize,
+    /** The [`BasicBenchThing`]. **/ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
 }
 
 impl Args {
     /// Do the command.
     pub fn r#do(mut self) {
-        let mut burl_total       = std::time::Duration::default();
-        let mut servo_total      = std::time::Duration::default();
-        let mut servo_plus_total = std::time::Duration::default();
-        let mut ada_total        = std::time::Duration::default();
-        let mut ada_plus_total   = std::time::Duration::default();
+        let mut burl_total       = Duration::default();
+        let mut servo_total      = Duration::default();
+        let mut servo_plus_total = Duration::default();
+        let mut ada_total        = Duration::default();
+        let mut ada_plus_total   = Duration::default();
 
         if self.all {
             self.servo      = true;
@@ -67,29 +66,15 @@ impl Args {
         for (i, line) in (1..).zip(std::io::stdin().lock().lines().map(Result::unwrap)) {
             print!("{i}");
 
-
-
-            let timer = std::time::Instant::now();
-
-            for _ in 0..self.num {
-                let _ = std::hint::black_box(BetterUrl::new(&*line));
-            }
-
-            let burl = timer.elapsed();
+            let burl = self.basic_bench_thing.bench(|| BetterUrl::new(&*line));
             burl_total += burl;
-
             print!("\t{burl:.2?}");
 
 
 
             if self.servo {
-                let timer = std::time::Instant::now();
+                let servo = self.basic_bench_thing.bench(|| url::Url::parse(&line));
 
-                for _ in 0..self.num {
-                    let _ = std::hint::black_box(url::Url::parse(&line));
-                }
-
-                let servo = timer.elapsed();
                 servo_total += servo;
 
                 let servo_factor       = servo      .as_secs_f64() / burl      .as_secs_f64();
@@ -101,19 +86,16 @@ impl Args {
 
 
             if self.servo_plus {
-                let timer = std::time::Instant::now();
+                let servo_plus = self.basic_bench_thing.bench(|| url::Url::parse(&line).map(|url| {
+                    let domain_details = if url.is_special() && let Some(url::Host::Domain(domain)) = url.host() && !domain.is_empty() {
+                        Some(DomainHostDetails::parse_unchecked(domain))
+                    } else {
+                        None
+                    };
 
-                for _ in 0..self.num {
-                    if let Ok(url) = url::Url::parse(&line) {
-                        let scheme_type = SchemeDetails::new_unchecked(url.scheme()).r#type();
+                    (url, domain_details)
+                }));
 
-                        if let Some(host) = url.host_str() {
-                            let _ = std::hint::black_box(HostDetails::parse(host, scheme_type));
-                        }
-                    }
-                }
-
-                let servo_plus = timer.elapsed();
                 servo_plus_total += servo_plus;
 
                 let servo_plus_factor       = servo_plus      .as_secs_f64() / burl      .as_secs_f64();
@@ -125,13 +107,8 @@ impl Args {
 
 
             if self.ada {
-                let timer = std::time::Instant::now();
+                let ada = self.basic_bench_thing.bench(|| ada_url::Url::parse(&line, None));
 
-                for _ in 0..self.num {
-                    let _ = std::hint::black_box(ada_url::Url::parse(&line, None));
-                }
-
-                let ada = timer.elapsed();
                 ada_total += ada;
 
                 let ada_factor       = ada      .as_secs_f64() / burl      .as_secs_f64();
@@ -143,17 +120,16 @@ impl Args {
 
 
             if self.ada_plus {
-                let timer = std::time::Instant::now();
+                let ada_plus = self.basic_bench_thing.bench(|| ada_url::Url::parse(&line, None).map(|url| {
+                    let domain_details = if url.scheme_type() != ada_url::SchemeType::NotSpecial && !url.hostname().is_empty() {
+                        Some(DomainHostDetails::parse_unchecked(url.hostname()))
+                    } else {
+                        None
+                    };
 
-                for _ in 0..self.num {
-                    if let Ok(url) = ada_url::Url::parse(&line, None) {
-                        let scheme_type = SchemeDetails::new_unchecked(url.protocol().strip_suffix(':').unwrap()).r#type();
+                    (url, domain_details)
+                }));
 
-                        let _ = std::hint::black_box(HostDetails::parse(url.hostname(), scheme_type));
-                    }
-                }
-
-                let ada_plus = timer.elapsed();
                 ada_plus_total += ada_plus;
 
                 let ada_plus_factor       = ada_plus      .as_secs_f64() / burl      .as_secs_f64();

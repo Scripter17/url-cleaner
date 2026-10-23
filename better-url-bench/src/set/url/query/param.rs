@@ -6,6 +6,8 @@ use clap::Parser;
 
 use better_url::prelude::*;
 
+use crate::util::BasicBenchThing;
+
 /// Benchmark setting a URL's query parameter.
 ///
 /// Parses each line of STDIN as a URL.
@@ -35,9 +37,6 @@ pub struct Args {
     /** Compare to Servo's URL crate. **/ #[arg(long)] pub servo: bool,
     /** Compare to Ada's URL crate.   **/ #[arg(long)] pub ada  : bool,
 
-    /// The number of times to do each URL.
-    #[arg(long)]
-    pub num: usize,
     /// The name to set.
     #[arg(long)]
     pub name: String,
@@ -47,6 +46,8 @@ pub struct Args {
     /// The value to set it to.
     #[arg(long)]
     pub value: Option<Option<String>>,
+
+    /** The [`BasicBenchThing`]. **/ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
 }
 
 impl Args {
@@ -70,17 +71,9 @@ impl Args {
                 Ok(url) => {
                     let r#type = url.query_type();
 
-                    let urls = vec![url; self.num];
-
                     let value = value.map(|x| MaybeQueryValue::new(x, r#type));
 
-                    let timer = std::time::Instant::now();
-
-                    for mut url in urls {
-                        let _ = url.set_query_param(name, index, value.as_ref());
-                    }
-
-                    let burl = timer.elapsed();
+                    let burl = self.basic_bench_thing.bench_with_input(|mut url| url.set_query_param(name, index, value.as_ref()), url.clone());
                     burl_total += burl;
 
                     print!("\t{burl:.2?}");
@@ -90,19 +83,13 @@ impl Args {
                     if servo {
                         match url::Url::parse(&line) {
                             Ok(url) => {
-                                let urls = vec![url; self.num];
-
-                                let timer = std::time::Instant::now();
-
-                                for mut url in urls {
+                                let servo = self.basic_bench_thing.bench_with_input(|mut url| {
                                     let mut query = unsafe {MaybeQuery::new_unchecked(url.query(), r#type)};
 
-                                    let _ = query.set(name, index, value.as_ref());
-
-                                    url.set_query(query.into_owned().as_str());
-                                }
-
-                                let servo = timer.elapsed();
+                                    if let Ok(true) = query.set(name, index, value.as_ref()) {
+                                        url.set_query(query.into_owned().as_str());
+                                    }
+                                }, url.clone());
                                 servo_total += servo;
 
                                 let factor       = servo      .as_secs_f64() / burl      .as_secs_f64();
@@ -117,19 +104,13 @@ impl Args {
                     if ada {
                         match ada_url::Url::parse(&*line, None) {
                             Ok(url) => {
-                                let urls = vec![url; self.num];
-
-                                let timer = std::time::Instant::now();
-
-                                for mut url in urls {
+                                let ada = self.basic_bench_thing.bench_with_input(|mut url| {
                                     let mut query = unsafe {MaybeQuery::new_unchecked(url.search().strip_prefix('?'), r#type)};
 
-                                    let _ = query.set(name, index, value.as_ref());
-
-                                    url.set_search(query.into_owned().as_str());
-                                }
-
-                                let ada = timer.elapsed();
+                                    if let Ok(true) = query.set(name, index, value.as_ref()) {
+                                        url.set_search(query.into_owned().as_str());
+                                    }
+                                }, url.clone());
                                 ada_total += ada;
 
                                 let factor       = ada      .as_secs_f64() / burl      .as_secs_f64();

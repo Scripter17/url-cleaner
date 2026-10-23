@@ -7,7 +7,7 @@ use crate::prelude::*;
 
 /// Parse and normalize an IPv6 host.
 /// # Errors
-/// If `value` is not a valid IPv6 host, returns the error [`InvalidIpv6Host`].
+/// If `value` is not a valid [`Ipv6Host`], returns the error [`InvalidIpv6Host`].
 /// # Examples
 /// ```
 /// use std::assert_matches;
@@ -29,20 +29,22 @@ use crate::prelude::*;
 /// assert!(changed);
 /// assert_matches!(host, Cow::Owned(x) if x == "[1:2::3]");
 /// ```
-pub fn make_ipv6_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, Ipv6Addr), InvalidIpv6Host> {
+pub fn make_ipv6_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, Ipv6HostDetails), InvalidIpv6Host> {
     let value = value.into();
 
-    match value.as_bytes() {
-        [b'[', addr @ .., b']'] => {
-            let addr = unsafe {str::from_utf8_unchecked(addr)}.parse().map_err(|_| InvalidIpv6Host)?;
+    let addr = value.strip_prefix('[').ok_or(InvalidIpv6Host)?.strip_suffix(']').ok_or(InvalidIpv6Host)?.parse::<Ipv6Addr>().map_err(|_| InvalidIpv6Host)?;
 
-            let mut normalizer = Normalizer::new(value);
-            write!(normalizer, "[{addr}]").expect("???");
+    let mut normalizer = Normalizer::new(value);
+    write!(normalizer, "[{addr}]").expect("???");
 
-            let (changed, host) = normalizer.done();
+    let (changed, host) = normalizer.done();
 
-            Ok((changed, host, addr))
-        },
-        _ => Err(InvalidIpv6Host)?,
-    }
+    Ok((changed, host, addr.into()))
+}
+
+/// Make an [`Ipv6Host`] from bytes.
+/// # Errors
+/// If `value` is not a valid [`Ipv6Host`], returns the error [`InvalidIpv6Host`].
+pub fn make_ipv6_host_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<(bool, Cow<'a, str>, Ipv6HostDetails), InvalidIpv6Host> {
+    make_ipv6_host(try_cow_bytes_to_str(value).map_err(|_| InvalidIpv6Host)?)
 }

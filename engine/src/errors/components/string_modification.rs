@@ -16,7 +16,6 @@ pub enum StringModificationError {
     /** [`RegexExpansionError`].           **/ #[error(transparent)] RegexExpansionError       (#[from] Box<RegexExpansionError>  ),
 
     /** [`std::str::Utf8Error`].           **/ #[error(transparent)] Utf8Error                 (#[from] std::str::Utf8Error       ),
-    /** [`std::string::FromUtf8Error`].    **/ #[error(transparent)] FromUtf8Error             (#[from] std::string::FromUtf8Error),
 
     /** [`serde_json::Error`].             **/ #[error(transparent)] SerdeJsonError            (#[from] serde_json::Error         ),
     /** [`regex::Error`].                  **/ #[error(transparent)] RegexError                (#[from] regex::Error              ),
@@ -52,6 +51,10 @@ pub enum StringModificationError {
     /// Returned when a [`regex::Regex`] doesn't find any matches in the string.
     #[error("The regex didn't find any matches in the string.")]
     RegexMatchNotFound,
+
+    /// [`InvalidUrl`].
+    #[error(transparent)]
+    InvalidUrl(#[from] InvalidUrl),
 
     /** [`FunctionNotFound`].            **/ #[error(transparent)] FunctionNotFound(#[from] FunctionNotFound),
     /** [`NotInFunction`].               **/ #[error(transparent)] NotInFunction(#[from] NotInFunction),

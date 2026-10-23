@@ -7,41 +7,45 @@ use crate::prelude::*;
 /// ```
 /// use better_url::util::*;
 ///
-/// assert_eq!(encode_file_path(""            ), (true, "/"        .into()));
+/// assert_eq!(make_file_path(""            ), (true, "/"        .into()));
 ///
-/// assert_eq!(encode_file_path("abc"         ), (true, "/abc"     .into()));
+/// assert_eq!(make_file_path("abc"         ), (true, "/abc"     .into()));
 ///
-/// assert_eq!(encode_file_path("/abc/."      ), (true, "/abc/"    .into()));
-/// assert_eq!(encode_file_path("/abc/.."     ), (true, "/"        .into()));
-/// assert_eq!(encode_file_path("/abc/./ghi/" ), (true, "/abc/ghi/".into()));
-/// assert_eq!(encode_file_path("/abc/../ghi/"), (true, "/ghi/"    .into()));
+/// assert_eq!(make_file_path("/abc/."      ), (true, "/abc/"    .into()));
+/// assert_eq!(make_file_path("/abc/.."     ), (true, "/"        .into()));
+/// assert_eq!(make_file_path("/abc/./ghi/" ), (true, "/abc/ghi/".into()));
+/// assert_eq!(make_file_path("/abc/../ghi/"), (true, "/ghi/"    .into()));
 ///
-/// assert_eq!(encode_file_path("/c:/."       ), (true, "/c:/"     .into()));
-/// assert_eq!(encode_file_path("/c:/.."      ), (true, "/c:/"     .into()));
-/// assert_eq!(encode_file_path("/c:/./ghi/"  ), (true, "/c:/ghi/" .into()));
-/// assert_eq!(encode_file_path("/c:/../ghi/" ), (true, "/c:/ghi/" .into()));
+/// assert_eq!(make_file_path("/c:/."       ), (true, "/c:/"     .into()));
+/// assert_eq!(make_file_path("/c:/.."      ), (true, "/c:/"     .into()));
+/// assert_eq!(make_file_path("/c:/./ghi/"  ), (true, "/c:/ghi/" .into()));
+/// assert_eq!(make_file_path("/c:/../ghi/" ), (true, "/c:/ghi/" .into()));
 ///
-/// assert_eq!(encode_file_path("/c|/."       ), (true, "/c:/"     .into()));
-/// assert_eq!(encode_file_path("/c|/.."      ), (true, "/c:/"     .into()));
-/// assert_eq!(encode_file_path("/c|/./ghi/"  ), (true, "/c:/ghi/" .into()));
-/// assert_eq!(encode_file_path("/c|/../ghi/" ), (true, "/c:/ghi/" .into()));
+/// assert_eq!(make_file_path("/c|/."       ), (true, "/c:/"     .into()));
+/// assert_eq!(make_file_path("/c|/.."      ), (true, "/c:/"     .into()));
+/// assert_eq!(make_file_path("/c|/./ghi/"  ), (true, "/c:/ghi/" .into()));
+/// assert_eq!(make_file_path("/c|/../ghi/" ), (true, "/c:/ghi/" .into()));
 /// ```
-pub fn encode_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    encode_file_path_bytes(cow_str_to_bytes(value))
+pub fn make_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    make_file_path_bytes(cow_str_to_bytes(value))
 }
 
 
 
 /// Encode a [`FilePath`] from bytes.
-pub fn encode_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+pub fn make_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
     let value = value.into();
+
+    if value.is_empty() {
+        return (true, "/".into());
+    }
 
     let prepend_slash = !matches!(&*value, [b'/' | b'\\', ..]);
     let mut to_encode = 0;
     let mut class = 0;
 
     for &b in &*value {
-        class |= PATH_BYTE_CLASS[b as usize];
+        class |= SCHEME_PATH_BYTE_CLASS_DATA[b as usize];
     }
 
     if class & 1 == 1 {

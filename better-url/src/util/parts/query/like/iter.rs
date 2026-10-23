@@ -5,13 +5,23 @@ use crate::prelude::*;
 /// A [`DoubleEndedIterator`] of [`QueryLikeSegment`]s.
 #[derive(Debug, Clone)]
 pub struct QueryLikeIter<'a> {
-    /// The [`SplitAmpersands`].
-    pub(crate) iter: SplitAmpersands<'a>,
-    /// The [`QueryLikeType`].
-    pub(crate) r#type: QueryLikeType,
+    /** The [`SplitAmpersands`]. **/ iter  : SplitAmpersands<'a>,
+    /** The [`QueryLikeType`].   **/ r#type: QueryLikeType,
 }
 
 impl<'a> QueryLikeIter<'a> {
+    /// Create a new [`Self`] from a [`SplitAmpersands`] without validity checks.
+    /// # Safety
+    /// Every output of [`SplitAmpersands::next`] must be a valid input to [`QueryLikeSegment::new_unchecked`] with the specified [`QueryLikeType`].
+    pub unsafe fn from_parts(iter: SplitAmpersands<'a>, r#type: QueryLikeType) -> Self {
+        Self {iter, r#type}
+    }
+
+    /// Get the inner [`SplitAmpersands`] and [`QueryLikeType`].
+    pub fn into_parts(self) -> (SplitAmpersands<'a>, QueryLikeType) {
+        (self.iter, self.r#type)
+    }
+
     /// The range of the remainder as a [`str`].
     pub fn range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&'a str> {
         self.iter.range(range)
@@ -32,21 +42,16 @@ impl<'a> QueryLikeIter<'a> {
         Some(unsafe {QueryLike::new_unchecked(self.remainder_str()?, self.r#type)})
     }
 
-    /// The [`SplitAmpersands`].
-    pub fn inner(&self) -> &SplitAmpersands<'a> {
-        &self.iter
-    }
-
     /// The [`QueryLikeType`].
     pub fn r#type(&self) -> QueryLikeType {
         self.r#type
     }
 }
 
-impl<'a> From<QueryIter          <'a>> for QueryLikeIter<'a> {fn from(value: QueryIter          <'a>) -> Self {Self {iter: value.iter, r#type: QueryLikeType::Query(value.r#type         )}}}
-impl<'a> From<SpecialQueryIter   <'a>> for QueryLikeIter<'a> {fn from(value: SpecialQueryIter   <'a>) -> Self {Self {iter: value.0   , r#type: QueryLikeType::Query(QueryType::Special   )}}}
-impl<'a> From<NonSpecialQueryIter<'a>> for QueryLikeIter<'a> {fn from(value: NonSpecialQueryIter<'a>) -> Self {Self {iter: value.0   , r#type: QueryLikeType::Query(QueryType::NonSpecial)}}}
-impl<'a> From<FragmentQueryIter  <'a>> for QueryLikeIter<'a> {fn from(value: FragmentQueryIter  <'a>) -> Self {Self {iter: value.0   , r#type: QueryLikeType::Fragment                    }}}
+impl<'a> From<QueryIter          <'a>> for QueryLikeIter<'a> {fn from(value: QueryIter          <'a>) -> Self {let (iter, r#type) = value.into_parts(); Self{iter, r#type: r#type.into()}}}
+impl<'a> From<SpecialQueryIter   <'a>> for QueryLikeIter<'a> {fn from(value: SpecialQueryIter   <'a>) -> Self {Self {iter: value.into_inner()   , r#type: QueryLikeType::Query(QueryType::Special   )}}}
+impl<'a> From<NonSpecialQueryIter<'a>> for QueryLikeIter<'a> {fn from(value: NonSpecialQueryIter<'a>) -> Self {Self {iter: value.into_inner()   , r#type: QueryLikeType::Query(QueryType::NonSpecial)}}}
+impl<'a> From<FragmentQueryIter  <'a>> for QueryLikeIter<'a> {fn from(value: FragmentQueryIter  <'a>) -> Self {Self {iter: value.into_inner()   , r#type: QueryLikeType::Fragment                    }}}
 
 impl<'a> IntoIterator for &'a QueryLike<'_> {
     type IntoIter = QueryLikeIter   <'a>;

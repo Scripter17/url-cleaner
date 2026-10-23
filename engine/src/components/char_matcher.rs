@@ -20,7 +20,7 @@ pub enum CharMatcher {
         /// The then.
         then: Box<Self>,
         /// The else.
-        r#else: Box<Self>
+        r#else: Box<Self>,
     },
     /// Invert.
     Not(Box<Self>),
@@ -38,7 +38,7 @@ pub enum CharMatcher {
         /// The try.
         r#try: Box<Self>,
         /// The else.
-        r#else: Box<Self>
+        r#else: Box<Self>,
     },
     /// The first [`Self`] to return [`Ok`].
     FirstNotError(Vec<Self>),
@@ -49,12 +49,12 @@ pub enum CharMatcher {
     Between {
         /// The start of the range.
         ///
-        /// Defaulted to [`Bound::Unbounded`].
+        /// Defaults to [`Bound::Unbounded`].
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
         start: Bound<char>,
         /// The end of the range.
         ///
-        /// Defaulted to [`Bound::Unbounded`].
+        /// Defaults to [`Bound::Unbounded`].
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
         end: Bound<char>,
     },
@@ -81,7 +81,7 @@ pub enum CharMatcher {
     /** [`char::is_lowercase`].                 **/ IsLowercase,
     /** [`char::is_numeric`].                   **/ IsNumeric,
     /** [`char::is_uppercase`].                 **/ IsUppercase,
-    /** [`char::is_whitespace`].                **/ IsWhitespace
+    /** [`char::is_whitespace`].                **/ IsWhitespace,
 }
 
 impl CharMatcher {

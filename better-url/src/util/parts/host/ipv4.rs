@@ -82,7 +82,7 @@ pub fn parse_ipv4_u8(value: &str) -> Option<u8> {
 /// [Parse an IPv4 host](https://url.spec.whatwg.org/#concept-ipv4-parser).
 ///
 /// See [`make_ipv4_host`] to also get a string.
-pub fn parse_ipv4_host(value: &str) -> Option<std::net::Ipv4Addr> {
+pub fn parse_ipv4_host(value: &str) -> Option<Ipv4Addr> {
     let mut parts = SplitDots(Some(value.my_trim_suffix(".")));
 
     let last = parse_ipv4_u32(parts.next_back()?)?;
@@ -124,7 +124,7 @@ pub fn parse_ipv4_host(value: &str) -> Option<std::net::Ipv4Addr> {
 /// assert!(changed);
 /// assert_matches!(host, Cow::Owned(x) if x == "127.0.0.1");
 /// ```
-pub fn make_ipv4_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, Ipv4Addr), InvalidIpv4Host> {
+pub fn make_ipv4_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, Ipv4HostDetails), InvalidIpv4Host> {
     let value = value.into();
 
     let addr = parse_ipv4_host(&value).ok_or(InvalidIpv4Host)?;
@@ -134,5 +134,5 @@ pub fn make_ipv4_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<
 
     let (changed, host) = normalizer.done();
 
-    Ok((changed, host, addr))
+    Ok((changed, host, addr.into()))
 }

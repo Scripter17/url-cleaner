@@ -48,7 +48,7 @@ impl<'a> OpaquePath<'a> {
 
 impl<'a> From<Cow<'a, [u8]>> for OpaquePath<'a> {
     fn from(value: Cow<'a, [u8]>) -> Self {
-        let (_, value) = encode_opaque_path_bytes(value);
+        let (_, value) = make_opaque_path_bytes(value);
 
         unsafe {
             Self::new_unchecked(value)

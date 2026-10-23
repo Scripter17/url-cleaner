@@ -13,6 +13,8 @@ use crate::prelude::*;
 #[serde(remote = "Self")]
 pub enum ListSource {
     /// [`None`].
+    ///
+    /// The default.
     #[default]
     None,
     /// If [`Self::If::if`], [`Self::If::then`]. Otherwise [`Self::If::else`].
@@ -54,7 +56,7 @@ pub enum ListSource {
     /// The [`List`].
     Literal(List<String>),
     /// [`Params::lists`].
-    Params(#[suitable(assert = "list_source_params")] StringSource),
+    Params(#[suitable(assert = list_source_params)] StringSource),
     /// [`FunctionArgs::lists`].
     FunctionArg(StringSource),
 }
@@ -65,33 +67,39 @@ impl ListSource {
     /// If [`Self::get`] returns an error, that error is returned.
     ///
     /// If [`Self::get`] returns [`None`], returns the sub-error [`ListNotFound`].
-    pub fn get_some<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Result<&'j List<String>, ListNotFound>, ListSourceError> {
-        self.get(task_state, args).map(|x| x.ok_or(ListNotFound))
+    pub fn get_some<'j>(&'j self, ts: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Result<&'j List<String>, ListNotFound>, ListSourceError> {
+        self.get(ts, args).map(|x| x.ok_or(ListNotFound))
     }
 
     /// Get the list.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn get<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<&'j List<String>>, ListSourceError> {
-        debug!(ListSource::get, self; self._get(task_state, args))
+    pub fn get<'j>(&'j self, ts: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<&'j List<String>>, ListSourceError> {
+        Ok(match self {
+            Self::None                            => None,
+            Self::Literal(x)                      => Some(x),
+            Self::Params(StringSource::String(x)) => ts.job.cleaner.params.lists.get(x),
+            _ => self._get(ts, args)?,
+        })
     }
 
-    /// [`Self::get`].
-    fn _get<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<&'j List<String>>, ListSourceError> {
+    /// [`Self::get`] without fast paths.
+    #[cold]
+    fn _get<'j>(&'j self, ts: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<&'j List<String>>, ListSourceError> {
         Ok(match self {
             Self::None => None,
-            Self::If {r#if, r#then, r#else} => if r#if.check(task_state, args)? {get!(?r#then)} else {get!(?r#else)},
-            Self::StringMap {value, map} => match map.get(get!(?&value)) {
-                Some(source) => get!(?source),
+            Self::If {r#if, r#then, r#else} => if r#if.check(ts, args)? {r#then} else {r#else}.get(ts, args)?,
+            Self::StringMap {value, map} => match map.get(value.get(ts, args)?.as_deref()) {
+                Some(source) => source.get(ts, args)?,
                 None         => None
             },
-            Self::PartMap {part, map} => match map.get(part.get(&task_state.url).as_deref()) {
-                Some(source) => get!(?source),
+            Self::PartMap {part, map} => match map.get(part.get(&ts.url).as_deref()) {
+                Some(source) => source.get(ts, args)?,
                 None         => None
             },
             Self::Literal    (x) => Some(x),
-            Self::Params     (x) => task_state.job.cleaner.params.lists.get(get!(&x)),
-            Self::FunctionArg(x) => args.ok_or(NotInFunction)?   .lists.get(get!(&x)),
+            Self::Params     (x) => ts.job.cleaner.params     .lists.get(&*x.get_some(ts, args)??),
+            Self::FunctionArg(x) => args.ok_or(NotInFunction)?.lists.get(&*x.get_some(ts, args)??),
         })
     }
 }
@@ -125,44 +133,42 @@ impl Serialize for ListSource {
 
 impl<'de> Deserialize<'de> for ListSource {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        deserializer.deserialize_any(ListSourceVisitor)
-    }
-}
+        struct V;
 
-/// [`Visitor`] for [`ListSource`].
-#[derive(Debug)]
-struct ListSourceVisitor;
+        impl<'de> Visitor<'de> for V {
+            type Value = ListSource;
 
-impl<'de> Visitor<'de> for ListSourceVisitor {
-    type Value = ListSource;
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a none, str, string, seq, or map.")
+            }
 
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "a string, list, null, or another variant written normally.")
-    }
+            fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
+                Ok(Self::Value::None)
+            }
 
-    fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
-        Ok(Self::Value::None)
-    }
+            fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+                Ok(Self::Value::Params(v.into()))
+            }
 
-    fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-        Ok(Self::Value::Params(v.into()))
-    }
+            fn visit_string<E: de::Error>(self, v: String) -> Result<Self::Value, E> {
+                Ok(Self::Value::Params(v.into()))
+            }
 
-    fn visit_string<E: de::Error>(self, v: String) -> Result<Self::Value, E> {
-        Ok(Self::Value::Params(v.into()))
-    }
+            fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+                let mut ret = Vec::with_capacity(seq.size_hint().unwrap_or(8));
 
-    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
-        let mut ret = Vec::with_capacity(seq.size_hint().unwrap_or(8));
+                while let Some(x) = seq.next_element()? {
+                    ret.push(x);
+                }
 
-        while let Some(x) = seq.next_element()? {
-            ret.push(x);
+                Ok(Self::Value::Literal(List(ret)))
+            }
+
+            fn visit_map<A: MapAccess<'de>>(self, map: A) -> Result<Self::Value, A::Error> {
+                Self::Value::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+            }
         }
 
-        Ok(Self::Value::Literal(List(ret)))
-    }
-
-    fn visit_map<A: MapAccess<'de>>(self, map: A) -> Result<Self::Value, A::Error> {
-        Self::Value::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+        deserializer.deserialize_any(V)
     }
 }

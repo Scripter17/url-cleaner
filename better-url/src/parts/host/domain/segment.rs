@@ -66,7 +66,7 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for DomainSegment<'a> {
     type Error = InvalidDomainSegment;
 
     fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        let (_, value) = encode_domain_segment_bytes(value)?;
+        let (_, value) = make_domain_segment_bytes(value)?;
 
         unsafe {
             Ok(Self::new_unchecked(value))
@@ -78,7 +78,7 @@ impl<'a> TryFrom<Cow<'a, str>> for DomainSegment<'a> {
     type Error = InvalidDomainSegment;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, value) = encode_domain_segment(value)?;
+        let (_, value) = make_domain_segment(value)?;
 
         unsafe {
             Ok(Self::new_unchecked(value))

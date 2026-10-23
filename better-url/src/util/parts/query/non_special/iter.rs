@@ -4,9 +4,21 @@ use crate::prelude::*;
 
 /// A [`DoubleEndedIterator`] of [`NonSpecialQuerySegment`]s.
 #[derive(Debug, Clone)]
-pub struct NonSpecialQueryIter<'a>(pub(crate) SplitAmpersands<'a>);
+pub struct NonSpecialQueryIter<'a>(SplitAmpersands<'a>);
 
 impl<'a> NonSpecialQueryIter<'a> {
+    /// Create a new [`Self`] from a [`SplitAmpersands`] without validity checks.
+    /// # Safety
+    /// Every output of [`SplitAmpersands::next`] must be a valid input to [`NonSpecialQuerySegment::new_unchecked`].
+    pub unsafe fn new_unchecked(value: SplitAmpersands<'a>) -> Self {
+        Self(value)
+    }
+
+    /// Get the inner [`SplitAmpersands`].
+    pub fn into_inner(self) -> SplitAmpersands<'a> {
+        self.0
+    }
+
     /// The range of the remainder as a [`str`].
     pub fn range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&'a str> {
         self.0.range(range)
@@ -25,11 +37,6 @@ impl<'a> NonSpecialQueryIter<'a> {
     /// The remaining [`NonSpecialQuery`].
     pub fn remainder(&self) -> Option<NonSpecialQuery<'a>> {
         Some(unsafe {NonSpecialQuery::new_unchecked(self.remainder_str()?)})
-    }
-
-    /// The [`SplitAmpersands`].
-    pub fn inner(&self) -> &SplitAmpersands<'a> {
-        &self.0
     }
 }
 

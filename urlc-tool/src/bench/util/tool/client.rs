@@ -35,12 +35,21 @@ impl ClientTool {
             Self::Valgrind (x) => x.kebab(),
         }
     }
+
+    /// The description.
+    pub fn description(self) -> &'static str {
+        match self {
+            Self::Hyperfine(x) => x.description(),
+            Self::Valgrind (x) => x.description(),
+        }
+    }
 }
 
 impl ValueEnum for ClientTool {
     fn value_variants<'a>() -> &'a [Self] {
         &[
-            Self::Hyperfine(Hyperfine),
+            Self::Hyperfine(Hyperfine::Time),
+            Self::Hyperfine(Hyperfine::Memory),
             Self::Valgrind (Valgrind::Massif),
             Self::Valgrind (Valgrind::Callgrind),
         ]

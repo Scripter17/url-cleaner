@@ -5,11 +5,23 @@ use crate::prelude::*;
 /// An [`Iterator`] over the [`PathSegment`]s of a [`PathSegments`].
 #[derive(Debug, Clone)]
 pub struct PathSegmentsIter<'a> {
-    /** The [`SplitSlashes`].      **/ pub(crate) iter  : SplitSlashes<'a>,
-    /** The [`SegmentedPathType`]. **/ pub(crate) r#type: SegmentedPathType,
+    /** The [`SplitSlashes`].      **/ iter  : SplitSlashes<'a>,
+    /** The [`SegmentedPathType`]. **/ r#type: SegmentedPathType,
 }
 
 impl<'a> PathSegmentsIter<'a> {
+    /// Create a new [`Self`] from a [`SplitSlashes`] without validity checks.
+    /// # Safety
+    /// Every output of [`SplitSlashes::next`] must be a valid input to [`PathSegment::new_unchecked`] with the specified [`SegmentedPathType`].
+    pub unsafe fn from_parts(iter: SplitSlashes<'a>, r#type: SegmentedPathType) -> Self {
+        Self {iter, r#type}
+    }
+
+    /// Get the inner [`SplitSlashes`] and [`SegmentedPathType`].
+    pub fn into_parts(self) -> (SplitSlashes<'a>, SegmentedPathType) {
+        (self.iter, self.r#type)
+    }
+
     /// The range of the remainder as a [`str`].
     pub fn range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&'a str> {
         self.iter.range(range)
@@ -86,6 +98,6 @@ impl<'a> DoubleEndedIterator for PathSegmentsIter<'a> {
     }
 }
 
-impl<'a> From<FilePathSegmentsIter          <'a>> for PathSegmentsIter<'a> {fn from(value: FilePathSegmentsIter          <'a>) -> Self {Self {iter: value.0, r#type: SegmentedPathType::File          }}}
-impl<'a> From<SpecialNotFilePathSegmentsIter<'a>> for PathSegmentsIter<'a> {fn from(value: SpecialNotFilePathSegmentsIter<'a>) -> Self {Self {iter: value.0, r#type: SegmentedPathType::SpecialNotFile}}}
-impl<'a> From<NonSpecialPathSegmentsIter    <'a>> for PathSegmentsIter<'a> {fn from(value: NonSpecialPathSegmentsIter    <'a>) -> Self {Self {iter: value.0, r#type: SegmentedPathType::NonSpecial    }}}
+impl<'a> From<FilePathSegmentsIter          <'a>> for PathSegmentsIter<'a> {fn from(value: FilePathSegmentsIter          <'a>) -> Self {Self {iter: value.into_inner(), r#type: SegmentedPathType::File          }}}
+impl<'a> From<SpecialNotFilePathSegmentsIter<'a>> for PathSegmentsIter<'a> {fn from(value: SpecialNotFilePathSegmentsIter<'a>) -> Self {Self {iter: value.into_inner(), r#type: SegmentedPathType::SpecialNotFile}}}
+impl<'a> From<NonSpecialPathSegmentsIter    <'a>> for PathSegmentsIter<'a> {fn from(value: NonSpecialPathSegmentsIter    <'a>) -> Self {Self {iter: value.into_inner(), r#type: SegmentedPathType::NonSpecial    }}}

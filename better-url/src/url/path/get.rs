@@ -98,7 +98,7 @@ impl BetterUrl {
 
     /// The [`PathSegmentsIter`].
     pub fn path_segments(&self) -> Option<PathSegmentsIter<'_>> {
-        Some(PathSegmentsIter {iter: self.path_segment_strs()?, r#type: self.scheme_type().into()})
+        Some(unsafe {PathSegmentsIter::from_parts(self.path_segment_strs()?, self.scheme_type().into())})
     }
 
 

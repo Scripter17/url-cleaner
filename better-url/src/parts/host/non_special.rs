@@ -101,10 +101,10 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for NonSpecialHost<'a> {
     type Error = InvalidNonSpecialHost;
 
     fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        Ok(match &*value {
-            b""        => EmptyHost ::default(     ) .into(),
-            [b'[', ..] => Ipv6Host  ::new    (value)?.into(),
-            _          => OpaqueHost::new    (value)?.into(),
+        let (_, value, details) = make_non_special_host_bytes(value)?;
+
+        Ok(unsafe {
+            Self::from_parts(value, details)
         })
     }
 }

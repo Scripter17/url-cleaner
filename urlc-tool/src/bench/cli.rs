@@ -27,7 +27,7 @@ impl Args {
         fresh_dir(&out_dir);
 
         let mut cmd = match tool {
-            ClientTool::Hyperfine(Hyperfine) => {
+            ClientTool::Hyperfine(Hyperfine::Time | Hyperfine::Memory) => {
                 let mut cmd = Command::new("hyperfine");
 
                 cmd.args([

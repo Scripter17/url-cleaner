@@ -144,9 +144,9 @@ impl<'a> DomainHost<'a> {
     pub unsafe fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidDomainHost> {
         let (_, value, class) = uts46_classify_map_normalize(value);
 
-        Ok(if class & 0b0010_0100 == 0b0010_0000 {
+        Ok(if class & 0b0001_0100 == 0b0001_0000 {
             Err(InvalidDomainHost)?
-        } else if class & 0b0010_0110 == 0b0000_0000 && !value.is_empty() {
+        } else if class & 0b0000_0110 == 0b0000_0000 && !value.is_empty() {
             unsafe {Self::new_raw(value)}
         } else {
             unsafe {Self::new_not_eian(value)}?
@@ -321,7 +321,7 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for DomainHost<'a> {
     type Error = InvalidDomainHost;
 
     fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        let (_, value) = encode_domain_host_bytes(value)?;
+        let (_, value) = make_domain_host_bytes(value)?;
 
         unsafe {
             Ok(Self::new_raw(value))
@@ -333,7 +333,7 @@ impl<'a> TryFrom<Cow<'a, str>> for DomainHost<'a> {
     type Error = InvalidDomainHost;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, value) = encode_domain_host(value)?;
+        let (_, value) = make_domain_host(value)?;
 
         unsafe {
             Ok(Self::new_raw(value))

@@ -30,7 +30,7 @@ impl<'a> Ipv4Host<'a> {
         let (_, value, addr) = make_ipv4_host(value)?;
 
         Ok(unsafe {
-            Self::from_parts(value, addr.into())
+            Self::from_parts(value, addr)
         })
     }
 

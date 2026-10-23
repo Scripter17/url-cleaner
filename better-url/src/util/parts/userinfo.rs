@@ -2,35 +2,35 @@
 
 use crate::prelude::*;
 
-/// Encode a [`Username`].
-pub fn encode_username<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    encode_username_bytes(cow_str_to_bytes(value))
+/// Make a [`Username`].
+pub fn make_username<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    make_username_bytes(cow_str_to_bytes(value))
 }
 
-/// Encode a [`Password`].
-pub fn encode_password<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    encode_password_bytes(cow_str_to_bytes(value))
+/// Make a [`Password`].
+pub fn make_password<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    make_password_bytes(cow_str_to_bytes(value))
 }
 
-/// Encode a [`Userinfo`].
-pub fn encode_userinfo<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>, Option<NonZero<usize>>) {
-    encode_userinfo_bytes(cow_str_to_bytes(value))
+/// Make a [`Userinfo`].
+pub fn make_userinfo<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>, Option<NonZero<usize>>) {
+    make_userinfo_bytes(cow_str_to_bytes(value))
 }
 
 
 
-/// Encode a [`Username`] from bytes.
-pub fn encode_username_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+/// Make a [`Username`] from bytes.
+pub fn make_username_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
     percent_encode_bytes(value, USERINFO)
 }
 
-/// Encode a [`Password`] from bytes.
-pub fn encode_password_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+/// Make a [`Password`] from bytes.
+pub fn make_password_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
     percent_encode_bytes(value, USERINFO)
 }
 
-/// Encode a [`Userinfo`] from bytes.
-pub fn encode_userinfo_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>, Option<NonZero<usize>>) {
+/// Make a [`Userinfo`] from bytes.
+pub fn make_userinfo_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>, Option<NonZero<usize>>) {
     let mut value = value.into();
 
     let colon = match value.memchr(b':') {

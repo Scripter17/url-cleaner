@@ -70,27 +70,22 @@ impl HttpRequestSource {
     /// If any call to [`HeaderValue::from_str`] returns an error, that error is returned.
     ///
     /// If any call to [`StringSource::get`] returns an error, that error is returned.
-    pub fn get(&self, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::Request, HttpRequestSourceError> {
-        debug!(HttpRequestSource::get, self; self._get(task_state, args))
-    }
+    pub fn get(&self, ts: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::Request, HttpRequestSourceError> {
+        let mut ret = reqwest::Request::new(self.method.get_some(ts, args)??.parse()?, self.url.get_some(ts, args)??.parse()?);
 
-    /// [`Self::get`].
-    fn _get(&self, task_state: &TaskState<'_>, args: Option<&FunctionArgs>) -> Result<reqwest::Request, HttpRequestSourceError> {
-        let mut ret = reqwest::Request::new(get!(self.method).parse()?, get!(&self.url).parse()?);
-
-        if let Some(map) = get!(?self.const_headers) {
+        if let Some(map) = self.const_headers.get(ts, args)? {
             for (key, value) in map.map.iter() {
                 ret.headers_mut().append(HeaderName::from_str(key)?, HeaderValue::from_str(value)?);
             }
         }
 
         for (key, value) in self.dynamic_headers.iter() {
-            if let Some(value) = get!(?&value) {
-                ret.headers_mut().append(HeaderName::from_str(key)?, HeaderValue::from_str(value)?);
+            if let Some(value) = value.get(ts, args)? {
+                ret.headers_mut().append(HeaderName::from_str(key)?, HeaderValue::from_str(&value)?);
             }
         }
 
-        *ret.body_mut() = get!(?*self.body).map(Into::into);
+        *ret.body_mut() = self.body.get(ts, args)?.map(|x| x.into_owned().into());
 
         Ok(ret)
     }

@@ -36,7 +36,7 @@ impl BetterUrl {
 
     /// The domain prefix's [`DomainSegmentsIter`].
     pub fn domain_prefix_segments(&self) -> Option<DomainSegmentsIter<'_>> {
-        self.domain_prefix_segment_strs().map(DomainSegmentsIter)
+        Some(unsafe {DomainSegmentsIter::new_unchecked(self.domain_prefix_segment_strs()?)})
     }
 
 

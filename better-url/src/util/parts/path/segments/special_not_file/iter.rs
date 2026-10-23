@@ -4,9 +4,21 @@ use crate::prelude::*;
 
 /// An [`Iterator`] over the [`SpecialNotFilePathSegment`]s of a [`SpecialNotFilePathSegments`].
 #[derive(Debug, Clone)]
-pub struct SpecialNotFilePathSegmentsIter<'a>(pub(crate) SplitSlashes<'a>);
+pub struct SpecialNotFilePathSegmentsIter<'a>(SplitSlashes<'a>);
 
 impl<'a> SpecialNotFilePathSegmentsIter<'a> {
+    /// Create a new [`Self`] from a [`SplitSlashes`] without validity checks.
+    /// # Safety
+    /// Every output of [`SplitSlashes::next`] must be a valid input to [`SpecialNotFilePathSegment::new_unchecked`].
+    pub unsafe fn new_unchecked(value: SplitSlashes<'a>) -> Self {
+        Self(value)
+    }
+
+    /// Get the inner [`SplitSlashes`].
+    pub fn into_inner(self) -> SplitSlashes<'a> {
+        self.0
+    }
+
     /// The range of the remainder as a [`str`].
     pub fn range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&'a str> {
         self.0.range(range)
@@ -20,11 +32,6 @@ impl<'a> SpecialNotFilePathSegmentsIter<'a> {
     /// The remaining [`SpecialNotFilePathSegments`].
     pub fn remainder(&self) -> Option<SpecialNotFilePathSegments<'a>> {
         Some(unsafe {SpecialNotFilePathSegments::new_unchecked(self.0.remainder()?)})
-    }
-
-    /// The [`SplitSlashes`].
-    pub fn inner(&self) -> &SplitSlashes<'a> {
-        &self.0
     }
 }
 

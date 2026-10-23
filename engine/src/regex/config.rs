@@ -9,16 +9,16 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub struct RegexConfig {
-    /// The line terminator to use.
-    ///
-    /// Defaults to `\n`'.
-    #[serde(default = "nlu8", skip_serializing_if = "is_nlu8")]
-    pub line_terminator: u8,
     /// The [`RegexFlags`].
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
     pub flags: RegexFlags,
+    /// [`regex::RegexBuilder::line_terminator`].
+    ///
+    /// Defaults to `\n`'.
+    #[serde(default = "nlu8", skip_serializing_if = "is_nlu8")]
+    pub line_terminator: u8,
 }
 
 /** Serde helper. **/ const fn    nlu8(      ) -> u8   {      b'\n'}
@@ -29,6 +29,15 @@ impl Default for RegexConfig {
         Self {
             line_terminator: nlu8(),
             flags: Default::default()
+        }
+    }
+}
+
+impl From<RegexFlags> for RegexConfig {
+    fn from(value: RegexFlags) -> Self {
+        Self {
+            flags: value,
+            ..Default::default()
         }
     }
 }

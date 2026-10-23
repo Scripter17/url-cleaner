@@ -1,26 +1,27 @@
 [package]
-name        = "better-url-bench"
-version     = "0.12.0-beta"
-edition     = "2024"
-description = "A tool to benchmark Better URL"
-repository  = "https://github.com/Scripter17/url-cleaner"
-keywords    = []
-categories  = []
-license     = "AGPL-3.0-or-later"
-readme      = "README.md"
-publish     = false
+name         = "better-url-bench"
+version      = "0.12.0-beta"
+edition      = "2024"
+description  = "A tool to benchmark Better URL"
+repository   = "https://github.com/Scripter17/url-cleaner"
+keywords     = []
+categories   = []
+license      = "AGPL-3.0-or-later"
+readme       = "README.md"
+rust-version = "1.96.1"
+publish      = false
 
 [dependencies]
-# URL Cleaner.
-better-url = { version = "0.12.0-beta", path = "../better-url", features = ["psl"] }
+# URL Cleaner
+better-url = { version = "0.12.0-beta", path = "../better-url", features = ["serde", "psl"] }
 
-# Other.
-icu_normalizer = { version = "2.3.0", default-features = false }
+# Other
+icu_normalizer = { version = "2.4.0", default-features = false }
 clap           = { version = "4.6.7", features = ["derive"] }
 url     = "2.5.8"
 ada-url = "4.0.0"
 idna    = "1.1.0"
-psl     = "2.1.239"
+psl     = "2.1.245"
 
 [lints]
 workspace = true

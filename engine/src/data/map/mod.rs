@@ -29,16 +29,16 @@ impl<T> Map<T> {
     /// If it contains `key`.
     pub fn contains(&self, key: Option<&str>) -> bool {
         match key {
-            Some(key) => self.map.contains_key(key),
-            None => self.if_none.is_some()
+            Some(key) => self.map    .contains_key(key),
+            None      => self.if_none.is_some(),
         }
     }
 
     /// Insert or replace `key` to `value`.
     pub fn insert(&mut self, key: Option<String>, value: T) -> Option<T> {
         match key {
-            Some(key) => self.map.insert(key, value),
-            None => self.if_none.replace(value)
+            Some(key) => self.map    .insert(key, value),
+            None      => self.if_none.replace(value),
         }
     }
 
@@ -65,6 +65,7 @@ impl<T> Map<T> {
     /// Keep only elements satisfying `f`.
     pub fn retain<F: FnMut(Option<&String>, &T) -> bool>(&mut self, mut f: F) {
         self.map.retain(|k, v| f(Some(k), v));
+
         if let Some(v) = &self.if_none && !f(None, v) {
             self.if_none = None;
         }
@@ -84,9 +85,10 @@ impl<T> Default for Map<T> {
 
 impl<T> FromIterator<(String, T)> for Map<T> {
     fn from_iter<I: IntoIterator<Item = (String, T)>>(iter: I) -> Self {
-        let mut ret = Self::default();
-        ret.extend(iter);
-        ret
+        Self {
+            map: iter.into_iter().collect(),
+            if_none: None,
+        }
     }
 }
 

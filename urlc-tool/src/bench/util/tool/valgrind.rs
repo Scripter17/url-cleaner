@@ -43,4 +43,12 @@ impl Valgrind {
             Self::Callgrind => "callgrind",
         }
     }
+
+    /// The description.
+    pub fn description(self) -> &'static str {
+        match self {
+            Self::Massif    => "The peak heap usage."  ,
+            Self::Callgrind => "The instruction cound.",
+        }
+    }
 }

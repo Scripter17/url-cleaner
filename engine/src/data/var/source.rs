@@ -9,44 +9,43 @@ use crate::prelude::*;
 /// Null deserializes/serializes from/into [`Self::None`].
 ///
 /// Strings deserialize/serialize from/into [`Self::Params`].
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
 #[serde(remote = "Self")]
 pub enum VarSource {
     /// [`None`].
+    ///
+    /// The default.
     #[default]
     None,
-    /// [`Params::vars`].
-    Params(StringSource),
-    /// [`TaskContext::vars`].
-    TaskContext(StringSource),
-    /// [`JobContext::vars`].
-    JobContext(StringSource),
-    /// [`FunctionArgs::vars`].
-    FunctionArg(StringSource),
-    /// [`Secrets::vars`].
-    Secret(StringSource),
+    /** [`Params::vars`].       **/ Params     (#[suitable(assert = var_source_params      )] StringSource),
+    /** [`TaskContext::vars`].  **/ TaskContext(#[suitable(assert = var_source_task_context)] StringSource),
+    /** [`JobContext::vars`].   **/ JobContext (#[suitable(assert = var_source_job_context )] StringSource),
+    /** [`FunctionArgs::vars`]. **/ FunctionArg(                                              StringSource),
+    /** [`Secrets::vars`].      **/ Secret     (#[suitable(assert = var_source_secret      )] StringSource),
 }
 
 impl VarSource {
     /// Get the var.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn get<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, VarSourceError> {
-        debug!(VarSource::get, self; match self {
-            Self::Params(StringSource::String(x)) => Ok(task_state.job.cleaner.params.vars.get(&**x).map(Into::into)),
-            x => x._get(task_state, args)
+    pub fn get<'j: 't, 't>(&'j self, ts: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, VarSourceError> {
+        Ok(match self {
+            Self::None                               => None,
+            Self::Params(StringSource::String(name)) => ts.job.cleaner.params.vars.get(name).map(Into::into),
+            _ => self._get(ts, args)?,
         })
     }
 
-    /// [`Self::get`].
-    fn _get<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, VarSourceError> {
+    /// [`Self::get`] without fast paths.
+    #[cold]
+    fn _get<'j: 't, 't>(&'j self, ts: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, VarSourceError> {
         Ok(match self {
             Self::None              => None,
-            Self::Params     (name) => task_state.job.cleaner.params.vars.get(get!(&name)).map(Into::into),
-            Self::TaskContext(name) => task_state.context           .vars.get(get!(&name)).map(Into::into),
-            Self::JobContext (name) => task_state.job.context       .vars.get(get!(&name)).map(Into::into),
-            Self::FunctionArg(name) => args.ok_or(NotInFunction)?   .vars.get(get!(&name)).map(Into::into),
-            Self::Secret     (name) => task_state.job.secrets       .vars.get(get!(&name)).map(Into::into),
+            Self::Params     (name) => ts.job.cleaner.params     .vars.get(&*name.get_some(ts, args)??).map(Into::into),
+            Self::TaskContext(name) => ts.context                .vars.get(&*name.get_some(ts, args)??).map(Into::into),
+            Self::JobContext (name) => ts.job.context            .vars.get(&*name.get_some(ts, args)??).map(Into::into),
+            Self::FunctionArg(name) => args.ok_or(NotInFunction)?.vars.get(&*name.get_some(ts, args)??).map(Into::into),
+            Self::Secret     (name) => ts.job.secrets            .vars.get(&*name.get_some(ts, args)??).map(Into::into),
         })
     }
 }
@@ -67,20 +66,6 @@ impl From<StringSource> for VarSource {fn from(name: StringSource) -> Self {Self
 
 
 
-impl Suitability for VarSource {
-    fn assert_suitability(&self, config: &Cleaner) {
-        match self {
-            Self::Params     (StringSource::String(name)) => assert!(config.docs.params      .vars.contains_key(name), "Undocumented Params Var: {name}"     ),
-            Self::TaskContext(StringSource::String(name)) => assert!(config.docs.task_context.vars.contains_key(name), "Undocumented TaskContext var: {name}"),
-            Self::JobContext (StringSource::String(name)) => assert!(config.docs.job_context .vars.contains_key(name), "Undocumented JobContext var: {name}" ),
-            Self::Secret     (StringSource::String(name)) => assert!(config.docs.secrets     .vars.contains_key(name), "Undocumented Secret var: {name}"     ),
-            _ => {}
-        }
-    }
-}
-
-
-
 impl Serialize for VarSource {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         Ok(match self {
@@ -93,34 +78,32 @@ impl Serialize for VarSource {
 
 impl<'de> Deserialize<'de> for VarSource {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        deserializer.deserialize_any(VarSourceVisitor)
-    }
-}
+        struct V;
 
-/// [`Visitor`] for [`VarSource`].
-#[derive(Debug)]
-struct VarSourceVisitor;
+        impl<'de> Visitor<'de> for V {
+            type Value = VarSource;
 
-impl<'de> Visitor<'de> for VarSourceVisitor {
-    type Value = VarSource;
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a none, str, string, or map.")
+            }
 
-    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "a string, null, or another variant written normally.")
-    }
+            fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
+                Ok(Self::Value::None)
+            }
 
-    fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
-        Ok(Self::Value::None)
-    }
+            fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
+                Ok(Self::Value::Params(v.into()))
+            }
 
-    fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-        Ok(Self::Value::Params(v.into()))
-    }
+            fn visit_string<E: de::Error>(self, v: String) -> Result<Self::Value, E> {
+                Ok(Self::Value::Params(v.into()))
+            }
 
-    fn visit_string<E: de::Error>(self, v: String) -> Result<Self::Value, E> {
-        Ok(Self::Value::Params(v.into()))
-    }
+            fn visit_map<A: MapAccess<'de>>(self, map: A) -> Result<Self::Value, A::Error> {
+                Self::Value::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+            }
+        }
 
-    fn visit_map<A: MapAccess<'de>>(self, map: A) -> Result<Self::Value, A::Error> {
-        Self::Value::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+        deserializer.deserialize_any(V)
     }
 }

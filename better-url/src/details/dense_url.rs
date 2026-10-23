@@ -2,13 +2,9 @@
 
 use crate::prelude::*;
 
-/// A [`UrlDetails`] that optimizes for space.
+/// A denser [`UrlDetails`] that trades ergonomics for space.
 ///
-/// By splitting [`HostDetails`] into [`HostType`] and [`HostData`], we can save 7 bytes of padding,
-/// which can then be used to store one of the [`u32`]s, [`Self::scheme`], and [`Self::port`],
-/// which then saves one more byte of padding, which lets us get down to 48 bytes.
-///
-/// The tradeoff is that this is slightly more annoying to work with and, for some reason, making a [`HostDetails`] from a [`HostType`] and [`HostData`] has worse codegen than it should.
+/// Generally you should convert to/from [`UrlDetails`] for ergonomics.
 /// # Examples
 /// ```
 /// use better_url::prelude::*;

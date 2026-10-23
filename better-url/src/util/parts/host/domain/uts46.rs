@@ -5,45 +5,6 @@ use crate::prelude::*;
 /// A UTS46 normalizer.
 pub(crate) static UTS46: icu_normalizer::uts46::Uts46MapperBorrowed = icu_normalizer::uts46::Uts46MapperBorrowed::new();
 
-/// Get [`DOMAIN_CLASS_DATA`].
-const fn get_data() -> [u8; 256] {
-    let mut ret = [0; 256];
-
-    let mut i = 0;
-    while i < 256 {
-        if  (i as u8).is_ascii_uppercase() { ret[i as usize] |= 0b0000_0001; }
-        if  (i as u8).is_ascii_digit    () { ret[i as usize] |= 0b0000_0010; }
-        if !(i as u8).is_ascii          () { ret[i as usize] |= 0b0000_0100; }
-
-        if FORBIDDEN_DOMAIN_SEGMENT_INPUT .contains(i as u8) { ret[i as usize] |= 0b0001_0000; }
-        if FORBIDDEN_DOMAIN_SEGMENTS_INPUT.contains(i as u8) { ret[i as usize] |= 0b0010_0000; }
-        if FORBIDDEN_IPV4_DEC_INPUT       .contains(i as u8) { ret[i as usize] |= 0b0100_0000; }
-        if FORBIDDEN_IPV4_INPUT           .contains(i as u8) { ret[i as usize] |= 0b1000_0000; }
-        i += 1;
-    }
-
-    ret
-}
-
-/// A map from a [`u8`] to a bitfield whose bits are, from lowest to highest:
-///
-/// - If an ASCII uppercase letter was found.
-///
-/// - If an ASCII number was found.
-///
-/// - If a non-ASCII byte was found.
-///
-/// - Unused.
-///
-/// - If a [`FORBIDDEN_DOMAIN_SEGMENT_INPUT`] byte was found.
-///
-/// - If a [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] byte was found.
-///
-/// - If a [`FORBIDDEN_IPV4_DEC_INPUT`] byte was found.
-///
-/// - If a [`FORBIDDEN_IPV4_INPUT`] byte was found.
-pub const DOMAIN_CLASS_DATA: [u8; 256] = get_data();
-
 /// Do UTS46 mapping and normalization, in-place if possible.
 ///
 /// Effectively a wrapper [`icu_normalizer::uts46::Uts46MapperBorrowed`] that should in theory be faster for ASCII input.
@@ -90,7 +51,7 @@ pub fn uts46_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a
 
 /// Like [`uts46_map_normalize`] but returns the "class" of the input.
 ///
-/// The "class" is the result of the bitwise OR of each byte's value in [`DOMAIN_CLASS_DATA`].
+/// The "class" is the result of the bitwise OR of each byte's value in [`DOMAIN_BYTE_CLASS_DATA`].
 ///
 /// ***Please*** note that this is about the ***input***.
 ///
@@ -106,7 +67,7 @@ pub fn uts46_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a
 #[inline]
 pub fn uts46_classify_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>, u8) {
     let mut value = value.into();
-    let class = value.bytes().fold(0, |acc, b| acc | DOMAIN_CLASS_DATA[b as usize]);
+    let class = value.bytes().fold(0, |acc, b| acc | DOMAIN_BYTE_CLASS_DATA[b as usize]);
 
     match class & 0b101 {
         0b000 => (false, value, class),
@@ -129,7 +90,7 @@ pub fn uts46_classify_map_normalize<'a, T: Into<Cow<'a, str>>>(value: T) -> (boo
                         ret.push('.');
                     }
 
-                    let segment_class = segment.bytes().fold(0, |acc, b| acc | DOMAIN_CLASS_DATA[b as usize]);
+                    let segment_class = segment.bytes().fold(0, |acc, b| acc | DOMAIN_BYTE_CLASS_DATA[b as usize]);
 
                     match segment_class & 0b101 {
                         0b000 => if changed {ret.push_str(segment)},

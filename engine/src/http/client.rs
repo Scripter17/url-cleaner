@@ -26,25 +26,20 @@ pub struct HttpClient {
 }
 
 impl HttpClient {
-    /// Make a new [`Self`].
+    /// [`tokio::runtime::Handle::block_on`] + [`Self::new`].
     /// # Panics
     /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
     pub fn new_sync(handle: tokio::runtime::Handle) -> Self {
         handle.block_on(Self::new())
     }
 
-    /// [`Self::do`] + [`tokio::runtime::Handle::block_on`].
+    /// [`tokio::runtime::Handle::block_on`] + [`Self::do`].
     /// # Errors
     /// If [`Self::do`] returns an error, that error is returned.
     /// # Panics
     /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
     pub fn do_sync<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
-        debug!(HttpClient::do_sync, self, request, response; self._do_sync(request, response, task_state, args))
-    }
-
-    /// [`Self::do_sync`] without debug logging.
-    fn _do_sync<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
-        self.handle.block_on(self._do(request, response, task_state, args))
+        self.handle.block_on(self.r#do(request, response, task_state, args))
     }
 
 
@@ -67,11 +62,6 @@ impl HttpClient {
     ///
     /// If [`HttpResponseHandler::handle`] returns an error, that error is returned.
     pub async fn r#do<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
-        debug!(HttpClient::r#do, self, request, response; self._do(request, response, task_state, args).await)
-    }
-
-    /// [`Self::do`] without debug logging.
-    async fn _do<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
         Ok(response.handle(task_state, args, &mut self.init_get()?.execute(request.get(task_state, args)?).await?).await?)
     }
 

@@ -1,7 +1,5 @@
 //! [`StringSource`].
 
-#![allow(unused_assignments, reason = "False positive.")]
-
 use std::ops::Bound;
 use std::convert::Infallible;
 
@@ -34,10 +32,8 @@ pub enum StringSource {
     /// # Errors
     /// If both return [`Err`], returns the error [`TryElseError`].
     TryElse {
-        /// The try.
-        r#try: Box<Self>,
-        /// The else.
-        r#else: Box<Self>
+        /** The try.  **/ r#try : Box<Self>,
+        /** The else. **/ r#else: Box<Self>,
     },
     /// Returns the first [`Self`] to return [`Ok`].
     /// # Errors
@@ -46,39 +42,33 @@ pub enum StringSource {
 
 
 
-    /// [`Self::NoneTo::value`], or, if it's [`None`], [`Self::NoneTo::if_none`].
-    NoneTo {
-        /// The try.
-        value: Box<Self>,
-        /// The else.
-        if_none: Box<Self>
-    },
-    /// [`Self::NoneToEmpty::0`] or, if [`None`], the empty string.
-    NoneToEmpty(Box<Self>),
-    /// [`Self::EmptyTo::value`] or, if the empty string, [`Self::EmptyTo::if_empty`].
-    EmptyTo {
-        /// The try.
-        value: Box<Self>,
-        /// The else.
-        if_empty: Box<Self>
-    },
-    /// [`Self::EmptyToNone::0`] or, if the empty string, [`None`].
-    EmptyToNone(Box<Self>),
-    /// [`Self::AssertMatches::value`] if it satisfies [`Self::AssertMatches::matcher`].
-    /// # Errors
-    /// If [`Self::AssertMatches::matcher`] is unsatisfied, returns the error [`AssertError`].
-    AssertMatches {
-        /// The [`Self`] to assert matches [`Self::AssertMatches::matcher`].
-        value: Box<Self>,
-        /// The [`StringMatcher`] to match [`Self::AssertMatches::value`].
-        matcher: Box<StringMatcher>,
-        /// The error message.
-        message: String,
-    },
-    /// [`Self::AssertSome::0`] or, if [`None`], the error [`StringNotFound`].
+    /** Map [`None`] to the empty string. **/ NoneToEmpty(Box<Self>),
+    /** Map the empty string to [`None`]. **/ EmptyToNone(Box<Self>),
+
+    /// Map [`None`] to the error [`StringNotFound`].
     /// # Errors
     /// If [`Self::get`] returns [`None`], returns the error [`StringNotFound`].
-    AssertSome(Box<Self>),
+    NoneToError(Box<Self>),
+
+    /// Map [`None`] to [`Self::NoneTo::if_none`].
+    NoneTo {
+        /** The try.  **/ value  : Box<Self>,
+        /** The else. **/ if_none: Box<Self>,
+    },
+    /// Map the empty string to [`Self::EmptyTo::if_empty`].
+    EmptyTo {
+        /** The try.  **/ value   : Box<Self>,
+        /** The else. **/ if_empty: Box<Self>,
+    },
+
+    /// [`Self::AssertMatches::value`] if it satisfies [`Self::AssertMatches::matcher`].
+    /// # Errors
+    /// If [`Self::AssertMatches::matcher`] returns [`false`], returns the error [`AssertError`].
+    AssertMatches {
+        /** The value.         **/ value  : Box<Self>,
+        /** The assert.        **/ matcher: Box<StringMatcher>,
+        /** The error message. **/ message: String,
+    },
 
 
 
@@ -86,21 +76,6 @@ pub enum StringSource {
     StringMap {
         /// The [`StringSource`].
         value: Box<Self>,
-        /// The [`Map`].
-        ///
-        /// Flattened.
-        #[serde(flatten)]
-        map: Box<Map<Self>>,
-        /// The else.
-        ///
-        /// Defaulted.
-        #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Box<Self>,
-    },
-    /// Index the [`Map`] with the [`UrlPart`] and use that or [`Self::PartMap::else`].
-    PartMap {
-        /// The [`UrlPart`].
-        part: UrlPart,
         /// The [`Map`].
         ///
         /// Flattened.
@@ -125,11 +100,9 @@ pub enum StringSource {
     /** [`BetterUrl::domain_prefix_segment_str`]. **/ DomainPrefixSegment(isize),
     /** [`BetterUrl::domain_suffix_segment_str`]. **/ DomainSuffixSegment(isize),
 
-    /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`].
-    PathSegment(isize),
-    /// [`BetterUrl::path_segment`] + [`PathSegment::into_inner`].
-    RawPathSegment(isize),
-    /// [`BetterUrl::path_segment_range`] + [`PathSegments::into_inner`].
+    /** [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`]. **/ PathSegment   (isize),
+    /** [`BetterUrl::path_segment_str`].                             **/ RawPathSegment(isize),
+    /// [`BetterUrl::path_segment_range_str`].
     RawPathSegmentRange {
         /// The start of the range.
         ///
@@ -140,26 +113,16 @@ pub enum StringSource {
         ///
         /// Defaults to [`Bound::Unbounded`].
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")]
-        end: Bound<isize>
+        end: Bound<isize>,
     },
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`].
-    QueryParam(QueryParamSelector),
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].
-    RawQueryParam(QueryParamSelector),
-    /// [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`].
-    FragmentParam(QueryParamSelector),
-    /// [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].
-    RawFragmentParam(QueryParamSelector),
+
+    /** [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`].          **/ QueryParam      (QueryParamSelector),
+    /** [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].            **/ RawQueryParam   (QueryParamSelector),
+    /** [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`]. **/ FragmentParam   (QueryParamSelector),
+    /** [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].   **/ RawFragmentParam(QueryParamSelector),
 
 
 
-    /// Parses [`Self::ExtractPart`] as a [`BetterUrl`] and returns the part specified by [`Self::ExtractPart::part`].
-    ExtractPart {
-        /// The [`BetterUrl`] to get [`Self::ExtractPart::part`] from.
-        value: Box<Self>,
-        /// The [`UrlPart`] to get from [`Self::ExtractPart::value`].
-        part: UrlPart
-    },
     /// Gets the specified [`HostPart`] from the [`JobContext::source_host`].
     JobSourceHostPart(HostPart),
 
@@ -176,27 +139,21 @@ pub enum StringSource {
     Var(Box<VarSource>),
     /// [`MapSource::get`] + [`Map::get`].
     Map {
-        /// The [`Map`] to index.
-        map: Box<MapSource>,
-        /// The value to index with.
-        key: Box<Self>
+        /** The [`Map`] to index.    **/ map: Box<MapSource>,
+        /** The value to index with. **/ key: Box<Self>,
     },
     /// [`PartitioningSource::get`] + [`Partitioning::get`].
     Partitioning {
-        /// The [`Partitioning`].
-        partitioning: Box<PartitioningSource>,
-        /// The element.
-        element: Box<Self>
+        /** The [`Partitioning`]. **/ partitioning: Box<PartitioningSource>,
+        /** The element.          **/ element     : Box<Self>,
     },
 
 
 
-    /// Gets the value of [`Self::Modified::value`] then applies [`Self::Modified::modification`].
+    /// [`Self::get`] + [`StringModification::apply`].
     Modified {
-        /// The value to get and modify.
-        value: Box<Self>,
-        /// The modification to apply to [`Self::Modified::value`].
-        modification: Box<StringModification>
+        /** The [`Self`].               **/ value       : Box<Self>,
+        /** The [`StringModification`]. **/ modification: Box<StringModification>,
     },
 
     /** [`try_percent_decode`].    **/ TryPercentDecode  (Box<Self>),
@@ -204,19 +161,18 @@ pub enum StringSource {
 
 
 
-    /// [`regex::Regex::captures`] + [`RegexExpansion::expand`].
+    /// [`Self::get`] + [`LazyRegex::get`] + [`regex::Regex::captures`] + [`RegexExpansion::expand`].
     RegexExpansion {
-        /// The value to match with.
-        value: Box<Self>,
-        /// The [`LazyRegex`].
-        regex: LazyRegex,
-        /// The [`RegexExpansion`].
-        expansion: Box<RegexExpansion>
+        /** The value to match with. **/ value    : Box<Self>,
+        /** The [`LazyRegex`].       **/ regex    : Box<LazyRegex>,
+        /** The [`RegexExpansion`].  **/ expansion: Box<RegexExpansion>,
     },
 
 
 
-    /// Sends an HTTP request and handles its response to return a value.
+    /// [`HttpClient::do_sync`].
+    ///
+    /// PLEASE note that before using this, [`Action::AcquireThreadLock`] should be used.
     #[cfg(feature = "http")]
     HttpRequest {
         /// The [`HttpRequestSource`].
@@ -228,20 +184,19 @@ pub enum StringSource {
         ///
         /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
-        response: Box<HttpResponseHandler>
+        response: Box<HttpResponseHandler>,
     },
 
 
 
-    /// Gets, or creates if missing, a cache entry with subject and key [`Self::Cache::subject`] and [`Self::Cache::key`].
+    /// Read and return or create a [`CacheClient`] entry.
+    ///
+    /// PLEASE note that before using this, [`Action::AcquireThreadLock`] should be used.
     #[cfg(feature = "cache")]
     Cache {
-        /// The subject of the thing to cache.
-        subject: Box<Self>,
-        /// The key of the thing thing to cache.
-        key: Box<Self>,
-        /// The value to cache.
-        value: Box<Self>
+        /** The subject. **/ subject: Box<Self>,
+        /** The key.     **/ key    : Box<Self>,
+        /** The value.   **/ value  : Box<Self>,
     },
 
 
@@ -257,7 +212,7 @@ pub enum StringSource {
     /// Additionally, using a function pointer means this variant cannot be [`Serialize`]d or [`Deserialize`]d.
     #[suitable(never)]
     #[serde(skip)]
-    Extern(StringSourceExtern)
+    Extern(StringSourceExtern),
 }
 
 impl FromStr for StringSource {
@@ -358,31 +313,13 @@ impl<'de> Deserialize<'de> for StringSource {
 }
 
 impl StringSource {
-    /// Get the string.
-    /// # Errors
-    /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn get<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, StringSourceError> {
-        debug!(StringSource::get, self, args; self._get(task_state, args))
-    }
-
     /// [`Self::get`] with [`None`] replaced with [`StringNotFound`].
     /// # Errors
     /// If [`Self::get`] returns an error, that error is returned.
     ///
     /// If [`Self::get`] returns [`None`], returns the error [`StringNotFound`].
-    pub fn get_some<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Result<Cow<'t, str>, StringNotFound>, StringSourceError> {
-        debug!(StringSource::get_some, self, args; self._get(task_state, args).map(|x| x.ok_or(StringNotFound)))
-    }
-
-    /// [`Self::get`] for use with [`BetterUrl`] setters.
-    /// # Errors
-    /// If [`Self::get`] returns an error, that error is returned.
-    pub fn get_part<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'j, str>>, StringSourceError> {
-        debug!(StringSource::get_part, self; match self {
-            Self::None => Ok(None),
-            Self::String(x) => Ok(Some(Cow::Borrowed(&**x))),
-            _ => self._get(task_state, args).map(|x| x.map(|x| x.into_owned().into()))
-        })
+    pub fn get_some<'j: 't, 't>(&'j self, ts: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Result<Cow<'t, str>, StringNotFound>, StringSourceError> {
+        self.get(ts, args).map(|x| x.ok_or(StringNotFound))
     }
 
     /// [`Self::get_part`] with [`None`] replaced with [`StringNotFound`].
@@ -390,23 +327,35 @@ impl StringSource {
     /// If [`Self::get_part`] returns an error, that error is returned.
     ///
     /// If [`Self::get_part`] returns [`None`], returns the error [`StringNotFound`].
-    pub fn get_some_part<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Result<Cow<'j, str>, StringNotFound>, StringSourceError> {
-        debug!(StringSource::get_some_part, self; match self {
-            Self::String(x) => Ok(Ok(Cow::Borrowed(&**x))),
-            _ => self._get(task_state, args).map(|x| x.ok_or(StringNotFound).map(|x| x.into_owned().into()))
+    pub fn get_some_part<'j>(&'j self, ts: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Result<Cow<'j, str>, StringNotFound>, StringSourceError> {
+        self.get_part(ts, args).map(|x| x.ok_or(StringNotFound))
+    }
+
+    /// [`Self::get`] for use with [`BetterUrl`] setters.
+    /// # Errors
+    /// If [`Self::get`] returns an error, that error is returned.
+    pub fn get_part<'j>(&'j self, ts: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'j, str>>, StringSourceError> {
+        Ok(match self {
+            Self::None => None,
+            Self::String(x) => Some(Cow::Borrowed(&**x)),
+            _ => self.get(ts, args)?.map(|x| x.into_owned().into())
         })
     }
 
-    /// [`Self::get`].
-    fn _get<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, StringSourceError> {
+    /// Get the string.
+    /// # Errors
+    /// See each variant of [`Self`] for when each variant returns an error.
+    pub fn get<'j: 't, 't>(&'j self, ts: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, StringSourceError> {
         Ok(match self {
             Self::None => None,
             Self::String(string) => Some(Cow::Borrowed(&**string)),
             Self::Error(msg) => Err(ExplicitError(msg.clone()))?,
 
-            Self::TryElse {r#try, r#else} => match r#try.get(task_state, args) {
+
+
+            Self::TryElse {r#try, r#else} => match r#try.get(ts, args) {
                 Ok(x) => x,
-                Err(try_error) => match r#else.get(task_state, args) {
+                Err(try_error) => match r#else.get(ts, args) {
                     Ok(x) => x,
                     Err(else_error) => Err(TryElseError {try_error, else_error})?
                 }
@@ -415,7 +364,7 @@ impl StringSource {
                 let mut errors = FirstNotErrorErrors(Vec::new());
 
                 for source in sources {
-                    match source.get(task_state, args) {
+                    match source.get(ts, args) {
                         Ok (x) => return Ok(x),
                         Err(e) => errors.0.push(e)
                     }
@@ -424,133 +373,137 @@ impl StringSource {
                 Err(errors)?
             },
 
-            Self::NoneTo     {value, if_none } => match get!(?value) {None                    => get!(?if_none) , x => x},
-            Self::NoneToEmpty(value          ) => match get!(?value) {None                    => Some("".into()), x => x},
-            Self::EmptyTo    {value, if_empty} => match get!(?value) {Some(x) if x.is_empty() => get!(?if_empty), x => x},
-            Self::EmptyToNone(value          ) => match get!(?value) {Some(x) if x.is_empty() => None           , x => x},
+
+
+            Self::NoneTo  {value, if_none } => match value.get(ts, args)? {None                    => if_none .get(ts, args)?, x => x},
+            Self::EmptyTo {value, if_empty} => match value.get(ts, args)? {Some(x) if x.is_empty() => if_empty.get(ts, args)?, x => x},
+
+            Self::NoneToError(x) => Some(x.get_some(ts, args)??),
+
+            Self::NoneToEmpty(value) => match value.get(ts, args)? {None                    => Some("".into()), x => x},
+            Self::EmptyToNone(value) => match value.get(ts, args)? {Some(x) if x.is_empty() => None           , x => x},
 
             Self::AssertMatches {value, matcher, message} => {
-                let ret = get!(?value);
-                match matcher.check(task_state, args, ret.as_deref())? {
+                let ret = value.get(ts, args)?;
+                match matcher.check(ts, args, ret.as_deref())? {
                     true  => ret,
                     false => Err(AssertError(message.clone()))?
                 }
             },
-            Self::AssertSome(x) => Some(get!(x)),
-
-            Self::StringMap {value, map, r#else} => get!(?map.get(get!(?&value)                       ).unwrap_or(r#else)),
-            Self::PartMap   {part , map, r#else} => get!(?map.get(part.get(&task_state.url).as_deref()).unwrap_or(r#else)),
-
-            Self::Part(part) => part.get(&task_state.url),
 
 
 
-            Self::DomainSegment      (index) => task_state.url.domain_segment_str       (*index).map(Into::into),
-            Self::DomainOriginSegment(index) => task_state.url.domain_origin_segment_str(*index).map(Into::into),
-            Self::DomainPrefixSegment(index) => task_state.url.domain_prefix_segment_str(*index).map(Into::into),
-            Self::DomainSuffixSegment(index) => task_state.url.domain_suffix_segment_str(*index).map(Into::into),
-
-            Self::PathSegment         (index     ) => task_state.url.path_segment      (*index        ).map(PathSegment ::lossy_decode),
-            Self::RawPathSegment      (index     ) => task_state.url.path_segment      (*index        ).map(PathSegment ::into_inner  ),
-            Self::RawPathSegmentRange {start, end} => task_state.url.path_segment_range((*start, *end)).map(PathSegments::into_inner  ),
-
-            Self::QueryParam   (param) => task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()),
-            Self::RawQueryParam(param) => task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner  ()),
-
-            Self::FragmentParam   (param) => task_state.url.fragment_query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()),
-            Self::RawFragmentParam(param) => task_state.url.fragment_query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner  ()),
+            Self::StringMap {value, map, r#else} => map.get(value.get(ts, args)?.as_deref()).unwrap_or(r#else).get(ts, args)?,
 
 
 
-            Self::ExtractPart{value, part} => part.get(&BetterUrl::new(get!(value))?).map(|x| x.into_owned().into()),
-            Self::JobSourceHostPart(part) => task_state.job.context.source_host.as_ref().and_then(|host| part.get(host)),
+            Self::Part(part) => part.get(&ts.url),
 
 
 
-            Self::Join(values) => Some(values.iter().filter_map(|value| value.get(task_state, args).transpose()).collect::<Result<String, _>>()?.into()),
+            Self::DomainSegment      (index) => ts.url.domain_segment_str       (*index).map(Into::into),
+            Self::DomainOriginSegment(index) => ts.url.domain_origin_segment_str(*index).map(Into::into),
+            Self::DomainPrefixSegment(index) => ts.url.domain_prefix_segment_str(*index).map(Into::into),
+            Self::DomainSuffixSegment(index) => ts.url.domain_suffix_segment_str(*index).map(Into::into),
+
+            Self::PathSegment         (index     ) => ts.url.path_segment          (*index        ).map(PathSegment::lossy_decode),
+            Self::RawPathSegment      (index     ) => ts.url.path_segment_str      (*index        ).map(Cow::Borrowed),
+            Self::RawPathSegmentRange {start, end} => ts.url.path_segment_range_str((*start, *end)).map(Cow::Borrowed),
+
+            Self::QueryParam   (param) => ts.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()),
+            Self::RawQueryParam(param) => ts.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner  ()),
+
+            Self::FragmentParam   (param) => ts.url.fragment_query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()),
+            Self::RawFragmentParam(param) => ts.url.fragment_query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner  ()),
 
 
 
-            Self::Var          (var_ref              ) => get!(?var_ref),
-            Self::Map          {map, key             } => get!(map).get(get!(?&key)).map(Into::into),
-            Self::Partitioning {partitioning, element} => get!(partitioning).get(get!(?&element)).map(Into::into),
+            Self::JobSourceHostPart(part) => ts.job.context.source_host.as_ref().and_then(|host| part.get(host)),
+
+
+
+            Self::Join(values) => Some(values.iter().filter_map(|value| value.get(ts, args).transpose()).collect::<Result<String, _>>()?.into()),
+
+
+
+            Self::Var          (var_ref              ) => var_ref.get(ts, args)?,
+            Self::Map          {map, key             } => map.get_some(ts, args)??.get(key.get(ts, args)?.as_deref()).map(Into::into),
+            Self::Partitioning {partitioning, element} => partitioning.get_some(ts, args)??.get(element.get(ts, args)?.as_deref()).map(Into::into),
 
 
 
             Self::Modified {value, modification} => {
-                let mut ret = get!(?value);
-                modification.apply(task_state, args, &mut ret)?;
+                let mut ret = value.get(ts, args)?;
+                modification.apply(ts, args, &mut ret)?;
                 ret
             },
 
 
 
-            Self::TryPercentDecode(value) => match get!(?value) {
-                Some(value) => {
-                    let (_, value) = try_percent_decode(value).map_err(|(e, _)| e)?;
-
-                    Some(value)
+            Self::TryPercentDecode(value) => match value.get(ts, args)? {
+                Some(value) => match try_percent_decode(value) {
+                    Ok ((_, value)) => Some(value),
+                    Err((e, _    )) => Err(e)?,
                 },
-                None => None
+                None => None,
             },
 
-            Self::TryDecodeQueryPart(value) => match get!(?value) {
-                Some(value) => {
-                    let (_, value) = try_decode_query_part(value).map_err(|(e, _)| e)?;
-
-                    Some(value)
+            Self::TryDecodeQueryPart(value) => match value.get(ts, args)? {
+                Some(value) => match try_decode_query_part(value) {
+                    Ok ((_, value)) => Some(value),
+                    Err((e, _    )) => Err(e)?,
                 },
-                None => None
+                None => None,
             },
 
 
 
             Self::RegexExpansion {value, regex, expansion} => {
-                expansion.expand(task_state, args, &regex.get()?.captures(get!(&value)).ok_or(StringModificationError::RegexMatchNotFound)?)?.map(|x| x.into_owned().into())
+                expansion.expand(ts, args, &regex.get()?.captures(&value.get_some(ts, args)??).ok_or(StringModificationError::RegexMatchNotFound)?)?.map(|x| x.into_owned().into())
             },
 
 
 
             #[cfg(feature = "http")]
             Self::HttpRequest {request, response} => {
-                let _thread_hider_handle = task_state.job.thread_hider.as_ref().map(|x| x.lock());
+                #[cold]
+                fn outline<'j: 't, 't>(ts: &'t TaskState<'j>, args: Option<&'j FunctionArgs>, request: &'j HttpRequestSource, response: &'j HttpResponseHandler) -> Result<Option<Cow<'t, str>>, StringSourceError> {
+                    Ok(ts.job.http_client.ok_or(NoHttpClient)?.do_sync(request, response, ts, args)?)
+                }
 
-                task_state.job.http_client.ok_or(NoHttpClient)?.do_sync(request, response, task_state, args)?
+                outline(ts, args, request, response)?
             },
 
 
 
             #[cfg(feature = "cache")]
             Self::Cache {subject, key, value} => {
-                let _thread_hider_lock = task_state.job.thread_hider.as_ref().map(|x| x.lock());
+                #[cold]
+                fn outline<'j: 't, 't>(ts: &'t TaskState<'j>, args: Option<&'j FunctionArgs>, subject: &'j StringSource, key: &'j StringSource, value: &'j StringSource) -> Result<Option<Cow<'t, str>>, StringSourceError> {
+                    let subject = subject.get_some(ts, args)??;
+                    let key     = key    .get_some(ts, args)??;
 
-                let subject = get!(subject);
-                let key = get!(key);
+                    if let Some(value) = ts.job.cache_client.read_sync(&subject, &key, ts.job.cache_config)? {
+                        return Ok(value.map(Cow::Owned));
+                    }
 
-                if let Some(value) = task_state.job.cache_client.read_sync(&subject, &key, task_state.job.cache_config)? {
-                    return Ok(value.map(Cow::Owned));
+                    let timer    = std::time::Instant::now();
+                    let ret      = value.get(ts, args)?;
+                    let duration = timer.elapsed();
+
+                    ts.job.cache_client.write_sync(&subject, &key, ret.as_deref(), duration, ts.job.cache_config)?;
+
+                    Ok(ret)
                 }
 
-                let start = std::time::Instant::now();
-                let ret = get!(?value);
-                let duration = start.elapsed();
-
-                task_state.job.cache_client.write_sync(&subject, &key, ret.as_deref(), duration, task_state.job.cache_config)?;
-
-                ret
+                outline(ts, args, subject, key, value)?
             },
 
             // Misc
 
-            Self::Function(call) => task_state.job.cleaner.functions.string_sources
-                .get(&call.name).ok_or(FunctionNotFound)?
-                .get(task_state, Some(&call.args))?,
-
-            Self::FunctionArg(name) => args.ok_or(NotInFunction)?.string_sources
-                .get(get!(&name)).ok_or(FunctionArgFunctionNotFound)?
-                .get(task_state, args)?,
-
-            Self::Extern(function) => function(task_state, args)?
+            Self::Function   (call    ) => ts.job.cleaner.functions.string_sources.get(&call.name).ok_or(FunctionNotFound)?.get(ts, Some(&call.args))?,
+            Self::FunctionArg(name    ) => args.ok_or(NotInFunction)?.string_sources.get(&*name.get_some(ts, args)??).ok_or(FunctionArgFunctionNotFound)?.get(ts, args)?,
+            Self::Extern     (function) => function(ts, args)?,
         })
     }
 }

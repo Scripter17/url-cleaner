@@ -8,6 +8,7 @@ const KEEPS: ByteSet = ByteSet::new().add_many(b"\t\n\r").invert();
 /// Canonize the input to the URL parser.
 ///
 /// Done automatically by [`BetterUrl::new`].
+#[inline]
 pub fn canonize_parser_input<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let (changed, value) = canonize_parser_input_bytes(cow_str_to_bytes(value));
 
@@ -17,6 +18,7 @@ pub fn canonize_parser_input<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<
 /// Canonize the input to the URL parser.
 ///
 /// Done automatically by [`BetterUrl::new`].
+#[inline]
 pub fn canonize_parser_input_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, [u8]>) {
     let mut value = value.into();
     let mut changed = false;
@@ -36,7 +38,7 @@ pub fn canonize_parser_input_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (boo
         changed = true;
     }
 
-    if value.memhas(b'\t') || value.memhas(b'\r') || value.memhas(b'\n') {
+    if memchr::memchr3(b'\t', b'\r', b'\n', &value).is_some() {
         #[cold]
         fn outline(value: &mut Cow<'_, [u8]>) {
             value.to_mut().retain(|&b| KEEPS.contains(b));

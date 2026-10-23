@@ -11,10 +11,10 @@ macro_rules! doc_job {
         let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build().unwrap();
 
         #[cfg(feature = "http")]
-        let http_client = HttpClient::new_sync(runtime.handle().clone());
+        let http_client = $crate::prelude::HttpClient::new_sync(runtime.handle().clone());
 
         #[cfg(feature = "cache")]
-        let cache_client = CacheClient::new_sync(":memory:".parse().unwrap(), runtime.handle().clone());
+        let cache_client = $crate::prelude::CacheClient::new_sync(":memory:".parse().unwrap(), runtime.handle().clone());
 
         let $name = $crate::prelude::Job {
             context: Default::default(),
@@ -29,4 +29,24 @@ macro_rules! doc_job {
             cache_config: Default::default(),
         };
     }
+}
+
+/// Create a minimal [`TaskState`] for use in doctests.
+#[macro_export]
+macro_rules! doc_ts {
+    ($name:ident, $config:expr) => {
+        $crate::doc_job!(job);
+
+        $crate::doc_ts!($name, job, $config);
+    };
+    ($name:ident, $job:expr, $config:expr) => {
+        let $crate::prelude::Task {url, context} = $config.try_into().unwrap();
+
+        let $name = $crate::prelude::TaskState {
+            url,
+            context: context,
+            job: &$job,
+            thread_lock: None,
+        };
+    };
 }

@@ -21,28 +21,35 @@ pub struct Args {
 }
 
 /// The state.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct State {
-    /// The [`Args`].
-    args     : Args,
-    /// The number of benchmarks.
-    count    : u32,
-    /// The current sum of each thing's times.
-    sums     : Vec<Duration>,
-    /// The current min of each thing's times.
-    mins     : Vec<Duration>,
-    /// The current max of each thing's times.
-    maxs     : Vec<Duration>,
-    /// The number of times temporary output has been printed.
-    temps    : u64,
-    /// The number of lines to replace on next print.
-    out_lines: u64,
+    /** The title.                                              **/ title     : String,
+    /** The names of the columns.                               **/ columns   : Vec<String>,
+    /** The number of lines after which to print progress info. **/ prog_every: u32,
+    /** The number of benchmarks.                               **/ count     : u32,
+    /** The current sum of each thing's times.                  **/ sums      : Vec<Duration>,
+    /** The current min of each thing's times.                  **/ mins      : Vec<Duration>,
+    /** The current max of each thing's times.                  **/ maxs      : Vec<Duration>,
+    /** The number of times temporary output has been printed.  **/ temps     : u64,
+    /** The number of lines to replace on next print.           **/ out_lines : u64,
+    /** The time at which this process started.                 **/ start     : std::time::Instant,
 }
 
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
-        let mut state = State { args: self, ..Default::default() };
+        let mut state = State {
+            title     : self.title,
+            columns   : self.columns,
+            prog_every: self.prog_every,
+            count     : 0,
+            sums      : Vec::new(),
+            mins      : Vec::new(),
+            maxs      : Vec::new(),
+            temps     : 0,
+            out_lines : 0,
+            start     : std::time::Instant::now(),
+        };
 
         for line in std::io::stdin().lines().map(Result::unwrap) {
             state.process_line(&line);
@@ -69,7 +76,7 @@ impl State {
             self.maxs[i] = self.maxs[i].max(time);
         }
 
-        if self.count.is_multiple_of(self.args.prog_every) {
+        if self.count.is_multiple_of(self.prog_every) {
             self.print_table(true);
         }
     }
@@ -84,15 +91,16 @@ impl State {
 
         self.out_lines = 0;
 
-        print!("{}", self.args.title);
+        print!("{}", self.title);
+
+        for column in &self.columns {
+            print!("\t{column}");
+        }
 
         if temp {
             self.temps += 1;
-            print!("-{}", self.temps);
-        }
-
-        for column in &self.args.columns {
-            print!("\t{column}");
+            print!("\t{}", self.temps);
+            print!("\t{:.2?}", self.start.elapsed());
         }
 
         println!();

@@ -67,7 +67,7 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for Ipv6Host<'a> {
         let (_, value, addr) = make_ipv6_host(try_cow_bytes_to_str(value).map_err(|_| InvalidIpv6Host)?)?;
 
         Ok(unsafe {
-            Self::from_parts(value, addr.into())
+            Self::from_parts(value, addr)
         })
    }
 }

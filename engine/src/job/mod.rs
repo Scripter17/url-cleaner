@@ -7,12 +7,14 @@ mod secrets;
 mod task;
 mod task_context;
 mod task_state;
+mod thread_hider;
 
 pub use job_context::*;
 pub use secrets::*;
 pub use task::*;
 pub use task_context::*;
 pub use task_state::*;
+pub use thread_hider::*;
 
 /// Configuration for a job.
 #[derive(Debug)]
@@ -23,8 +25,8 @@ pub struct Job<'j> {
     pub cleaner: Cleaner<'j>,
     /// The [`Secrets`].
     pub secrets: &'j Secrets,
-    /// The thread hider.
-    pub thread_hider: Option<std::sync::Arc<parking_lot::ReentrantMutex<()>>>,
+    /// The [`ThreadHider`].
+    pub thread_hider: Option<std::sync::Arc<ThreadHider>>,
     /// The [`HttpClient`].
     #[cfg(feature = "http")]
     pub http_client: Option<&'j HttpClient>,
@@ -43,14 +45,15 @@ impl<'j> Job<'j> {
     ///
     /// IF [`Cleaner::apply`] returns an error, that error is returned.
     /// # Panics
-    /// If called inside a Tokio runtime, may or may not panic.
+    /// If called inside a Tokio runtime, will panic upon attempting any HTTP requests ot cache reads/writes.
     pub fn r#do<T: TryInto<Task>>(&self, task: T) -> Result<(bool, BetterUrl), DoTaskError> where MakeTaskError: From<T::Error> {
         let Task {url, context} = task.try_into().map_err(MakeTaskError::from)?;
 
         let mut task_state = TaskState {
             url,
             context,
-            job: self
+            job: self,
+            thread_lock: None,
         };
 
         Ok((self.cleaner.apply(&mut task_state)?, task_state.url))

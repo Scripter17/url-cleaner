@@ -42,7 +42,9 @@ pub struct Base64Config {
     #[serde(default, skip_serializing_if = "is_default")]
     pub decode_padding: Base64DecodePaddingMode,
     /// [`GeneralPurposeConfig::with_decode_allow_trailing_bits`].
-    #[serde(default, skip_serializing_if = "is_default")]
+    ///
+    /// Defaults to [`false`].
+    #[serde(default = "get_false", skip_serializing_if = "is_false")]
     pub decode_allow_trailing_bits: bool
 }
 

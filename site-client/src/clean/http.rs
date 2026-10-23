@@ -10,7 +10,6 @@ use futures_util::StreamExt;
 use bytes::Bytes;
 
 use hyper_util::{client::legacy::{Client, connect::HttpConnector}, rt::TokioExecutor};
-use hyper_tls::HttpsConnector;
 
 use better_url::prelude::*;
 
@@ -32,7 +31,11 @@ pub async fn r#do(instance: BetterUrl) {
 
     let res = match instance.scheme_str() {
         "http"  => Client::builder(TokioExecutor::new()).build(HttpConnector ::new()).request(Request::builder().uri(instance.as_str()).method("POST").body(body).unwrap()),
-        "https" => Client::builder(TokioExecutor::new()).build(HttpsConnector::new()).request(Request::builder().uri(instance.as_str()).method("POST").body(body).unwrap()),
+        "https" => {
+            let connector = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().expect("No native root CA certificates found.").https_only().enable_all_versions().build();
+
+            Client::builder(TokioExecutor::new()).build(connector).request(Request::builder().uri(instance.as_str()).method("POST").body(body).unwrap())
+        },
         _ => unreachable!()
     }.await.unwrap();
 

@@ -17,118 +17,67 @@ pub enum SchemeDetails {
 }
 
 impl SchemeDetails {
-    /// Make a new [`Self`].
+    /** [`FileSchemeDetails`].                  **/ pub const FILE       : Self = Self::Special(SpecialSchemeDetails::File          (FileSchemeDetails                 ));
+    /** [`SpecialNotFileSchemeDetails::Http`].  **/ pub const HTTP       : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Http ));
+    /** [`SpecialNotFileSchemeDetails::Https`]. **/ pub const HTTPS      : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Https));
+    /** [`SpecialNotFileSchemeDetails::Ws`].    **/ pub const WS         : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Ws   ));
+    /** [`SpecialNotFileSchemeDetails::Wss`].   **/ pub const WSS        : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Wss  ));
+    /** [`SpecialNotFileSchemeDetails::Ftp`].   **/ pub const FTP        : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Ftp  ));
+    /** [`NonSpecialSchemeDetails`].            **/ pub const NON_SPECIAL: Self = Self::NonSpecial(NonSpecialSchemeDetails);
+
+    /// Parse a scheme literal.
     /// # Errors
-    /// If `value` is an invalid scheme, returns the error [`InvalidScheme`].
+    /// If `value` is an invalid scheme literal, returns the error [`InvalidScheme`].
     pub fn new(value: &str) -> Result<Self, InvalidScheme> {
-             if value.eq_ignore_ascii_case("http" ) {Ok(SpecialNotFileSchemeDetails::Http .into())}
-        else if value.eq_ignore_ascii_case("https") {Ok(SpecialNotFileSchemeDetails::Https.into())}
-        else if value.eq_ignore_ascii_case("ws"   ) {Ok(SpecialNotFileSchemeDetails::Ws   .into())}
-        else if value.eq_ignore_ascii_case("wss"  ) {Ok(SpecialNotFileSchemeDetails::Wss  .into())}
-        else if value.eq_ignore_ascii_case("ftp"  ) {Ok(SpecialNotFileSchemeDetails::Ftp  .into())}
-        else if value.eq_ignore_ascii_case("file" ) {Ok(FileSchemeDetails                 .into())}
-        else if is_valid_scheme(value)              {Ok(NonSpecialSchemeDetails           .into())}
-        else {Err(InvalidScheme)}
+        Ok(match value {
+            "http"  => Self::HTTP ,
+            "https" => Self::HTTPS,
+            "ws"    => Self::WS   ,
+            "wss"   => Self::WSS  ,
+            "ftp"   => Self::FTP  ,
+            "file"  => Self::FILE ,
+            _       => match is_valid_scheme_literal(value) {
+                true  => Self::NON_SPECIAL,
+                false => Err(InvalidScheme)?,
+            },
+        })
     }
 
-    /// Make a new [`Self`] without case or validity checks.
+    /// Parse a scheme literal without validity checks.
     pub fn new_unchecked(value: &str) -> Self {
         match value {
-            "http"  => SpecialNotFileSchemeDetails::Http .into(),
-            "https" => SpecialNotFileSchemeDetails::Https.into(),
-            "ws"    => SpecialNotFileSchemeDetails::Ws   .into(),
-            "wss"   => SpecialNotFileSchemeDetails::Wss  .into(),
-            "ftp"   => SpecialNotFileSchemeDetails::Ftp  .into(),
-            "file"  => FileSchemeDetails                 .into(),
-            _       => NonSpecialSchemeDetails           .into(),
+            "http"  => Self::HTTP       ,
+            "https" => Self::HTTPS      ,
+            "ws"    => Self::WS         ,
+            "wss"   => Self::WSS        ,
+            "ftp"   => Self::FTP        ,
+            "file"  => Self::FILE       ,
+            _       => Self::NON_SPECIAL,
         }
     }
 
     /// The [`SchemeType`].
-    pub fn r#type(self) -> SchemeType {
+    pub const fn r#type(self) -> SchemeType {
         match self {
             Self::Special   (x) => x.r#type(),
             Self::NonSpecial(x) => x.r#type(),
         }
     }
 
-    /// [`SchemeType::is_special`].
-    pub fn is_special(self) -> bool {
-        self.r#type().is_special()
-    }
-
-    /// [`SchemeType::is_special_not_file`].
-    pub fn is_special_not_file(self) -> bool {
-        self.r#type().is_special_not_file()
-    }
-
-    /// [`SchemeType::is_file`].
-    pub fn is_file(self) -> bool {
-        self.r#type().is_file()
-    }
-
-    /// [`SchemeType::is_non_special`].
-    pub fn is_non_special(self) -> bool {
-        self.r#type().is_non_special()
-    }
+    /** [`SchemeType::is_special`].          **/ pub const fn is_special         (self) -> bool {self.r#type().is_special         ()}
+    /** [`SchemeType::is_special_not_file`]. **/ pub const fn is_special_not_file(self) -> bool {self.r#type().is_special_not_file()}
+    /** [`SchemeType::is_non_special`].      **/ pub const fn is_non_special     (self) -> bool {self.r#type().is_non_special     ()}
 
 
 
-    /// [`SpecialSchemeDetails::is_http`].
-    pub fn is_http(self) -> bool {
-        match self {
-            Self::Special   (x) => x.is_http(),
-            Self::NonSpecial(_) => false,
-        }
-    }
-
-    /// [`SpecialSchemeDetails::is_https`].
-    pub fn is_https(self) -> bool {
-        match self {
-            Self::Special   (x) => x.is_https(),
-            Self::NonSpecial(_) => false,
-        }
-    }
-
-    /// [`SpecialSchemeDetails::is_http_or_https`].
-    pub fn is_http_or_https(self) -> bool {
-        match self {
-            Self::Special   (x) => x.is_http_or_https(),
-            Self::NonSpecial(_) => false,
-        }
-    }
-
-    /// [`SpecialSchemeDetails::is_ws`].
-    pub fn is_ws(self) -> bool {
-        match self {
-            Self::Special   (x) => x.is_ws(),
-            Self::NonSpecial(_) => false,
-        }
-    }
-
-    /// [`SpecialSchemeDetails::is_wss`].
-    pub fn is_wss(self) -> bool {
-        match self {
-            Self::Special   (x) => x.is_wss(),
-            Self::NonSpecial(_) => false,
-        }
-    }
-
-    /// [`SpecialSchemeDetails::is_ws_or_wss`].
-    pub fn is_ws_or_wss(self) -> bool {
-        match self {
-            Self::Special   (x) => x.is_ws_or_wss(),
-            Self::NonSpecial(_) => false,
-        }
-    }
-
-    /// [`SpecialSchemeDetails::is_ftp`].
-    pub fn is_ftp(self) -> bool {
-        match self {
-            Self::Special   (x) => x.is_ftp(),
-            Self::NonSpecial(_) => false,
-        }
-    }
+    /** If it's [`Self::FILE`].                    **/ pub const fn is_file         (self) -> bool {matches!(self, Self::FILE               )}
+    /** If it's [`Self::HTTP`].                    **/ pub const fn is_http         (self) -> bool {matches!(self, Self::HTTP               )}
+    /** If it's [`Self::HTTPS`].                   **/ pub const fn is_https        (self) -> bool {matches!(self, Self::HTTPS              )}
+    /** If it's [`Self::HTTP`] or [`Self::HTTPS`]. **/ pub const fn is_http_or_https(self) -> bool {matches!(self, Self::HTTP  | Self::HTTPS)}
+    /** If it's [`Self::WS`].                      **/ pub const fn is_ws           (self) -> bool {matches!(self, Self::WS                 )}
+    /** If it's [`Self::WSS`].                     **/ pub const fn is_wss          (self) -> bool {matches!(self, Self::WSS                )}
+    /** If it's [`Self::WS`] or [`Self::WSS`].     **/ pub const fn is_ws_or_wss    (self) -> bool {matches!(self, Self::WS    | Self::WSS  )}
+    /** If it's [`Self::FTP`].                     **/ pub const fn is_ftp          (self) -> bool {matches!(self, Self::FTP                )}
 
 
 
@@ -141,7 +90,7 @@ impl SchemeDetails {
     }
 
     /// [`SpecialSchemeDetails::default_port_num`].
-    pub fn default_port_num(self) -> Option<u16> {
+    pub const fn default_port_num(self) -> Option<u16> {
         match self {
             Self::Special   (x) => x.default_port_num(),
             Self::NonSpecial(_) => None,
@@ -149,7 +98,7 @@ impl SchemeDetails {
     }
 
     /// [`SpecialSchemeDetails::default_port_str`].
-    pub fn default_port_str(self) -> Option<&'static str> {
+    pub const fn default_port_str(self) -> Option<&'static str> {
         match self {
             Self::Special   (x) => x.default_port_str(),
             Self::NonSpecial(_) => None,

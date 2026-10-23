@@ -2,76 +2,69 @@
 
 use crate::prelude::*;
 
-/// Get [`DATA`].
-const fn get_data() -> [u8; 256] {
-    let mut ret = [0; 256];
-
-    let mut i = 0;
-    while i < 256 {
-        match i as u8 {
-            b'a'..=b'z'                      => ret[i as usize] = 0b000,
-            b'A'..=b'Z'                      => ret[i as usize] = 0b100,
-            b'.' | b'-' | b'+' | b'0'..=b'9' => ret[i as usize] = 0b001,
-            _                                => ret[i as usize] = 0b011,
-        }
-        i += 1;
+/// If it's a valid scheme literal.
+pub fn is_valid_scheme_literal(value: &str) -> bool {
+    match value.as_bytes() {
+        [] => false,
+        [first, rest @ ..] => (SCHEME_PATH_BYTE_CLASS_DATA[*first as usize] & 0b0101_0000 == 0b0000_0000) && (rest.iter().fold(0, |acc, &b| acc | SCHEME_PATH_BYTE_CLASS_DATA[b as usize]) & 0b0110_0000 == 0b0000_0000)
     }
-
-    ret
 }
 
-/// A set of bitfields where the bits are, from lowest to highest:
-///
-/// - If the byte can't start a scheme.
-///
-/// - If the byte can't continue a scheme.
-///
-/// - If the byte requires the scheme be lowercased.
-const DATA: [u8; 256] = get_data();
-
-/// If it's a valid scheme input.
-pub fn is_valid_scheme(value: &str) -> bool {
-    let mut bytes = value.bytes();
-
-    bytes.next().is_some_and(|b| DATA[b as usize] & 0b101 == 0b000)
-        && bytes.fold(0, |acc, b| acc | DATA[b as usize]) & 0b110 == 0b000
-}
-
-/// Encode a scheme.
+/// Make a scheme.
 /// # Errors
 /// If the scheme is invalid, returns the error [`InvalidScheme`].
 #[inline]
-pub fn encode_scheme<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidScheme> {
-    encode_scheme_bytes(cow_str_to_bytes(value))
+pub fn make_scheme<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>, SchemeDetails), InvalidScheme> {
+    make_scheme_bytes(cow_str_to_bytes(value))
 }
 
-/// Encode a scheme from bytes.
+/// Make a scheme from bytes.
 /// # Errors
 /// If the scheme is invalid, returns the error [`InvalidScheme`].
 #[inline]
-pub fn encode_scheme_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<(bool, Cow<'a, str>), InvalidScheme> {
+pub fn make_scheme_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<(bool, Cow<'a, str>, SchemeDetails), InvalidScheme> {
     let value = value.into();
 
-    if matches!(&*value, b"http" | b"https" | b"ws" | b"wss" | b"file" | b"ftp") {
-        return Ok((false, unsafe {cow_bytes_to_str_unchecked(value)}));
-    }
+    Ok(match &*value {
+        b"http"  => (false, unsafe {cow_bytes_to_str_unchecked(value)}, SchemeDetails::HTTP ),
+        b"https" => (false, unsafe {cow_bytes_to_str_unchecked(value)}, SchemeDetails::HTTPS),
+        b"ws"    => (false, unsafe {cow_bytes_to_str_unchecked(value)}, SchemeDetails::WS   ),
+        b"wss"   => (false, unsafe {cow_bytes_to_str_unchecked(value)}, SchemeDetails::WSS  ),
+        b"file"  => (false, unsafe {cow_bytes_to_str_unchecked(value)}, SchemeDetails::FILE ),
+        b"ftp"   => (false, unsafe {cow_bytes_to_str_unchecked(value)}, SchemeDetails::FTP  ),
+        _ => {
+            #[cold]
+            fn outline<'a>(value: Cow<'a, [u8]>) -> Result<(bool, Cow<'a, str>, SchemeDetails), InvalidScheme> {
+                match &*value {
+                    [] => Err(InvalidScheme),
+                    [first, rest @ ..] => {
+                        let class1 =                                     SCHEME_PATH_BYTE_CLASS_DATA[*first as usize] ;
+                        let class2 = rest.iter().fold(0, |acc, &b| acc | SCHEME_PATH_BYTE_CLASS_DATA[ b     as usize]);
 
-    #[cold]
-    fn outline<'a>(mut value: Cow<'a, [u8]>) -> Result<(bool, Cow<'a, str>), InvalidScheme> {
-        let mut bytes = value.iter().copied();
+                        Ok(match (class1 & 0b0101_0000, class2 & 0b0110_0000) {
+                            (0, 0) => {
+                                let value = unsafe {cow_bytes_to_str_unchecked(value)};
 
-        let class1 = DATA[bytes.next().ok_or(InvalidScheme)? as usize];
-        let class2 = bytes.fold(0, |acc, b| acc | DATA[b as usize]);
+                                let details = SchemeDetails::new_unchecked(&value);
 
-        Ok(match (class1 & 0b101, class2 & 0b110) {
-            (0b000, 0b000) => (false, unsafe {cow_bytes_to_str_unchecked(value)}),
-            (0b000, 0b100) | (0b100, 0b000 | 0b100) => {
-                value.to_mut().make_ascii_lowercase();
-                (true, unsafe {cow_bytes_to_str_unchecked(value)})
-            },
-            _ => Err(InvalidScheme)?
-        })
-    }
+                                (false, value, details)
+                            }
+                            (0 | 64, 0 | 64) => {
+                                let mut value = unsafe {cow_bytes_to_str_unchecked(value)};
 
-    outline(value)
+                                value.to_mut().make_ascii_lowercase();
+
+                                let details = SchemeDetails::new_unchecked(&value);
+
+                                (true, value, details)
+                            },
+                            _ => Err(InvalidScheme)?
+                        })
+                    }
+                }
+            }
+
+            outline(value)?
+        }
+    })
 }

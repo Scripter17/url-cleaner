@@ -41,7 +41,7 @@ impl BetterUrl {
 
     /// The domain normal segments as [`DomainSegment`]s.
     pub fn domain_normal_segments(&self) -> Option<DomainSegmentsIter<'_>> {
-        self.domain_normal_segment_strs().map(DomainSegmentsIter)
+        Some(unsafe {DomainSegmentsIter::new_unchecked(self.domain_normal_segment_strs()?)})
     }
 
 

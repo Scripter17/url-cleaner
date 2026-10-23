@@ -1,14 +1,6 @@
 //! Decoding.
 
-use icu_properties::{CodePointMapDataBorrowed, props::{GeneralCategory, GeneralCategoryGroup}};
-use icu_normalizer::ComposingNormalizerBorrowed;
-
 use crate::prelude::*;
-
-/// the general category getter.
-static GC: CodePointMapDataBorrowed<GeneralCategory> = CodePointMapDataBorrowed::new();
-/// The NFC checker.
-static NFC: ComposingNormalizerBorrowed = ComposingNormalizerBorrowed::new_nfc();
 
 /// A single segment of [Domain to Unicode](https://url.spec.whatwg.org/#concept-domain-to-unicode).
 ///
@@ -44,7 +36,7 @@ pub fn uts46_domain_segment_to_unicode<'a, T: Into<Cow<'a, str>>>(value: T) -> R
     let value = value.into();
 
     match value.strip_prefix("xn--") {
-        None => match BidiDetail::fast_parse_ascii(&value) {
+        None => match BidiDetail::parse_ascii(&value) {
             Some(bidi_detail) => Ok((value, None, bidi_detail)),
             None => match mostly_validate_uts46_domain_segment_unicode(&value) {
                 true => match BidiDetail::parse_unicode(&value) {
@@ -80,27 +72,4 @@ pub fn unchecked_uts46_domain_segment_to_unicode<'a, T: Into<Cow<'a, str>>>(valu
             Err(InvalidPunycode) => (value, None         ),
         }
     }
-}
-
-
-
-/// If `value` satisfies [validity criteria](https://www.unicode.org/reports/tr46/#Validity_Criteria) 1 through 8.
-///
-/// 9 is handled by [`BidiDetail`].
-pub fn mostly_validate_domain_segment_unicode(value: &str) -> bool {
-    NFC.is_normalized(value)
-        && !value.starts_with("xn--")
-        && !value.contains('.')
-        && !value.starts_with(|c| GeneralCategoryGroup::Mark.contains(GC.get(c)))
-        && !value.contains(idna_invalid)
-        && validate_domain_segment_joiners(value)
-}
-
-/// [`mostly_validate_domain_segment_unicode`], assuming the input has been through [`uts46_map_normalize`].
-pub fn mostly_validate_uts46_domain_segment_unicode(value: &str) -> bool {
-    !value.starts_with("xn--")
-        && !value.contains('.')
-        && !value.starts_with(|c| GeneralCategoryGroup::Mark.contains(GC.get(c)))
-        && !value.contains('\u{FFFD}')
-        && validate_domain_segment_joiners(value)
 }

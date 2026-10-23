@@ -59,14 +59,39 @@ impl AsciiSet {
     }
 
     /// Get the inner [`ByteSet`].
-    pub const fn to_byte_set(self) -> ByteSet {
+    pub const fn into_inner(self) -> ByteSet {
         self.0
+    }
+
+    /// Make a new [`Self`] from a [`ByteSet`] without validity checks.
+    /// # Safety
+    /// All bytes in the range `128..=255` must be in the [`ByteSet`].
+    pub const fn new_unchecked(value: ByteSet) -> Self {
+        Self(value)
     }
 }
 
 impl Default for AsciiSet {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl From<AsciiSet> for ByteSet {
+    fn from(value: AsciiSet) -> Self {
+        value.0
+    }
+}
+
+impl TryFrom<ByteSet> for AsciiSet {
+    type Error = ByteSet;
+
+    fn try_from(value: ByteSet) -> Result<Self, Self::Error> {
+        if !(128..=255).all(|b| value.contains(b)) {
+            Err(value)?;
+        }
+
+        Ok(Self(value))
     }
 }
 

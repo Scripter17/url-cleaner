@@ -10,7 +10,7 @@ pub struct NonSpecialSchemeDetails;
 
 impl NonSpecialSchemeDetails {
     /// The [`SchemeType`].
-    pub fn r#type(self) -> SchemeType {
+    pub const fn r#type(self) -> SchemeType {
         SchemeType::NonSpecial
     }
 }

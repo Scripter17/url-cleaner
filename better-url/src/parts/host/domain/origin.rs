@@ -46,7 +46,7 @@ impl DomainHost<'_> {
 
     /// The origin segments as [`DomainSegment`]s.
     pub fn origin_segments(&self) -> Option<DomainSegmentsIter<'_>> {
-        self.origin_segment_strs().map(DomainSegmentsIter)
+        Some(unsafe {DomainSegmentsIter::new_unchecked(self.origin_segment_strs()?)})
     }
 
 

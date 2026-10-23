@@ -14,10 +14,38 @@ pub struct QueryParamSelector {
     ///
     /// Defaults to `0`.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub index: isize
+    pub index: isize,
 }
 
-string_or_struct_magic!(QueryParamSelector);
+impl Serialize for QueryParamSelector {
+    fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        <QueryParamSelector>::serialize(self, serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for QueryParamSelector {
+    fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct V;
+
+        impl<'de> serde::de::Visitor<'de> for V {
+            type Value = QueryParamSelector;
+
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+                f.write_str("Expected a string or a map.")
+            }
+
+            fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {
+                Self::Value::from_str(s).map_err(E::custom)
+            }
+
+            fn visit_map<M: serde::de::MapAccess<'de>>(self, map: M) -> Result<Self::Value, M::Error> {
+                Self::Value::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+            }
+        }
+
+        deserializer.deserialize_any(V)
+    }
+}
 
 impl FromStr for QueryParamSelector {
     type Err = std::convert::Infallible;

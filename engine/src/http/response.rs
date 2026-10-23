@@ -113,35 +113,30 @@ impl HttpResponseHandler {
     /// Handle the response.
     /// # Errors
     /// See each variant of [`Self`] for details.
-    pub async fn handle<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>, response: &mut reqwest::Response) -> Result<Option<Cow<'t, str>>, HttpResponseHandlerError> {
-        debug!(HttpResponseHandler::handle, self; self._handle(task_state, args, response).await)
-    }
-
-    /// [`Self::handle`].
-    async fn _handle<'j: 't, 't>(&'j self, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>, response: &mut reqwest::Response) -> Result<Option<Cow<'t, str>>, HttpResponseHandlerError> {
+    pub async fn handle<'j: 't, 't>(&'j self, ts: &'t TaskState<'j>, args: Option<&'j FunctionArgs>, response: &mut reqwest::Response) -> Result<Option<Cow<'t, str>>, HttpResponseHandlerError> {
         Ok(match self {
-            Self::NoneTo {handler, if_none} => match Box::pin(handler.handle(task_state, args, response)).await? {
+            Self::NoneTo {handler, if_none} => match Box::pin(handler.handle(ts, args, response)).await? {
                 Some(x) => Some(x),
-                None    => Box::pin(if_none.handle(task_state, args, response)).await?,
+                None    => Box::pin(if_none.handle(ts, args, response)).await?,
             },
             Self::Modified {handler, modification} => {
-                let mut ret = Box::pin(handler.handle(task_state, args, response)).await?;
-                modification.apply(task_state, args, &mut ret)?;
+                let mut ret = Box::pin(handler.handle(ts, args, response)).await?;
+                modification.apply(ts, args, &mut ret)?;
                 ret
             },
-            Self::TryElse {r#try, r#else} => match Box::pin(r#try.handle(task_state, args, response)).await {
+            Self::TryElse {r#try, r#else} => match Box::pin(r#try.handle(ts, args, response)).await {
                 Ok(x) => x,
-                Err(try_error) => match Box::pin(r#else.handle(task_state, args, response)).await {
+                Err(try_error) => match Box::pin(r#else.handle(ts, args, response)).await {
                     Ok(x) => x,
                     Err(else_error) => Err(TryElseError {try_error, else_error})?
                 }
             },
 
-            Self::Require1xx(handler) => if response.status().is_informational() {Box::pin(handler.handle(task_state, args, response)).await?} else {Err(HttpResponseHandlerError::Required1xx(response.status()))?},
-            Self::Require2xx(handler) => if response.status().is_success      () {Box::pin(handler.handle(task_state, args, response)).await?} else {Err(HttpResponseHandlerError::Required2xx(response.status()))?},
-            Self::Require3xx(handler) => if response.status().is_redirection  () {Box::pin(handler.handle(task_state, args, response)).await?} else {Err(HttpResponseHandlerError::Required3xx(response.status()))?},
-            Self::Require4xx(handler) => if response.status().is_client_error () {Box::pin(handler.handle(task_state, args, response)).await?} else {Err(HttpResponseHandlerError::Required4xx(response.status()))?},
-            Self::Require5xx(handler) => if response.status().is_server_error () {Box::pin(handler.handle(task_state, args, response)).await?} else {Err(HttpResponseHandlerError::Required5xx(response.status()))?},
+            Self::Require1xx(handler) => if response.status().is_informational() {Box::pin(handler.handle(ts, args, response)).await?} else {Err(HttpResponseHandlerError::Required1xx(response.status()))?},
+            Self::Require2xx(handler) => if response.status().is_success      () {Box::pin(handler.handle(ts, args, response)).await?} else {Err(HttpResponseHandlerError::Required2xx(response.status()))?},
+            Self::Require3xx(handler) => if response.status().is_redirection  () {Box::pin(handler.handle(ts, args, response)).await?} else {Err(HttpResponseHandlerError::Required3xx(response.status()))?},
+            Self::Require4xx(handler) => if response.status().is_client_error () {Box::pin(handler.handle(ts, args, response)).await?} else {Err(HttpResponseHandlerError::Required4xx(response.status()))?},
+            Self::Require5xx(handler) => if response.status().is_server_error () {Box::pin(handler.handle(ts, args, response)).await?} else {Err(HttpResponseHandlerError::Required5xx(response.status()))?},
 
             Self::Body => {
                 let mut ret = Vec::new();
@@ -150,14 +145,14 @@ impl HttpResponseHandler {
                 }
                 Some(String::try_from(ret)?.into())
             },
-            Self::Header(name) => match response.headers().get(get!(&name)) {
+            Self::Header(name) => match response.headers().get(&*name.get_some(ts, args)??) {
                 Some(value) => Some(str::from_utf8(value.as_bytes())?.to_string().into()),
                 None => None
             },
             Self::Url => Some(response.url().to_string().into()),
 
             Self::ExtractFromBody {extractors, limit} => {
-                let prefixes = extractors.iter().filter_map(|x| x.prefix.get(task_state, args).transpose()).collect::<Result<Vec<_>, _>>()?;
+                let prefixes = extractors.iter().filter_map(|x| x.prefix.get(ts, args).transpose()).collect::<Result<Vec<_>, _>>()?;
 
                 let max_prefix_len = prefixes.iter().map(|x| x.len()).max().ok_or(HttpResponseHandlerError::NoSomeExtractors)?;
 
@@ -168,19 +163,19 @@ impl HttpResponseHandler {
                 loop {
                     for (prefix, extractor) in prefixes.iter().zip(extractors.iter()) {
                         if buf.ends_with(prefix.as_bytes()) {
-                            match get!(?extractor.strip_prefix) {
+                            match extractor.strip_prefix.get(ts, args)? {
                                 false => {buf.drain(..buf.len() - prefix.len());},
                                 true  =>  buf.clear()
                             }
 
                             let middle_start = buf.len();
 
-                            let suffix = get!(extractor.suffix);
+                            let suffix = extractor.suffix.get_some(ts, args)??;
 
                             if suffix.is_empty() {
                                 let mut ret = Some(String::try_from(buf)?.into());
 
-                                extractor.parser.apply(task_state, args, &mut ret)?;
+                                extractor.parser.apply(ts, args, &mut ret)?;
 
                                 return Ok(ret);
                             }
@@ -189,13 +184,13 @@ impl HttpResponseHandler {
                                 for byte in bytes {
                                     buf.push(byte);
                                     if buf[middle_start..].ends_with(suffix.as_bytes()) {
-                                        if get!(?extractor.strip_suffix) {
+                                        if extractor.strip_suffix.get(ts, args)? {
                                             buf.truncate(buf.len() - suffix.len());
                                         }
 
                                         let mut ret = Some(String::try_from(buf)?.into());
 
-                                        extractor.parser.apply(task_state, args, &mut ret)?;
+                                        extractor.parser.apply(ts, args, &mut ret)?;
 
                                         return Ok(ret);
                                     }

@@ -11,76 +11,58 @@ mod config  ; pub use config  ::*;
 mod flags   ; pub use flags   ::*;
 mod expander; pub use expander::*;
 
-/// A lazily compiled [`Regex`].
+/// A lazily compiled [`Regex`], moving the cost of deserialization to the first usage.
 /// # Examples
 /// ```
 /// use url_cleaner_engine::prelude::*;
 ///
 /// let regex = LazyRegex::from("abc");
+///
+/// assert!(regex.cached().is_none());
+///
 /// assert!(regex.get().unwrap().is_match("abc"));
 ///
-/// // Trying to set flags like `/.../i` isn't supported by the regex crate, and so isn't supported here.
-/// assert_eq!(LazyRegex::from("/abc/i").parts().pattern, "/abc/i");
+/// assert!(regex.cached().is_some());
 /// ```
-#[derive(Clone, Debug, Serialize, Deserialize, Suitability)]
-#[serde(from = "RegexParts", into = "RegexParts")]
+#[derive(Clone, Debug, Suitability)]
 pub struct LazyRegex {
     /// The lazily initialized [`Regex`].
     #[suitable(always)]
-    regex: OnceLock<Regex>,
+    regex: OnceLock<Result<Regex, regex::Error>>,
     /// The [`RegexParts`] to compile [`Self::regex`] from.
     parts: RegexParts
 }
 
+impl Serialize for LazyRegex {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.parts.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for LazyRegex {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        <RegexParts as Deserialize<'de>>::deserialize(deserializer).map(Into::into)
+    }
+}
+
 impl LazyRegex {
-    /// Gets the [`RegexParts`] this uses to compile its [`Regex`].
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    ///
-    /// let regex = LazyRegex::from(".*=.*");
-    /// assert_eq!(regex.parts(), &RegexParts {pattern: ".*=.*".into(), config: Default::default()});
-    /// ```
+    /// Get a reference to the cached result of [`RegexParts::build`] if it's present.
+    pub fn cached(&self) -> Option<&Result<Regex, regex::Error>> {
+        self.regex.get()
+    }
+
+    /// Get the [`RegexParts`] this uses to compile its [`Regex`].
     pub fn parts(&self) -> &RegexParts {
         &self.parts
     }
 
-    /// Get the compiled [`Regex`] if it's been compiled.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    ///
-    /// let regex = LazyRegex::from(".*=.*");
-    /// assert!(regex.get_no_compile().is_none());
-    /// regex.get().unwrap();
-    /// assert!(regex.get_no_compile().is_some());
-    /// ```
-    pub fn get_no_compile(&self) -> Option<&Regex> {
-        self.regex.get()
-    }
-
-    /// Gets the compiled [`Regex`] or, if it hasn't been compiled, compiles it.
-    ///
-    /// Currently, if a call to [`Self::get`] returns an error, the next call will attempt to compile the [`Regex`] *again*.
-    ///
-    /// Given this should be pretty rare and the cost of storing the error is pretty high, I choose to consider a reasonable tradeoff.
+    /// Returns the cached [`Regex`], compiling it first if needed.
     /// # Errors
-    /// If the cache is unset and [`RegexParts::build`] returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    ///
-    /// let regex = LazyRegex::from(".*=.*");
-    /// assert!(regex.get_no_compile().is_none());
-    /// regex.get().unwrap();
-    /// assert!(regex.get_no_compile().is_some());
-    /// ```
+    /// If the cached value is an error or [`RegexParts::build`] returns an error, that error is cloned and returned.
     pub fn get(&self) -> Result<&Regex, regex::Error> {
-        if let Some(regex) = self.regex.get() {
-            Ok(regex)
-        } else {
-            let temp = self.parts.build()?;
-            Ok(self.regex.get_or_init(|| temp))
+        match self.regex.get_or_init(|| self.parts.build()) {
+            Ok(x) => Ok(x),
+            Err(e) => Err(e.clone())
         }
     }
 }
@@ -89,7 +71,7 @@ impl From<RegexParts> for LazyRegex {
     fn from(parts: RegexParts) -> Self {
         Self {
             regex: OnceLock::new(),
-            parts
+            parts,
         }
     }
 }
@@ -97,9 +79,6 @@ impl From<RegexParts> for LazyRegex {
 impl FromStr for LazyRegex {
     type Err = std::convert::Infallible;
 
-    /// Creates a new [`RegexParts`] and uses that.
-    ///
-    /// The regex is only compiled later.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(RegexParts::from(s).into())
     }
@@ -107,11 +86,14 @@ impl FromStr for LazyRegex {
 
 impl From<&str> for LazyRegex {
 
-    /// Creates a new [`RegexParts`] and uses that.
-    ///
-    /// The regex is only compiled later.
-    fn from(s: &str) -> Self {
-        RegexParts::from(s).into()
+    fn from(value: &str) -> Self {
+        RegexParts::from(value).into()
+    }
+}
+
+impl From<String> for LazyRegex {
+    fn from(value: String) -> Self {
+        RegexParts::from(value).into()
     }
 }
 
@@ -138,12 +120,7 @@ impl AsRef<RegexParts> for LazyRegex {
 impl TryFrom<LazyRegex> for Regex {
     type Error = regex::Error;
 
-    /// Does not re-compile or clone the [`Regex`] if it's already cached. It simply takes it.
     fn try_from(value: LazyRegex) -> Result<Self, Self::Error> {
-        if let Some(regex) = value.regex.into_inner() {
-            Ok(regex)
-        } else {
-            value.parts.build()
-        }
+        value.regex.into_inner().unwrap_or_else(|| value.parts.build())
     }
 }

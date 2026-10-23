@@ -14,7 +14,6 @@ pub mod errors;
 #[cfg(feature = "cache")] pub mod cache;
 
 pub(crate) mod util;
-pub(crate) mod debug;
 
 /// A prelude module to make importing all the various types nicer.
 ///
@@ -37,7 +36,6 @@ pub mod prelude {
     pub(crate) use better_url::util::*;
 
     pub(crate) use super::util::*;
-    pub(crate) use super::debug::debug;
 
     pub(crate) use std::borrow::{Borrow, Cow};
     pub(crate) use std::str::FromStr;

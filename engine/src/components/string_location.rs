@@ -44,35 +44,6 @@ pub enum StringLocation {
 
     // Logic
 
-    /// If [`Self::IfContains::at`] is satisfied, return the value of [`Self::IfContains::then`].
-    ///
-    /// If [`Self::IfContains::at`] is unsatisfied, return the value of [`Self::IfContains::else`].
-    /// # Errors
-    /// If any call to [`Self::check`] returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    ///
-    /// assert!(StringLocation::IfContains {
-    ///     at: Box::new(StringLocation::Always),
-    ///     then   : Box::new(StringLocation::Always),
-    ///     r#else : Box::new(StringLocation::Never)
-    /// }.check("a", "a").unwrap());
-    ///
-    /// assert!(!StringLocation::IfContains {
-    ///     at: Box::new(StringLocation::Never),
-    ///     then   : Box::new(StringLocation::Always),
-    ///     r#else : Box::new(StringLocation::Never)
-    /// }.check("a", "a").unwrap());
-    /// ```
-    IfContains {
-        /// The [`Self`] to decide between [`Self::IfContains::then`] and [`Self::IfContains::else`].
-        at: Box<Self>,
-        /// The [`Self`] to use if [`Self::IfContains::at`] is satisfied.
-        then: Box<Self>,
-        /// The [`Self`] to use if [`Self::IfContains::at`] is unsatisfied.
-        r#else: Box<Self>
-    },
     /// Inverts the satisfaction of the contained [`Self`].
     /// # Errors
     /// If [`Self::check`] returns an error, that error is returned.
@@ -146,7 +117,7 @@ pub enum StringLocation {
         /// The [`Self`] to try first.
         r#try: Box<Self>,
         /// The [`Self`] to try if [`Self::TryElse::try`] returns an error.
-        r#else: Box<Self>
+        r#else: Box<Self>,
     },
     /// Return the first non-error value.
     /// # Errors
@@ -291,78 +262,6 @@ pub enum StringLocation {
     /// assert!(!StringLocation::Equals.check("#abc#", "abc").unwrap());
     /// ```
     Equals,
-    /// Satisfied if the haystack contains the needle in the specified range at [`Self::InRange::at`].
-    /// # Errors
-    /// If the specified range is either out of bounds or doesn't fall on UTF-8 character boundaries, returns the error [`StringLocationError::InvalidSlice`].
-    ///
-    /// If [`Self::check`] returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    ///
-    /// assert!(StringLocation::InRange {
-    ///     start: 0,
-    ///     end  : Some(3),
-    ///     at   : Box::new(StringLocation::Equals)
-    /// }.check("abc##", "abc").unwrap());
-    /// ```
-    InRange {
-        /// The start of the range to search in.
-        start: isize,
-        /// The end of the range to search in, exclusive.
-        ///
-        /// Set to [`None`] to keep it unbounded.
-        end: Option<isize>,
-        /// The [`Self`] to search for the needle in the range.
-        at: Box<Self>
-    },
-    /// Satisfied if any segment of the haystack, split by [`Self::AnySegment::split`], contains the needle at [`Self::AnySegment::at`].
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    ///
-    /// assert!(StringLocation::AnySegment {
-    ///     split: "/".to_string(),
-    ///     at   : Box::new(StringLocation::Equals)
-    /// }.check("123/abc/456", "abc").unwrap());
-    /// ```
-    AnySegment {
-        /// The string to split the haystack with.
-        split: String,
-        /// The [`Self`] to search for the needle in each segment.
-        at: Box<Self>
-    },
-    /// Satisfied if the [`Self::NthSegment::n`]th segment of the haystack, split by [`Self::NthSegment::split`], contains the needle at [`Self::NthSegment::at`].
-    /// # Examples
-    /// ```
-    /// use url_cleaner_engine::prelude::*;
-    ///
-    /// assert!(!StringLocation::NthSegment {
-    ///     split: "/".to_string(),
-    ///     n    : 0,
-    ///     at   : Box::new(StringLocation::Equals)
-    /// }.check("123/abc/456", "abc").unwrap());
-    ///
-    /// assert!(StringLocation::NthSegment {
-    ///     split: "/".to_string(),
-    ///     n    : 1,
-    ///     at   : Box::new(StringLocation::Equals)
-    /// }.check("123/abc/456", "abc").unwrap());
-    ///
-    /// assert!(!StringLocation::NthSegment {
-    ///     split: "/".to_string(),
-    ///     n    : 2,
-    ///     at   : Box::new(StringLocation::Equals)
-    /// }.check("123/abc/456", "abc").unwrap());
-    /// ```
-    NthSegment {
-        /// The string to split the haystack with.
-        split: String,
-        /// The index of the segment to search in.
-        n: isize,
-        /// The [`Self`] to search for the needle in the [`Self::NthSegment::n`]th segment.
-        at: Box<Self>
-    }
 }
 
 impl StringLocation {
@@ -379,7 +278,6 @@ impl StringLocation {
 
             // Logic.
 
-            Self::IfContains {at, then, r#else} => if at.check(haystack, needle)? {then} else {r#else}.check(haystack, needle)?,
             Self::All(locations) => {
                 for location in locations {
                     if !location.check(haystack, needle)? {
@@ -432,21 +330,7 @@ impl StringLocation {
             Self::BeforeOrAt(end)  => haystack.get((Bound::Unbounded, Bound::Included(neg_index(*end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?))).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
             Self::Before    (end)  => haystack.get((Bound::Unbounded, Bound::Excluded(neg_index(*end, haystack.len()).ok_or(StringLocationError::InvalidIndex)?))).ok_or(StringLocationError::InvalidSlice)?.contains(needle),
 
-            Self::InRange {start, end, at} => at.check(
-                haystack.get(neg_range(*start, *end, haystack.len()).ok_or(StringLocationError::InvalidSlice)?).ok_or(StringLocationError::InvalidSlice)?,
-                needle
-            )?,
-
             Self::Equals => haystack==needle,
-            Self::AnySegment {split, at} => {
-                for segment in haystack.split(split) {
-                    if at.check(segment, needle)? {
-                        return Ok(true)
-                    }
-                }
-                return Ok(false)
-            },
-            Self::NthSegment {split, n, at} => at.check(neg_nth(haystack.split(split), *n).ok_or(StringLocationError::SegmentNotFound)?, needle)?
         })
     }
 }

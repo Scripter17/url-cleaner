@@ -7,15 +7,15 @@ use crate::prelude::*;
 /// ```
 /// use better_url::util::*;
 ///
-/// assert_eq!(encode_opaque_path("/abc   def   "), (true, "%2Fabc   def  %20".into()));
+/// assert_eq!(make_opaque_path("/abc   def   "), (true, "%2Fabc   def  %20".into()));
 /// ```
-pub fn encode_opaque_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    encode_opaque_path_bytes(cow_str_to_bytes(value))
+pub fn make_opaque_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    make_opaque_path_bytes(cow_str_to_bytes(value))
 }
 
 /// Do just the percent encoding for an [`OpaquePath`].
 ///
-/// For the full process, see [`encode_opaque_path`].
+/// For the full process, see [`make_opaque_path`].
 pub fn percent_encode_opaque_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     percent_encode(value, OPAQUE_PATH)
 }
@@ -23,7 +23,7 @@ pub fn percent_encode_opaque_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool,
 
 
 /// Make an [`OpaquePath`] from bytes.
-pub fn encode_opaque_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+pub fn make_opaque_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
     let mut value = value.into();
     let mut changed = false;
 
@@ -46,7 +46,7 @@ pub fn encode_opaque_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, 
 
 /// Do just the percent encoding for an [`OpaquePath`].
 ///
-/// For the full process, see [`encode_opaque_path_bytes`].
+/// For the full process, see [`make_opaque_path_bytes`].
 pub fn percent_encode_opaque_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
     percent_encode_bytes(value, OPAQUE_PATH)
 }

@@ -38,7 +38,7 @@ impl BetterUrl {
 
     /// The domain origin segments as [`DomainSegment`]s.
     pub fn domain_origin_segments(&self) -> Option<DomainSegmentsIter<'_>> {
-        self.domain_origin_segment_strs().map(DomainSegmentsIter)
+        Some(unsafe {DomainSegmentsIter::new_unchecked(self.domain_origin_segment_strs()?)})
     }
 
 

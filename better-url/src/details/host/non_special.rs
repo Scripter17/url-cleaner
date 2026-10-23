@@ -16,15 +16,15 @@ impl NonSpecialHostDetails {
     /// If `value` is not a valid [`NonSpecialHost`] literal, returns the error [`InvalidNonSpecialHost`].
     pub fn parse(value: &str) -> Result<Self, InvalidNonSpecialHost> {
         Ok(match value.as_bytes() {
-            b""        => EmptyHostDetails                  .into(),
-            [b'[', ..] => Ipv6HostDetails  ::parse  (value)?.into(),
-            _          => OpaqueHostDetails::parse  (value)?.into(),
+            b""        => EmptyHostDetails                .into(),
+            [b'[', ..] => Ipv6HostDetails  ::parse(value)?.into(),
+            _          => OpaqueHostDetails::parse(value)?.into(),
         })
     }
 
-    /** If it's [`Self::ipv6`]. **/                   pub fn is_ipv6  (self) -> bool {matches!(self, Self::Ipv6  (_)                )}
-    /** If it's [`Self::Opaque`]. **/                 pub fn is_opaque(self) -> bool {matches!(self, Self::Opaque(_)                )}
-    /** If it's [`Self::Empty`]. **/                  pub fn is_empty (self) -> bool {matches!(self, Self::Empty (_)                )}
+    /** If it's [`Self::ipv6`].   **/ pub fn is_ipv6  (self) -> bool {matches!(self, Self::Ipv6  (_))}
+    /** If it's [`Self::Opaque`]. **/ pub fn is_opaque(self) -> bool {matches!(self, Self::Opaque(_))}
+    /** If it's [`Self::Empty`].  **/ pub fn is_empty (self) -> bool {matches!(self, Self::Empty (_))}
 
     /** The [`Ipv6HostDetails`].   **/ pub fn ipv6  (self) -> Option<Ipv6HostDetails  > {self.try_into().ok()}
     /** The [`OpaqueHostDetails`]. **/ pub fn opaque(self) -> Option<OpaqueHostDetails> {self.try_into().ok()}
@@ -34,3 +34,5 @@ impl NonSpecialHostDetails {
 impl From<Ipv6HostDetails  > for NonSpecialHostDetails {fn from(value: Ipv6HostDetails  ) -> Self {Self::Ipv6  (value)}}
 impl From<OpaqueHostDetails> for NonSpecialHostDetails {fn from(value: OpaqueHostDetails) -> Self {Self::Opaque(value)}}
 impl From<EmptyHostDetails > for NonSpecialHostDetails {fn from(value: EmptyHostDetails ) -> Self {Self::Empty (value)}}
+
+impl From<std::net::Ipv6Addr> for NonSpecialHostDetails {fn from(value: std::net::Ipv6Addr) -> Self {Self::Ipv6(value.into())}}

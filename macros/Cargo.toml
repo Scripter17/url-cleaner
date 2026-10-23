@@ -14,9 +14,9 @@ rust-version = "1.96.1"
 proc-macro = true
 
 [dependencies]
-syn         = { version = "2.0.119", features = ["extra-traits"] }
+syn   = "3.0.9"
+quote = "1.0.47"
 proc-macro2 = "1.0.107"
-quote       = "1.0.47"
 
 [lints]
 workspace = true

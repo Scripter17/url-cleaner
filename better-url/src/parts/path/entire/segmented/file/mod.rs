@@ -50,7 +50,7 @@ impl<'a> FilePath<'a> {
 
 impl<'a> From<Cow<'a, [u8]>> for FilePath<'a> {
     fn from(value: Cow<'a, [u8]>) -> Self {
-        let (_, value) = encode_file_path_bytes(value);
+        let (_, value) = make_file_path_bytes(value);
 
         unsafe {
             Self::new_unchecked(value)

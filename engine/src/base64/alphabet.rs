@@ -16,7 +16,7 @@ pub enum Base64Alphabet {
     Standard,
     /// The URL safe alphabet, where characters 62 and 63 are `-` and `_`.
     ///
-    /// The default.
+    /// The default, given this is a URL cleaning library.
     #[default]
     UrlSafe,
     /// [`base64::alphabet::CRYPT`].
@@ -26,7 +26,7 @@ pub enum Base64Alphabet {
     /// [`base64::alphabet::IMAP_MUTF7`].
     IMAPMUTF7,
     /// [`base64::alphabet::BIN_HEX`].
-    BinHex
+    BinHex,
 }
 
 impl Base64Alphabet {
@@ -38,7 +38,7 @@ impl Base64Alphabet {
             Self::Crypt     => &base64::alphabet::CRYPT,
             Self::Bcrypt    => &base64::alphabet::BCRYPT,
             Self::IMAPMUTF7 => &base64::alphabet::IMAP_MUTF7,
-            Self::BinHex    => &base64::alphabet::BIN_HEX
+            Self::BinHex    => &base64::alphabet::BIN_HEX,
         }
     }
 }

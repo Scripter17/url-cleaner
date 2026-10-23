@@ -2,40 +2,9 @@
 
 use std::time::Duration;
 
-use sqlx::{Arguments, Executor, Row};
+use sqlx::Row;
 
 use crate::prelude::*;
-
-/// A simple wrapper around [`sqlx::sqlite::SqliteConnectOptions`] whose [`FromStr`] includes [`sqlx::sqlite::SqliteConnectOptions::create_if_missing`] set to [`true`].
-#[derive(Debug, Clone)]
-pub struct CacheTarget {
-    /// The [`sqlx::sqlite::SqliteConnectOptions`].
-    pub options: sqlx::sqlite::SqliteConnectOptions
-}
-
-impl From<sqlx::sqlite::SqliteConnectOptions> for CacheTarget {
-    fn from(value: sqlx::sqlite::SqliteConnectOptions) -> Self {
-        Self {
-            options: value
-        }
-    }
-}
-
-impl From<CacheTarget> for sqlx::sqlite::SqliteConnectOptions {
-    fn from(value: CacheTarget) -> Self {
-        value.options
-    }
-}
-
-impl FromStr for CacheTarget {
-    type Err = <sqlx::sqlite::SqliteConnectOptions as FromStr>::Err;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self {
-            options: s.parse::<sqlx::sqlite::SqliteConnectOptions>()?.create_if_missing(true)
-        })
-    }
-}
 
 /// A connection to a SQLite cache.
 ///
@@ -85,14 +54,10 @@ pub struct CacheClient {
     pub pool: sqlx::SqlitePool,
     /// The [`tokio::runtime::Handle`].
     pub handle: tokio::runtime::Handle,
-    /// If the SQLite database should be assumed to be initialized.
-    ///
-    /// Just used to let [`Self::init_acquire`] skip the initialization.
-    pub assume_init: std::sync::atomic::AtomicBool,
 }
 
 impl CacheClient {
-    /// The initializiation code of the database.
+    /// The query to initialize the database.
     pub const INIT: &str = r#"CREATE TABLE IF NOT EXISTS cache (
         subject  TEXT  NOT NULL,
         "key"    TEXT  NOT NULL,
@@ -100,6 +65,12 @@ impl CacheClient {
         duration FLOAT NOT NULL,
         UNIQUE(subject, "key") ON CONFLICT REPLACE
     )"#;
+
+    /// The query to read from the database.
+    pub const READ: &str = r#"SELECT value, duration FROM cache WHERE subject = $1 AND "key" = $2"#;
+
+    /// The query to write to the database.
+    pub const WRITE: &str = r#"INSERT INTO cache (subject, "key", value, duration) VALUES ($1, $2, $3, $4)"#;
 
 
 
@@ -128,15 +99,6 @@ impl CacheClient {
         self.handle.block_on(self.write(subject, key, value, duration, config))
     }
 
-    /// [`tokio::runtime::Handle::block_on`] + [`Self::init_acquire`].
-    /// # Errors
-    /// If interacing with the database returns an error, returns the error [`sqlx::Error`].
-    /// # Panics
-    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
-    pub fn init_acquire_sync(&self) -> Result<sqlx::pool::PoolConnection<sqlx::Sqlite>, InitAcquireCacheError> {
-        self.handle.block_on(self.init_acquire())
-    }
-
 
 
     /// Make a new [`Self`] using the current runtime's [`tokio::runtime::Handle`].
@@ -144,18 +106,22 @@ impl CacheClient {
     /// If called outside a Tokio runtime, panics.
     pub async fn new(target: CacheTarget) -> Self {
         Self {
-            pool       : sqlx::SqlitePool::connect_lazy_with(target.options),
-            handle     : tokio::runtime::Handle::current(),
-            assume_init: false.into(),
+            pool: sqlx::sqlite::SqlitePoolOptions::default().after_connect(|conn, _| Box::pin(async move {
+                sqlx::query(Self::INIT).execute(conn).await?;
+
+                Ok(())
+            })).connect_lazy_with(target.options),
+            handle: tokio::runtime::Handle::current(),
         }
     }
 
     /// Read an entry's value.
-    /// # Errors
-    /// If [`Self::init_acquire`] returns an error, that error is returned.
     ///
+    /// If [`CacheConfig::read`] is [`false`], always immediately returns `Ok(None)`.
+    ///
+    /// If [`CacheConfig::hide`] is [`true`], a matching cache entry is found, and reading the cache took less time than that entry's `duration` column, sleeps for the remaining time.
+    /// # Errors
     /// If interacing with the database returns an error, returns the error [`sqlx::Error`].
-    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
     pub async fn read(&self, subject: &str, key: &str, config: CacheConfig) -> Result<Option<Option<String>>, ReadFromCacheError> {
         if !config.read {
             return Ok(None);
@@ -163,16 +129,7 @@ impl CacheClient {
 
         let start = std::time::Instant::now();
 
-        let mut connection = self.init_acquire().await?;
-
-        let mut args = sqlx::sqlite::SqliteArguments::default();
-
-        args.add(subject).expect("???");
-        args.add(key    ).expect("???");
-
-        let query = sqlx::query_with(r#"SELECT * FROM cache WHERE subject = $1 AND "key" = $2"#, args);
-
-        Ok(match connection.fetch_optional(query).await? {
+        Ok(match sqlx::query(Self::READ).bind(subject).bind(key).fetch_optional(&self.pool).await? {
             Some(row) => {
                 if config.hide && let Some(remainder) = Duration::from_secs_f64(row.try_get("duration")?).checked_sub(start.elapsed()) {
                     tokio::time::sleep(remainder).await;
@@ -185,46 +142,19 @@ impl CacheClient {
     }
 
     /// Write an entry.
-    /// # Errors
-    /// If [`Self::init_acquire`] returns an error, that error is returned.
     ///
+    /// If [`CacheConfig::read`] is [`false`], always immediately returns `Ok(())`.
+    /// # Errors
     /// If interacing with the database returns an error, returns the error [`sqlx::Error`].
-    #[expect(clippy::missing_panics_doc, reason = "Shouldn't be possible.")]
     pub async fn write(&self, subject: &str, key: &str, value: Option<&str>, duration: Duration, config: CacheConfig) -> Result<(), WriteToCacheError> {
         if !config.write {
             return Ok(());
         }
 
-        let mut connection = self.init_acquire().await?;
-
-        let mut args = sqlx::sqlite::SqliteArguments::default();
-
-        args.add(subject               ).expect("???");
-        args.add(key                   ).expect("???");
-        args.add(value                 ).expect("???");
-        args.add(duration.as_secs_f64()).expect("???");
-
-        let query = sqlx::query_with(r#"INSERT INTO cache (subject, "key", value, duration) VALUES ($1, $2, $3, $4)"#, args);
-
-        connection.execute(query).await?;
+        sqlx::query(Self::WRITE)
+            .bind(subject).bind(key).bind(value).bind(duration.as_secs_f64())
+            .execute(&self.pool).await?;
 
         Ok(())
-    }
-
-    /// Ensure the cache is initialized and return a connection.
-    /// # Errors
-    /// If interacing with the database returns an error, returns the error [`sqlx::Error`].
-    pub async fn init_acquire(&self) -> Result<sqlx::pool::PoolConnection<sqlx::Sqlite>, InitAcquireCacheError> {
-        let mut connection = self.pool.acquire().await?;
-
-        if !self.assume_init.load(std::sync::atomic::Ordering::Relaxed) {
-            let query = sqlx::query(Self::INIT);
-
-            connection.execute(query).await?;
-
-            self.assume_init.store(true, std::sync::atomic::Ordering::Relaxed);
-        }
-
-        Ok(connection)
     }
 }

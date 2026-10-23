@@ -38,7 +38,7 @@ impl BetterUrl {
 
     /// The domain suffix [`DomainSegmentsIter`].
     pub fn domain_suffix_segments(&self) -> Option<DomainSegmentsIter<'_>> {
-        self.domain_suffix_segment_strs().map(DomainSegmentsIter)
+        Some(unsafe {DomainSegmentsIter::new_unchecked(self.domain_suffix_segment_strs()?)})
     }
 
 

@@ -69,11 +69,10 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for OpaqueHost<'a> {
     type Error = InvalidOpaqueHost;
 
     fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        let (_, host) = encode_opaque_host_bytes(value)?;
+        let (_, host, details) = make_opaque_host_bytes(value)?;
 
-        Ok(Self {
-            host,
-            details: Default::default(),
+        Ok(unsafe {
+            Self::from_parts(host, details)
         })
     }
 }

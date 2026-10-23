@@ -1,5 +1,6 @@
 //! Parts.
 
+mod classes;
 mod split;
 mod split_bytes;
 mod canonize;
@@ -11,6 +12,7 @@ mod path;
 mod query;
 mod fragment;
 
+pub use classes::*;
 pub use split::*;
 pub use split_bytes::*;
 pub use canonize::*;

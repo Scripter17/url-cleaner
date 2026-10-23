@@ -44,7 +44,7 @@ impl BetterUrl {
 
     /// [`FragmentQueryIter`].
     pub fn fragment_query_segments(&self) -> FragmentQueryIter<'_> {
-        FragmentQueryIter(SplitAmpersands(self.fragment_str()))
+        unsafe {FragmentQueryIter::new_unchecked(SplitAmpersands(self.fragment_str()))}
     }
 
     /// The `index`th fragment [`FragmentQuerySegment`] named `name`.

@@ -15,7 +15,7 @@ impl<'a> Scheme<'a> {
     /// Make a new [`Self`] without doing any validity checks.
     /// # Safety
     /// `value` must be a valid [`Self`] literal and `details` must be its details.
-    pub unsafe fn new_unchecked<T: Into<Cow<'a, str>>>(value: T, details: SchemeDetails) -> Self {
+    pub unsafe fn from_parts<T: Into<Cow<'a, str>>>(value: T, details: SchemeDetails) -> Self {
         Self {
             scheme: value.into(),
             details
@@ -63,11 +63,11 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for Scheme<'a> {
     type Error = InvalidScheme;
 
     fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        let (_, value) = encode_scheme_bytes(value)?;
+        let (_, value, details) = make_scheme_bytes(value)?;
 
         Ok(Self {
-            details: SchemeDetails::new_unchecked(&value),
-            scheme : value
+            scheme : value,
+            details,
         })
     }
 }

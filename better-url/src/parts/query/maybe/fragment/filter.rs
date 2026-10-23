@@ -28,7 +28,7 @@ impl MaybeFragmentQuery<'_> {
         let old_len = self.len();
 
         if let Some(query) = &mut self.0 {
-            let mut ranges = Vec::<Range<usize>>::new();
+            let mut ranges = smallvec::SmallVec::<[Range<usize>; 2]>::new();
 
             for segment in query.iter() {
                 let range = query.as_str().my_substr_range(segment.as_str());
@@ -45,13 +45,18 @@ impl MaybeFragmentQuery<'_> {
             match &*ranges {
                 [] => self.0 = None,
                 [range] => unsafe {query.0.retain_range_unchecked(range.clone())},
-                [first, ranges @ ..] => {
-                    let mut ret = query.as_str()[first.clone()].to_string();
-                    for range in ranges {
-                        ret.push('&');
-                        ret.push_str(&query.as_str()[range.clone()]);
+                ranges => {
+                    let mut ret = String::with_capacity(ranges.iter().map(Range::len).sum::<usize>() + ranges.len());
+
+                    for (i, range) in ranges.iter().enumerate() {
+                        if i != 0 {
+                            ret.push('&');
+                        }
+
+                        ret.push_str(unsafe {query.as_str().get_unchecked(range.clone())});
                     }
-                    query.0 = ret.into();
+
+                    *query = unsafe {FragmentQuery::new_unchecked(ret)};
                 }
             }
         }

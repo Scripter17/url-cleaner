@@ -16,7 +16,6 @@ pub enum StringSourceError {
     /** [`PartitioningSourceError`].     **/                           #[error(transparent)] PartitioningSourceError    (#[from] Box<PartitioningSourceError> ),
     /** [`RegexExpansionError`].         **/                           #[error(transparent)] RegexExpansionError        (#[from] Box<RegexExpansionError>     ),
 
-    /** [`InvalidUrl`].                  **/                           #[error(transparent)] InvalidUrl                 (#[from] InvalidUrl                   ),
     /** [`PartitioningNotFound`]         **/                           #[error(transparent)] PartitioningNotFound       (#[from] Box<PartitioningNotFound>    ),
     /** [`MapNotFound`]                  **/                           #[error(transparent)] MapNotFound                (#[from] Box<MapNotFound>             ),
     /** [`FlagSourceError`].             **/                           #[error(transparent)] FlagSourceError            (#[from] Box<FlagSourceError>         ),

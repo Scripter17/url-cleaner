@@ -4,9 +4,21 @@ use crate::prelude::*;
 
 /// An [`Iterator`] over the [`DomainSegment`]s of a [`DomainSegments`].
 #[derive(Debug, Clone)]
-pub struct DomainSegmentsIter<'a>(pub(crate) SplitDots<'a>);
+pub struct DomainSegmentsIter<'a>(SplitDots<'a>);
 
 impl<'a> DomainSegmentsIter<'a> {
+    /// Create a new [`Self`] from a [`SplitDots`] without validity checks.
+    /// # Safety
+    /// Every output of [`SplitDots::next`] must be a valid input to [`DomainSegment::new_unchecked`].
+    pub unsafe fn new_unchecked(value: SplitDots<'a>) -> Self {
+        Self(value)
+    }
+
+    /// Get the inner [`SplitDots`].
+    pub fn into_inner(self) -> SplitDots<'a> {
+        self.0
+    }
+
     /// The srange of the remainder as a [`str`].
     pub fn range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&'a str> {
         self.0.range(range)

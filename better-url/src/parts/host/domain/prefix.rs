@@ -46,7 +46,7 @@ impl DomainHost<'_> {
 
     /// The prefix segments as [`DomainSegment`]s.
     pub fn prefix_segments(&self) -> Option<DomainSegmentsIter<'_>> {
-        self.prefix_segment_strs().map(DomainSegmentsIter)
+        Some(unsafe {DomainSegmentsIter::new_unchecked(self.prefix_segment_strs()?)})
     }
 
 

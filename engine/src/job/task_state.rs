@@ -10,5 +10,7 @@ pub struct TaskState<'j> {
     /// [`Task::context`].
     pub context: TaskContext,
     /// The [`Job`].
-    pub job: &'j Job<'j>
+    pub job: &'j Job<'j>,
+    /// A [`ThreadLock`].
+    pub thread_lock: Option<ThreadLock<'j>>,
 }

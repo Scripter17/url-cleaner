@@ -30,6 +30,13 @@ impl ServerTool {
             Self::Valgrind(x) => x.kebab(),
         }
     }
+
+    /// The description.
+    pub fn description(self) -> &'static str {
+        match self {
+            Self::Valgrind(x) => x.description(),
+        }
+    }
 }
 
 impl ValueEnum for ServerTool {

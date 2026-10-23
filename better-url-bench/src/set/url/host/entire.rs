@@ -6,6 +6,8 @@ use clap::Parser;
 
 use better_url::prelude::*;
 
+use crate::util::BasicBenchThing;
+
 /// Benchmark setting a URL's host.
 ///
 /// Parses each line of STDIN as a URL and processes it --num times for each datapoint.
@@ -49,12 +51,11 @@ pub struct Args {
     /** Compare to Servo's URL crate. **/ #[arg(long)] pub servo: bool,
     /** Compare to Ada's URL crate.   **/ #[arg(long)] pub ada  : bool,
 
-    /// The number of times to do each URL.
-    #[arg(long)]
-    pub num: usize,
     /// The value to set it to.
     #[arg(long)]
     pub value: String,
+
+    /** The [`BasicBenchThing`]. **/ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
 }
 
 impl Args {
@@ -75,53 +76,27 @@ impl Args {
 
             match BetterUrl::new(&line) {
                 Ok(url) if let Ok(value) = Host::new(&self.value, url.scheme_type()) => {
-                    let temp = url.clone();
-                    let urls = vec![temp; self.num];
-
-                    let timer = std::time::Instant::now();
-
-                    for mut url in urls {
-                        let _ = url.set_host(value.borrowed());
-                    }
-
-                    let burl = timer.elapsed();
+                    let burl = self.basic_bench_thing.bench_with_input(|mut url| url.set_host(value.borrowed()), url.clone());
                     burl_total += burl;
 
                     print!("\t{burl:.2?}");
 
 
 
-                    let urls = vec![url; self.num];
-
-                    let timer = std::time::Instant::now();
-
-                    for mut url in urls {
-                        let _ = url.set_host(&self.value);
-                    }
-
-                    let burl_untyped = timer.elapsed();
+                    let burl_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_host(&self.value), url.clone());
                     burl_untyped_total += burl_untyped;
 
                     let factor       = burl_untyped      .as_secs_f64() / burl      .as_secs_f64();
                     let total_factor = burl_untyped_total.as_secs_f64() / burl_total.as_secs_f64();
 
-                    print!("\t{burl_untyped:.2?}\t{factor:.2}\t{total_factor:.2}");
+                    print!("\t{burl_untyped:.2?}\t{burl_untyped:.2?}\t{factor:.2}\t{total_factor:.2}");
 
 
 
                     if servo {
                         match url::Url::parse(&line) {
                             Ok(url) => {
-                                let temp = url.clone();
-                                let urls = vec![temp; self.num];
-
-                                let timer = std::time::Instant::now();
-
-                                for mut url in urls {
-                                    let _ = url.set_host(Some(value.as_str()));
-                                }
-
-                                let servo = timer.elapsed();
+                                let servo = self.basic_bench_thing.bench_with_input(|mut url| url.set_host(Some(value.as_str())), url.clone());
                                 servo_total += servo;
 
                                 let factor       = servo      .as_secs_f64() / burl      .as_secs_f64();
@@ -131,15 +106,7 @@ impl Args {
 
 
 
-                                let urls = vec![url; self.num];
-
-                                let timer = std::time::Instant::now();
-
-                                for mut url in urls {
-                                    let _ = url.set_host(Some(&self.value));
-                                }
-
-                                let servo_untyped = timer.elapsed();
+                                let servo_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_host(Some(&self.value)), url.clone());
                                 servo_untyped_total += servo_untyped;
 
                                 let factor       = servo_untyped      .as_secs_f64() / burl_untyped      .as_secs_f64();
@@ -147,7 +114,7 @@ impl Args {
 
                                 print!("\t{servo:.2?}\t{factor:.2}\t{total_factor:.2}");
                             },
-                            Err(_) => print!("\t\t\t\t\t\t")
+                            Err(_) => print!("\t\t\t\t\t\t"),
                         }
                     }
 
@@ -156,16 +123,7 @@ impl Args {
                     if ada {
                         match ada_url::Url::parse(&line, None) {
                             Ok(url) => {
-                                let temp = url.clone();
-                                let urls = vec![temp; self.num];
-
-                                let timer = std::time::Instant::now();
-
-                                for mut url in urls {
-                                    let _ = url.set_hostname(Some(value.as_str()));
-                                }
-
-                                let ada = timer.elapsed();
+                                let ada = self.basic_bench_thing.bench_with_input(|mut url| url.set_hostname(Some(value.as_str())), url.clone());
                                 ada_total += ada;
 
                                 let factor       = ada      .as_secs_f64() / burl      .as_secs_f64();
@@ -175,15 +133,7 @@ impl Args {
 
 
 
-                                let urls = vec![url; self.num];
-
-                                let timer = std::time::Instant::now();
-
-                                for mut url in urls {
-                                    let _ = url.set_hostname(Some(&self.value));
-                                }
-
-                                let ada_untyped = timer.elapsed();
+                                let ada_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_hostname(Some(&self.value)), url.clone());
                                 ada_untyped_total += ada_untyped;
 
                                 let factor       = ada_untyped      .as_secs_f64() / burl_untyped      .as_secs_f64();
@@ -191,7 +141,7 @@ impl Args {
 
                                 print!("\t{ada:.2?}\t{factor:.2}\t{total_factor:.2}");
                             },
-                            Err(_) => print!("\t\t\t\t\t\t")
+                            Err(_) => print!("\t\t\t\t\t\t"),
                         }
                     }
                 },
@@ -199,7 +149,7 @@ impl Args {
                     print!("\t\t\t\t");
                     if servo {print!("\t\t\t\t\t\t");}
                     if ada   {print!("\t\t\t\t\t\t");}
-                }
+                },
             }
 
             println!();

@@ -12,8 +12,8 @@ pub enum SchemeType {
 }
 
 impl SchemeType {
-    /** If it's [`Self::File`] or [`Self::SpecialNotFile`]. **/ pub fn is_special         (self) -> bool {matches!(self, Self::File | Self::SpecialNotFile)}
-    /** If it's [`Self::File`].                             **/ pub fn is_file            (self) -> bool {matches!(self, Self::File                       )}
-    /** If it's [`Self::SpecialNotFile`].                   **/ pub fn is_special_not_file(self) -> bool {matches!(self, Self::SpecialNotFile             )}
-    /** If it's [`Self::NonSpecial`].                       **/ pub fn is_non_special     (self) -> bool {matches!(self, Self::NonSpecial                 )}
+    /** If it's [`Self::File`] or [`Self::SpecialNotFile`]. **/ pub const fn is_special         (self) -> bool {matches!(self, Self::File | Self::SpecialNotFile)}
+    /** If it's [`Self::File`].                             **/ pub const fn is_file            (self) -> bool {matches!(self, Self::File                       )}
+    /** If it's [`Self::SpecialNotFile`].                   **/ pub const fn is_special_not_file(self) -> bool {matches!(self, Self::SpecialNotFile             )}
+    /** If it's [`Self::NonSpecial`].                       **/ pub const fn is_non_special     (self) -> bool {matches!(self, Self::NonSpecial                 )}
 }

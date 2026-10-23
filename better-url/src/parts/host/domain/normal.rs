@@ -49,7 +49,7 @@ impl DomainHost<'_> {
 
     /// The normal segments as [`DomainSegment`]s.
     pub fn normal_segments(&self) -> DomainSegmentsIter<'_> {
-        DomainSegmentsIter(self.normal_segment_strs())
+        unsafe {DomainSegmentsIter::new_unchecked(self.normal_segment_strs())}
     }
 
 

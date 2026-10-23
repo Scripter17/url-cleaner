@@ -46,7 +46,7 @@ impl DomainHost<'_> {
 
     /// The labels segments as [`DomainSegment`]s.
     pub fn labels_segments(&self) -> DomainSegmentsIter<'_> {
-        DomainSegmentsIter(self.labels_segment_strs())
+        unsafe {DomainSegmentsIter::new_unchecked(self.labels_segment_strs())}
     }
 
 

@@ -22,7 +22,6 @@ pub enum BidiDetail {
 
 /** Shorthand. **/ const AL  : BidiClass = BidiClass::AL ;
 /** Shorthand. **/ const AN  : BidiClass = BidiClass::AN ;
-/** Shorthand. **/ const B   : BidiClass = BidiClass::B  ;
 /** Shorthand. **/ const BN  : BidiClass = BidiClass::BN ;
 /** Shorthand. **/ const CS  : BidiClass = BidiClass::CS ;
 /** Shorthand. **/ const EN  : BidiClass = BidiClass::EN ;
@@ -32,72 +31,6 @@ pub enum BidiDetail {
 /** Shorthand. **/ const NSM : BidiClass = BidiClass::NSM;
 /** Shorthand. **/ const ON  : BidiClass = BidiClass::ON ;
 /** Shorthand. **/ const R   : BidiClass = BidiClass::R  ;
-/** Shorthand. **/ const S   : BidiClass = BidiClass::S  ;
-/** Shorthand. **/ const WS  : BidiClass = BidiClass::WS ;
-
-/// The [`BidiClass`] for each ASCII byte.
-///
-/// Used to compute [`DATA`].
-const ASCII_CLASSES: [Option<BidiClass>; 256] = [
-    /* 00-03 */ Some(BN), Some(BN), Some(BN), Some(BN), /* 04-07 */ Some(BN), Some(BN), Some(BN), Some(BN), /* 18-1B */ Some(BN), Some(S ), Some(B ), Some(S ), /* 2C-2F */ Some(WS), Some(B ), Some(BN), Some(BN),
-    /* 10-13 */ Some(BN), Some(BN), Some(BN), Some(BN), /* 34-37 */ Some(BN), Some(BN), Some(BN), Some(BN), /* 48-4B */ Some(BN), Some(BN), Some(BN), Some(BN), /* 5C-5F */ Some(B ), Some(B ), Some(B ), Some(S ),
-    /* 20-23 */ Some(WS), Some(ON), Some(ON), Some(ET), /* 64-67 */ Some(ET), Some(ET), Some(ON), Some(ON), /* 78-7B */ Some(ON), Some(ON), Some(ON), Some(ES), /* 7C-7F */ Some(CS), Some(ES), Some(CS), Some(CS),
-    /* 30-33 */ Some(EN), Some(EN), Some(EN), Some(EN), /* 74-77 */ Some(EN), Some(EN), Some(EN), Some(EN), /* 78-7B */ Some(EN), Some(EN), Some(CS), Some(ON), /* 7C-7F */ Some(ON), Some(ON), Some(ON), Some(ON),
-    /* 40-43 */ Some(ON), Some(L ), Some(L ), Some(L ), /* 74-77 */ Some(L ), Some(L ), Some(L ), Some(L ), /* 78-7B */ Some(L ), Some(L ), Some(L ), Some(L ), /* 7C-7F */ Some(L ), Some(L ), Some(L ), Some(L ),
-    /* 50-53 */ Some(L ), Some(L ), Some(L ), Some(L ), /* 74-77 */ Some(L ), Some(L ), Some(L ), Some(L ), /* 78-7B */ Some(L ), Some(L ), Some(L ), Some(ON), /* 7C-7F */ Some(ON), Some(ON), Some(ON), Some(ON),
-    /* 60-63 */ Some(ON), Some(L ), Some(L ), Some(L ), /* 74-77 */ Some(L ), Some(L ), Some(L ), Some(L ), /* 78-7B */ Some(L ), Some(L ), Some(L ), Some(L ), /* 7C-7F */ Some(L ), Some(L ), Some(L ), Some(L ),
-    /* 70-73 */ Some(L ), Some(L ), Some(L ), Some(L ), /* 74-77 */ Some(L ), Some(L ), Some(L ), Some(L ), /* 78-7B */ Some(L ), Some(L ), Some(L ), Some(ON), /* 7C-7F */ Some(ON), Some(ON), Some(ON), Some(BN),
-
-    // Non ASCII
-
-    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-    None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None,
-];
-
-/// Get [`DATA`].
-const fn get_data() -> [u8; 256] {
-    let mut ret = [0; 256];
-
-    let mut i = 0;
-    while i < 256 {
-        if !matches!(ASCII_CLASSES[i as usize], Some(L                              )) {ret[i as usize] |= 0b0000_0001;}
-        if !matches!(ASCII_CLASSES[i as usize], Some(L | EN | ES | CS | ET | ON | BN)) {ret[i as usize] |= 0b0000_0010;}
-        if !matches!(ASCII_CLASSES[i as usize], Some(L | EN                         )) {ret[i as usize] |= 0b0000_0100;}
-
-        if !matches!(ASCII_CLASSES[i as usize], Some(L | EN | ES | CS | ET | ON | BN)) {ret[i as usize] |= 0b0001_0000;}
-        if !matches!(ASCII_CLASSES[i as usize], Some(L | EN | ES | CS | ET | ON | BN)) {ret[i as usize] |= 0b0010_0000;}
-        if !matches!(ASCII_CLASSES[i as usize], Some(L | EN | ES | CS | ET | ON | BN)) {ret[i as usize] |= 0b0100_0000;}
-
-        i += 1;
-    }
-
-    ret
-}
-
-/// A set of bitfields whose bits are, from lowest to highest:
-///
-/// - If a byte is either not ASCII or can't start a [`BidiDetail::Ltr`] domain label.
-///
-/// - If a byte is either not ASCII or can't continue a [`BidiDetail::Ltr`] domain label.
-///
-/// - If a byte is either not ASCII or can't end a [`BidiDetail::Ltr`] domain label.
-///
-/// - Unused.
-///
-/// - If a byte is either not ASCII or can't start a [`BidiDetail::ForceLtr`] domain label.
-///
-/// - If a byte is either not ASCII or can't continue a [`BidiDetail::ForceLtr`] domain label.
-///
-/// - If a byte is either not ASCII or can't end a [`BidiDetail::ForceLtr`] domain label.
-///
-/// - Unused.
-const DATA: [u8; 256] = get_data();
 
 impl BidiDetail {
     /// Join the [`BidiDetail`]s of multiple domain segments.
@@ -115,16 +48,16 @@ impl BidiDetail {
 
     /// Parse a decoded domain segment.
     ///
-    /// First does [`Self::fast_parse_ascii`], only doing [`Self::parse_unicode`] if it returns [`None`].
+    /// First does [`Self::parse_ascii`], only doing [`Self::parse_unicode`] if it returns [`None`].
     pub fn parse(value: &str) -> Self {
-        if let Some(ret) = Self::fast_parse_ascii(value) {
+        if let Some(ret) = Self::parse_ascii(value) {
             return ret;
         }
 
         Self::parse_unicode(value)
     }
 
-    /// Quickly check if an ASCII label is [`Self::Ltr`].
+    /// Quickly check if an ASCII label is [`Self::Ltr`] or [`Self::ForceLtr`].
     ///
     /// Done as the first step of [`Self::parse`].
     /// # Examples
@@ -137,36 +70,36 @@ impl BidiDetail {
     ///             let bs = [a, b, c];
     ///             let s = str::from_utf8(&bs).unwrap();
     ///
-    ///             if let Some(x) = BidiDetail::fast_parse_ascii(s) {
+    ///             if let Some(x) = BidiDetail::parse_ascii(s) {
     ///                 assert_eq!(x, BidiDetail::parse_unicode(s), "{s:?}");
     ///             }
     ///         }
     ///     }
     /// }
     /// ```
-    pub fn fast_parse_ascii(value: &str) -> Option<Self> {
+    pub fn parse_ascii(value: &str) -> Option<Self> {
         let (x, mid, y) = match *value.as_bytes() {
             [                  ] => return Some(Self::Ltr),
             [x                 ] => (x, b"".as_slice(), x),
             [x, ref mid @ .., y] => (x, mid           , y),
         };
 
-        let c1 = DATA[x as usize];
-        let c2 = mid.iter().fold(0, |acc, &b| acc | DATA[b as usize]);
-        let c3 = DATA[y as usize];
+        let c1 =                                    DOMAIN_BYTE_CLASS_DATA[x as usize] ;
+        let c2 = mid.iter().fold(0, |acc, &b| acc | DOMAIN_BYTE_CLASS_DATA[b as usize]);
+        let c3 =                                    DOMAIN_BYTE_CLASS_DATA[y as usize] ;
 
-        if (c1 & 1) | (c2 & 2) | (c3 & 4) == 0 {
+        if (c1 & 0b0010_0000) | (c2 & 0b0100_0000) | (c3 & 0b1000_0000) == 0 {
             Some(Self::Ltr)
-        } else if (c1 & 16) | (c2 & 32) | (c3 & 64) == 0 {
+        } else if (c1 | c2 | c3) & 0b0100_0000 == 0 {
             Some(Self::ForceLtr)
         } else {
             None
         }
     }
 
-    /// [`Self::parse`] without first trying [`Self::fast_parse_ascii`].
+    /// [`Self::parse`] without first trying [`Self::parse_ascii`].
     ///
-    /// Done as the second step of [`Self::parse`] after [`Self::fast_parse_ascii`].
+    /// Done as the second step of [`Self::parse`] after [`Self::parse_ascii`].
     pub fn parse_unicode(value: &str) -> Self {
         let mut classes = value.chars().map(BidiClass::for_char);
 

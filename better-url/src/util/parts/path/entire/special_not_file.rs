@@ -7,71 +7,43 @@ use crate::prelude::*;
 /// ```
 /// use better_url::util::*;
 ///
-/// assert_eq!(encode_special_not_file_path(""            ), (true, "/"        .into()));
+/// assert_eq!(make_special_not_file_path(""            ), (true, "/"        .into()));
 ///
-/// assert_eq!(encode_special_not_file_path("abc"         ), (true, "/abc"     .into()));
+/// assert_eq!(make_special_not_file_path("abc"         ), (true, "/abc"     .into()));
 ///
-/// assert_eq!(encode_special_not_file_path("/abc/."      ), (true, "/abc/"    .into()));
-/// assert_eq!(encode_special_not_file_path("/abc/.."     ), (true, "/"        .into()));
-/// assert_eq!(encode_special_not_file_path("/abc/./ghi/" ), (true, "/abc/ghi/".into()));
-/// assert_eq!(encode_special_not_file_path("/abc/../ghi/"), (true, "/ghi/"    .into()));
+/// assert_eq!(make_special_not_file_path("/abc/."      ), (true, "/abc/"    .into()));
+/// assert_eq!(make_special_not_file_path("/abc/.."     ), (true, "/"        .into()));
+/// assert_eq!(make_special_not_file_path("/abc/./ghi/" ), (true, "/abc/ghi/".into()));
+/// assert_eq!(make_special_not_file_path("/abc/../ghi/"), (true, "/ghi/"    .into()));
 ///
-/// assert_eq!(encode_special_not_file_path("/."          ), (true, "/"        .into()));
-/// assert_eq!(encode_special_not_file_path("/.."         ), (true, "/"        .into()));
-/// assert_eq!(encode_special_not_file_path("/./ghi/"     ), (true, "/ghi/"    .into()));
-/// assert_eq!(encode_special_not_file_path("/../ghi/"    ), (true, "/ghi/"    .into()));
+/// assert_eq!(make_special_not_file_path("/."          ), (true, "/"        .into()));
+/// assert_eq!(make_special_not_file_path("/.."         ), (true, "/"        .into()));
+/// assert_eq!(make_special_not_file_path("/./ghi/"     ), (true, "/ghi/"    .into()));
+/// assert_eq!(make_special_not_file_path("/../ghi/"    ), (true, "/ghi/"    .into()));
 ///
-/// assert_eq!(encode_special_not_file_path("/c:/."       ), (true, "/c:/"     .into()));
-/// assert_eq!(encode_special_not_file_path("/c:/.."      ), (true, "/"        .into()));
-/// assert_eq!(encode_special_not_file_path("/c:/./ghi/"  ), (true, "/c:/ghi/" .into()));
-/// assert_eq!(encode_special_not_file_path("/c:/../ghi/" ), (true, "/ghi/"    .into()));
+/// assert_eq!(make_special_not_file_path("/c:/."       ), (true, "/c:/"     .into()));
+/// assert_eq!(make_special_not_file_path("/c:/.."      ), (true, "/"        .into()));
+/// assert_eq!(make_special_not_file_path("/c:/./ghi/"  ), (true, "/c:/ghi/" .into()));
+/// assert_eq!(make_special_not_file_path("/c:/../ghi/" ), (true, "/ghi/"    .into()));
 /// ```
-pub fn encode_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    encode_special_not_file_path_bytes(cow_str_to_bytes(value))
+pub fn make_special_not_file_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
+    make_special_not_file_path_bytes(cow_str_to_bytes(value))
 }
-
-
-/// Get [`PATH_BYTE_CLASS`].
-const fn get_path_byte_class() -> [u8; 256] {
-    let mut ret = [0; 256];
-
-    let mut i = 0;
-    while i < 256 {
-        if PATH.contains(i as u8) {ret[i as usize] |= 1;}
-
-        i += 1;
-    }
-
-    ret[b'\\' as usize] |= 2;
-    ret[b'%'  as usize] |= 4;
-    ret[b'.'  as usize] |= 4;
-    ret[b':'  as usize] |= 8;
-    ret[b'|'  as usize] |= 8;
-
-    ret
-}
-
-/// A byte classifier whose bits are, from lowest to highest:
-///
-/// - If the byte is in [`PATH`].
-///
-/// - If the byte is `%` or `.`, possibly requiring resolving.
-///
-/// - If the byte is `|` or `:`, possibly requiring resolving in the current kinda bad [`FilePath`] resolver.
-pub(crate) const PATH_BYTE_CLASS: [u8; 256] = get_path_byte_class();
-
-
 
 /// Encode a [`SpecialNotFilePath`] from bytes.
-pub fn encode_special_not_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
+pub fn make_special_not_file_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
     let value = value.into();
+
+    if value.is_empty() {
+        return (true, "/".into());
+    }
 
     let prepend_slash = !matches!(&*value, [b'/' | b'\\', ..]);
     let mut to_encode = 0;
     let mut class = 0;
 
     for &b in &*value {
-        class |= PATH_BYTE_CLASS[b as usize];
+        class |= SCHEME_PATH_BYTE_CLASS_DATA[b as usize];
     }
 
     if class & 1 == 1 {

@@ -1,7 +1,5 @@
 //! [`StringMatcher`].
 
-#![allow(unused_assignments, reason = "False positive.")]
-
 #[expect(unused_imports, reason = "Used in docs.")]
 use regex::Regex;
 
@@ -33,7 +31,7 @@ pub enum StringMatcher {
         ///
         /// Defaults to [`Self::Never`].
         #[serde(default, skip_serializing_if = "is_default")]
-        r#else: Box<Self>
+        r#else: Box<Self>,
     },
     /// Invert.
     Not(Box<Self>),
@@ -53,7 +51,7 @@ pub enum StringMatcher {
         /// The try.
         r#try: Box<Self>,
         /// The else.
-        r#else: Box<Self>
+        r#else: Box<Self>,
     },
     /// The first [`Self`] to return [`Ok`].
     FirstNotError(Vec<Self>),
@@ -79,7 +77,7 @@ pub enum StringMatcher {
         ///
         /// Defaults to [`StringLocation::Anywhere`].
         #[serde(default, skip_serializing_if = "is_default")]
-        at: StringLocation
+        at: StringLocation,
     },
 
     /// [`StringSource::get`] + [`str::starts_with`].
@@ -94,7 +92,7 @@ pub enum StringMatcher {
         ///
         /// Defaults to [`StringLocation::Anywhere`].
         #[serde(default, skip_serializing_if = "is_default")]
-        at: StringLocation
+        at: StringLocation,
     },
 
     // Char matching
@@ -161,7 +159,7 @@ pub enum StringMatcher {
         /// The [`StringModification`].
         modification: Box<StringModification>,
         /// The [`Self`].
-        matcher: Box<Self>
+        matcher: Box<Self>,
     },
 
     /// Satisfied if the string is [`Some`].
@@ -192,7 +190,7 @@ pub enum StringMatcher {
     /// # Errors
     #[suitable(never)]
     #[serde(skip)]
-    Extern(StringMatcherExtern)
+    Extern(StringMatcherExtern),
 }
 
 impl From<LazyRegex> for StringMatcher {
@@ -205,12 +203,7 @@ impl StringMatcher {
     /// Returns [`true`] if `value` satisfies `self`.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn check<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>, value: Option<&str>) -> Result<bool, StringMatcherError> {
-        debug!(StringMatcher::check, self, args, value; self._check(task_state, args, value))
-    }
-
-    /// [`Self::check`].
-    fn _check<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>, value: Option<&str>) -> Result<bool, StringMatcherError> {
+    pub fn check<'j>(&'j self, ts: &TaskState<'j>, args: Option<&'j FunctionArgs>, value: Option<&str>) -> Result<bool, StringMatcherError> {
         Ok(match self {
             Self::Always => true,
             Self::Never => false,
@@ -220,16 +213,16 @@ impl StringMatcher {
 
             Self::IsSome => value.is_some(),
             Self::IsNone => value.is_none(),
-            Self::IsSomeAnd(matcher) => value.is_some() && matcher.check(task_state, args, value)?,
-            Self::IsNoneOr (matcher) => value.is_none() || matcher.check(task_state, args, value)?,
+            Self::IsSomeAnd(matcher) => value.is_some() && matcher.check(ts, args, value)?,
+            Self::IsNoneOr (matcher) => value.is_none() || matcher.check(ts, args, value)?,
 
-            Self::If {r#if, then, r#else} => match r#if.check(task_state, args, value)? {
-                true  => then  .check(task_state, args, value)?,
-                false => r#else.check(task_state, args, value)?,
+            Self::If {r#if, then, r#else} => match r#if.check(ts, args, value)? {
+                true  => then  .check(ts, args, value)?,
+                false => r#else.check(ts, args, value)?,
             },
             Self::All(matchers) => {
                 for matcher in matchers {
-                    if !matcher.check(task_state, args, value)? {
+                    if !matcher.check(ts, args, value)? {
                         return Ok(false);
                     }
                 }
@@ -237,21 +230,21 @@ impl StringMatcher {
             },
             Self::Any(matchers) => {
                 for matcher in matchers {
-                    if matcher.check(task_state, args, value)? {
+                    if matcher.check(ts, args, value)? {
                         return Ok(true);
                     }
                 }
                 false
             },
-            Self::Not(matcher) => !matcher.check(task_state, args, value)?,
+            Self::Not(matcher) => !matcher.check(ts, args, value)?,
 
             // Error handling.
 
-            Self::ErrorToSatisfied  (matcher) => matcher.check(task_state, args, value).unwrap_or(true ),
-            Self::ErrorToUnsatisfied(matcher) => matcher.check(task_state, args, value).unwrap_or(false),
-            Self::TryElse {r#try, r#else} => match r#try.check(task_state, args, value) {
+            Self::ErrorToSatisfied  (matcher) => matcher.check(ts, args, value).unwrap_or(true ),
+            Self::ErrorToUnsatisfied(matcher) => matcher.check(ts, args, value).unwrap_or(false),
+            Self::TryElse {r#try, r#else} => match r#try.check(ts, args, value) {
                 Ok(x) => x,
-                Err(try_error) => match r#else.check(task_state, args, value) {
+                Err(try_error) => match r#else.check(ts, args, value) {
                     Ok(x) => x,
                     Err(else_error) => Err(TryElseError {try_error, else_error})?
                 }
@@ -260,7 +253,7 @@ impl StringMatcher {
                 let mut errors = Vec::new();
 
                 for matcher in matchers {
-                    match matcher.check(task_state, args, value) {
+                    match matcher.check(ts, args, value) {
                         Ok (x) => return Ok(x),
                         Err(e) => errors.push(e)
                     }
@@ -271,18 +264,18 @@ impl StringMatcher {
 
             // Equality
 
-            Self::Is     (check) => value == get!(?&check),
-            Self::IsInSet(set  ) => get!(set).contains(value),
+            Self::Is     (check) => value == check.get(ts, args)?.as_deref(),
+            Self::IsInSet(set  ) => set.get_some(ts, args)??.contains(value),
 
             // Containment
 
-            Self::StartsWith(prefix    ) => value.ok_or(SubjectIsNone)?.starts_with(get!(&prefix)),
-            Self::EndsWith  (suffix    ) => value.ok_or(SubjectIsNone)?.ends_with  (get!(&suffix)),
-            Self::Contains  {substr, at} => at.check(value.ok_or(SubjectIsNone)?,   get!(&substr))?,
+            Self::StartsWith(prefix    ) => value.ok_or(SubjectIsNone)?.starts_with(&*prefix.get_some(ts, args)??),
+            Self::EndsWith  (suffix    ) => value.ok_or(SubjectIsNone)?.ends_with  (&*suffix.get_some(ts, args)??),
+            Self::Contains  {substr, at} => at.check(value.ok_or(SubjectIsNone)?,   & substr.get_some(ts, args)??)?,
 
-            Self::IsPrefixOf    (container    ) => get!(container).starts_with(value.ok_or(SubjectIsNone)?),
-            Self::IsSuffixOf    (container    ) => get!(container).ends_with  (value.ok_or(SubjectIsNone)?),
-            Self::IsContainedIn {container, at} => at.check(get!(&container),  value.ok_or(SubjectIsNone)?)?,
+            Self::IsPrefixOf    (container    ) => container.get_some(ts, args)??.starts_with(value.ok_or(SubjectIsNone)?),
+            Self::IsSuffixOf    (container    ) => container.get_some(ts, args)??.ends_with  (value.ok_or(SubjectIsNone)?),
+            Self::IsContainedIn {container, at} => at.check(&container.get_some(ts, args)??,  value.ok_or(SubjectIsNone)?)?,
 
             // Char matcher
 
@@ -332,8 +325,8 @@ impl StringMatcher {
 
             Self::Modified {modification, matcher} => {
                 let mut temp = value.map(Cow::Borrowed);
-                modification.apply(task_state, args, &mut temp)?;
-                matcher.check(task_state, args, temp.as_deref())?
+                modification.apply(ts, args, &mut temp)?;
+                matcher.check(ts, args, temp.as_deref())?
             }
 
             // Glue
@@ -342,15 +335,9 @@ impl StringMatcher {
 
             // Misc
 
-            Self::Function(call) => task_state.job.cleaner.functions.string_matchers
-                .get(&call.name).ok_or(FunctionNotFound)?
-                .check(task_state, Some(&call.args), value)?,
-
-            Self::FunctionArg(name) => args.ok_or(NotInFunction)?.string_matchers
-                .get(get!(&name)).ok_or(FunctionArgFunctionNotFound)?
-                .check(task_state, args, value)?,
-
-            Self::Extern(function) => function(task_state, args, value)?,
+            Self::Function   (call    ) => ts.job.cleaner.functions  .string_matchers.get(& call.name                ).ok_or(FunctionNotFound           )?.check(ts, Some(&call.args), value)?,
+            Self::FunctionArg(name    ) => args.ok_or(NotInFunction)?.string_matchers.get(&*name.get_some(ts, args)??).ok_or(FunctionArgFunctionNotFound)?.check(ts, args            , value)?,
+            Self::Extern     (function) => function(ts, args, value)?,
         })
     }
 }

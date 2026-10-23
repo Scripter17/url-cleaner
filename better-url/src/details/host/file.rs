@@ -17,11 +17,20 @@ impl FileHostDetails {
     /// If `value` is not a valid [`FileHost`] literal, returns the error [`InvalidFileHost`].
     pub fn parse(value: &str) -> Result<Self, InvalidFileHost> {
         Ok(match value.as_bytes() {
-            b""        => EmptyHostDetails                 .into(),
-            [b'[', ..] => Ipv6HostDetails ::parse  (value)?.into(),
-            _ => match ends_in_a_number(value) {
-                true  => Ipv4HostDetails  ::parse(value)?.into(),
-                false => DomainHostDetails::parse(value)?.into(),
+            b""        => EmptyHostDetails               .into(),
+            [b'[', ..] => Ipv6HostDetails ::parse(value)?.into(),
+            _ => {
+                let class = value.bytes().fold(0, |acc, b| acc | DOMAIN_BYTE_CLASS_DATA[b as usize]);
+
+                if class & 0b0001_0101 != 0 {
+                    Err(InvalidFileHost)?;
+                }
+
+                if class & 0b0000_0010 != 0 && ends_in_a_number(value) {
+                    Ipv4HostDetails::parse(value)?.into()
+                } else {
+                    DomainHostDetails::parse_unchecked(value).into()
+                }
             }
         })
     }
@@ -41,3 +50,15 @@ impl From<DomainHostDetails> for FileHostDetails {fn from(value: DomainHostDetai
 impl From<Ipv4HostDetails  > for FileHostDetails {fn from(value: Ipv4HostDetails  ) -> Self {Self::Ipv4  (value)}}
 impl From<Ipv6HostDetails  > for FileHostDetails {fn from(value: Ipv6HostDetails  ) -> Self {Self::Ipv6  (value)}}
 impl From<EmptyHostDetails > for FileHostDetails {fn from(value: EmptyHostDetails ) -> Self {Self::Empty (value)}}
+
+impl From<std::net::IpAddr> for FileHostDetails {
+    fn from(value: std::net::IpAddr) -> Self {
+        match value {
+            std::net::IpAddr::V4(x) => x.into(),
+            std::net::IpAddr::V6(x) => x.into(),
+        }
+    }
+}
+
+impl From<std::net::Ipv4Addr> for FileHostDetails {fn from(value: std::net::Ipv4Addr) -> Self {Self::Ipv4(value.into())}}
+impl From<std::net::Ipv6Addr> for FileHostDetails {fn from(value: std::net::Ipv6Addr) -> Self {Self::Ipv6(value.into())}}

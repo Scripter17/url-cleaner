@@ -6,6 +6,8 @@ use clap::Parser;
 
 use better_url::prelude::*;
 
+use crate::util::BasicBenchThing;
+
 /// Benchmark setting a URL's query.
 ///
 /// Parses each line of STDIN as a URL and processes it --num times for each datapoint.
@@ -49,12 +51,11 @@ pub struct Args {
     /** Compare to Servo's URL crate. **/ #[arg(long)] pub servo: bool,
     /** Compare to Ada's URL crate.   **/ #[arg(long)] pub ada  : bool,
 
-    /// The number of times to do each URL.
-    #[arg(long)]
-    pub num: usize,
     /// The value to set it to.
     #[arg(long)]
     pub value: Option<String>,
+
+    /** The [`BasicBenchThing`]. **/ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
 }
 
 impl Args {
@@ -77,31 +78,14 @@ impl Args {
                 Ok(url) => {
                     let value = MaybeQuery::new(&self.value, url.query_type());
 
-                    let temp = url.clone();
-                    let urls = vec![temp; self.num];
-
-                    let timer = std::time::Instant::now();
-
-                    for mut url in urls {
-                        let _ = url.set_query(&value);
-                    }
-
-                    let burl = timer.elapsed();
+                    let burl = self.basic_bench_thing.bench_with_input(|mut url| url.set_query(&value), url.clone());
                     burl_total += burl;
 
                     print!("\t{burl:.2?}");
 
 
 
-                    let urls = vec![url; self.num];
-
-                    let timer = std::time::Instant::now();
-
-                    for mut url in urls {
-                        let _ = url.set_query(self.value.as_deref());
-                    }
-
-                    let burl_untyped = timer.elapsed();
+                    let burl_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_query(self.value.as_deref()), url.clone());
                     burl_untyped_total += burl_untyped;
 
                     let factor       = burl_untyped      .as_secs_f64() / burl      .as_secs_f64();
@@ -114,16 +98,7 @@ impl Args {
                     if servo {
                         match url::Url::parse(&line) {
                             Ok(url) => {
-                                let temp = url.clone();
-                                let urls = vec![temp; self.num];
-
-                                let timer = std::time::Instant::now();
-
-                                for mut url in urls {
-                                    url.set_query(value.as_str());
-                                }
-
-                                let servo = timer.elapsed();
+                                let servo = self.basic_bench_thing.bench_with_input(|mut url| url.set_query(value.as_str()), url.clone());
                                 servo_total += servo;
 
                                 let factor       = servo      .as_secs_f64() / burl      .as_secs_f64();
@@ -133,15 +108,7 @@ impl Args {
 
 
 
-                                let urls = vec![url; self.num];
-
-                                let timer = std::time::Instant::now();
-
-                                for mut url in urls {
-                                    url.set_query(self.value.as_deref());
-                                }
-
-                                let servo_untyped = timer.elapsed();
+                                let servo_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_query(self.value.as_deref()), url.clone());
                                 servo_untyped_total += servo_untyped;
 
                                 let factor       = servo_untyped      .as_secs_f64() / burl_untyped      .as_secs_f64();
@@ -158,16 +125,7 @@ impl Args {
                     if ada {
                         match ada_url::Url::parse(&line, None) {
                             Ok(url) => {
-                                let temp = url.clone();
-                                let urls = vec![temp; self.num];
-
-                                let timer = std::time::Instant::now();
-
-                                for mut url in urls {
-                                    url.set_search(value.as_str());
-                                }
-
-                                let ada = timer.elapsed();
+                                let ada = self.basic_bench_thing.bench_with_input(|mut url| url.set_search(value.as_str()), url.clone());
                                 ada_total += ada;
 
                                 let factor       = ada      .as_secs_f64() / burl      .as_secs_f64();
@@ -177,15 +135,7 @@ impl Args {
 
 
 
-                                let urls = vec![url; self.num];
-
-                                let timer = std::time::Instant::now();
-
-                                for mut url in urls {
-                                    url.set_search(self.value.as_deref());
-                                }
-
-                                let ada_untyped = timer.elapsed();
+                                let ada_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_search(self.value.as_deref()), url.clone());
                                 ada_untyped_total += ada_untyped;
 
                                 let factor       = ada_untyped      .as_secs_f64() / burl_untyped      .as_secs_f64();

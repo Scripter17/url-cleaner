@@ -9,12 +9,12 @@ pub struct FileSchemeDetails;
 
 impl FileSchemeDetails {
     /// The scheme as a [`str`].
-    pub fn as_str(self) -> &'static str {
+    pub const fn as_str(self) -> &'static str {
         "file"
     }
 
     /// The [`SchemeType`].
-    pub fn r#type(self) -> SchemeType {
+    pub const fn r#type(self) -> SchemeType {
         SchemeType::File
     }
 }

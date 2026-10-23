@@ -27,7 +27,7 @@ impl Args {
         let _site = start_site(protocol.is_tls());
 
         let mut cmd = match tool {
-            ClientTool::Hyperfine(Hyperfine) => {
+            ClientTool::Hyperfine(Hyperfine::Time | Hyperfine::Memory) => {
                 let mut cmd = Command::new("hyperfine");
 
                 cmd.args([

@@ -50,7 +50,7 @@ pub enum Condition {
         /// The try.
         r#try: Box<Self>,
         /// The else.
-        r#else: Box<Self>
+        r#else: Box<Self>,
     },
     /// The first contained [`Self`] to return [`Ok`].
     /// # Errors
@@ -141,28 +141,28 @@ pub enum Condition {
         /// The left side.
         left: StringSource,
         /// The right side.
-        right: StringSource
+        right: StringSource,
     },
     /// If [`Self::StringIsInSet::value`] is in [`Self::StringIsInSet::set`].
     StringIsInSet {
         /// The [`StringSource`].
         value: StringSource,
         /// The [`SetSource`].
-        set: SetSource
+        set: SetSource,
     },
     /// If [`Self::StringStartsWith::value`] starts with [`Self::StringStartsWith::prefix`].
     StringStartsWith {
         /// The [`StringSource`] to search in.
         value: StringSource,
         /// The [`StringSource`] to search for.
-        prefix: StringSource
+        prefix: StringSource,
     },
     /// If [`Self::StringEndsWith::value`] starts with [`Self::StringEndsWith::suffix`].
     StringEndsWith {
         /// The [`StringSource`] to search in.
         value: StringSource,
         /// The [`StringSource`] to search for.
-        suffix: StringSource
+        suffix: StringSource,
     },
     /// [`StringLocation::check`].
     StringContains {
@@ -174,14 +174,14 @@ pub enum Condition {
         ///
         /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
-        at: StringLocation
+        at: StringLocation,
     },
     /// [`StringMatcher::check`].
     StringMatches {
         /// The value to check.
         value: StringSource,
         /// The [`StringMatcher`].
-        matcher: StringMatcher
+        matcher: StringMatcher,
     },
 
     // Whole
@@ -215,28 +215,28 @@ pub enum Condition {
         /// The segment to check.
         index: isize,
         /// The value to check for.
-        value: StringSource
+        value: StringSource,
     },
     /// If the [`BetterUrl::domain_prefix_segment`] is the specified value.
     DomainPrefixSegmentIs {
         /// The segment to check.
         index: isize,
         /// The value to check for.
-        value: StringSource
+        value: StringSource,
     },
     /// If the [`BetterUrl::domain_suffix_segment`] is the specified value.
     DomainSuffixSegmentIs {
         /// The segment to check.
         index: isize,
         /// The value to check for.
-        value: StringSource
+        value: StringSource,
     },
     /// If the [`BetterUrl::domain_origin_segment`] is the specified value.
     DomainOriginSegmentIs {
         /// The segment to check.
         index: isize,
         /// The value to check for.
-        value: StringSource
+        value: StringSource,
     },
 
     // Host is in set
@@ -255,28 +255,28 @@ pub enum Condition {
         /// The segment to check.
         index: isize,
         /// The [`Set`] to check in.
-        set: SetSource
+        set: SetSource,
     },
     /// If the [`BetterUrl::domain_origin_segment`] is in the specified [`Set`].
     DomainOriginSegmentIsInSet {
         /// The segment to check.
         index: isize,
         /// The [`Set`] to check in.
-        set: SetSource
+        set: SetSource,
     },
     /// If the [`BetterUrl::domain_prefix_segment`] is in the specified [`Set`].
     DomainPrefixSegmentIsInSet {
         /// The segment to check.
         index: isize,
         /// The [`Set`] to check in.
-        set: SetSource
+        set: SetSource,
     },
     /// If the [`BetterUrl::domain_suffix_segment`] is in the specified [`Set`].
     DomainSuffixSegmentIsInSet {
         /// The segment to check.
         index: isize,
         /// The [`Set`] to check in.
-        set: SetSource
+        set: SetSource,
     },
 
     // Misc. host
@@ -327,7 +327,7 @@ pub enum Condition {
         ///
         /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
-        at: StringLocation
+        at: StringLocation,
     },
     /// If [`BetterUrl::path_str`] satisfies the specified [`StringMatcher`].
     PathMatches(StringMatcher),
@@ -339,14 +339,14 @@ pub enum Condition {
         /// The segment to check.
         index: isize,
         /// The value to check for.
-        value: StringSource
+        value: StringSource,
     },
     /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`Set::contains`].
     PathSegmentIsInSet {
         /// The segment to check.
         index: isize,
         /// The [`Set`] to check in.
-        set: SetSource
+        set: SetSource,
     },
     /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`str::starts_with`].
     /// # Errors
@@ -355,7 +355,7 @@ pub enum Condition {
         /// The segment to check.
         index: isize,
         /// The value to check for.
-        prefix: StringSource
+        prefix: StringSource,
     },
     /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`str::ends_with`].
     /// # Errors
@@ -364,7 +364,7 @@ pub enum Condition {
         /// The segment to check.
         index: isize,
         /// The value to check for.
-        suffix: StringSource
+        suffix: StringSource,
     },
     /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`StringLocation::check`].
     /// # Errors
@@ -378,88 +378,17 @@ pub enum Condition {
         ///
         /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
-        at: StringLocation
+        at: StringLocation,
     },
     /// If the [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] satisfies the [`StringMatcher`].
     PathSegmentMatches {
         /// The segment to check.
         index: isize,
         /// The [`StringMatcher`].
-        matcher: StringMatcher
-    },
-
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::into_inner`] is the specified value.
-    RawPathSegmentIs {
-        /// The segment to check.
-        index: isize,
-        /// The value to check for.
-        value: StringSource
-    },
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::into_inner`] is in the [`Set`].
-    RawPathSegmentIsInSet {
-        /// The segment to check.
-        index: isize,
-        /// The [`Set`] to check in.
-        set: SetSource
-    },
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::into_inner`] starts with the specified value.
-    /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`PathSegmentNotFound`].
-    RawPathSegmentStartsWith {
-        /// The segment to check.
-        index: isize,
-        /// The value to check for.
-        prefix: StringSource
-    },
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::into_inner`] ends with the specified value.
-    /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`PathSegmentNotFound`].
-    RawPathSegmentEndsWith {
-        /// The segment to check.
-        index: isize,
-        /// The value to check for.
-        suffix: StringSource
-    },
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::into_inner`] contains the specified value.
-    /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`PathSegmentNotFound`].
-    RawPathSegmentContains {
-        /// The path segment to get.
-        index: isize,
-        /// The value to check for.
-        substr: StringSource,
-        /// The location to cehck at.
-        ///
-        /// Defaulted.
-        #[serde(default, skip_serializing_if = "is_default")]
-        at: StringLocation
-    },
-    /// If the [`BetterUrl::path_segment`] + [`PathSegment::into_inner`] satisfies the [`StringMatcher`].
-    RawPathSegmentMatches {
-        /// The segment to check.
-        index: isize,
-        /// The [`StringMatcher`].
-        matcher: StringMatcher
+        matcher: StringMatcher,
     },
 
     // Query
-
-    /** [`BetterUrl::query_str`] + [`PartialEq::eq`].    **/ QueryIs(StringSource),
-    /** [`BetterUrl::query_str`] + [`Set::contains`].    **/ QueryIsInSet(SetSource),
-    /** [`BetterUrl::query_str`] + [`str::starts_with`]. **/ QueryStartsWith(StringSource),
-    /** [`BetterUrl::query_str`] + [`str::ends_with`].   **/ QueryEndsWith(StringSource),
-    /// [`BetterUrl::query_str`] + [`StringLocation::check`].
-    QueryContains {
-        /// The value to check for.
-        substr: StringSource,
-        /// The [`StringLocation`].
-        ///
-        /// Defaulted.
-        #[serde(default, skip_serializing_if = "is_default")]
-        at: StringLocation
-    },
-    /// [`BetterUrl::query_str`] + [`StringMatcher::check`].
-    QueryMatches(StringMatcher),
 
     /// [`BetterUrl::has_query_param`].
     QueryHasParam(QueryParamSelector),
@@ -471,14 +400,14 @@ pub enum Condition {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The value to check for.
-        value: StringSource
+        value: StringSource,
     },
     /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] + [`Set::contains`].
     QueryParamIsInSet {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The [`Set`].
-        set: SetSource
+        set: SetSource,
     },
     /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] starts with the specified value.
     /// # Errors
@@ -489,7 +418,7 @@ pub enum Condition {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The value to check for.
-        prefix: StringSource
+        prefix: StringSource,
     },
     /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] ends with the specified value.
     /// # Errors
@@ -500,7 +429,7 @@ pub enum Condition {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The value to check for.
-        suffix: StringSource
+        suffix: StringSource,
     },
     /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] contains the specified value.
     /// # Errors
@@ -516,7 +445,7 @@ pub enum Condition {
         ///
         /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
-        at: StringLocation
+        at: StringLocation,
     },
     /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]) + [`MaybeQueryValue::lossy_decode`] +ed [`StringMatcher::check`]
     /// # Errors
@@ -527,73 +456,7 @@ pub enum Condition {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The [`StringMatcher`]
-        matcher: StringMatcher
-    },
-
-
-
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] + [`PartialEq::eq`].
-    RawQueryParamIs {
-        /// The [`QueryParamSelector`].
-        param: QueryParamSelector,
-        /// The value to check for.
-        value: StringSource
-    },
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] + [`Set::contains`].
-    RawQueryParamIsInSet {
-        /// The [`QueryParamSelector`].
-        param: QueryParamSelector,
-        /// The [`Set`].
-        set: SetSource
-    },
-    /// If the [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] starts with the specified value.
-    /// # Errors
-    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
-    ///
-    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
-    RawQueryParamStartsWith {
-        /// The [`QueryParamSelector`].
-        param: QueryParamSelector,
-        /// The value to check for.
-        prefix: StringSource
-    },
-    /// If the [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] ends with the specified value.
-    /// # Errors
-    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
-    ///
-    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
-    RawQueryParamEndsWith {
-        /// The [`QueryParamSelector`].
-        param: QueryParamSelector,
-        /// The value to check for.
-        suffix: StringSource
-    },
-    /// If the [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] contains the specified value.
-    /// # Errors
-    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
-    ///
-    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
-    RawQueryParamContains {
-        /// The [`QueryParamSelectorget.
-        param: QueryParamSelector,
-        /// The value to check for.
-        substr: StringSource,
-        /// The location to cehck at.
-        ///
-        /// Defaulted.
-        #[serde(default, skip_serializing_if = "is_default")]
-        at: StringLocation
-    },
-    /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::into_inner`] + [`StringMatcher::check`]
-    /// # Errors
-    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
-    ///
-    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
-    RawQueryParamMatches {
-        /// The [`QueryParamSelector`].
-        param: QueryParamSelector,
-        /// The [`StringMatcher`]
-        matcher: StringMatcher
+        matcher: StringMatcher,
     },
 
     // Fragment
@@ -612,28 +475,28 @@ pub enum Condition {
         /// The [`UrlPart`].
         part: UrlPart,
         /// The [`StringSource`].
-        value: StringSource
+        value: StringSource,
     },
     /// If [`Self::PartIsInSet::part`] is in [`Self::PartIsInSet::set`].
     PartIsInSet {
         /// The [`UrlPart`].
         part: UrlPart,
         /// The [`SetSource`].
-        set: SetSource
+        set: SetSource,
     },
     /// If [`Self::PartStartsWith::part`] starts with [`Self::PartStartsWith::prefix`].
     PartStartsWith {
         /// The [`UrlPart`].
         part: UrlPart,
         /// The [`StringSource`].
-        prefix: StringSource
+        prefix: StringSource,
     },
     /// If [`Self::PartEndsWith::part`] starts with [`Self::PartEndsWith::suffix`].
     PartEndsWith {
         /// The [`UrlPart`].
         part: UrlPart,
         /// The [`StringSource`].
-        suffix: StringSource
+        suffix: StringSource,
     },
     /// If [`Self::PartContains::part`] contains [`Self::PartContains::substr`] at [`Self::PartContains::at`].
     PartContains {
@@ -645,14 +508,14 @@ pub enum Condition {
         ///
         /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
-        at: StringLocation
+        at: StringLocation,
     },
     /// If [`Self::PartMatches::part`] matches [`Self::PartMatches::matcher`].
     PartMatches {
         /// The [`UrlPart`].
         part: UrlPart,
         /// The [`StringMatcher`].
-        matcher: StringMatcher
+        matcher: StringMatcher,
     },
 
     /// If [`Self::PartIsSomeAndStartsWith::part`] is [`Some`] and starts with [`Self::PartIsSomeAndStartsWith::prefix`].
@@ -660,14 +523,14 @@ pub enum Condition {
         /// The [`UrlPart`].
         part: UrlPart,
         /// the [`StringSource`].
-        prefix: StringSource
+        prefix: StringSource,
     },
     /// If [`Self::PartIsSomeAndEndsWith::part`] is [`Some`] and starts with [`Self::PartIsSomeAndEndsWith::suffix`].
     PartIsSomeAndEndsWith {
         /// The [`UrlPart`].
         part: UrlPart,
         /// the [`StringSource`].
-        suffix: StringSource
+        suffix: StringSource,
     },
     /// If [`Self::PartIsSomeAndContains::part`] is [`Some`] and contains [`Self::PartIsSomeAndContains::substr`] at [`Self::PartIsSomeAndContains::at`].
     PartIsSomeAndContains {
@@ -679,7 +542,7 @@ pub enum Condition {
         ///
         /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
-        at: StringLocation
+        at: StringLocation,
     },
 
     // Misc.
@@ -695,19 +558,14 @@ pub enum Condition {
     /// Additionally, using a function pointer means this variant cannot be [`Serialize`]d or [`Deserialize`]d.
     #[suitable(never)]
     #[serde(skip)]
-    Extern(ConditionExtern)
+    Extern(ConditionExtern),
 }
 
 impl Condition {
     /// If it's satisfied.
     /// # Errors
     /// See each variant of [`Self`] for when each variant returns an error.
-    pub fn check<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<bool, ConditionError> {
-        debug!(Condition::check, self, task_state.url, args; self._check(task_state, args))
-    }
-
-    /// [`Self::check`].
-    fn _check<'j>(&'j self, task_state: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<bool, ConditionError> {
+    pub fn check<'j>(&'j self, ts: &TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<bool, ConditionError> {
         Ok(match self {
             // Debug/constants
 
@@ -717,14 +575,14 @@ impl Condition {
 
             // Logic
 
-            Self::If {r#if, then, r#else} => match r#if.check(task_state, args)? {
-                true  => then  .check(task_state, args)?,
-                false => r#else.check(task_state, args)?
+            Self::If {r#if, then, r#else} => match r#if.check(ts, args)? {
+                true  => then  .check(ts, args)?,
+                false => r#else.check(ts, args)?
             },
-            Self::Not(condition) => !condition.check(task_state, args)?,
+            Self::Not(condition) => !condition.check(ts, args)?,
             Self::All(conditions) => {
                 for condition in conditions {
-                    if !condition.check(task_state, args)? {
+                    if !condition.check(ts, args)? {
                         return Ok(false);
                     }
                 }
@@ -732,7 +590,7 @@ impl Condition {
             },
             Self::Any(conditions) => {
                 for condition in conditions {
-                    if condition.check(task_state, args)? {
+                    if condition.check(ts, args)? {
                         return Ok(true);
                     }
                 }
@@ -741,11 +599,11 @@ impl Condition {
 
             // Error handling
 
-            Self::ErrorToSatisfied  (condition) => condition.check(task_state, args).unwrap_or(true ),
-            Self::ErrorToUnsatisfied(condition) => condition.check(task_state, args).unwrap_or(false),
-            Self::TryElse {r#try, r#else} => match r#try.check(task_state, args) {
+            Self::ErrorToSatisfied  (condition) => condition.check(ts, args).unwrap_or(true ),
+            Self::ErrorToUnsatisfied(condition) => condition.check(ts, args).unwrap_or(false),
+            Self::TryElse {r#try, r#else} => match r#try.check(ts, args) {
                 Ok(x) => x,
-                Err(try_error) => match r#else.check(task_state, args) {
+                Err(try_error) => match r#else.check(ts, args) {
                     Ok(x) => x,
                     Err(else_error) => Err(TryElseError {try_error, else_error})?
                 }
@@ -754,7 +612,7 @@ impl Condition {
                 let mut errors = Vec::new();
 
                 for matcher in matchers {
-                    match matcher.check(task_state, args) {
+                    match matcher.check(ts, args) {
                         Ok (x) => return Ok(x),
                         Err(e) => errors.push(e)
                     }
@@ -765,177 +623,156 @@ impl Condition {
 
             // Maps
 
-            Self::PartMap  {part , map, r#else} => map.get(part.get(&task_state.url).as_deref()).unwrap_or(r#else).check(task_state, args)?,
-            Self::StringMap{value, map, r#else} => map.get(get!(?&value)                       ).unwrap_or(r#else).check(task_state, args)?,
+            Self::PartMap  {part , map, r#else} => map.get(part .get(&ts.url ) .as_deref()).unwrap_or(r#else).check(ts, args)?,
+            Self::StringMap{value, map, r#else} => map.get(value.get(ts, args)?.as_deref()).unwrap_or(r#else).check(ts, args)?,
 
-            Self::PartPartitioning   {partitioning, part , map, r#else} => map.get(get!(partitioning).get(part.get(&task_state.url).as_deref())).unwrap_or(r#else).check(task_state, args)?,
-            Self::StringPartitioning {partitioning, value, map, r#else} => map.get(get!(partitioning).get(get!(?&value))                       ).unwrap_or(r#else).check(task_state, args)?,
+            Self::PartPartitioning   {partitioning, part , map, r#else} => map.get(partitioning.get_some(ts, args)??.get(part .get(&ts.url ) .as_deref())).unwrap_or(r#else).check(ts, args)?,
+            Self::StringPartitioning {partitioning, value, map, r#else} => map.get(partitioning.get_some(ts, args)??.get(value.get(ts, args)?.as_deref())).unwrap_or(r#else).check(ts, args)?,
 
             // Params
 
-            Self::FlagIsSet   (flag) =>  flag.get(task_state, args)?,
-            Self::FlagIsNotSet(flag) => !flag.get(task_state, args)?,
+            Self::FlagIsSet   (flag) =>  flag.get(ts, args)?,
+            Self::FlagIsNotSet(flag) => !flag.get(ts, args)?,
 
-            Self::VarIsSome(var) => get!(?var).is_some(),
+            Self::VarIsSome(var) => var.get(ts, args)?.is_some(),
 
             // Strings
 
-            Self::StringIs         {left , right     } => get!(?left) == get!(?right),
-            Self::StringStartsWith {value, prefix    } => get!(value).starts_with(get!(&prefix)),
-            Self::StringEndsWith   {value, suffix    } => get!(value).ends_with  (get!(&suffix)),
-            Self::StringContains   {value, substr, at} => at.check(get!(&value), get!(&substr))?,
-            Self::StringIsInSet    {value, set       } => get!(set).contains(get!(?&value )),
-            Self::StringMatches    {value, matcher   } => matcher.check(task_state, args, get!(?&value))?,
+            Self::StringIs         {left , right     } =>                                    left .get     (ts, args)? == right.get(ts, args)?,
+            Self::StringStartsWith {value, prefix    } =>                                    value.get_some(ts, args)??.starts_with(&*prefix.get_some(ts, args)??) ,
+            Self::StringEndsWith   {value, suffix    } =>                                    value.get_some(ts, args)??.ends_with  (&*suffix.get_some(ts, args)??) ,
+            Self::StringContains   {value, substr, at} => at.check(                         &value.get_some(ts, args)??,            & substr.get_some(ts, args)??)?,
+            Self::StringIsInSet    {value, set       } => set.get_some(ts, args)??.contains( value.get     (ts, args)?.as_deref()) ,
+            Self::StringMatches    {value, matcher   } => matcher.check(ts, args,            value.get     (ts, args)?.as_deref())?,
 
             // Parts
 
-            Self::PartIs         {part, value     } =>                                 part.get     (&task_state.url) == get!(?value),
-            Self::PartStartsWith {part, prefix    } =>                                 part.get_some(&task_state.url)?.starts_with(get!(&prefix)),
-            Self::PartEndsWith   {part, suffix    } =>                                 part.get_some(&task_state.url)?.ends_with  (get!(&suffix)),
-            Self::PartContains   {part, substr, at} => at.check(                      &part.get_some(&task_state.url)?,            get!(&substr))?,
-            Self::PartIsInSet    {part, set       } => get!(set).contains(             part.get     (&task_state.url).as_deref()),
-            Self::PartMatches    {part, matcher   } => matcher.check(task_state, args, part.get     (&task_state.url).as_deref())?,
+            Self::PartIs         {part, value     } =>                                    part.get     (&ts.url) == value.get(ts, args)?,
+            Self::PartStartsWith {part, prefix    } =>                                    part.get_some(&ts.url)?.starts_with(&*prefix.get_some(ts, args)??),
+            Self::PartEndsWith   {part, suffix    } =>                                    part.get_some(&ts.url)?.ends_with  (&*suffix.get_some(ts, args)??),
+            Self::PartContains   {part, substr, at} => at.check(                         &part.get_some(&ts.url)?,            & substr.get_some(ts, args)??)?,
+            Self::PartIsInSet    {part, set       } => set.get_some(ts, args)??.contains( part.get     (&ts.url).as_deref()) ,
+            Self::PartMatches    {part, matcher   } => matcher.check(ts, args,            part.get     (&ts.url).as_deref())?,
 
-            Self::PartIsSomeAndStartsWith {part, prefix    } => if let Some(x) = part.get(&task_state.url) {x.starts_with(get!(&prefix)) } else {false},
-            Self::PartIsSomeAndEndsWith   {part, suffix    } => if let Some(x) = part.get(&task_state.url) {x.ends_with  (get!(&suffix)) } else {false},
-            Self::PartIsSomeAndContains   {part, substr, at} => if let Some(x) = part.get(&task_state.url) {at.check(&x,  get!(&substr))?} else {false},
+            Self::PartIsSomeAndStartsWith {part, prefix    } => if let Some(x) = part.get(&ts.url) {x.starts_with(&*prefix.get_some(ts, args)??) } else {false},
+            Self::PartIsSomeAndEndsWith   {part, suffix    } => if let Some(x) = part.get(&ts.url) {x.ends_with  (&*suffix.get_some(ts, args)??) } else {false},
+            Self::PartIsSomeAndContains   {part, substr, at} => if let Some(x) = part.get(&ts.url) {at.check(&x,  & substr.get_some(ts, args)??)?} else {false},
 
             // Whole
 
-            Self::UrlIsSpecial        => task_state.url.is_special    (),
-            Self::UrlIsSpecialNotFile => task_state.url.is_special    (),
-            Self::UrlIsFile           => task_state.url.is_file       (),
-            Self::UrlIsNonSpecial     => task_state.url.is_non_special(),
+            Self::UrlIsSpecial        => ts.url.is_special    (),
+            Self::UrlIsSpecialNotFile => ts.url.is_special    (),
+            Self::UrlIsFile           => ts.url.is_file       (),
+            Self::UrlIsNonSpecial     => ts.url.is_non_special(),
 
             // Scheme
 
-            Self::SchemeIs     (value) => task_state.url.scheme_str() == get!(value),
-            Self::SchemeIsInSet(set  ) => get!(set).contains_some(task_state.url.scheme_str()),
-            Self::SchemeIsHttp         => task_state.url.scheme_details().is_http         (),
-            Self::SchemeIsHttps        => task_state.url.scheme_details().is_https        (),
-            Self::SchemeIsHttpOrHttps  => task_state.url.scheme_details().is_http_or_https(),
+            Self::SchemeIs     (value) => ts.url.scheme_str() == value.get_some(ts, args)??,
+            Self::SchemeIsInSet(set  ) => set.get_some(ts, args)??.contains_some(ts.url.scheme_str()),
+            Self::SchemeIsHttp         => ts.url.scheme_details().is_http         (),
+            Self::SchemeIsHttps        => ts.url.scheme_details().is_https        (),
+            Self::SchemeIsHttpOrHttps  => ts.url.scheme_details().is_http_or_https(),
 
             // Host is
 
-            Self::HostIs        (x) => task_state.url.host_str() == get!(?&x),
-            Self::DomainPrefixIs(x) => task_state.url.domain_prefix_str() == get!(?&x),
-            Self::DomainMiddleIs(x) => task_state.url.domain_middle_str() == get!(?&x),
-            Self::DomainSuffixIs(x) => task_state.url.domain_suffix_str() == get!(?&x),
-            Self::DomainOriginIs(x) => task_state.url.domain_origin_str() == get!(?&x),
-            Self::DomainNormalIs(x) => task_state.url.domain_normal_str() == get!(?&x),
+            Self::HostIs        (x) => ts.url.host_str         () == x.get(ts, args)?.as_deref(),
+            Self::DomainPrefixIs(x) => ts.url.domain_prefix_str() == x.get(ts, args)?.as_deref(),
+            Self::DomainMiddleIs(x) => ts.url.domain_middle_str() == x.get(ts, args)?.as_deref(),
+            Self::DomainSuffixIs(x) => ts.url.domain_suffix_str() == x.get(ts, args)?.as_deref(),
+            Self::DomainOriginIs(x) => ts.url.domain_origin_str() == x.get(ts, args)?.as_deref(),
+            Self::DomainNormalIs(x) => ts.url.domain_normal_str() == x.get(ts, args)?.as_deref(),
 
-            Self::DomainSegmentIs       {index, value} => task_state.url.domain_segment       (*index).map(DomainSegment::into_inner) == get!(?value),
-            Self::DomainPrefixSegmentIs {index, value} => task_state.url.domain_prefix_segment(*index).map(DomainSegment::into_inner) == get!(?value),
-            Self::DomainSuffixSegmentIs {index, value} => task_state.url.domain_suffix_segment(*index).map(DomainSegment::into_inner) == get!(?value),
-            Self::DomainOriginSegmentIs {index, value} => task_state.url.domain_origin_segment(*index).map(DomainSegment::into_inner) == get!(?value),
+            Self::DomainSegmentIs       {index, value} => ts.url.domain_segment_str       (*index) == value.get(ts, args)?.as_deref(),
+            Self::DomainPrefixSegmentIs {index, value} => ts.url.domain_prefix_segment_str(*index) == value.get(ts, args)?.as_deref(),
+            Self::DomainSuffixSegmentIs {index, value} => ts.url.domain_suffix_segment_str(*index) == value.get(ts, args)?.as_deref(),
+            Self::DomainOriginSegmentIs {index, value} => ts.url.domain_origin_segment_str(*index) == value.get(ts, args)?.as_deref(),
 
             // Host is in set
 
-            Self::HostIsInSet        (set) => get!(set).contains(task_state.url.host_str()),
-            Self::DomainPrefixIsInSet(set) => get!(set).contains(task_state.url.domain_prefix_str()),
-            Self::DomainMiddleIsInSet(set) => get!(set).contains(task_state.url.domain_middle_str()),
-            Self::DomainSuffixIsInSet(set) => get!(set).contains(task_state.url.domain_suffix_str()),
-            Self::DomainOriginIsInSet(set) => get!(set).contains(task_state.url.domain_origin_str()),
-            Self::DomainNormalIsInSet(set) => get!(set).contains(task_state.url.domain_normal_str()),
+            Self::HostIsInSet        (set) => set.get_some(ts, args)??.contains(ts.url.host_str         ()),
+            Self::DomainPrefixIsInSet(set) => set.get_some(ts, args)??.contains(ts.url.domain_prefix_str()),
+            Self::DomainMiddleIsInSet(set) => set.get_some(ts, args)??.contains(ts.url.domain_middle_str()),
+            Self::DomainSuffixIsInSet(set) => set.get_some(ts, args)??.contains(ts.url.domain_suffix_str()),
+            Self::DomainOriginIsInSet(set) => set.get_some(ts, args)??.contains(ts.url.domain_origin_str()),
+            Self::DomainNormalIsInSet(set) => set.get_some(ts, args)??.contains(ts.url.domain_normal_str()),
 
-            Self::DomainSegmentIsInSet       {index, set} => get!(set).contains(task_state.url.domain_segment_str       (*index)),
-            Self::DomainPrefixSegmentIsInSet {index, set} => get!(set).contains(task_state.url.domain_prefix_segment_str(*index)),
-            Self::DomainSuffixSegmentIsInSet {index, set} => get!(set).contains(task_state.url.domain_suffix_segment_str(*index)),
-            Self::DomainOriginSegmentIsInSet {index, set} => get!(set).contains(task_state.url.domain_origin_segment_str(*index)),
+            Self::DomainSegmentIsInSet       {index, set} => set.get_some(ts, args)??.contains(ts.url.domain_segment_str       (*index)),
+            Self::DomainPrefixSegmentIsInSet {index, set} => set.get_some(ts, args)??.contains(ts.url.domain_prefix_segment_str(*index)),
+            Self::DomainSuffixSegmentIsInSet {index, set} => set.get_some(ts, args)??.contains(ts.url.domain_suffix_segment_str(*index)),
+            Self::DomainOriginSegmentIsInSet {index, set} => set.get_some(ts, args)??.contains(ts.url.domain_origin_segment_str(*index)),
 
             // Misc. host
 
-            Self::UrlHasHost   => task_state.url.has_host(),
-            Self::HostIsDomain => task_state.url.host_is_domain(),
-            Self::HostIsIpv4   => task_state.url.host_is_ipv4  (),
-            Self::HostIsIpv6   => task_state.url.host_is_ipv6  (),
-            Self::HostIsOpaque => task_state.url.host_is_opaque(),
-            Self::HostIsEmpty  => task_state.url.host_is_empty (),
+            Self::UrlHasHost   => ts.url.has_host(),
+            Self::HostIsDomain => ts.url.host_is_domain(),
+            Self::HostIsIpv4   => ts.url.host_is_ipv4  (),
+            Self::HostIsIpv6   => ts.url.host_is_ipv6  (),
+            Self::HostIsOpaque => ts.url.host_is_opaque(),
+            Self::HostIsEmpty  => ts.url.host_is_empty (),
 
-            Self::UrlHasDomainPrefix => task_state.url.has_domain_prefix(),
-            Self::UrlHasDomainMiddle => task_state.url.has_domain_middle(),
-            Self::UrlHasDomainSuffix => task_state.url.has_domain_suffix(),
-            Self::UrlHasDomainOrigin => task_state.url.has_domain_origin(),
-            Self::UrlHasDomainLabels => task_state.url.has_domain_labels(),
-            Self::UrlHasDomainNormal => task_state.url.has_domain_normal(),
+            Self::UrlHasDomainPrefix => ts.url.has_domain_prefix(),
+            Self::UrlHasDomainMiddle => ts.url.has_domain_middle(),
+            Self::UrlHasDomainSuffix => ts.url.has_domain_suffix(),
+            Self::UrlHasDomainOrigin => ts.url.has_domain_origin(),
+            Self::UrlHasDomainLabels => ts.url.has_domain_labels(),
+            Self::UrlHasDomainNormal => ts.url.has_domain_normal(),
 
-            Self::HostIsBroadcastIpv4     => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_broadcast    ),
-            Self::HostIsDocumentationIpv4 => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_documentation),
-            Self::HostIsLinkLocalIpv4     => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_link_local   ),
-            Self::HostIsLoopbackIpv4      => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_loopback     ),
-            Self::HostIsMulticastIpv4     => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_multicast    ),
-            Self::HostIsPrivateIpv4       => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_private      ),
-            Self::HostIsUnspecifiedIpv4   => task_state.url.ipv4_details().is_some_and(Ipv4HostDetails::is_unspecified  ),
+            Self::HostIsBroadcastIpv4     => ts.url.ipv4_details().is_some_and(Ipv4HostDetails::is_broadcast    ),
+            Self::HostIsDocumentationIpv4 => ts.url.ipv4_details().is_some_and(Ipv4HostDetails::is_documentation),
+            Self::HostIsLinkLocalIpv4     => ts.url.ipv4_details().is_some_and(Ipv4HostDetails::is_link_local   ),
+            Self::HostIsLoopbackIpv4      => ts.url.ipv4_details().is_some_and(Ipv4HostDetails::is_loopback     ),
+            Self::HostIsMulticastIpv4     => ts.url.ipv4_details().is_some_and(Ipv4HostDetails::is_multicast    ),
+            Self::HostIsPrivateIpv4       => ts.url.ipv4_details().is_some_and(Ipv4HostDetails::is_private      ),
+            Self::HostIsUnspecifiedIpv4   => ts.url.ipv4_details().is_some_and(Ipv4HostDetails::is_unspecified  ),
 
-            Self::HostIsLoopbackIpv6         => task_state.url.ipv6_details().is_some_and(Ipv6HostDetails::is_loopback          ),
-            Self::HostIsUnicastLinkLocalIpv6 => task_state.url.ipv6_details().is_some_and(Ipv6HostDetails::is_unicast_link_local),
-            Self::HostIsMulticastIpv6        => task_state.url.ipv6_details().is_some_and(Ipv6HostDetails::is_multicast         ),
-            Self::HostIsUniqueLocalIpv6      => task_state.url.ipv6_details().is_some_and(Ipv6HostDetails::is_unique_local      ),
-            Self::HostIsUnspecifiedIpv6      => task_state.url.ipv6_details().is_some_and(Ipv6HostDetails::is_unspecified       ),
+            Self::HostIsLoopbackIpv6         => ts.url.ipv6_details().is_some_and(Ipv6HostDetails::is_loopback          ),
+            Self::HostIsUnicastLinkLocalIpv6 => ts.url.ipv6_details().is_some_and(Ipv6HostDetails::is_unicast_link_local),
+            Self::HostIsMulticastIpv6        => ts.url.ipv6_details().is_some_and(Ipv6HostDetails::is_multicast         ),
+            Self::HostIsUniqueLocalIpv6      => ts.url.ipv6_details().is_some_and(Ipv6HostDetails::is_unique_local      ),
+            Self::HostIsUnspecifiedIpv6      => ts.url.ipv6_details().is_some_and(Ipv6HostDetails::is_unspecified       ),
 
             // Path
 
-            Self::PathIsSegmented       => task_state.url.path_is_segmented(),
-            Self::PathIsOpaque          => task_state.url.path_is_opaque   (),
-            Self::PathHasSegment(index) => task_state.url.has_path_segment (*index),
+            Self::PathIsSegmented       => ts.url.path_is_segmented(),
+            Self::PathIsOpaque          => ts.url.path_is_opaque   (),
+            Self::PathHasSegment(index) => ts.url.has_path_segment (*index),
 
-            Self::PathIs        (value     ) =>                                      task_state.url.path_str() == get!(value),
-            Self::PathStartsWith(prefix    ) =>                                      task_state.url.path_str().starts_with(get!(&prefix)),
-            Self::PathEndsWith  (suffix    ) =>                                      task_state.url.path_str().ends_with  (get!(&suffix)),
-            Self::PathContains  {substr, at} => at.check(                            task_state.url.path_str(),            get!(&substr))?,
-            Self::PathIsInSet   (set       ) => get!(set).contains_some(             task_state.url.path_str()),
-            Self::PathMatches   (matcher   ) => matcher.check(task_state, args, Some(task_state.url.path_str()))?,
+            Self::PathIs        (value     ) =>                                             ts.url.path_str() == value.get_some(ts, args)??,
+            Self::PathStartsWith(prefix    ) =>                                             ts.url.path_str().starts_with(&*prefix.get_some(ts, args)??) ,
+            Self::PathEndsWith  (suffix    ) =>                                             ts.url.path_str().ends_with  (&*suffix.get_some(ts, args)??) ,
+            Self::PathContains  {substr, at} => at.check(                                   ts.url.path_str(),            & substr.get_some(ts, args)??)?,
+            Self::PathIsInSet   (set       ) => set.get_some(ts, args)??.contains_some(     ts.url.path_str())  ,
+            Self::PathMatches   (matcher   ) => matcher.check(ts, args,                Some(ts.url.path_str()))?,
 
-            Self::PathSegmentIs        {index, value     } =>                                 task_state.url.path_segment(*index).map(PathSegment::lossy_decode) == get!(?value),
-            Self::PathSegmentStartsWith{index, prefix    } =>                                 task_state.url.path_segment(*index).map(PathSegment::lossy_decode).ok_or(PathSegmentNotFound)?.starts_with(get!(&prefix)),
-            Self::PathSegmentEndsWith  {index, suffix    } =>                                 task_state.url.path_segment(*index).map(PathSegment::lossy_decode).ok_or(PathSegmentNotFound)?.ends_with  (get!(&suffix)),
-            Self::PathSegmentContains  {index, substr, at} => at.check(                      &task_state.url.path_segment(*index).map(PathSegment::lossy_decode).ok_or(PathSegmentNotFound)?,            get!(&substr))?,
-            Self::PathSegmentIsInSet   {index, set       } => get!(set).contains(             task_state.url.path_segment(*index).map(PathSegment::lossy_decode).as_deref()),
-            Self::PathSegmentMatches   {index, matcher   } => matcher.check(task_state, args, task_state.url.path_segment(*index).map(PathSegment::lossy_decode).as_deref())?,
-
-            Self::RawPathSegmentIs        {index, value     } =>                                 task_state.url.path_segment_str(*index) == get!(?&value),
-            Self::RawPathSegmentStartsWith{index, prefix    } =>                                 task_state.url.path_segment_str(*index).ok_or(PathSegmentNotFound)?.starts_with(get!(&prefix)),
-            Self::RawPathSegmentEndsWith  {index, suffix    } =>                                 task_state.url.path_segment_str(*index).ok_or(PathSegmentNotFound)?.ends_with  (get!(&suffix)),
-            Self::RawPathSegmentContains  {index, substr, at} => at.check(                       task_state.url.path_segment_str(*index).ok_or(PathSegmentNotFound)?,            get!(&substr))?,
-            Self::RawPathSegmentIsInSet   {index, set       } => get!(set).contains(             task_state.url.path_segment_str(*index)),
-            Self::RawPathSegmentMatches   {index, matcher   } => matcher.check(task_state, args, task_state.url.path_segment_str(*index))?,
+            Self::PathSegmentIs        {index, value     } =>                                    ts.url.path_segment(*index).map(PathSegment::lossy_decode) == value.get(ts, args)?,
+            Self::PathSegmentStartsWith{index, prefix    } =>                                    ts.url.path_segment(*index).map(PathSegment::lossy_decode).ok_or(PathSegmentNotFound)?.starts_with(&*prefix.get_some(ts, args)??),
+            Self::PathSegmentEndsWith  {index, suffix    } =>                                    ts.url.path_segment(*index).map(PathSegment::lossy_decode).ok_or(PathSegmentNotFound)?.ends_with  (&*suffix.get_some(ts, args)??),
+            Self::PathSegmentContains  {index, substr, at} => at.check(                         &ts.url.path_segment(*index).map(PathSegment::lossy_decode).ok_or(PathSegmentNotFound)?,            & substr.get_some(ts, args)??)?,
+            Self::PathSegmentIsInSet   {index, set       } => set.get_some(ts, args)??.contains( ts.url.path_segment(*index).map(PathSegment::lossy_decode).as_deref()) ,
+            Self::PathSegmentMatches   {index, matcher   } => matcher.check(ts, args,            ts.url.path_segment(*index).map(PathSegment::lossy_decode).as_deref())?,
 
             // Query
 
-            Self::QueryHasParam(param) => task_state.url.has_query_param(&param.name, param.index),
+            Self::QueryHasParam(param) => ts.url.has_query_param(&param.name, param.index),
 
-            Self::QueryIs        (value     ) =>                                 task_state.url.query_str() == get!(?&value),
-            Self::QueryIsInSet   (set       ) => get!(set).contains(             task_state.url.query_str()),
-            Self::QueryStartsWith(prefix    ) =>                                 task_state.url.query_str().ok_or(QueryNotFound)?.starts_with(get!(&prefix)),
-            Self::QueryEndsWith  (suffix    ) =>                                 task_state.url.query_str().ok_or(QueryNotFound)?.ends_with  (get!(&suffix)),
-            Self::QueryContains  {substr, at} => at.check(                       task_state.url.query_str().ok_or(QueryNotFound)?, get!(&substr))?,
-            Self::QueryMatches   (matcher   ) => matcher.check(task_state, args, task_state.url.query_str())?,
-
-            Self::QueryParamIs         {param, value     } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()) == get!(?value),
-            Self::QueryParamStartsWith {param, prefix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).ok_or(QueryParamNotFound)?.starts_with(get!(&prefix)),
-            Self::QueryParamEndsWith   {param, suffix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).ok_or(QueryParamNotFound)?.ends_with  (get!(&suffix)),
-            Self::QueryParamContains   {param, substr, at} => at.check(                      &task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).ok_or(QueryParamNotFound)?,            get!(&substr))?,
-            Self::QueryParamIsInSet    {param, set       } => get!(set).contains(             task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).as_deref()),
-            Self::QueryParamMatches    {param, matcher   } => matcher.check(task_state, args, task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).as_deref())?,
-
-            Self::RawQueryParamIs         {param, value     } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()) == get!(?value),
-            Self::RawQueryParamStartsWith {param, prefix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()).ok_or(QueryParamNotFound)?.starts_with(get!(&prefix)),
-            Self::RawQueryParamEndsWith   {param, suffix    } =>                                 task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()).ok_or(QueryParamNotFound)?.ends_with  (get!(&suffix)),
-            Self::RawQueryParamContains   {param, substr, at} => at.check(                      &task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()).ok_or(QueryParamNotFound)?,            get!(&substr))?,
-            Self::RawQueryParamIsInSet    {param, set       } => get!(set).contains(             task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()).as_deref()),
-            Self::RawQueryParamMatches    {param, matcher   } => matcher.check(task_state, args, task_state.url.query_param(&param.name, param.index).and_then(|x| x.into_value().into_inner()).as_deref())?,
+            Self::QueryParamIs         {param, value     } =>                                    ts.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()) == value.get(ts, args)?,
+            Self::QueryParamStartsWith {param, prefix    } =>                                    ts.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).ok_or(QueryParamNotFound)?.starts_with(&*prefix.get_some(ts, args)??),
+            Self::QueryParamEndsWith   {param, suffix    } =>                                    ts.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).ok_or(QueryParamNotFound)?.ends_with  (&*suffix.get_some(ts, args)??),
+            Self::QueryParamContains   {param, substr, at} => at.check(                         &ts.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).ok_or(QueryParamNotFound)?,            & substr.get_some(ts, args)??)?,
+            Self::QueryParamIsInSet    {param, set       } => set.get_some(ts, args)??.contains( ts.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).as_deref()) ,
+            Self::QueryParamMatches    {param, matcher   } => matcher.check(ts, args,            ts.url.query_param(&param.name, param.index).and_then(|x| x.into_value().lossy_decode()).as_deref())?,
 
             // Fragment
 
-            Self::FragmentIs     (value  ) => task_state.url.fragment_str() == get!(?&value),
-            Self::FragmentIsInSet(set    ) => get!(set).contains(task_state.url.fragment_str()),
-            Self::FragmentMatches(matcher) => matcher.check(task_state, args, task_state.url.fragment_str())?,
+            Self::FragmentIs     (value  ) => ts.url.fragment_str() == value.get(ts, args)?.as_deref(),
+            Self::FragmentIsInSet(set    ) => set.get_some(ts, args)??.contains(ts.url.fragment_str()),
+            Self::FragmentMatches(matcher) => matcher.check(ts, args, ts.url.fragment_str())?,
 
             // Misc
 
-            Self::Function   (call) => task_state.job.cleaner.functions.conditions.get(&call.name).ok_or(FunctionNotFound)?.check(task_state, Some(&call.args))?,
-            Self::FunctionArg(name) => args.ok_or(NotInFunction)?.conditions.get(get!(&name)).ok_or(FunctionArgFunctionNotFound)?.check(task_state, args)?,
-            Self::Extern     (func) => func(task_state, args)?
+            Self::Function   (call) => ts.job.cleaner.functions.conditions.get(&call.name).ok_or(FunctionNotFound)?.check(ts, Some(&call.args))?,
+            Self::FunctionArg(name) => args.ok_or(NotInFunction)?.conditions.get(&*name.get_some(ts, args)??).ok_or(FunctionArgFunctionNotFound)?.check(ts, args)?,
+            Self::Extern     (func) => func(ts, args)?
         })
     }
 }
