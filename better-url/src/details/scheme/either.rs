@@ -12,18 +12,18 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum SchemeDetails {
-    /** [`SpecialSchemeDetails`].    **/ Special   (SpecialSchemeDetails   ),
-    /** [`NonSpecialSchemeDetails`]. **/ NonSpecial(NonSpecialSchemeDetails),
+    /** [`SpecialSchemeDetails`].    */ Special   (SpecialSchemeDetails   ),
+    /** [`NonSpecialSchemeDetails`]. */ NonSpecial(NonSpecialSchemeDetails),
 }
 
 impl SchemeDetails {
-    /** [`FileSchemeDetails`].                  **/ pub const FILE       : Self = Self::Special(SpecialSchemeDetails::File          (FileSchemeDetails                 ));
-    /** [`SpecialNotFileSchemeDetails::Http`].  **/ pub const HTTP       : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Http ));
-    /** [`SpecialNotFileSchemeDetails::Https`]. **/ pub const HTTPS      : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Https));
-    /** [`SpecialNotFileSchemeDetails::Ws`].    **/ pub const WS         : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Ws   ));
-    /** [`SpecialNotFileSchemeDetails::Wss`].   **/ pub const WSS        : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Wss  ));
-    /** [`SpecialNotFileSchemeDetails::Ftp`].   **/ pub const FTP        : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Ftp  ));
-    /** [`NonSpecialSchemeDetails`].            **/ pub const NON_SPECIAL: Self = Self::NonSpecial(NonSpecialSchemeDetails);
+    /** [`FileSchemeDetails`].                  */ pub const FILE       : Self = Self::Special(SpecialSchemeDetails::File          (FileSchemeDetails                 ));
+    /** [`SpecialNotFileSchemeDetails::Http`].  */ pub const HTTP       : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Http ));
+    /** [`SpecialNotFileSchemeDetails::Https`]. */ pub const HTTPS      : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Https));
+    /** [`SpecialNotFileSchemeDetails::Ws`].    */ pub const WS         : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Ws   ));
+    /** [`SpecialNotFileSchemeDetails::Wss`].   */ pub const WSS        : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Wss  ));
+    /** [`SpecialNotFileSchemeDetails::Ftp`].   */ pub const FTP        : Self = Self::Special(SpecialSchemeDetails::SpecialNotFile(SpecialNotFileSchemeDetails::Ftp  ));
+    /** [`NonSpecialSchemeDetails`].            */ pub const NON_SPECIAL: Self = Self::NonSpecial(NonSpecialSchemeDetails);
 
     /// Parse a scheme literal.
     /// # Errors
@@ -64,20 +64,20 @@ impl SchemeDetails {
         }
     }
 
-    /** [`SchemeType::is_special`].          **/ pub const fn is_special         (self) -> bool {self.r#type().is_special         ()}
-    /** [`SchemeType::is_special_not_file`]. **/ pub const fn is_special_not_file(self) -> bool {self.r#type().is_special_not_file()}
-    /** [`SchemeType::is_non_special`].      **/ pub const fn is_non_special     (self) -> bool {self.r#type().is_non_special     ()}
+    /** [`SchemeType::is_special`].          */ pub const fn is_special         (self) -> bool {self.r#type().is_special         ()}
+    /** [`SchemeType::is_special_not_file`]. */ pub const fn is_special_not_file(self) -> bool {self.r#type().is_special_not_file()}
+    /** [`SchemeType::is_non_special`].      */ pub const fn is_non_special     (self) -> bool {self.r#type().is_non_special     ()}
 
 
 
-    /** If it's [`Self::FILE`].                    **/ pub const fn is_file         (self) -> bool {matches!(self, Self::FILE               )}
-    /** If it's [`Self::HTTP`].                    **/ pub const fn is_http         (self) -> bool {matches!(self, Self::HTTP               )}
-    /** If it's [`Self::HTTPS`].                   **/ pub const fn is_https        (self) -> bool {matches!(self, Self::HTTPS              )}
-    /** If it's [`Self::HTTP`] or [`Self::HTTPS`]. **/ pub const fn is_http_or_https(self) -> bool {matches!(self, Self::HTTP  | Self::HTTPS)}
-    /** If it's [`Self::WS`].                      **/ pub const fn is_ws           (self) -> bool {matches!(self, Self::WS                 )}
-    /** If it's [`Self::WSS`].                     **/ pub const fn is_wss          (self) -> bool {matches!(self, Self::WSS                )}
-    /** If it's [`Self::WS`] or [`Self::WSS`].     **/ pub const fn is_ws_or_wss    (self) -> bool {matches!(self, Self::WS    | Self::WSS  )}
-    /** If it's [`Self::FTP`].                     **/ pub const fn is_ftp          (self) -> bool {matches!(self, Self::FTP                )}
+    /** If it's [`Self::FILE`].                    */ pub const fn is_file         (self) -> bool {matches!(self, Self::FILE               )}
+    /** If it's [`Self::HTTP`].                    */ pub const fn is_http         (self) -> bool {matches!(self, Self::HTTP               )}
+    /** If it's [`Self::HTTPS`].                   */ pub const fn is_https        (self) -> bool {matches!(self, Self::HTTPS              )}
+    /** If it's [`Self::HTTP`] or [`Self::HTTPS`]. */ pub const fn is_http_or_https(self) -> bool {matches!(self, Self::HTTP  | Self::HTTPS)}
+    /** If it's [`Self::WS`].                      */ pub const fn is_ws           (self) -> bool {matches!(self, Self::WS                 )}
+    /** If it's [`Self::WSS`].                     */ pub const fn is_wss          (self) -> bool {matches!(self, Self::WSS                )}
+    /** If it's [`Self::WS`] or [`Self::WSS`].     */ pub const fn is_ws_or_wss    (self) -> bool {matches!(self, Self::WS    | Self::WSS  )}
+    /** If it's [`Self::FTP`].                     */ pub const fn is_ftp          (self) -> bool {matches!(self, Self::FTP                )}
 
 
 

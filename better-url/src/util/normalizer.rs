@@ -3,6 +3,8 @@
 use crate::prelude::*;
 
 /// A [`std::fmt::Write`] that, if fed a prefix of its input, does not allocate.
+///
+/// Used for things like [`Ipv6Host`] where detecting if an input is normalized is super complicated but always allocating is super stupid.
 /// # Examples
 /// ```
 /// use std::fmt::Write;
@@ -18,10 +20,7 @@ use crate::prelude::*;
 /// write!(normalizer, "a").unwrap();
 /// write!(normalizer, "b").unwrap();
 ///
-/// let (changed, value) = normalizer.done();
-///
-/// assert!(changed);
-/// assert_matches!(value, Cow::Borrowed("ab"));
+/// assert_matches!(normalizer.done(), (true, Cow::Borrowed("ab")));
 ///
 /// // But changes do.
 ///
@@ -32,7 +31,7 @@ use crate::prelude::*;
 /// write!(normalizer, "::").unwrap();
 /// write!(normalizer, "]" ).unwrap();
 ///
-/// assert_eq!(normalizer.done(), (true, "[1::]".into()));
+/// assert_matches!(normalizer.done(), (true, Cow::Owned(x)) if x == "[1::]");
 /// ```
 #[derive(Debug, Clone)]
 pub struct Normalizer<'a> {
@@ -54,27 +53,37 @@ impl<'a> Normalizer<'a> {
     pub fn done(mut self) -> (bool, Cow<'a, str>) {
         let changed = self.c || self.i != self.x.len();
 
-        match &mut self.x {
-            Cow::Owned   (x) => unsafe {x.as_mut_vec().set_len(self.i);},
-            Cow::Borrowed(x) => *x = unsafe {x.get_unchecked(..self.i)}
+        unsafe {
+            self.x.truncate_unchecked(self.i);
         }
 
         (changed, self.x)
     }
+
+    /// What [`Self::done`] would return, without consuming `self`.
+    pub fn current_output(&self) -> (bool, &str) {
+        let changed = self.c || self.i != self.x.len();
+
+        (changed, unsafe {self.x.get_unchecked(..self.i)})
+    }
 }
 
-impl<'a> From<Cow<'a, str>> for Normalizer<'a     > {fn from(value: Cow<'a, str>) -> Self {Self {x: value, i: 0, c: false}}}
-impl<'a> From<&'a str     > for Normalizer<'a     > {fn from(value: &'a str     ) -> Self {Cow       ::Borrowed(value).into()}}
-impl     From<String      > for Normalizer<'static> {fn from(value: String      ) -> Self {Cow::<str>::Owned   (value).into()}}
+impl<'a> From<Cow<'a, str>> for Normalizer<'a     > {fn from(value: Cow<'a, str>) -> Self {Self {x: value       , i: 0, c: false}}}
+impl<'a> From<&'a str     > for Normalizer<'a     > {fn from(value: &'a str     ) -> Self {Self {x: value.into(), i: 0, c: false}}}
+impl     From<String      > for Normalizer<'static> {fn from(value: String      ) -> Self {Self {x: value.into(), i: 0, c: false}}}
 
 impl<'a> std::fmt::Write for Normalizer<'a> {
+    #[inline]
     fn write_str(&mut self, s: &str) -> Result<(), std::fmt::Error> {
-        if self.i + s.len() > self.x.len() || unsafe {self.x.get_unchecked(self.i .. self.i + s.len())} != s {
+        if self.c || !unsafe {self.x.get_unchecked(self.i..)}.starts_with(s) {
+            let a = self.x.to_mut();
+
             unsafe {
-                self.x.to_mut().as_mut_vec().set_len(self.i);
+                a.as_mut_vec().set_len(self.i);
             }
 
-            self.x.to_mut().push_str(s);
+            a.push_str(s);
+
             self.c = true;
         }
 

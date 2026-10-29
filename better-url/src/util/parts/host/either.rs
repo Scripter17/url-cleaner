@@ -5,11 +5,11 @@ use crate::prelude::*;
 /// Possible last bytes for a domain segment that [`is_a_number`].
 const NUM_SEGMENT_LASTS: ByteSet = ByteSet::new().add_many(b"0123456789abcdefx");
 
-/** [`bytes_ends_in_a_number`]. **/ pub fn ends_in_a_number(value: &str) -> bool {bytes_ends_in_a_number(value.as_bytes())}
-/** [`bytes_ends_in_empty`].    **/ pub fn ends_in_empty   (value: &str) -> bool {bytes_ends_in_empty   (value.as_bytes())}
-/** [`bytes_last_is_a_number`]. **/ pub fn last_is_a_number(value: &str) -> bool {bytes_last_is_a_number(value.as_bytes())}
-/** [`bytes_last_is_empty`].    **/ pub fn last_is_empty   (value: &str) -> bool {bytes_last_is_empty   (value.as_bytes())}
-/** [`bytes_is_a_number`].      **/ pub fn is_a_number     (value: &str) -> bool {bytes_is_a_number     (value.as_bytes())}
+/** [`bytes_ends_in_a_number`]. */ pub fn ends_in_a_number(value: &str) -> bool {bytes_ends_in_a_number(value.as_bytes())}
+/** [`bytes_ends_in_empty`].    */ pub fn ends_in_empty   (value: &str) -> bool {bytes_ends_in_empty   (value.as_bytes())}
+/** [`bytes_last_is_a_number`]. */ pub fn last_is_a_number(value: &str) -> bool {bytes_last_is_a_number(value.as_bytes())}
+/** [`bytes_last_is_empty`].    */ pub fn last_is_empty   (value: &str) -> bool {bytes_last_is_empty   (value.as_bytes())}
+/** [`bytes_is_a_number`].      */ pub fn is_a_number     (value: &str) -> bool {bytes_is_a_number     (value.as_bytes())}
 
 
 

@@ -19,21 +19,17 @@ pub struct Args {
 impl Args {
     /// Do the command.
     pub async fn r#do(self) {
-        let (a, b) = crate::USERSCRIPT.split_once("localhost").expect("???");
+        let host = self.host;
+        let port = self.port;
 
+        let protocol = match self.tls {
+            true  => "wss",
+            false => "ws" ,
+        };
+
+        let (a, b) = crate::USERSCRIPT.split_once("localhost").expect("???");
         let (b, c) = b.split_once("ws://localhost:9149").expect("???");
 
-        print!("{a}");
-
-        print!("{}", self.host);
-
-        print!("{b}");
-
-        match self.tls {
-            true  => print!("wss://{}:{}", self.host, self.port),
-            false => print!("ws://{}:{}", self.host, self.port),
-        }
-
-        print!("{c}");
+        print!("{a}{host}{b}{protocol}://{host}:{port}{c}");
     }
 }

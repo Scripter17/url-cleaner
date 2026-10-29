@@ -113,15 +113,15 @@ impl Default for ByteSet {
     }
 }
 
-/** [The forbidden host code point set](https://url.spec.whatwg.org/#forbidden-host-code-point).     **/ pub const FORBIDDEN_HOST_INPUT           : ByteSet = ByteSet::new().add_many(b"\x00\t\n\r #/:<>?@[\\]^|");
-/** [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] plus `.`.                                                    **/ pub const FORBIDDEN_DOMAIN_SEGMENT_INPUT : ByteSet = FORBIDDEN_DOMAIN_SEGMENTS_INPUT.add(b'.');
-/** [`FORBIDDEN_HOST_INPUT`] plus [`C0`] and `%`.                                                    **/ pub const FORBIDDEN_DOMAIN_SEGMENTS_INPUT: ByteSet = FORBIDDEN_HOST_INPUT.merge(C0.into_inner().remove_non_ascii()).add(b'%');
-/** [the forbidden domain code point set](https://url.spec.whatwg.org/#forbidden-domain-code-point). **/ pub const FORBIDDEN_DOMAIN_HOST_INPUT    : ByteSet = FORBIDDEN_DOMAIN_SEGMENTS_INPUT;
+/** [The forbidden host code point set](https://url.spec.whatwg.org/#forbidden-host-code-point).     */ pub const FORBIDDEN_HOST_INPUT           : ByteSet = ByteSet::new().add_many(b"\x00\t\n\r #/:<>?@[\\]^|");
+/** [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] plus `.`.                                                    */ pub const FORBIDDEN_DOMAIN_SEGMENT_INPUT : ByteSet = FORBIDDEN_DOMAIN_SEGMENTS_INPUT.add(b'.');
+/** [`FORBIDDEN_HOST_INPUT`] plus [`C0`] and `%`.                                                    */ pub const FORBIDDEN_DOMAIN_SEGMENTS_INPUT: ByteSet = FORBIDDEN_HOST_INPUT.merge(C0.into_inner().remove_non_ascii()).add(b'%');
+/** [the forbidden domain code point set](https://url.spec.whatwg.org/#forbidden-domain-code-point). */ pub const FORBIDDEN_DOMAIN_HOST_INPUT    : ByteSet = FORBIDDEN_DOMAIN_SEGMENTS_INPUT;
 
-/** [`FORBIDDEN_HOST_INPUT`] with non-ASCII.            **/ pub const FORBIDDEN_HOST_LITERAL           : ByteSet = FORBIDDEN_HOST_INPUT           .add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-/** [`FORBIDDEN_DOMAIN_SEGMENT_INPUT`] with non-ASCII.  **/ pub const FORBIDDEN_DOMAIN_SEGMENT_LITERAL : ByteSet = FORBIDDEN_DOMAIN_SEGMENT_INPUT .add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-/** [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] with non-ASCII. **/ pub const FORBIDDEN_DOMAIN_SEGMENTS_LITERAL: ByteSet = FORBIDDEN_DOMAIN_SEGMENTS_INPUT.add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-/** [`FORBIDDEN_DOMAIN_HOST_INPUT`] with non-ASCII.     **/ pub const FORBIDDEN_DOMAIN_HOST_LITERAL    : ByteSet = FORBIDDEN_DOMAIN_HOST_INPUT    .add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+/** [`FORBIDDEN_HOST_INPUT`] with non-ASCII.            */ pub const FORBIDDEN_HOST_LITERAL           : ByteSet = FORBIDDEN_HOST_INPUT           .add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+/** [`FORBIDDEN_DOMAIN_SEGMENT_INPUT`] with non-ASCII.  */ pub const FORBIDDEN_DOMAIN_SEGMENT_LITERAL : ByteSet = FORBIDDEN_DOMAIN_SEGMENT_INPUT .add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+/** [`FORBIDDEN_DOMAIN_SEGMENTS_INPUT`] with non-ASCII. */ pub const FORBIDDEN_DOMAIN_SEGMENTS_LITERAL: ByteSet = FORBIDDEN_DOMAIN_SEGMENTS_INPUT.add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+/** [`FORBIDDEN_DOMAIN_HOST_INPUT`] with non-ASCII.     */ pub const FORBIDDEN_DOMAIN_HOST_LITERAL    : ByteSet = FORBIDDEN_DOMAIN_HOST_INPUT    .add_non_ascii().add_many(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
-/** The set of bytes forbidden from being used in a decimal IPv4 host. **/ pub const FORBIDDEN_IPV4_DEC_INPUT: ByteSet = ByteSet::new().add_many(b"0123456789."              ).invert();
-/** The set of bytes forbidden from being used in an IPv4 host.        **/ pub const FORBIDDEN_IPV4_INPUT    : ByteSet = ByteSet::new().add_many(b"0123456789.abcdefABCDEFxX").invert();
+/** The set of bytes forbidden from being used in a decimal IPv4 host. */ pub const FORBIDDEN_IPV4_DEC_INPUT: ByteSet = ByteSet::new().add_many(b"0123456789."              ).invert();
+/** The set of bytes forbidden from being used in an IPv4 host.        */ pub const FORBIDDEN_IPV4_INPUT    : ByteSet = ByteSet::new().add_many(b"0123456789.abcdefABCDEFxX").invert();

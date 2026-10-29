@@ -47,15 +47,15 @@ use crate::util::BasicBenchThing;
 /// If a particular library's URL parser returns an error, its columns will be present but empty.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /** Compare to all libraries.     **/ #[arg(long)] pub all  : bool,
-    /** Compare to Servo's URL crate. **/ #[arg(long)] pub servo: bool,
-    /** Compare to Ada's URL crate.   **/ #[arg(long)] pub ada  : bool,
+    /** Compare to all libraries.     */ #[arg(long)] pub all  : bool,
+    /** Compare to Servo's URL crate. */ #[arg(long)] pub servo: bool,
+    /** Compare to Ada's URL crate.   */ #[arg(long)] pub ada  : bool,
 
     /// The value to set it to.
     #[arg(long)]
     pub value: Option<String>,
 
-    /** The [`BasicBenchThing`]. **/ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
+    /** The [`BasicBenchThing`]. */ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
 }
 
 impl Args {
@@ -85,7 +85,7 @@ impl Args {
 
 
 
-                    let burl_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_query(self.value.as_deref()), url.clone());
+                    let burl_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_query(self.value.as_deref()), url);
                     burl_untyped_total += burl_untyped;
 
                     let factor       = burl_untyped      .as_secs_f64() / burl      .as_secs_f64();
@@ -108,7 +108,7 @@ impl Args {
 
 
 
-                                let servo_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_query(self.value.as_deref()), url.clone());
+                                let servo_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_query(self.value.as_deref()), url);
                                 servo_untyped_total += servo_untyped;
 
                                 let factor       = servo_untyped      .as_secs_f64() / burl_untyped      .as_secs_f64();
@@ -116,7 +116,7 @@ impl Args {
 
                                 print!("\t{servo:.2?}\t{factor:.2}\t{total_factor:.2}");
                             },
-                            Err(_) => print!("\t\t\t\t\t\t")
+                            Err(_) => print!("\t\t\t\t\t\t"),
                         }
                     }
 
@@ -135,7 +135,7 @@ impl Args {
 
 
 
-                                let ada_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_search(self.value.as_deref()), url.clone());
+                                let ada_untyped = self.basic_bench_thing.bench_with_input(|mut url| url.set_search(self.value.as_deref()), url);
                                 ada_untyped_total += ada_untyped;
 
                                 let factor       = ada_untyped      .as_secs_f64() / burl_untyped      .as_secs_f64();
@@ -143,7 +143,7 @@ impl Args {
 
                                 print!("\t{ada:.2?}\t{factor:.2}\t{total_factor:.2}");
                             },
-                            Err(_) => print!("\t\t\t\t\t")
+                            Err(_) => print!("\t\t\t\t\t"),
                         }
                     }
                 },
@@ -151,7 +151,7 @@ impl Args {
                     print!("\t\t\t\t");
                     if servo {print!("\t\t\t\t\t\t");}
                     if ada   {print!("\t\t\t\t\t\t");}
-                }
+                },
             }
 
             println!();

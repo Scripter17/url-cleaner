@@ -41,13 +41,13 @@ pub struct NonFqdnCantEndInEmpty;
 /// Returned when failing to set some/all of a domain.
 #[derive(Debug, Error)]
 pub enum SetDomainError {
-    /** [`InvalidDomainSegments`]. **/ #[error(transparent)] InvalidDomainSegments(#[from] InvalidDomainSegments),
-    /** [`TooLong`].               **/ #[error(transparent)] TooLong              (#[from] TooLong              ),
-    /** [`InsertNotFound`].        **/ #[error(transparent)] InsertNotFound       (#[from] InsertNotFound       ),
-    /** [`RangeNotFound`].         **/ #[error(transparent)] RangeNotFound        (#[from] RangeNotFound        ),
-    /** [`CantEndInANumber`].      **/ #[error(transparent)] CantEndInANumber     (#[from] CantEndInANumber     ),
-    /** [`NonFqdnCantEndInEmpty`]. **/ #[error(transparent)] NonFqdnCantEndInEmpty(#[from] NonFqdnCantEndInEmpty),
-    /** [`InvalidDomainSegment`].  **/ #[error(transparent)] InvalidDomainSegment (#[from] InvalidDomainSegment ),
-    /** [`CantBeNone`].            **/ #[error(transparent)] CantBeEmpty          (#[from] CantBeEmpty          ),
-    /** [`InvalidDomainHost`].     **/ #[error(transparent)] InvalidDomainHost    (#[from] InvalidDomainHost    ),
+    /** [`InvalidDomainSegments`]. */ #[error(transparent)] InvalidDomainSegments(#[from] InvalidDomainSegments),
+    /** [`TooLong`].               */ #[error(transparent)] TooLong              (#[from] TooLong              ),
+    /** [`InsertNotFound`].        */ #[error(transparent)] InsertNotFound       (#[from] InsertNotFound       ),
+    /** [`RangeNotFound`].         */ #[error(transparent)] RangeNotFound        (#[from] RangeNotFound        ),
+    /** [`CantEndInANumber`].      */ #[error(transparent)] CantEndInANumber     (#[from] CantEndInANumber     ),
+    /** [`NonFqdnCantEndInEmpty`]. */ #[error(transparent)] NonFqdnCantEndInEmpty(#[from] NonFqdnCantEndInEmpty),
+    /** [`InvalidDomainSegment`].  */ #[error(transparent)] InvalidDomainSegment (#[from] InvalidDomainSegment ),
+    /** [`CantBeNone`].            */ #[error(transparent)] CantBeEmpty          (#[from] CantBeEmpty          ),
+    /** [`InvalidDomainHost`].     */ #[error(transparent)] InvalidDomainHost    (#[from] InvalidDomainHost    ),
 }

@@ -27,14 +27,14 @@ impl TaskContext {
 
 impl Suitability for TaskContext {
     fn assert_suitability(&self, cleaner: &Cleaner<'_>) {
-        for name in self.flags.iter() {assert!(cleaner.docs.task_context.flags.contains_key(name), "Undocumented TaskContext Flag {name:?}");}
+        for name in self.flags.iter() {
+            assert!(cleaner.docs.task_context.flags.contains_key(name), "Undocumented TaskContext Flag {name:?}");
+        }
 
         for (name, value) in self.vars.iter() {
             match cleaner.docs.task_context.vars.get(name) {
-                Some(doc) => {
-                    if let Some(variants) = &doc.variants && !variants.contains_key(value) {
-                        panic!("TaskContext Var {name:?} set to undocumented value {value:?}.");
-                    }
+                Some(doc) => if !doc.documents(Some(value)) {
+                    panic!("TaskContext Var {name:?} set to undocumented value {value:?}.");
                 },
                 None => panic!("Undocumented TaskContext Var {name:?}.")
             }

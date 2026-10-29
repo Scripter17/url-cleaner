@@ -44,12 +44,12 @@ pub fn make_fragment_query_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool
 
 /// Make a [`Fragment`]/[`FragmentQuery`] from bytes.
 pub fn make_fragment_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode_bytes(value, FRAGMENT)
+    percent_encode_bytes(value, &FRAGMENT)
 }
 
 /// Make a [`FragmentQuerySegment`] from bytes.
 pub fn make_fragment_query_segment_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>, Option<NonZero<usize>>) {
-    let (changed, value) = percent_encode_bytes(value, FRAGMENT_QUERY_SEGMENT);
+    let (changed, value) = percent_encode_bytes(value, &FRAGMENT_QUERY_SEGMENT);
 
     let vs = value.memchr(b'=').and_then(|x| NonZero::new(x + 1));
 

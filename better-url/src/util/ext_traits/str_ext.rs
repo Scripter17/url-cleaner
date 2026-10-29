@@ -19,9 +19,8 @@ pub(crate) trait StrExt {
     /// [`str::trim_suffix`] but stable.
     fn my_trim_suffix(&self, suffix: &str) -> &str;
 
-    /** [`[u8]::memchr`].  **/ fn memchr                 (&self, b :  u8    ) -> Option<usize>;
-    /** [`[u8]::memrchr`]. **/ fn memrchr                (&self, b :  u8    ) -> Option<usize>;
-    /** [`[u8]::memchrn`]. **/ fn memchrn<const N: usize>(&self, bs: [u8; N]) -> Option<usize>;
+    /** [`[u8]::memchr`].  */ fn memchr (&self, b:  u8) -> Option<usize>;
+    /** [`[u8]::memrchr`]. */ fn memrchr(&self, b:  u8) -> Option<usize>;
 }
 
 impl StrExt for str {
@@ -52,6 +51,4 @@ impl StrExt for str {
 
     fn memchr (&self, b: u8) -> Option<usize> {self.as_bytes().memchr (b)}
     fn memrchr(&self, b: u8) -> Option<usize> {self.as_bytes().memrchr(b)}
-
-    fn memchrn<const N: usize>(&self, bs: [u8; N]) -> Option<usize> {self.as_bytes().memchrn(bs)}
 }

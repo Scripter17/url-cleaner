@@ -9,8 +9,8 @@ mod filter;
 /// Either [`MaybeSpecialQuery`] or [`MaybeNonSpecialQuery`].
 #[derive(Debug, Clone)]
 pub enum MaybeQuery<'a> {
-    /** [`MaybeSpecialQuery`].    **/ Special   (MaybeSpecialQuery   <'a>),
-    /** [`MaybeNonSpecialQuery`]. **/ NonSpecial(MaybeNonSpecialQuery<'a>),
+    /** [`MaybeSpecialQuery`].    */ Special   (MaybeSpecialQuery   <'a>),
+    /** [`MaybeNonSpecialQuery`]. */ NonSpecial(MaybeNonSpecialQuery<'a>),
 }
 
 impl<'a> MaybeQuery<'a> {
@@ -22,8 +22,8 @@ impl<'a> MaybeQuery<'a> {
         }
     }
 
-    /** [`MaybeSpecialQuery::new`].    **/ pub fn new_special    <T: Into<MaybeSpecialQuery   <'a>>>(query: T) -> Self {MaybeSpecialQuery   ::new(query).into()}
-    /** [`MaybeNonSpecialQuery::new`]. **/ pub fn new_non_special<T: Into<MaybeNonSpecialQuery<'a>>>(query: T) -> Self {MaybeNonSpecialQuery::new(query).into()}
+    /** [`MaybeSpecialQuery::new`].    */ pub fn new_special    <T: Into<MaybeSpecialQuery   <'a>>>(query: T) -> Self {MaybeSpecialQuery   ::new(query).into()}
+    /** [`MaybeNonSpecialQuery::new`]. */ pub fn new_non_special<T: Into<MaybeNonSpecialQuery<'a>>>(query: T) -> Self {MaybeNonSpecialQuery::new(query).into()}
 
 
 

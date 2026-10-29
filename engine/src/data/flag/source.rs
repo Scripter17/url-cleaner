@@ -17,10 +17,10 @@ pub enum FlagSource {
     False,
     /// [`true`].
     True,
-    /** [`Params::flags`].       **/ Params     (#[suitable(assert = flag_source_params      )] StringSource),
-    /** [`TaskContext::flags`].  **/ TaskContext(#[suitable(assert = flag_source_task_context)] StringSource),
-    /** [`JobContext::flags`].   **/ JobContext (#[suitable(assert = flag_source_job_context )] StringSource),
-    /** [`FunctionArgs::flags`]. **/ FunctionArg(                                               StringSource),
+    /** [`Params::flags`].       */ Params     (#[suitable(assert = flag_source_params      )] StringSource),
+    /** [`TaskContext::flags`].  */ TaskContext(#[suitable(assert = flag_source_task_context)] StringSource),
+    /** [`JobContext::flags`].   */ JobContext (#[suitable(assert = flag_source_job_context )] StringSource),
+    /** [`FunctionArgs::flags`]. */ FunctionArg(                                               StringSource),
 }
 
 impl FlagSource {

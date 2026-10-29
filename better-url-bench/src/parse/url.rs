@@ -11,29 +11,35 @@ use crate::util::BasicBenchThing;
 
 /// Benchmark URL parsing.
 ///
-/// For each line of input, the output is a TSV.
+/// The columns are:
 ///
-/// - The first column is the line number, starting at 1.
+///  1. The line number starting at 1.
 ///
-/// - The second column is the time it took BetterUrl::new to run the specified number of times.
+///  2. BetterUrl::new.
 ///
-/// The remaining columns are groups of 3 representing an alternate parser being compared to.
+///  3. (if --all and/or --servo) url::Url::parse.
 ///
-/// - A group's first column is the time it took that group's parser to run the specified number of times.
+///  4. (if --all and/or --servo) The current row's column 3 divided by the current row's column 2.
 ///
-/// - A group's second column is the group's time divided by Better URL's time.
+///  5. (if --all and/or --servo) The current sum of column 3 divided by the current sum of column 2.
 ///
-/// - A group's third column is the current sum of the group's times divided by the current sum of Better URL's times.
+///  6. (if --all and/or --servo-plus) url::Url::parse + DomainDetails::parse_unchecked.
 ///
-/// There are currently 4 parsers to compare with:
+///  7. (if --all and/or --servo-plus) The current row's column 6 divided by the current row's column 2.
 ///
-/// 1. Servo's URL crate (`url`).
+///  8. (if --all and/or --servo-plus) The current sum of column 6 divided by the current sum of column 2.
 ///
-/// 2. Servo's URL crate plus Better URL's DomainHostDetails::parse_unchecked.
+///  9. (if --all and/or --ada) ada_url::Url::parse.
 ///
-/// 3. Ada's URL crate (`ada_url`).
+/// 10. (if --all and/or --ada) The current row's column 9 divided by the current row's column 2.
 ///
-/// 4. Ada's URL crate plus Better URL's DomainHostDetails::parse_unchecked.
+/// 11. (if --all and/or --ada) The current sum of column 9 divided by the current sum of column 2.
+///
+/// 12. (if --all and/or --ada-plus) ada_url::Url::parse + DomainDetails::parse_unchecked.
+///
+/// 13. (if --all and/or --ada-plus) The current row's column 12 divided by the current row's column 2.
+///
+/// 14. (if --all and/or --ada-plus) The current sum of column 12 divided by the current sum of column 2.
 ///
 /// Because Better URL Bench enables Better URL's `psl` feature, comparisons 2 and 4 are going to be closer (but probably a bit above) the "actual" performance factor.
 #[derive(Debug, Parser)]
@@ -44,7 +50,7 @@ pub struct Args {
     /** Compare to Ada's URL crate.                                           */ #[arg(long)] pub ada       : bool,
     /** Compare to Ada's URL crate plus DomainHostDetails::parse_unchecked.   */ #[arg(long)] pub ada_plus  : bool,
 
-    /** The [`BasicBenchThing`]. **/ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
+    /** The [`BasicBenchThing`]. */ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
 }
 
 impl Args {

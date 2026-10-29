@@ -4,6 +4,7 @@ use crate::prelude::*;
 
 /// Configuration for a [`CacheClient`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CacheConfig {
     /// If [`false`], make all reads do nothing and return [`None`].
     ///

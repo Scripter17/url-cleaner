@@ -20,11 +20,11 @@ impl BetterUrl {
         unsafe {Scheme::from_parts(self.scheme_str(), self.scheme_details())}
     }
 
-    /** [`SchemeDetails::type`].                **/ pub fn scheme_type        (&self) -> SchemeType {self.details.scheme.r#type             ()}
-    /** [`SchemeDetails::is_special`].          **/ pub fn is_special         (&self) -> bool       {self.details.scheme.is_special         ()}
-    /** [`SchemeDetails::is_file`].             **/ pub fn is_file            (&self) -> bool       {self.details.scheme.is_file            ()}
-    /** [`SchemeDetails::is_special_not_file`]. **/ pub fn is_special_not_file(&self) -> bool       {self.details.scheme.is_special_not_file()}
-    /** [`SchemeDetails::is_non_special`].      **/ pub fn is_non_special     (&self) -> bool       {self.details.scheme.is_non_special     ()}
+    /** [`SchemeDetails::type`].                */ pub fn scheme_type        (&self) -> SchemeType {self.details.scheme.r#type             ()}
+    /** [`SchemeDetails::is_special`].          */ pub fn is_special         (&self) -> bool       {self.details.scheme.is_special         ()}
+    /** [`SchemeDetails::is_file`].             */ pub fn is_file            (&self) -> bool       {self.details.scheme.is_file            ()}
+    /** [`SchemeDetails::is_special_not_file`]. */ pub fn is_special_not_file(&self) -> bool       {self.details.scheme.is_special_not_file()}
+    /** [`SchemeDetails::is_non_special`].      */ pub fn is_non_special     (&self) -> bool       {self.details.scheme.is_non_special     ()}
 
     /// Set the scheme.
     /// # Errors

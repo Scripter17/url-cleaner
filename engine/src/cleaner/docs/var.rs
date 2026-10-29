@@ -23,6 +23,16 @@ pub struct VarDoc {
     pub variants: Option<IndexMap<String, String>>,
 }
 
+impl VarDoc {
+    ///  If this [`VarDoc`] documents the provided value.
+    pub fn documents(&self, value: Option<&str>) -> bool {
+        match value {
+            Some(value) => self.variants.as_ref().is_none_or(|variants| variants.contains_key(value)),
+            None => !self.required,
+        }
+    }
+}
+
 impl Suitability for VarDoc {
     fn assert_suitability(&self, _: &Cleaner<'_>) {
         match (self.required, self.unset.is_some()) {

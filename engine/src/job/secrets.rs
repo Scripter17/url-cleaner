@@ -74,10 +74,8 @@ impl Suitability for Secrets {
     fn assert_suitability(&self, cleaner: &Cleaner<'_>) {
         for (name, value) in self.vars.iter() {
             match cleaner.docs.secrets.vars.get(name) {
-                Some(doc) => {
-                    if let Some(variants) = &doc.variants && !variants.contains_key(value) {
-                        panic!("Secrets Var {name:?} set to undocumented value {value:?}.");
-                    }
+                Some(doc) => if !doc.documents(Some(value)) {
+                    panic!("Secrets Var {name:?} set to an undocumented value.");
                 },
                 None => panic!("Undocumented Secrets Var {name:?}.")
             }

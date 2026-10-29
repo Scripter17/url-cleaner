@@ -20,17 +20,17 @@ pub enum BidiDetail {
     ForceAscii,
 }
 
-/** Shorthand. **/ const AL  : BidiClass = BidiClass::AL ;
-/** Shorthand. **/ const AN  : BidiClass = BidiClass::AN ;
-/** Shorthand. **/ const BN  : BidiClass = BidiClass::BN ;
-/** Shorthand. **/ const CS  : BidiClass = BidiClass::CS ;
-/** Shorthand. **/ const EN  : BidiClass = BidiClass::EN ;
-/** Shorthand. **/ const ES  : BidiClass = BidiClass::ES ;
-/** Shorthand. **/ const ET  : BidiClass = BidiClass::ET ;
-/** Shorthand. **/ const L   : BidiClass = BidiClass::L  ;
-/** Shorthand. **/ const NSM : BidiClass = BidiClass::NSM;
-/** Shorthand. **/ const ON  : BidiClass = BidiClass::ON ;
-/** Shorthand. **/ const R   : BidiClass = BidiClass::R  ;
+/** Shorthand. */ const AL  : BidiClass = BidiClass::AL ;
+/** Shorthand. */ const AN  : BidiClass = BidiClass::AN ;
+/** Shorthand. */ const BN  : BidiClass = BidiClass::BN ;
+/** Shorthand. */ const CS  : BidiClass = BidiClass::CS ;
+/** Shorthand. */ const EN  : BidiClass = BidiClass::EN ;
+/** Shorthand. */ const ES  : BidiClass = BidiClass::ES ;
+/** Shorthand. */ const ET  : BidiClass = BidiClass::ET ;
+/** Shorthand. */ const L   : BidiClass = BidiClass::L  ;
+/** Shorthand. */ const NSM : BidiClass = BidiClass::NSM;
+/** Shorthand. */ const ON  : BidiClass = BidiClass::ON ;
+/** Shorthand. */ const R   : BidiClass = BidiClass::R  ;
 
 impl BidiDetail {
     /// Join the [`BidiDetail`]s of multiple domain segments.

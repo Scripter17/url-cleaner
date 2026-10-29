@@ -7,8 +7,8 @@ impl From<ConditionError> for MapSourceError  {fn from(value: ConditionError) ->
 /// [`ListSource::get`].
 #[derive(Debug, Error)]
 pub enum MapSourceError {
-    /** [`StringNotFound`].    **/ #[error(transparent)] StringNotFound   (#[from] StringNotFound     ),
-    /** [`StringSourceError`]. **/ #[error(transparent)] StringSourceError(#[from] StringSourceError  ),
-    /** [`ConditionError`].    **/ #[error(transparent)] ConditionError   (#[from] Box<ConditionError>),
-    /** [`NotInFunction`].     **/ #[error(transparent)] NotInFunction    (#[from] NotInFunction      ),
+    /** [`StringNotFound`].    */ #[error(transparent)] StringNotFound   (#[from] StringNotFound     ),
+    /** [`StringSourceError`]. */ #[error(transparent)] StringSourceError(#[from] StringSourceError  ),
+    /** [`ConditionError`].    */ #[error(transparent)] ConditionError   (#[from] Box<ConditionError>),
+    /** [`NotInFunction`].     */ #[error(transparent)] NotInFunction    (#[from] NotInFunction      ),
 }

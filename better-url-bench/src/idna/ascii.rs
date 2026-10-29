@@ -7,22 +7,26 @@ use crate::util::BasicBenchThing;
 /// ToASCII.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /** Compare to all parsers.       **/ #[arg(long)] pub all  : bool,
-    /** Compare to Servo's URL crate. **/ #[arg(long)] pub servo: bool,
-    /** Compare to Ada's URL crate.   **/ #[arg(long)] pub ada  : bool,
+    /** Compare to all parsers.       */ #[arg(long)] pub all  : bool,
+    /** Compare to Servo's URL crate. */ #[arg(long)] pub servo: bool,
+    /** Compare to Ada's URL crate.   */ #[arg(long)] pub ada  : bool,
 
-    /** The [`BasicBenchThing`]. **/ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
+    /** The [`BasicBenchThing`]. */ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
 }
 
 impl Args {
     /// Do the command.
-    pub fn r#do(self) {
+    pub fn r#do(mut self) {
         let mut burl_total  = std::time::Duration::default();
         let mut servo_total = std::time::Duration::default();
         let mut ada_total   = std::time::Duration::default();
 
-        let servo = self.servo || self.all;
-        let ada   = self.ada   || self.all;
+        if self.all {
+            self.servo = true;
+            self.ada   = true;
+        }
+
+        let servo_idna = idna::uts46::Uts46::new();
 
         for (i, line) in (1..).zip(std::io::stdin().lines().map(Result::unwrap)) {
             print!("{i}");
@@ -34,10 +38,8 @@ impl Args {
 
 
 
-            if servo {
-                let x = idna::uts46::Uts46::new();
-
-                let servo = self.basic_bench_thing.bench_with_input(|line| x.to_ascii(line.as_bytes(), idna::AsciiDenyList::URL, idna::uts46::Hyphens::Allow, idna::uts46::DnsLength::Ignore), &line);
+            if self.servo {
+                let servo = self.basic_bench_thing.bench_with_input(|line| servo_idna.to_ascii(line.as_bytes(), idna::AsciiDenyList::URL, idna::uts46::Hyphens::Allow, idna::uts46::DnsLength::Ignore), &line);
                 servo_total += servo;
 
                 let factor       = servo      .as_secs_f64() / burl      .as_secs_f64();
@@ -48,7 +50,7 @@ impl Args {
 
 
 
-            if ada {
+            if self.ada {
                 let ada = self.basic_bench_thing.bench_with_input(|line| ada_url::Idna::ascii(line), &line);
                 ada_total += ada;
 

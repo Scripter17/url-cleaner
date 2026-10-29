@@ -5,8 +5,8 @@ use crate::prelude::*;
 /// A [`DoubleEndedIterator`] of [`QuerySegment`]s.
 #[derive(Debug, Clone)]
 pub struct QueryIter<'a> {
-    /** The [`SplitAmpersands`]. **/ iter  : SplitAmpersands<'a>,
-    /** The [`QueryType`].       **/ r#type: QueryType,
+    /** The [`SplitAmpersands`]. */ iter  : SplitAmpersands<'a>,
+    /** The [`QueryType`].       */ r#type: QueryType,
 }
 
 impl<'a> QueryIter<'a> {

@@ -321,10 +321,10 @@ impl<'a> TryFrom<Cow<'a, [u8]>> for DomainHost<'a> {
     type Error = InvalidDomainHost;
 
     fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        let (_, value) = make_domain_host_bytes(value)?;
+        let (_, value, details) = make_domain_host_bytes(value)?;
 
         unsafe {
-            Ok(Self::new_raw(value))
+            Ok(Self::from_parts(value, details))
         }
     }
 }
@@ -333,10 +333,10 @@ impl<'a> TryFrom<Cow<'a, str>> for DomainHost<'a> {
     type Error = InvalidDomainHost;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, value) = make_domain_host(value)?;
+        let (_, value, details) = make_domain_host(value)?;
 
         unsafe {
-            Ok(Self::new_raw(value))
+            Ok(Self::from_parts(value, details))
         }
     }
 }

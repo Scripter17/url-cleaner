@@ -19,11 +19,17 @@ pub fn make_opaque_host_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<(b
         Err(InvalidOpaqueHost)?;
     }
 
-    if value.iter().any(|&b| FORBIDDEN_HOST_INPUT.contains(b)) {
+    let class = value.iter().fold(0, |acc, &b| acc | OPAQUE_HOST_BYTE_CLASS_DATA[b as usize]);
+
+    if class & 1 == 1 {
         Err(InvalidOpaqueHost)?;
     }
 
-    let (changed, value) = percent_encode_bytes(value, OPAQUE_HOST);
+    if class & 2 == 0 {
+        return Ok((false, unsafe {cow_bytes_to_str_unchecked(value)}, OpaqueHostDetails));
+    }
+
+    let (changed, value) = percent_encode_bytes(value, &OPAQUE_HOST);
 
     Ok((changed, value, OpaqueHostDetails))
 }

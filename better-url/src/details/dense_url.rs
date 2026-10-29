@@ -16,17 +16,17 @@ use crate::prelude::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(from = "UrlDetails", into = "UrlDetails"))]
 pub struct DenseUrlDetails {
-    /** The `:` marking the scheme.        **/ pub scheme_mark   : u32                 ,
-    /** The `:` or `@` after the username. **/ pub username_after: Option<NonZero<u32>>,
-    /** The start of the host.             **/ pub host_start    : Option<NonZero<u32>>,
-    /** The `:` marking the port.          **/ pub port_mark     : Option<NonZero<u32>>,
-    /** The start of the path.             **/ pub path_start    : u32                 ,
-    /** The `?` marking the query.         **/ pub query_mark    : Option<NonZero<u32>>,
-    /** The `#` marking the fragment.      **/ pub fragment_mark : Option<NonZero<u32>>,
-    /** The [`SchemeDetails`].             **/ pub scheme        : SchemeDetails       ,
-    /** The [`HostType`].                  **/     host_type     : Option<HostType>    ,
-    /** The [`HostData`].                  **/     host_data     : HostData            ,
-    /** The port.                          **/ pub port          : u16                 ,
+    /** The `:` marking the scheme.        */ pub scheme_mark   : u32                 ,
+    /** The `:` or `@` after the username. */ pub username_after: Option<NonZero<u32>>,
+    /** The start of the host.             */ pub host_start    : Option<NonZero<u32>>,
+    /** The `:` marking the port.          */ pub port_mark     : Option<NonZero<u32>>,
+    /** The start of the path.             */ pub path_start    : u32                 ,
+    /** The `?` marking the query.         */ pub query_mark    : Option<NonZero<u32>>,
+    /** The `#` marking the fragment.      */ pub fragment_mark : Option<NonZero<u32>>,
+    /** The [`SchemeDetails`].             */ pub scheme        : SchemeDetails       ,
+    /** The [`HostType`].                  */     host_type     : Option<HostType>    ,
+    /** The [`HostData`].                  */     host_data     : HostData            ,
+    /** The port.                          */ pub port          : u16                 ,
 }
 
 /// The variant of a [`HostDetails`].
@@ -35,11 +35,11 @@ pub struct DenseUrlDetails {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum HostType {
-    /** [`HostDetails::Domain`]. **/ Domain,
-    /** [`HostDetails::Ipv4`].   **/ Ipv4  ,
-    /** [`HostDetails::Ipv6`].   **/ Ipv6  ,
-    /** [`HostDetails::Opaque`]. **/ Opaque,
-    /** [`HostDetails::Empty`].  **/ Empty ,
+    /** [`HostDetails::Domain`]. */ Domain,
+    /** [`HostDetails::Ipv4`].   */ Ipv4  ,
+    /** [`HostDetails::Ipv6`].   */ Ipv6  ,
+    /** [`HostDetails::Opaque`]. */ Opaque,
+    /** [`HostDetails::Empty`].  */ Empty ,
 }
 
 /// The data for a [`HostDetails`].
@@ -47,11 +47,11 @@ pub enum HostType {
 /// Used in [`DenseUrlDetails`] to avoid 8 bytes of padding.
 #[derive(Clone, Copy)]
 pub union HostData {
-    /** [`DomainHostDetails`]. **/ pub domain: DomainHostDetails,
-    /** [`Ipv4HostDetails`].   **/ pub ipv4  : Ipv4HostDetails  ,
-    /** [`Ipv6HostDetails`].   **/ pub ipv6  : Ipv6HostDetails  ,
-    /** [`OpaqueHostDetails`]. **/ pub opaque: OpaqueHostDetails,
-    /** [`EmptyHostDetails`].  **/ pub empty : EmptyHostDetails ,
+    /** [`DomainHostDetails`]. */ pub domain: DomainHostDetails,
+    /** [`Ipv4HostDetails`].   */ pub ipv4  : Ipv4HostDetails  ,
+    /** [`Ipv6HostDetails`].   */ pub ipv6  : Ipv6HostDetails  ,
+    /** [`OpaqueHostDetails`]. */ pub opaque: OpaqueHostDetails,
+    /** [`EmptyHostDetails`].  */ pub empty : EmptyHostDetails ,
 }
 
 impl std::fmt::Debug for HostData {
@@ -86,17 +86,17 @@ impl DenseUrlDetails {
         self.host_data = host_data;
     }
 
-    /** The [`DomainHostDetails`]. **/ pub fn domain_details(self) -> Option<DomainHostDetails> {(self.host_type == Some(HostType::Domain)).then_some(unsafe {self.host_data.domain})}
-    /** The [`Ipv4HostDetails`].   **/ pub fn ipv4_details  (self) -> Option<Ipv4HostDetails  > {(self.host_type == Some(HostType::Ipv4  )).then_some(unsafe {self.host_data.ipv4  })}
-    /** The [`Ipv6HostDetails`].   **/ pub fn ipv6_details  (self) -> Option<Ipv6HostDetails  > {(self.host_type == Some(HostType::Ipv6  )).then_some(unsafe {self.host_data.ipv6  })}
-    /** The [`OpaqueHostDetails`]. **/ pub fn opaque_details(self) -> Option<OpaqueHostDetails> {(self.host_type == Some(HostType::Opaque)).then_some(unsafe {self.host_data.opaque})}
-    /** The [`EmptyHostDetails`].  **/ pub fn empty_details (self) -> Option<EmptyHostDetails > {(self.host_type == Some(HostType::Empty )).then_some(unsafe {self.host_data.empty })}
+    /** The [`DomainHostDetails`]. */ pub fn domain_details(self) -> Option<DomainHostDetails> {(self.host_type == Some(HostType::Domain)).then_some(unsafe {self.host_data.domain})}
+    /** The [`Ipv4HostDetails`].   */ pub fn ipv4_details  (self) -> Option<Ipv4HostDetails  > {(self.host_type == Some(HostType::Ipv4  )).then_some(unsafe {self.host_data.ipv4  })}
+    /** The [`Ipv6HostDetails`].   */ pub fn ipv6_details  (self) -> Option<Ipv6HostDetails  > {(self.host_type == Some(HostType::Ipv6  )).then_some(unsafe {self.host_data.ipv6  })}
+    /** The [`OpaqueHostDetails`]. */ pub fn opaque_details(self) -> Option<OpaqueHostDetails> {(self.host_type == Some(HostType::Opaque)).then_some(unsafe {self.host_data.opaque})}
+    /** The [`EmptyHostDetails`].  */ pub fn empty_details (self) -> Option<EmptyHostDetails > {(self.host_type == Some(HostType::Empty )).then_some(unsafe {self.host_data.empty })}
 
-    /** If the host is [`DomainHost`]. **/ pub fn host_is_domain(&self) -> bool {self.host_type == Some(HostType::Domain)}
-    /** If the host is [`Ipv4Host`].   **/ pub fn host_is_ipv4  (&self) -> bool {self.host_type == Some(HostType::Ipv4  )}
-    /** If the host is [`Ipv6Host`].   **/ pub fn host_is_ipv6  (&self) -> bool {self.host_type == Some(HostType::Ipv6  )}
-    /** If the host is [`OpaqueHost`]. **/ pub fn host_is_opaque(&self) -> bool {self.host_type == Some(HostType::Opaque)}
-    /** If the host is [`EmptyHost`].  **/ pub fn host_is_empty (&self) -> bool {self.host_type == Some(HostType::Empty )}
+    /** If the host is [`DomainHost`]. */ pub fn host_is_domain(&self) -> bool {self.host_type == Some(HostType::Domain)}
+    /** If the host is [`Ipv4Host`].   */ pub fn host_is_ipv4  (&self) -> bool {self.host_type == Some(HostType::Ipv4  )}
+    /** If the host is [`Ipv6Host`].   */ pub fn host_is_ipv6  (&self) -> bool {self.host_type == Some(HostType::Ipv6  )}
+    /** If the host is [`OpaqueHost`]. */ pub fn host_is_opaque(&self) -> bool {self.host_type == Some(HostType::Opaque)}
+    /** If the host is [`EmptyHost`].  */ pub fn host_is_empty (&self) -> bool {self.host_type == Some(HostType::Empty )}
 }
 
 impl std::fmt::Debug for DenseUrlDetails {

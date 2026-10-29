@@ -4,7 +4,7 @@ use icu_properties::props::BidiClass;
 
 use crate::prelude::*;
 
-/// A classification of each byte whose bits are, from lowest to highest, are:
+/// A classification of each byte whose bits, from lowest to highest, are:
 ///
 /// 1. If it's an ASCII uppercase letter.
 ///
@@ -52,16 +52,16 @@ const fn get_domain_byte_class_data() -> [u8; 256] {
     ret
 }
 
-/** Shorthand. **/ const B   : BidiClass = BidiClass::B ;
-/** Shorthand. **/ const BN  : BidiClass = BidiClass::BN;
-/** Shorthand. **/ const CS  : BidiClass = BidiClass::CS;
-/** Shorthand. **/ const EN  : BidiClass = BidiClass::EN;
-/** Shorthand. **/ const ES  : BidiClass = BidiClass::ES;
-/** Shorthand. **/ const ET  : BidiClass = BidiClass::ET;
-/** Shorthand. **/ const L   : BidiClass = BidiClass::L ;
-/** Shorthand. **/ const ON  : BidiClass = BidiClass::ON;
-/** Shorthand. **/ const S   : BidiClass = BidiClass::S ;
-/** Shorthand. **/ const WS  : BidiClass = BidiClass::WS;
+/** Shorthand. */ const B   : BidiClass = BidiClass::B ;
+/** Shorthand. */ const BN  : BidiClass = BidiClass::BN;
+/** Shorthand. */ const CS  : BidiClass = BidiClass::CS;
+/** Shorthand. */ const EN  : BidiClass = BidiClass::EN;
+/** Shorthand. */ const ES  : BidiClass = BidiClass::ES;
+/** Shorthand. */ const ET  : BidiClass = BidiClass::ET;
+/** Shorthand. */ const L   : BidiClass = BidiClass::L ;
+/** Shorthand. */ const ON  : BidiClass = BidiClass::ON;
+/** Shorthand. */ const S   : BidiClass = BidiClass::S ;
+/** Shorthand. */ const WS  : BidiClass = BidiClass::WS;
 
 /// The [`BidiClass`] for each ASCII byte.
 ///

@@ -20,6 +20,6 @@ impl<'a> MaybeQuery<'a> {
 
     /// The `index`th [`QuerySegment`] named `name`.
     pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<QuerySegment<'_>> {
-        self.find_iter(name.as_ref()).neg_nth(index)
+        self.find_iter(name).neg_nth(index)
     }
 }

@@ -1,5 +1,7 @@
 //! [`FileHost`].
 
+use std::fmt::Write;
+
 use crate::prelude::*;
 
 /// Make a [`FileHost`].
@@ -26,9 +28,14 @@ pub fn make_file_host<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<
                     if class & 0b0001_0100 == 0b0001_0000 {
                         Err(InvalidFileHost)?
                     } else if class & 0b0000_0110 != 0b0000_0000 && ends_in_a_number(&value) {
-                        let (c, value, ip) = make_ipv4_host(value)?;
+                        let addr = parse_ipv4_addr(&value).ok_or(InvalidIpv4Host)?;
 
-                        (a || b || c, value, ip.into())
+                        let mut normalizer = Normalizer::new(value);
+                        write!(normalizer, "{addr}").expect("???");
+
+                        let (c, value) = normalizer.done();
+
+                        (a || b || c, value, addr.into())
                     } else if class & 0b0001_0110 == 0b0000_0000 && !value.is_empty() {
                         let details = DomainHostDetails::parse_unchecked(&value);
 
@@ -82,9 +89,14 @@ pub fn make_file_host_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result<(boo
                     if class & 0b0001_0100 == 0b0001_0000 {
                         Err(InvalidFileHost)?
                     } else if class & 0b0000_0110 != 0b0000_0000 && ends_in_a_number(&value) {
-                        let (c, value, ip) = make_ipv4_host(value)?;
+                        let addr = parse_ipv4_addr(&value).ok_or(InvalidIpv4Host)?;
 
-                        (a || b || c, value, ip.into())
+                        let mut normalizer = Normalizer::new(value);
+                        write!(normalizer, "{addr}").expect("???");
+
+                        let (c, value) = normalizer.done();
+
+                        (a || b || c, value, addr.into())
                     } else if class & 0b0001_0110 == 0b0000_0000 && !value.is_empty() {
                         let details = DomainHostDetails::parse_unchecked(&value);
 

@@ -48,8 +48,8 @@ pub async fn r#do(instance: BetterUrl) {
 
     while let Some(msg) = stream.next().await {
         match msg {
-            // https://github.com/snapview/tokio-tungstenite/issues/373
-            Err(tungstenite::error::Error::Protocol(tungstenite::error::ProtocolError::ResetWithoutClosingHandshake)) => break,
+            // It's fiiiiiiine.
+            Err(tungstenite::error::Error::Io(e)) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
             msg => if let Message::Text(x) = msg.unwrap() {
                 println!("{x}");
                 results += better_url::util::MemchrLines {remainder: Some(x.as_ref())}.count();

@@ -8,8 +8,8 @@ mod value;
 /// Either [`QuerySegment`] or [`FragmentQuerySegment`].
 #[derive(Debug, Clone)]
 pub enum QueryLikeSegment<'a> {
-    /** [`QuerySegment`].         **/ Query   (QuerySegment        <'a>),
-    /** [`FragmentQuerySegment`]. **/ Fragment(FragmentQuerySegment<'a>),
+    /** [`QuerySegment`].         */ Query   (QuerySegment        <'a>),
+    /** [`FragmentQuerySegment`]. */ Fragment(FragmentQuerySegment<'a>),
 }
 
 impl<'a> QueryLikeSegment<'a> {
@@ -29,10 +29,10 @@ impl<'a> QueryLikeSegment<'a> {
         }
     }
 
-    /** [`QuerySegment::new`].           **/ pub fn new_query            <T: Into<SpecialQuerySegment   <'a>> + Into<NonSpecialQuerySegment<'a>>>(value: T, r#type: QueryType) -> Self {QuerySegment          ::new(value, r#type).into()}
-    /** [`SpecialQuerySegment::new`].    **/ pub fn new_special_query    <T: Into<SpecialQuerySegment   <'a>>                                   >(value: T                   ) -> Self {SpecialQuerySegment   ::new(value        ).into()}
-    /** [`NonSpecialQuerySegment::new`]. **/ pub fn new_non_special_query<T: Into<NonSpecialQuerySegment<'a>>                                   >(value: T                   ) -> Self {NonSpecialQuerySegment::new(value        ).into()}
-    /** [`FragmentQuerySegment::new`].   **/ pub fn new_fragment         <T: Into<FragmentQuerySegment  <'a>>                                   >(value: T                   ) -> Self {FragmentQuerySegment  ::new(value        ).into()}
+    /** [`QuerySegment::new`].           */ pub fn new_query            <T: Into<SpecialQuerySegment   <'a>> + Into<NonSpecialQuerySegment<'a>>>(value: T, r#type: QueryType) -> Self {QuerySegment          ::new(value, r#type).into()}
+    /** [`SpecialQuerySegment::new`].    */ pub fn new_special_query    <T: Into<SpecialQuerySegment   <'a>>                                   >(value: T                   ) -> Self {SpecialQuerySegment   ::new(value        ).into()}
+    /** [`NonSpecialQuerySegment::new`]. */ pub fn new_non_special_query<T: Into<NonSpecialQuerySegment<'a>>                                   >(value: T                   ) -> Self {NonSpecialQuerySegment::new(value        ).into()}
+    /** [`FragmentQuerySegment::new`].   */ pub fn new_fragment         <T: Into<FragmentQuerySegment  <'a>>                                   >(value: T                   ) -> Self {FragmentQuerySegment  ::new(value        ).into()}
 
 
 
@@ -81,10 +81,10 @@ impl<'a> QueryLikeSegment<'a> {
 
 
 
-    /** If it's [`Self::Query`].       **/ pub fn is_query            (&self) -> bool {matches!(self, Self::Query   (_                          ))}
-    /** If it's [`Query::Special`].    **/ pub fn is_special_query    (&self) -> bool {matches!(self, Self::Query   (QuerySegment::Special   (_)))}
-    /** If it's [`Query::NonSpecial`]. **/ pub fn is_non_special_query(&self) -> bool {matches!(self, Self::Query   (QuerySegment::NonSpecial(_)))}
-    /** If it's [`Self::Fragment`].    **/ pub fn is_fragment         (&self) -> bool {matches!(self, Self::Fragment(_                          ))}
+    /** If it's [`Self::Query`].       */ pub fn is_query            (&self) -> bool {matches!(self, Self::Query   (_                          ))}
+    /** If it's [`Query::Special`].    */ pub fn is_special_query    (&self) -> bool {matches!(self, Self::Query   (QuerySegment::Special   (_)))}
+    /** If it's [`Query::NonSpecial`]. */ pub fn is_non_special_query(&self) -> bool {matches!(self, Self::Query   (QuerySegment::NonSpecial(_)))}
+    /** If it's [`Self::Fragment`].    */ pub fn is_fragment         (&self) -> bool {matches!(self, Self::Fragment(_                          ))}
 
 
 

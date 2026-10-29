@@ -44,18 +44,18 @@ impl BetterUrl {
 
 
 
-    /** The [`HostDetails`].       **/ pub fn host_details       (&self) -> Option<HostDetails      > {self.details.host_details  ()}
-    /** The [`DomainHostDetails`]. **/ pub fn domain_details     (&self) -> Option<DomainHostDetails> {self.details.domain_details()}
-    /** The [`Ipv4HostDetails`].   **/ pub fn ipv4_details       (&self) -> Option<Ipv4HostDetails  > {self.details.ipv4_details  ()}
-    /** The [`Ipv6HostDetails`].   **/ pub fn ipv6_details       (&self) -> Option<Ipv6HostDetails  > {self.details.ipv6_details  ()}
-    /** The [`OpaqueHostDetails`]. **/ pub fn opaque_host_details(&self) -> Option<OpaqueHostDetails> {self.details.opaque_details()}
-    /** The [`EmptyHostDetails`].  **/ pub fn empty_host_details (&self) -> Option<EmptyHostDetails > {self.details.empty_details ()}
+    /** The [`HostDetails`].       */ pub fn host_details       (&self) -> Option<HostDetails      > {self.details.host_details  ()}
+    /** The [`DomainHostDetails`]. */ pub fn domain_details     (&self) -> Option<DomainHostDetails> {self.details.domain_details()}
+    /** The [`Ipv4HostDetails`].   */ pub fn ipv4_details       (&self) -> Option<Ipv4HostDetails  > {self.details.ipv4_details  ()}
+    /** The [`Ipv6HostDetails`].   */ pub fn ipv6_details       (&self) -> Option<Ipv6HostDetails  > {self.details.ipv6_details  ()}
+    /** The [`OpaqueHostDetails`]. */ pub fn opaque_host_details(&self) -> Option<OpaqueHostDetails> {self.details.opaque_details()}
+    /** The [`EmptyHostDetails`].  */ pub fn empty_host_details (&self) -> Option<EmptyHostDetails > {self.details.empty_details ()}
 
-    /** If the host is [`DomainHost`]. **/ pub fn host_is_domain(&self) -> bool {self.details.host_is_domain()}
-    /** If the host is [`Ipv4Host`].   **/ pub fn host_is_ipv4  (&self) -> bool {self.details.host_is_ipv4  ()}
-    /** If the host is [`Ipv6Host`].   **/ pub fn host_is_ipv6  (&self) -> bool {self.details.host_is_ipv6  ()}
-    /** If the host is [`OpaqueHost`]. **/ pub fn host_is_opaque(&self) -> bool {self.details.host_is_opaque()}
-    /** If the host is [`EmptyHost`].  **/ pub fn host_is_empty (&self) -> bool {self.details.host_is_empty ()}
+    /** If the host is [`DomainHost`]. */ pub fn host_is_domain(&self) -> bool {self.details.host_is_domain()}
+    /** If the host is [`Ipv4Host`].   */ pub fn host_is_ipv4  (&self) -> bool {self.details.host_is_ipv4  ()}
+    /** If the host is [`Ipv6Host`].   */ pub fn host_is_ipv6  (&self) -> bool {self.details.host_is_ipv6  ()}
+    /** If the host is [`OpaqueHost`]. */ pub fn host_is_opaque(&self) -> bool {self.details.host_is_opaque()}
+    /** If the host is [`EmptyHost`].  */ pub fn host_is_empty (&self) -> bool {self.details.host_is_empty ()}
 
 
 

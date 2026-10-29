@@ -34,20 +34,20 @@ That, said, in general:
 
 Using Ada's [`top100.txt`](https://github.com/ada-url/url-various-datasets/blob/main/top100/top100.txt):
 
-- Better URL's parser averages 3.25x the speed of Servo's parser.
-
-  - With making Servo compute the SchemeDetails and HostDetails, this goes to 3.52x.
-
-- Better URL's parser averages 1.19x the speed of Ada's parser.
-
-  - With making Ada compute the SchemeDetails and HostDetails, this goes to 1.49x.
+|top100  |BURL    |Servo   |Servo+  |Ada     |Ada+    |
+|:-------|-------:|-------:|-------:|-------:|-------:|
+|Sum     |  16.54s|  55.74s|  60.09s|  20.44s|  25.31s|
+|Min     | 13.50µs| 20.08µs| 18.74µs| 49.64µs| 49.91µs|
+|Max     |  1.06ms|  6.51ms|  6.55ms|  2.77ms|  2.83ms|
+|Mean    |165.34µs|557.20µs|600.66µs|204.36µs|253.07µs|
+|Factor  |   1.000|   3.370|   3.633|   1.236|   1.531|
 
 Using Smythp's [reddit links dataset](https://github.com/smythp/reddit_links_dataset) (test.db):
 
-- Better URL's parser averages 2.80x the speed of Servo's parser.
-
-  - With making Servo compute the SchemeDetails and HostDetails, this goes to 3.07x.
-
-- Better URL's parser averages 1.02x the speed of Ada's parser.
-
-  - With making Ada compute the SchemeDetails and HostDetails, this goes to 1.34x.
+|reddit  |BURL    |Servo   |Servo+  |Ada     |Ada+    |
+|:-------|-------:|-------:|-------:|-------:|-------:|
+|Sum     | 153.04s| 444.18s| 486.29s| 162.73s| 210.11s|
+|Min     | 16.39µs| 25.03µs| 26.36µs| 54.49µs| 54.21µs|
+|Max     | 10.36ms| 49.83ms| 50.22ms| 19.83ms| 19.89ms|
+|Mean    |153.04µs|444.18µs|486.29µs|162.72µs|210.11µs|
+|Factor  |   1.000|   2.902|   3.178|   1.063|   1.373|

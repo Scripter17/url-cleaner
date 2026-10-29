@@ -13,14 +13,14 @@ pub struct Ipv6HostDetails {
 }
 
 impl Ipv6HostDetails {
-    /// Parse an IPv6 host.
+    /// Parse an [`Ipv6Host`] literal.
     /// # Errors
     /// If [`Ipv6Addr::from_str`] returns an error, returns the error [`InvalidIpv6Host`].
-    pub fn parse(s: &str) -> Result<Self, InvalidIpv6Host> {
+    pub fn parse(value: &str) -> Result<Self, InvalidIpv6Host> {
         Ok(Self {
-            parsed: s
-                .strip_prefix("[").ok_or(InvalidIpv6Host)?
-                .strip_suffix("]").ok_or(InvalidIpv6Host)?
+            parsed: value
+                .strip_prefix('[').ok_or(InvalidIpv6Host)?
+                .strip_suffix(']').ok_or(InvalidIpv6Host)?
                 .parse().map_err(|_| InvalidIpv6Host)?
         })
     }

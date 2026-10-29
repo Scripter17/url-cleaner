@@ -75,7 +75,7 @@ impl ParamsDiff {
                 let (x, y) = Self::load(path)?;
                 Ok((x.into(), y))
             },
-            None => Ok(("{}".into(), Default::default()))
+            None => Ok(("{}".into(), Default::default())),
         }
     }
 
@@ -140,30 +140,22 @@ impl ParamsDiff {
 impl Suitability for ParamsDiff {
     fn assert_suitability(&self, cleaner: &Cleaner<'_>) {
         for name in self.flags.iter() {
-            if !cleaner.docs.params.flags.contains_key(name) {
-                panic!("ParamsDiff sets undocumented Flag {name:?}");
-            }
+            assert!(cleaner.docs.params.flags.contains_key(name), "ParamsDiff sets undocumented Flag {name:?}");
 
-            if self.unflags.contains(name) {
-                panic!("ParamsDiff sets and unsets Flag {name:?}.");
-            }
+            assert!(!self.unflags.contains(name), "ParamsDiff sets and unsets Flag {name:?}.");
         }
 
 
 
         for (name, value) in self.vars.iter() {
             match cleaner.docs.params.vars.get(name) {
-                Some(doc) => {
-                    if let Some(variants) = &doc.variants && !variants.contains_key(value) {
-                        panic!("ParamsDiff sets Var {name:?} to undocumented variant {value:?}");
-                    }
+                Some(doc) => if let Some(variants) = &doc.variants && !variants.contains_key(value) {
+                    panic!("ParamsDiff sets Var {name:?} to undocumented variant {value:?}");
                 },
                 None => panic!("ParamsDiff sets undocumented Var {name:?}"),
             }
 
-            if self.unvars.contains(name) {
-                panic!("ParamsDiff sets and unsets Var {name:?}.");
-            }
+            assert!(!self.unvars.contains(name), "ParamsDiff sets and unsets Var {name:?}.");
         }
 
         for name in self.unvars.iter() {
@@ -175,15 +167,11 @@ impl Suitability for ParamsDiff {
 
 
         for (name, inserts) in self.insert_into_sets.iter() {
-            if !cleaner.docs.params.sets.contains_key(name) {
-                panic!("ParamsDiff inserts into undocumented Set {name:?}");
-            }
+            assert!(cleaner.docs.params.sets.contains_key(name), "ParamsDiff inserts into undocumented Set {name:?}");
 
             if let Some(removes) = self.remove_from_sets.get(name) {
                 for element in inserts {
-                    if removes.contains(element) {
-                        panic!("ParamsDiff inserts and removes {element:?} into and from Set {name:?}.");
-                    }
+                    assert!(removes.contains(element), "ParamsDiff inserts and removes {element:?} into and from Set {name:?}.");
                 }
             }
         }
@@ -191,15 +179,11 @@ impl Suitability for ParamsDiff {
 
 
         for (name, inserts) in self.insert_into_maps.iter() {
-            if !cleaner.docs.params.maps.contains_key(name) {
-                panic!("ParamsDiff inserts into undocumented Map {name:?}");
-            }
+            assert!(cleaner.docs.params.maps.contains_key(name), "ParamsDiff inserts into undocumented Map {name:?}");
 
             if let Some(removes) = self.remove_from_maps.get(name) {
                 for (name, _) in inserts {
-                    if removes.contains(name) {
-                        panic!("ParamsDiff inserts and removes {name:?} into and from Map {name:?}.");
-                    }
+                    assert!(!removes.contains(name), "ParamsDiff inserts and removes {name:?} into and from Map {name:?}.");
                 }
             }
         }

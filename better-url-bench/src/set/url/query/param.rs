@@ -33,9 +33,9 @@ use crate::util::BasicBenchThing;
 /// If a particular library's URL parser returns an error, its 3 columns will be present but empty.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /** Compare to all libraries.     **/ #[arg(long)] pub all  : bool,
-    /** Compare to Servo's URL crate. **/ #[arg(long)] pub servo: bool,
-    /** Compare to Ada's URL crate.   **/ #[arg(long)] pub ada  : bool,
+    /** Compare to all libraries.     */ #[arg(long)] pub all  : bool,
+    /** Compare to Servo's URL crate. */ #[arg(long)] pub servo: bool,
+    /** Compare to Ada's URL crate.   */ #[arg(long)] pub ada  : bool,
 
     /// The name to set.
     #[arg(long)]
@@ -47,7 +47,7 @@ pub struct Args {
     #[arg(long)]
     pub value: Option<Option<String>>,
 
-    /** The [`BasicBenchThing`]. **/ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
+    /** The [`BasicBenchThing`]. */ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
 }
 
 impl Args {
@@ -73,7 +73,7 @@ impl Args {
 
                     let value = value.map(|x| MaybeQueryValue::new(x, r#type));
 
-                    let burl = self.basic_bench_thing.bench_with_input(|mut url| url.set_query_param(name, index, value.as_ref()), url.clone());
+                    let burl = self.basic_bench_thing.bench_with_input(|mut url| url.set_query_param(name, index, value.as_ref()), url);
                     burl_total += burl;
 
                     print!("\t{burl:.2?}");
@@ -89,7 +89,7 @@ impl Args {
                                     if let Ok(true) = query.set(name, index, value.as_ref()) {
                                         url.set_query(query.into_owned().as_str());
                                     }
-                                }, url.clone());
+                                }, url);
                                 servo_total += servo;
 
                                 let factor       = servo      .as_secs_f64() / burl      .as_secs_f64();
@@ -97,7 +97,7 @@ impl Args {
 
                                 print!("\t{servo:.2?}\t{factor:.2}\t{total_factor:.2}");
                             },
-                            Err(_) => print!("\t\t\t")
+                            Err(_) => print!("\t\t\t"),
                         }
                     }
 
@@ -110,7 +110,7 @@ impl Args {
                                     if let Ok(true) = query.set(name, index, value.as_ref()) {
                                         url.set_search(query.into_owned().as_str());
                                     }
-                                }, url.clone());
+                                }, url);
                                 ada_total += ada;
 
                                 let factor       = ada      .as_secs_f64() / burl      .as_secs_f64();
@@ -118,7 +118,7 @@ impl Args {
 
                                 print!("\t{ada:.2?}\t{factor:.2}\t{total_factor:.2}");
                             },
-                            Err(_) => print!("\t\t\t")
+                            Err(_) => print!("\t\t\t"),
                         }
                     }
                 },
@@ -126,7 +126,7 @@ impl Args {
                     print!("\t");
                     if servo {print!("\t\t\t");}
                     if ada   {print!("\t\t\t");}
-                }
+                },
             }
 
             println!();

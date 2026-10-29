@@ -9,9 +9,9 @@ mod remove;
 /// Either a [`FilePath`], [`SpecialNotFilePath`], or [`NonSpecialPath`].
 #[derive(Debug, Clone)]
 pub enum SegmentedPath<'a> {
-    /** [`FilePath`].           **/ File          (FilePath          <'a>),
-    /** [`SpecialNotFilePath`]. **/ SpecialNotFile(SpecialNotFilePath<'a>),
-    /** [`NonSpecialPath`].     **/ NonSpecial    (NonSpecialPath    <'a>),
+    /** [`FilePath`].           */ File          (FilePath          <'a>),
+    /** [`SpecialNotFilePath`]. */ SpecialNotFile(SpecialNotFilePath<'a>),
+    /** [`NonSpecialPath`].     */ NonSpecial    (NonSpecialPath    <'a>),
 }
 
 impl<'a> SegmentedPath<'a> {
@@ -24,9 +24,9 @@ impl<'a> SegmentedPath<'a> {
         }
     }
 
-    /** [`FilePath::new`].           **/ pub fn new_file            <T: Into<FilePath          <'a>>>(value: T) -> Self {FilePath          ::new(value).into()}
-    /** [`SpecialNotFilePath::new`]. **/ pub fn new_special_not_file<T: Into<SpecialNotFilePath<'a>>>(value: T) -> Self {SpecialNotFilePath::new(value).into()}
-    /** [`NonSpecialPath::new`].     **/ pub fn new_non_special     <T: Into<NonSpecialPath    <'a>>>(value: T) -> Self {NonSpecialPath    ::new(value).into()}
+    /** [`FilePath::new`].           */ pub fn new_file            <T: Into<FilePath          <'a>>>(value: T) -> Self {FilePath          ::new(value).into()}
+    /** [`SpecialNotFilePath::new`]. */ pub fn new_special_not_file<T: Into<SpecialNotFilePath<'a>>>(value: T) -> Self {SpecialNotFilePath::new(value).into()}
+    /** [`NonSpecialPath::new`].     */ pub fn new_non_special     <T: Into<NonSpecialPath    <'a>>>(value: T) -> Self {NonSpecialPath    ::new(value).into()}
 
 
 
@@ -85,10 +85,10 @@ impl<'a> SegmentedPath<'a> {
 
 
 
-    /** If it's [`Self::SpecialNotFile`] or [`Self::File`]. **/ pub fn is_special         (&self) -> bool {matches!(self, Self::SpecialNotFile(_) | Self::File(_))}
-    /** If it's [`Self::SpecialNotFile`].                   **/ pub fn is_special_not_file(&self) -> bool {matches!(self, Self::SpecialNotFile(_)                )}
-    /** If it's [`Self::File`].                             **/ pub fn is_file            (&self) -> bool {matches!(self, Self::File          (_)                )}
-    /** If it's [`Self::NonSpecial`].                       **/ pub fn is_non_special     (&self) -> bool {matches!(self, Self::NonSpecial    (_)                )}
+    /** If it's [`Self::SpecialNotFile`] or [`Self::File`]. */ pub fn is_special         (&self) -> bool {matches!(self, Self::SpecialNotFile(_) | Self::File(_))}
+    /** If it's [`Self::SpecialNotFile`].                   */ pub fn is_special_not_file(&self) -> bool {matches!(self, Self::SpecialNotFile(_)                )}
+    /** If it's [`Self::File`].                             */ pub fn is_file            (&self) -> bool {matches!(self, Self::File          (_)                )}
+    /** If it's [`Self::NonSpecial`].                       */ pub fn is_non_special     (&self) -> bool {matches!(self, Self::NonSpecial    (_)                )}
 
 
 

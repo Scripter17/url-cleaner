@@ -9,39 +9,16 @@ use crate::prelude::*;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Ipv4HostDetails {
     /// The parsed [`Ipv4Addr`].
-    pub parsed: Ipv4Addr
+    pub parsed: Ipv4Addr,
 }
 
 impl Ipv4HostDetails {
-    /// Parse a raw IPv4 host.
+    /// Parse an [`Ipv4Host`] literal.
     /// # Errors
     /// If [`Ipv4Addr::from_str`] returns an error, returns the error [`InvalidIpv4Host`].
-    /// # Examples
-    /// ```
-    /// use better_url::prelude::*;
-    ///
-    /// Ipv4HostDetails::from_raw("127.0.0.1").unwrap    ();
-    /// Ipv4HostDetails::from_raw("0x12.034" ).unwrap_err();
-    /// ```
-    pub fn from_raw(s: &str) -> Result<Self, InvalidIpv4Host> {
-        Ok(Self {
-            parsed: s.parse().map_err(|_| InvalidIpv4Host)?
-        })
-    }
-
-    /// Parse an IPv4 host.
-    /// # Errors
-    /// If [`parse_ipv4_host`] returns an error, that error is returned.
-    /// # Examples
-    /// ```
-    /// use better_url::prelude::*;
-    ///
-    /// Ipv4HostDetails::parse("127.0.0.1").unwrap();
-    /// Ipv4HostDetails::parse("0x12.034" ).unwrap();
-    /// ```
     pub fn parse(s: &str) -> Result<Self, InvalidIpv4Host> {
         Ok(Self {
-            parsed: parse_ipv4_host(s).ok_or(InvalidIpv4Host)?
+            parsed: s.parse().map_err(|_| InvalidIpv4Host)?
         })
     }
 

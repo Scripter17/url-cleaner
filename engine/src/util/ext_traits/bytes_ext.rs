@@ -4,17 +4,10 @@
 pub(crate) trait BytesExt {
     /// The index of the first occurence of `b`.
     fn memchr(&self, b: u8) -> Option<usize>;
-
-    /// The index of the first occurence of any byte in `bs`. 
-    fn memchrn<const N: usize>(&self, bs: [u8; N]) -> Option<usize>;
 }
 
 impl BytesExt for [u8] {
     fn memchr(&self, b: u8) -> Option<usize> {
         better_url::util::memchr(self, b)
-    }
-
-    fn memchrn<const N: usize>(&self, bs: [u8; N]) -> Option<usize> {
-        better_url::util::memchrn(self, &bs)
     }
 }

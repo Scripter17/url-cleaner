@@ -12,7 +12,7 @@ pub fn encode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, 
 
 /// [`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) encoding.
 pub fn encode_query_part_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = percent_encode_bytes(value, THING);
+    let (a, value) = percent_encode_bytes(value, &THING);
     let (b, value) = space_to_plus(value);
 
     (a || b, value)

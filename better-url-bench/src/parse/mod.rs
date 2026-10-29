@@ -5,8 +5,6 @@ use clap::Parser;
 mod url;
 mod scheme;
 mod userinfo;
-mod username;
-mod password;
 mod host;
 mod port;
 mod path;
@@ -20,13 +18,9 @@ pub enum Args {
     Url(url::Args),
     Scheme(scheme::Args),
     Userinfo(userinfo::Args),
-    Username(username::Args),
-    Password(password::Args),
     Host(host::Args),
     Port(port::Args),
-    #[command(subcommand)]
     Path(path::Args),
-    #[command(subcommand)]
     Query(query::Args),
     Fragment(fragment::Args),
 }
@@ -37,8 +31,6 @@ impl Args {
             Self::Url     (args) => args.r#do(),
             Self::Scheme  (args) => args.r#do(),
             Self::Userinfo(args) => args.r#do(),
-            Self::Username(args) => args.r#do(),
-            Self::Password(args) => args.r#do(),
             Self::Host    (args) => args.r#do(),
             Self::Port    (args) => args.r#do(),
             Self::Path    (args) => args.r#do(),

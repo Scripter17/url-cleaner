@@ -13,7 +13,7 @@ use crate::prelude::*;
 pub struct OpaqueHostDetails;
 
 impl OpaqueHostDetails {
-    /// Parse an opaque host literal.
+    /// Parse an [`OpaqueHost`] literal.
     /// # Errors
     /// If the host is an invalid opaque host, returns the error [`InvalidOpaqueHost`].
     ///
@@ -23,12 +23,12 @@ impl OpaqueHostDetails {
     /// Therefore, empty opaque hosts are rejected.
     ///
     /// See [whatwg/url#908](https://github.com/whatwg/url/issues/908) for discussion.
-    pub fn parse(s: &str) -> Result<Self, InvalidOpaqueHost> {
-        if s.is_empty() {
+    pub fn parse(value: &str) -> Result<Self, InvalidOpaqueHost> {
+        if value.is_empty() {
             Err(InvalidOpaqueHost)?;
         }
 
-        if s.bytes().any(|b| FORBIDDEN_HOST_LITERAL.contains(b)) {
+        if value.bytes().any(|b| FORBIDDEN_HOST_LITERAL.contains(b)) {
             Err(InvalidOpaqueHost)?;
         }
 

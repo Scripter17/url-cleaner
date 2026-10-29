@@ -144,8 +144,8 @@ pub enum Action {
     RevertOnError(Box<Self>),
     /// [`Self::TryElse::try`], or [`Self::TryElse::else`] if it returns [`Err`].
     TryElse {
-        /** The try.  **/ r#try: Box<Self>,
-        /** The else. **/ r#else: Box<Self>,
+        /** The try.  */ r#try: Box<Self>,
+        /** The else. */ r#else: Box<Self>,
     },
     /// [`Self::All`] but stops after the first [`Ok`].
     /// # Errors
@@ -166,87 +166,87 @@ pub enum Action {
 
     // Host
 
-    /** [`BetterUrl::set_host`].          **/ SetHost        (StringSource),
-    /** [`BetterUrl::set_domain_prefix`]. **/ SetDomainPrefix(StringSource),
-    /** [`BetterUrl::set_domain_middle`]. **/ SetDomainMiddle(StringSource),
-    /** [`BetterUrl::set_domain_suffix`]. **/ SetDomainSuffix(StringSource),
-    /** [`BetterUrl::set_domain_origin`]. **/ SetDomainOrigin(StringSource),
+    /** [`BetterUrl::set_host`].          */ SetHost        (StringSource),
+    /** [`BetterUrl::set_domain_prefix`]. */ SetDomainPrefix(StringSource),
+    /** [`BetterUrl::set_domain_middle`]. */ SetDomainMiddle(StringSource),
+    /** [`BetterUrl::set_domain_suffix`]. */ SetDomainSuffix(StringSource),
+    /** [`BetterUrl::set_domain_origin`]. */ SetDomainOrigin(StringSource),
 
     /// [`BetterUrl::set_domain_segment`].
     SetDomainSegment {
-        /** The index. **/ index: isize,
-        /** The value. **/ value: StringSource,
+        /** The index. */ index: isize,
+        /** The value. */ value: StringSource,
     },
     /// [`BetterUrl::set_domain_prefix_segment`].
     SetDomainPrefixSegment {
-        /** The index. **/ index: isize,
-        /** The value. **/ value: StringSource,
+        /** The index. */ index: isize,
+        /** The value. */ value: StringSource,
     },
     /// [`BetterUrl::set_domain_suffix_segment`].
     SetDomainSuffixSegment {
-        /** The index. **/ index: isize,
-        /** The value. **/ value: StringSource,
+        /** The index. */ index: isize,
+        /** The value. */ value: StringSource,
     },
     /// [`BetterUrl::set_domain_origin_segment`].
     SetDomainOriginSegment {
-        /** The index. **/ index: isize,
-        /** The value. **/ value: StringSource,
+        /** The index. */ index: isize,
+        /** The value. */ value: StringSource,
     },
 
 
 
-    /** [`BetterUrl::host_str`] + [`StringModification::apply`] + [`BetterUrl::set_host`].               **/ ModifyHost        (StringModification),
-    /** [`BetterUrl::domain_prefix`] + [`StringModification::apply`] + [`BetterUrl::set_domain_prefix`]. **/ ModifyDomainPrefix(StringModification),
-    /** [`BetterUrl::domain_middle`] + [`StringModification::apply`] + [`BetterUrl::set_domain_middle`]. **/ ModifyDomainMiddle(StringModification),
-    /** [`BetterUrl::domain_suffix`] + [`StringModification::apply`] + [`BetterUrl::set_domain_suffix`]. **/ ModifyDomainSuffix(StringModification),
-    /** [`BetterUrl::domain_origin`] + [`StringModification::apply`] + [`BetterUrl::set_domain_origin`]. **/ ModifyDomainOrigin(StringModification),
+    /** [`BetterUrl::host_str`] + [`StringModification::apply`] + [`BetterUrl::set_host`].               */ ModifyHost        (StringModification),
+    /** [`BetterUrl::domain_prefix`] + [`StringModification::apply`] + [`BetterUrl::set_domain_prefix`]. */ ModifyDomainPrefix(StringModification),
+    /** [`BetterUrl::domain_middle`] + [`StringModification::apply`] + [`BetterUrl::set_domain_middle`]. */ ModifyDomainMiddle(StringModification),
+    /** [`BetterUrl::domain_suffix`] + [`StringModification::apply`] + [`BetterUrl::set_domain_suffix`]. */ ModifyDomainSuffix(StringModification),
+    /** [`BetterUrl::domain_origin`] + [`StringModification::apply`] + [`BetterUrl::set_domain_origin`]. */ ModifyDomainOrigin(StringModification),
 
     /// [`BetterUrl::domain_segment`] + [`StringModification::apply`] + [`BetterUrl::set_domain_segment`].
     ModifyDomainSegment {
-        /** The index.                  **/ index       : isize,
-        /** The [`StringModification`]. **/ modification: StringModification,
+        /** The index.                  */ index       : isize,
+        /** The [`StringModification`]. */ modification: StringModification,
     },
     /// [`BetterUrl::domain_prefix_segment`] + [`StringModification::apply`] + [`BetterUrl::set_domain_prefix_segment`].
     ModifyDomainPrefixSegment {
-        /** The index.                  **/ index       : isize,
-        /** The [`StringModification`]. **/ modification: StringModification,
+        /** The index.                  */ index       : isize,
+        /** The [`StringModification`]. */ modification: StringModification,
     },
     /// [`BetterUrl::domain_suffix_segment`] + [`StringModification::apply`] + [`BetterUrl::set_domain_suffix_segment`].
     ModifyDomainSuffixSegment {
-        /** The index.                  **/ index       : isize,
-        /** The [`StringModification`]. **/ modification: StringModification,
+        /** The index.                  */ index       : isize,
+        /** The [`StringModification`]. */ modification: StringModification,
     },
     /// [`BetterUrl::domain_origin_segment`] + [`StringModification::apply`] + [`BetterUrl::set_domain_origin_segment`].
     ModifyDomainOriginSegment {
-        /** The index.                  **/ index       : isize,
-        /** The [`StringModification`]. **/ modification: StringModification,
+        /** The index.                  */ index       : isize,
+        /** The [`StringModification`]. */ modification: StringModification,
     },
 
 
 
     /// [`BetterUrl::insert_domain_segment`].
     InsertDomainSegment {
-        /** The index. **/ index: isize,
-        /** The value. **/ value: StringSource,
+        /** The index. */ index: isize,
+        /** The value. */ value: StringSource,
     },
     /// [`BetterUrl::insert_domain_prefix_segment`].
     InsertDomainPrefixSegment {
-        /** The index. **/ index: isize,
-        /** The value. **/ value: StringSource,
+        /** The index. */ index: isize,
+        /** The value. */ value: StringSource,
     },
     /// [`BetterUrl::insert_domain_suffix_segment`].
     InsertDomainSuffixSegment {
-        /** The index. **/ index: isize,
-        /** The value. **/ value: StringSource,
+        /** The index. */ index: isize,
+        /** The value. */ value: StringSource,
     },
     /// [`BetterUrl::insert_domain_origin_segment`].
     InsertDomainOriginSegment {
-        /** The index. **/ index: isize,
-        /** The value. **/ value: StringSource,
+        /** The index. */ index: isize,
+        /** The value. */ value: StringSource,
     },
 
-    /** [`BetterUrl::set_fqdn`] to [`true`].  **/ EnsureFqdnPeriod,
-    /** [`BetterUrl::set_fqdn`] to [`false`]. **/ RemoveFqdnPeriod,
+    /** [`BetterUrl::set_fqdn`] to [`true`].  */ EnsureFqdnPeriod,
+    /** [`BetterUrl::set_fqdn`] to [`false`]. */ RemoveFqdnPeriod,
 
     /// [`BetterUrl::set_path`].
     SetPath(StringSource),
@@ -256,18 +256,18 @@ pub enum Action {
     RemovePathSegment(isize),
     /// [`BetterUrl::set_path_segment`].
     SetPathSegment {
-        /** The index. **/ index: isize,
-        /** The value. **/ value: StringSource,
+        /** The index. */ index: isize,
+        /** The value. */ value: StringSource,
     },
     /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`StringModification::apply`] + [`BetterUrl::set_path_segment`].
     ModifyPathSegment {
-        /** The index.                  **/ index: isize,
-        /** The [`StringModification`]. **/ modification: StringModification,
+        /** The index.                  */ index: isize,
+        /** The [`StringModification`]. */ modification: StringModification,
     },
     /// [`BetterUrl::insert_path_segment`].
     InsertPathSegment {
-        /** The index. **/ index: isize,
-        /** The value. **/ value: StringSource,
+        /** The index. */ index: isize,
+        /** The value. */ value: StringSource,
     },
     /// [`BetterUrl::pop_path`].
     PopPath,
@@ -280,17 +280,17 @@ pub enum Action {
     SetQuery(StringSource),
     /// [`BetterUrl::set_query_param`].
     SetQueryParam {
-        /** The [`QueryParamSelector`]. **/ param: QueryParamSelector,
-        /** The [`StringSource`].       **/ value: StringSource,
+        /** The [`QueryParamSelector`]. */ param: QueryParamSelector,
+        /** The [`StringSource`].       */ value: StringSource,
     },
-    /** [`BetterUrl::remove_query`].                                                             **/ RemoveQuery                                 ,
-    /** [`BetterUrl::remove_empty_query`].                                                       **/ RemoveEmptyQuery                            ,
-    /** [`MaybeQuery::filter`], removing params whose names are the specified value.             **/ RemoveQueryParam         (StringSource     ),
-    /** [`MaybeQuery::filter`], removing params whose names are not the specified value.         **/ AllowQueryParam          (StringSource     ),
-    /** [`MaybeQuery::filter`], removing params whose names are in the set.                      **/ RemoveQueryParams        (FxHashSet<String>),
-    /** [`MaybeQuery::filter`], removing params whose names are not in the set.                  **/ AllowQueryParams         (FxHashSet<String>),
-    /** [`MaybeQuery::filter`], removing params whose names satisfy the [`StringMatcher`].       **/ RemoveQueryParamsMatching(StringMatcher    ),
-    /** [`MaybeQuery::filter`], removing params whose names don't satisfy the [`StringMatcher`]. **/ AllowQueryParamsMatching (StringMatcher    ),
+    /** [`BetterUrl::remove_query`].                                                             */ RemoveQuery                                 ,
+    /** [`BetterUrl::remove_empty_query`].                                                       */ RemoveEmptyQuery                            ,
+    /** [`MaybeQuery::filter`], removing params whose names are the specified value.             */ RemoveQueryParam         (StringSource     ),
+    /** [`MaybeQuery::filter`], removing params whose names are not the specified value.         */ AllowQueryParam          (StringSource     ),
+    /** [`MaybeQuery::filter`], removing params whose names are in the set.                      */ RemoveQueryParams        (FxHashSet<String>),
+    /** [`MaybeQuery::filter`], removing params whose names are not in the set.                  */ AllowQueryParams         (FxHashSet<String>),
+    /** [`MaybeQuery::filter`], removing params whose names satisfy the [`StringMatcher`].       */ RemoveQueryParamsMatching(StringMatcher    ),
+    /** [`MaybeQuery::filter`], removing params whose names don't satisfy the [`StringMatcher`]. */ AllowQueryParamsMatching (StringMatcher    ),
 
     /// Set the URL to the value of the query param.
     /// # Errors
@@ -305,22 +305,22 @@ pub enum Action {
     SetFragment(StringSource),
     /// [`BetterUrl::set_fragment_query_param`].
     SetFragmentParam {
-        /** The fragment param to set. **/ param: QueryParamSelector,
-        /** The value to set it to.    **/ value: StringSource,
+        /** The fragment param to set. */ param: QueryParamSelector,
+        /** The value to set it to.    */ value: StringSource,
     },
-    /** [`BetterUrl::remove_fragment`].                                                          **/ RemoveFragment                                 ,
-    /** [`BetterUrl::remove_empty_fragment`].                                                    **/ RemoveEmptyFragment                            ,
-    /** [`MaybeQuery::filter`], removing params whose names are the specified value.             **/ RemoveFragmentParam         (StringSource     ),
-    /** [`MaybeQuery::filter`], removing params whose names are not the specified value.         **/ AllowFragmentParam          (StringSource     ),
-    /** [`MaybeQuery::filter`], removing params whose names are in the set.                      **/ RemoveFragmentParams        (FxHashSet<String>),
-    /** [`MaybeQuery::filter`], removing params whose names are not in the set.                  **/ AllowFragmentParams         (FxHashSet<String>),
-    /** [`MaybeQuery::filter`], removing params whose names satisfy the [`StringMatcher`].       **/ RemoveFragmentParamsMatching(StringMatcher    ),
-    /** [`MaybeQuery::filter`], removing params whose names don't satisfy the [`StringMatcher`]. **/ AllowFragmentParamsMatching (StringMatcher    ),
+    /** [`BetterUrl::remove_fragment`].                                                          */ RemoveFragment                                 ,
+    /** [`BetterUrl::remove_empty_fragment`].                                                    */ RemoveEmptyFragment                            ,
+    /** [`MaybeQuery::filter`], removing params whose names are the specified value.             */ RemoveFragmentParam         (StringSource     ),
+    /** [`MaybeQuery::filter`], removing params whose names are not the specified value.         */ AllowFragmentParam          (StringSource     ),
+    /** [`MaybeQuery::filter`], removing params whose names are in the set.                      */ RemoveFragmentParams        (FxHashSet<String>),
+    /** [`MaybeQuery::filter`], removing params whose names are not in the set.                  */ AllowFragmentParams         (FxHashSet<String>),
+    /** [`MaybeQuery::filter`], removing params whose names satisfy the [`StringMatcher`].       */ RemoveFragmentParamsMatching(StringMatcher    ),
+    /** [`MaybeQuery::filter`], removing params whose names don't satisfy the [`StringMatcher`]. */ AllowFragmentParamsMatching (StringMatcher    ),
 
     // Misc.
 
-    /** See [`ThreadHider`] for info. **/ AcquireThreadLock,
-    /** See [`ThreadHider`] for info. **/ ReleaseThreadLock,
+    /** See [`ThreadHider`] for info. */ AcquireThreadLock,
+    /** See [`ThreadHider`] for info. */ ReleaseThreadLock,
 
     /// [`MaybeQuery::filter`] by set and prefix.
     ///
@@ -382,8 +382,8 @@ pub enum Action {
     /// PLEASE note that before using this, [`Self::AcquireThreadLock`] should be used.
     #[cfg(feature = "cache")]
     Cache {
-        /** The subject.  **/ subject: StringSource,
-        /** The [`Self`]. **/ action : Box<Self>,
+        /** The subject.  */ subject: StringSource,
+        /** The [`Self`]. */ action : Box<Self>,
     },
 
 

@@ -5,8 +5,8 @@ use crate::prelude::*;
 /// An [`Iterator`] over the [`PathSegment`]s of a [`PathSegments`].
 #[derive(Debug, Clone)]
 pub struct PathSegmentsIter<'a> {
-    /** The [`SplitSlashes`].      **/ iter  : SplitSlashes<'a>,
-    /** The [`SegmentedPathType`]. **/ r#type: SegmentedPathType,
+    /** The [`SplitSlashes`].      */ iter  : SplitSlashes<'a>,
+    /** The [`SegmentedPathType`]. */ r#type: SegmentedPathType,
 }
 
 impl<'a> PathSegmentsIter<'a> {

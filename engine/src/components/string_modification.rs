@@ -104,8 +104,8 @@ pub enum StringModification {
     /// Prepends the specified value.
     Prepend(StringSource),
 
-    /** [`str::to_lowercase`]. **/ Lowercase,
-    /** [`str::to_uppercase`]. **/ Uppercase,
+    /** [`str::to_lowercase`]. */ Lowercase,
+    /** [`str::to_uppercase`]. */ Uppercase,
 
 
 
@@ -118,8 +118,8 @@ pub enum StringModification {
     /// If the suffix isn't found, returns the error [`StringModificationError::SuffixNotFound`].
     StripSuffix(StringSource),
 
-    /** [`Self::StripPrefix`], ignoring missing prefixes. **/ TrimPrefix(StringSource),
-    /** [`Self::StripSuffix`], ignoring missing suffixes. **/ TrimSuffix(StringSource),
+    /** [`Self::StripPrefix`], ignoring missing prefixes. */ TrimPrefix(StringSource),
+    /** [`Self::StripSuffix`], ignoring missing suffixes. */ TrimSuffix(StringSource),
 
 
 
@@ -157,15 +157,15 @@ pub enum StringModification {
     /// If the substring isn't found, returns the error [`SubstringNotFound`].
     KeepAfterLast(StringSource),
 
-    /** [`Self::StripBefore`],     ignoring missing substrings. **/ TrimBefore        (StringSource),
-    /** [`Self::StripAfter`],      ignoring missing substrings. **/ TrimAfter         (StringSource),
-    /** [`Self::KeepAfter`],       ignoring missing substrings. **/ KeepTrimBefore    (StringSource),
-    /** [`Self::KeepAfter`],       ignoring missing substrings. **/ KeepTrimAfter     (StringSource),
+    /** [`Self::StripBefore`],     ignoring missing substrings. */ TrimBefore        (StringSource),
+    /** [`Self::StripAfter`],      ignoring missing substrings. */ TrimAfter         (StringSource),
+    /** [`Self::KeepAfter`],       ignoring missing substrings. */ KeepTrimBefore    (StringSource),
+    /** [`Self::KeepAfter`],       ignoring missing substrings. */ KeepTrimAfter     (StringSource),
 
-    /** [`Self::StripBeforeLast`], ignoring missing substrings. **/ TrimBeforeLast    (StringSource),
-    /** [`Self::StripAfterLast`],  ignoring missing substrings. **/ TrimAfterLast     (StringSource),
-    /** [`Self::KeepAfterLast`],   ignoring missing substrings. **/ KeepTrimBeforeLast(StringSource),
-    /** [`Self::KeepAfterLast`],   ignoring missing substrings. **/ KeepTrimAfterLast (StringSource),
+    /** [`Self::StripBeforeLast`], ignoring missing substrings. */ TrimBeforeLast    (StringSource),
+    /** [`Self::StripAfterLast`],  ignoring missing substrings. */ TrimAfterLast     (StringSource),
+    /** [`Self::KeepAfterLast`],   ignoring missing substrings. */ KeepTrimBeforeLast(StringSource),
+    /** [`Self::KeepAfterLast`],   ignoring missing substrings. */ KeepTrimAfterLast (StringSource),
 
 
 
@@ -190,9 +190,9 @@ pub enum StringModification {
 
 
 
-    /** [`get_js_string`].      **/ GetJsString,
-    /** [`unescape_html`].      **/ UnescapeHtml,
-    /** [`get_html_attribute`]. **/ GetHtmlAttribute(StringSource),
+    /** [`get_js_string`].      */ GetJsString,
+    /** [`unescape_html`].      */ UnescapeHtml,
+    /** [`get_html_attribute`]. */ GetHtmlAttribute(StringSource),
 
 
 
@@ -238,14 +238,14 @@ pub enum StringModification {
 
 
 
-    /** [`better_url::util::encode_query_part`].       **/ EncodeQueryPart,
-    /** [`better_url::util::lossy_decode_query_part`]. **/ LossyDecodeQueryPart,
-    /** [`better_url::util::lossy_percent_decode`].    **/ LossyPercentDecode,
+    /** [`better_url::util::encode_query_part`].       */ EncodeQueryPart,
+    /** [`better_url::util::lossy_decode_query_part`]. */ LossyDecodeQueryPart,
+    /** [`better_url::util::lossy_percent_decode`].    */ LossyPercentDecode,
 
 
 
-    /** Base64 encodes the string. **/ Base64Encode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
-    /** Base64 decodes the string. **/ Base64Decode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
+    /** Base64 encodes the string. */ Base64Encode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
+    /** Base64 decodes the string. */ Base64Decode(#[serde(default, skip_serializing_if = "is_default")] Base64Config),
 
 
 

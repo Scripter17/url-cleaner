@@ -4,9 +4,9 @@ use serde::{Serialize, Deserialize};
 
 use super::*;
 
-/** Serde helper. **/ pub(crate) fn is_default<T: Default + PartialEq>(x: &T) -> bool {x == &T::default()}
-/** Serde helper. **/ pub(crate) fn is_true (x: &bool) -> bool {*x}
-/** Serde helper. **/ pub(crate) fn get_true(        ) -> bool {true}
+/** Serde helper. */ pub(crate) fn is_default<T: Default + PartialEq>(x: &T) -> bool {x == &T::default()}
+/** Serde helper. */ pub(crate) fn is_true (x: &bool) -> bool {*x}
+/** Serde helper. */ pub(crate) fn get_true(        ) -> bool {true}
 
 /// Config for a `/clean` job.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

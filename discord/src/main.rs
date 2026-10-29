@@ -106,11 +106,11 @@ pub struct Bot {
 /// [`main`].
 #[derive(Debug, Error)]
 enum DiscordError {
-    /** [`LoadCleanerError`].        **/ #[error(transparent)] LoadCleanerError       (#[from] LoadCleanerError       ),
-    /** [`LoadProfilesConfigError`]. **/ #[error(transparent)] LoadProfilesConfigError(#[from] LoadProfilesConfigError),
-    /** [`LoadSecretsError`].        **/ #[error(transparent)] LoadSecretsError       (#[from] LoadSecretsError       ),
-    /** [`TokenError`].              **/ #[error(transparent)] TokenError             (#[from] TokenError             ),
-    /** [`serenity::Error`].         **/ #[error(transparent)] SerenityError          (#[from] serenity::Error        ),
+    /** [`LoadCleanerError`].        */ #[error(transparent)] LoadCleanerError       (#[from] LoadCleanerError       ),
+    /** [`LoadProfilesConfigError`]. */ #[error(transparent)] LoadProfilesConfigError(#[from] LoadProfilesConfigError),
+    /** [`LoadSecretsError`].        */ #[error(transparent)] LoadSecretsError       (#[from] LoadSecretsError       ),
+    /** [`TokenError`].              */ #[error(transparent)] TokenError             (#[from] TokenError             ),
+    /** [`serenity::Error`].         */ #[error(transparent)] SerenityError          (#[from] serenity::Error        ),
 }
 
 #[tokio::main]

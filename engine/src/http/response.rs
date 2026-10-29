@@ -32,7 +32,7 @@ pub enum HttpResponseHandler {
         /// The try.
         r#try: Box<Self>,
         /// The else.
-        r#else: Box<Self>
+        r#else: Box<Self>,
     },
     /// [`Self::NoneTo::handler`], or, if it's [`None`], [`Self::NoneTo::if_none`].
     NoneTo {
@@ -46,7 +46,7 @@ pub enum HttpResponseHandler {
         /// The [`Self`].
         handler: Box<Self>,
         /// The [`StringModification`].
-        modification: StringModification
+        modification: StringModification,
     },
 
     /// The body.
@@ -71,7 +71,7 @@ pub enum HttpResponseHandler {
         ///
         /// Defaults to 8MiB.
         #[serde(default = "default_limit", skip_serializing_if = "is_default_limit")]
-        limit: usize
+        limit: usize,
     },
 }
 

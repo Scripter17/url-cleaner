@@ -2,7 +2,8 @@
 
 use crate::prelude::*;
 
-// Note: The memchrn calls are in each of the top level functions because apparently [`cow_bytes_to_str_unchecked`] is pretty expensive.
+// TODO: Check below.
+// Note: The memchr2 calls are in each of the top level functions because apparently [`cow_bytes_to_str_unchecked`] is pretty expensive.
 
 /// Try to decode a [`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) encoded string.
 /// # Errors
@@ -11,7 +12,7 @@ use crate::prelude::*;
 pub fn try_decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool, Cow<'a, str>), (std::str::Utf8Error, Cow<'a, [u8]>)> {
     let value = value.into();
 
-    if value.memchrn(*b"%+").is_none() {
+    if memchr::memchr2(b'%', b'+', value.as_bytes()).is_none() {
         return Ok((false, value));
     }
 
@@ -22,7 +23,7 @@ pub fn try_decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(boo
 pub fn lossy_decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
     let value = value.into();
 
-    if value.memchrn(*b"%+").is_none() {
+    if memchr::memchr2(b'%', b'+', value.as_bytes()).is_none() {
         return (false, value);
     }
 
@@ -43,7 +44,7 @@ pub fn lossy_decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Co
 pub fn decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, [u8]>) {
     let value = value.into();
 
-    if value.memchrn(*b"%+").is_none() {
+    if memchr::memchr2(b'%', b'+', value.as_bytes()).is_none() {
         return (false, cow_str_to_bytes(value));
     }
 
@@ -64,7 +65,7 @@ pub fn decode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, 
 pub fn decode_query_part_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, [u8]>) {
     let value = value.into();
 
-    if value.memchrn(*b"%+").is_none() {
+    if memchr::memchr2(b'%', b'+', &value).is_none() {
         return (false, value);
     }
 

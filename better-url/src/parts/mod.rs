@@ -1,73 +1,37 @@
 //! Individual parts of URLs.
 //!
-//! These APIs are the core advantage of Better URL over most other URL implementations.
-//! They allow the various setters on [`BetterUrl`] to often just be a few very cheap checks and a [`String::replace_range`].
-//!
-//! A nice ergonimic feature of part types is the ability to construct a `Part<'a>` from a `&'a Part<'_>`, as well as a `MaybePart<'a>` from a `Part<'a>`, `Option<Part<'a>>`, `&'a Part<'_>`, `&'a Option<Part<'_>>`, or `Option<&'a Part<'_>>`.
+//! These allow for very fast and ergonomic manipulation of URLs, only checking invariants as needed.
 //!
 //! ```
 //! use better_url::prelude::*;
 //!
-//! let mut url = BetterUrl::new("https://example.com").unwrap();
+//! let mut url = BetterUrl::new("https://example.com?a=2&utm_b=3&c=4").unwrap();
 //!
-//! let mut query = SpecialQuery::new("all the expensive processing happens here");
+//! // A `MaybeQuery`, which easily handles both special and non-special queries as well as their absence.
+//! let mut query = url.query();
 //!
-//! assert_eq!(query, "all%20the%20expensive%20processing%20happens%20here");
+//! // Remove any segment that doesn't satisfy the predicate.
+//! query.filter(|segment| !segment.name().decode().starts_with(b"utm_"));
 //!
-//! // Dirt cheap.
-//! url.set_query(&query).unwrap();
+//! // Basically just a `String::replace_range`. No need to check encoding that's known to be valid at the type level.
+//! url.set_query(query.into_owned());
 //!
-//! // Because `MaybeQuery<'a>` impls `From<&'a SpecialQuery<'_>>`, this can be done as many times as you want.
-//! url.set_query(&query).unwrap();
-//!
-//! // Though setting the same URL's query to the same value 3 times is a bit redundant.
-//! url.set_query(&query).unwrap();
-//!
-//! // And you can just pass ownership.
-//! url.set_query(query).unwrap();
+//! assert_eq!(url, "https://example.com/?a=2&c=4");
 //! ```
 //!
-//! However please note that the constructors for these types aren't just "what would this input result in when parsing an appropriate URL?" or "what would this input result in in an appropriate URL's setter?".
-//!
-//! Specifically, tabs, newlines, and carrage returns are not detected or removed,
-//! [`Fragment`] and co. don't remove trailing C0-or-space codepoints, [`OpaquePath`] always percent encodes a trailing space,
-//! and the 4GiB length limit that [`BetterUrl`] enforces is completely ignored.
+//! Of course, the above example can be written as just
 //!
 //! ```
 //! use better_url::prelude::*;
 //!
-//! let mut url = BetterUrl::new("https://example.com").unwrap();
+//! let mut url = BetterUrl::new("https://example.com?a=2&utm_b=3&c=4").unwrap();
 //!
-//! // Implicit conversion into a `SpecialQuery`.
-//! url.set_query("abc\tdef").unwrap();
+//! url.filter_query(|segment| !segment.name().decode().starts_with(b"utm_"));
 //!
-//! assert_eq!(url.query_str(), Some("abc%09def"));
-//!
-//! // The "canon" APIs do emulate this behavior.
-//! url.canon_set_search("abc\tdef").unwrap();
-//!
-//! assert_eq!(url.query_str(), Some("abcdef"));
+//! assert_eq!(url, "https://example.com/?a=2&c=4");
 //! ```
 //!
-//! This is because those are stupid. For example it'd require that [`Ipv6Host`] have separate constructors/types for special and non-special URLs.
-//! 
-//! ```
-//! use better_url::prelude::*;
-//!
-//! let mut url = BetterUrl::new("https://example.com").unwrap();
-//!
-//! url.canon_set_hostname("[::1]\\removed").unwrap();
-//!
-//! assert_eq!(url, "https://[::1]/");
-//!
-//!
-//!
-//! let mut url = BetterUrl::new("non-special://example.com").unwrap();
-//!
-//! url.canon_set_hostname("[::1]\\errored").unwrap_err();
-//!
-//! assert_eq!(url, "non-special://example.com");
-//! ```
+//! but the non-shorthand version better demonstrates how type level invariants are used.
 
 use crate::prelude::*;
 
@@ -115,7 +79,7 @@ try_from_cow_bytes!(
 
     NonSpecialHost,
 
-    Ipv6Host, OpaqueHost, EmptyHost
+    OpaqueHost, EmptyHost
 );
 
 try_from_cow_bytes_or_str!(
@@ -123,7 +87,7 @@ try_from_cow_bytes_or_str!(
 
     DomainSegments, DomainHost, DomainSegment,
 
-    Ipv4Host
+    Ipv4Host, Ipv6Host
 );
 
 

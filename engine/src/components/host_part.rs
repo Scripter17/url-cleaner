@@ -6,14 +6,14 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum HostPart {
-    /** [`Host::as_str`]. **/ Host,
+    /** [`Host::as_str`]. */ Host,
 
-    /** [`Host::domain_prefix_str`]. **/ DomainPrefix,
-    /** [`Host::domain_middle_str`]. **/ DomainMiddle,
-    /** [`Host::domain_suffix_str`]. **/ DomainSuffix,
-    /** [`Host::domain_labels_str`]. **/ DomainLabels,
-    /** [`Host::domain_origin_str`]. **/ DomainOrigin,
-    /** [`Host::domain_normal_str`]. **/ DomainNormal,
+    /** [`Host::domain_prefix_str`]. */ DomainPrefix,
+    /** [`Host::domain_middle_str`]. */ DomainMiddle,
+    /** [`Host::domain_suffix_str`]. */ DomainSuffix,
+    /** [`Host::domain_labels_str`]. */ DomainLabels,
+    /** [`Host::domain_origin_str`]. */ DomainOrigin,
+    /** [`Host::domain_normal_str`]. */ DomainNormal,
 }
 
 impl HostPart {

@@ -20,6 +20,6 @@ impl<'a> MaybeFragmentQuery<'a> {
 
     /// The `index`th [`FragmentQuerySegment`] named `name`.
     pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<FragmentQuerySegment<'_>> {
-        self.find_iter(name.as_ref()).neg_nth(index)
+        self.find_iter(name).neg_nth(index)
     }
 }

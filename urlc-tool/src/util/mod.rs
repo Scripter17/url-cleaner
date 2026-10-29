@@ -29,12 +29,12 @@ pub fn is_default<T: Default + PartialEq>(x: &T) -> bool {
 /// The bin to run.
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Bin {
-    /** CLI.         **/ Cli       ,
-    /** Site.        **/ Site      ,
-    /** Site Client. **/ SiteClient,
-    /** Discord.     **/ Discord   ,
-    /** URLC Tool.   **/ UrlcTool  ,
-    /** BURL Bench.  **/ BurlBench ,
+    /** CLI.         */ Cli       ,
+    /** Site.        */ Site      ,
+    /** Site Client. */ SiteClient,
+    /** Discord.     */ Discord   ,
+    /** URLC Tool.   */ UrlcTool  ,
+    /** BURL Bench.  */ BurlBench ,
 }
 
 impl Bin {

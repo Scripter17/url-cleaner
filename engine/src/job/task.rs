@@ -13,37 +13,7 @@ pub struct Task {
     ///
     /// Defaults to [`TaskContext::default`].
     #[serde(default, skip_serializing_if = "is_default")]
-    pub context: TaskContext
-}
-
-impl Serialize for Task {
-    fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        <Task>::serialize(self, serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for Task {
-    fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        struct V;
-
-        impl<'de> serde::de::Visitor<'de> for V {
-            type Value = Task;
-
-            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-                f.write_str("Expected a string or a map.")
-            }
-
-            fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {
-                Self::Value::from_str(s).map_err(E::custom)
-            }
-
-            fn visit_map<M: serde::de::MapAccess<'de>>(self, map: M) -> Result<Self::Value, M::Error> {
-                Self::Value::deserialize(serde::de::value::MapAccessDeserializer::new(map))
-            }
-        }
-
-        deserializer.deserialize_any(V)
-    }
+    pub context: TaskContext,
 }
 
 impl Task {
@@ -94,9 +64,62 @@ impl TryFrom<&[u8]> for Task {
 impl std::fmt::Display for Task {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.context.is_empty() {
-            true  => write!(formatter, "{}", self.url),
-            // TODO: This is dumb.
-            false => write!(formatter, "{}", serde_json::to_string(self).expect("To always work."))
+            true  => formatter.write_str(self.url.as_str()),
+            false => {
+                struct Adapter<'a, 'b>(&'a mut std::fmt::Formatter<'b>);
+
+                impl std::io::Write for Adapter<'_, '_> {
+                    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+                        // SAFETY: Only ever called by [`serde_json::to_writer`], which only ever provides UTF-8.
+                        let value = unsafe {str::from_utf8_unchecked(buf)};
+
+                        match self.0.write_str(value) {
+                            Ok (_) => Ok(value.len()),
+                            Err(_) => Err(std::io::ErrorKind::Other.into()),
+                        }
+                    }
+
+                    fn flush(&mut self) -> std::io::Result<()> {
+                        Ok(())
+                    }
+                }
+
+                serde_json::to_writer(&mut Adapter(formatter), self).map_err(|_| std::fmt::Error)
+            }
         }
+    }
+}
+
+impl Serialize for Task {
+    fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        if self.context.is_empty() {
+            self.url.serialize(serializer)
+        } else {
+            <Task>::serialize(self, serializer)
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Task {
+    fn deserialize<D: serde::de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct V;
+
+        impl<'de> serde::de::Visitor<'de> for V {
+            type Value = Task;
+
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+                f.write_str("a str or map")
+            }
+
+            fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {
+                Self::Value::from_str(s).map_err(E::custom)
+            }
+
+            fn visit_map<M: serde::de::MapAccess<'de>>(self, map: M) -> Result<Self::Value, M::Error> {
+                Self::Value::deserialize(serde::de::value::MapAccessDeserializer::new(map))
+            }
+        }
+
+        deserializer.deserialize_any(V)
     }
 }

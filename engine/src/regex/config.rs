@@ -21,8 +21,8 @@ pub struct RegexConfig {
     pub line_terminator: u8,
 }
 
-/** Serde helper. **/ const fn    nlu8(      ) -> u8   {      b'\n'}
-/** Serde helper. **/ const fn is_nlu8(x: &u8) -> bool {*x == b'\n'}
+/** Serde helper. */ const fn    nlu8(      ) -> u8   {      b'\n'}
+/** Serde helper. */ const fn is_nlu8(x: &u8) -> bool {*x == b'\n'}
 
 impl Default for RegexConfig {
     fn default() -> Self {

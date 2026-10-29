@@ -32,8 +32,8 @@ pub enum StringSource {
     /// # Errors
     /// If both return [`Err`], returns the error [`TryElseError`].
     TryElse {
-        /** The try.  **/ r#try : Box<Self>,
-        /** The else. **/ r#else: Box<Self>,
+        /** The try.  */ r#try : Box<Self>,
+        /** The else. */ r#else: Box<Self>,
     },
     /// Returns the first [`Self`] to return [`Ok`].
     /// # Errors
@@ -42,8 +42,8 @@ pub enum StringSource {
 
 
 
-    /** Map [`None`] to the empty string. **/ NoneToEmpty(Box<Self>),
-    /** Map the empty string to [`None`]. **/ EmptyToNone(Box<Self>),
+    /** Map [`None`] to the empty string. */ NoneToEmpty(Box<Self>),
+    /** Map the empty string to [`None`]. */ EmptyToNone(Box<Self>),
 
     /// Map [`None`] to the error [`StringNotFound`].
     /// # Errors
@@ -52,22 +52,22 @@ pub enum StringSource {
 
     /// Map [`None`] to [`Self::NoneTo::if_none`].
     NoneTo {
-        /** The try.  **/ value  : Box<Self>,
-        /** The else. **/ if_none: Box<Self>,
+        /** The try.  */ value  : Box<Self>,
+        /** The else. */ if_none: Box<Self>,
     },
     /// Map the empty string to [`Self::EmptyTo::if_empty`].
     EmptyTo {
-        /** The try.  **/ value   : Box<Self>,
-        /** The else. **/ if_empty: Box<Self>,
+        /** The try.  */ value   : Box<Self>,
+        /** The else. */ if_empty: Box<Self>,
     },
 
     /// [`Self::AssertMatches::value`] if it satisfies [`Self::AssertMatches::matcher`].
     /// # Errors
     /// If [`Self::AssertMatches::matcher`] returns [`false`], returns the error [`AssertError`].
     AssertMatches {
-        /** The value.         **/ value  : Box<Self>,
-        /** The assert.        **/ matcher: Box<StringMatcher>,
-        /** The error message. **/ message: String,
+        /** The value.         */ value  : Box<Self>,
+        /** The assert.        */ matcher: Box<StringMatcher>,
+        /** The error message. */ message: String,
     },
 
 
@@ -95,13 +95,13 @@ pub enum StringSource {
 
 
 
-    /** [`BetterUrl::domain_segment_str`].        **/ DomainSegment      (isize),
-    /** [`BetterUrl::domain_origin_segment_str`]. **/ DomainOriginSegment(isize),
-    /** [`BetterUrl::domain_prefix_segment_str`]. **/ DomainPrefixSegment(isize),
-    /** [`BetterUrl::domain_suffix_segment_str`]. **/ DomainSuffixSegment(isize),
+    /** [`BetterUrl::domain_segment_str`].        */ DomainSegment      (isize),
+    /** [`BetterUrl::domain_origin_segment_str`]. */ DomainOriginSegment(isize),
+    /** [`BetterUrl::domain_prefix_segment_str`]. */ DomainPrefixSegment(isize),
+    /** [`BetterUrl::domain_suffix_segment_str`]. */ DomainSuffixSegment(isize),
 
-    /** [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`]. **/ PathSegment   (isize),
-    /** [`BetterUrl::path_segment_str`].                             **/ RawPathSegment(isize),
+    /** [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`]. */ PathSegment   (isize),
+    /** [`BetterUrl::path_segment_str`].                             */ RawPathSegment(isize),
     /// [`BetterUrl::path_segment_range_str`].
     RawPathSegmentRange {
         /// The start of the range.
@@ -116,10 +116,10 @@ pub enum StringSource {
         end: Bound<isize>,
     },
 
-    /** [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`].          **/ QueryParam      (QueryParamSelector),
-    /** [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].            **/ RawQueryParam   (QueryParamSelector),
-    /** [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`]. **/ FragmentParam   (QueryParamSelector),
-    /** [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].   **/ RawFragmentParam(QueryParamSelector),
+    /** [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`].          */ QueryParam      (QueryParamSelector),
+    /** [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].            */ RawQueryParam   (QueryParamSelector),
+    /** [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`]. */ FragmentParam   (QueryParamSelector),
+    /** [`BetterUrl::fragment_query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].   */ RawFragmentParam(QueryParamSelector),
 
 
 
@@ -139,33 +139,33 @@ pub enum StringSource {
     Var(Box<VarSource>),
     /// [`MapSource::get`] + [`Map::get`].
     Map {
-        /** The [`Map`] to index.    **/ map: Box<MapSource>,
-        /** The value to index with. **/ key: Box<Self>,
+        /** The [`Map`] to index.    */ map: Box<MapSource>,
+        /** The value to index with. */ key: Box<Self>,
     },
     /// [`PartitioningSource::get`] + [`Partitioning::get`].
     Partitioning {
-        /** The [`Partitioning`]. **/ partitioning: Box<PartitioningSource>,
-        /** The element.          **/ element     : Box<Self>,
+        /** The [`Partitioning`]. */ partitioning: Box<PartitioningSource>,
+        /** The element.          */ element     : Box<Self>,
     },
 
 
 
     /// [`Self::get`] + [`StringModification::apply`].
     Modified {
-        /** The [`Self`].               **/ value       : Box<Self>,
-        /** The [`StringModification`]. **/ modification: Box<StringModification>,
+        /** The [`Self`].               */ value       : Box<Self>,
+        /** The [`StringModification`]. */ modification: Box<StringModification>,
     },
 
-    /** [`try_percent_decode`].    **/ TryPercentDecode  (Box<Self>),
-    /** [`try_decode_query_part`]. **/ TryDecodeQueryPart(Box<Self>),
+    /** [`try_percent_decode`].    */ TryPercentDecode  (Box<Self>),
+    /** [`try_decode_query_part`]. */ TryDecodeQueryPart(Box<Self>),
 
 
 
     /// [`Self::get`] + [`LazyRegex::get`] + [`regex::Regex::captures`] + [`RegexExpansion::expand`].
     RegexExpansion {
-        /** The value to match with. **/ value    : Box<Self>,
-        /** The [`LazyRegex`].       **/ regex    : Box<LazyRegex>,
-        /** The [`RegexExpansion`].  **/ expansion: Box<RegexExpansion>,
+        /** The value to match with. */ value    : Box<Self>,
+        /** The [`LazyRegex`].       */ regex    : Box<LazyRegex>,
+        /** The [`RegexExpansion`].  */ expansion: Box<RegexExpansion>,
     },
 
 
@@ -194,9 +194,9 @@ pub enum StringSource {
     /// PLEASE note that before using this, [`Action::AcquireThreadLock`] should be used.
     #[cfg(feature = "cache")]
     Cache {
-        /** The subject. **/ subject: Box<Self>,
-        /** The key.     **/ key    : Box<Self>,
-        /** The value.   **/ value  : Box<Self>,
+        /** The subject. */ subject: Box<Self>,
+        /** The key.     */ key    : Box<Self>,
+        /** The value.   */ value  : Box<Self>,
     },
 
 

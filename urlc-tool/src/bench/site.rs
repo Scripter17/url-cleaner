@@ -5,12 +5,12 @@ use super::prelude::*;
 /// Site.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /** The name.       **/ #[arg(long)] pub name       : String,
-    /** The task.       **/ #[arg(long)] pub task       : String,
-    /** The num.        **/ #[arg(long)] pub num        : u64,
-    /** The ParamsDiff. **/ #[arg(long)] pub params_diff: Option<String>,
-    /** The protocol.   **/ #[arg(long)] pub protocol   : Protocol,
-    /** The tool.       **/ #[arg(long)] pub tool       : ServerTool,
+    /** The name.       */ #[arg(long)] pub name       : String,
+    /** The task.       */ #[arg(long)] pub task       : String,
+    /** The num.        */ #[arg(long)] pub num        : u64,
+    /** The ParamsDiff. */ #[arg(long)] pub params_diff: Option<String>,
+    /** The protocol.   */ #[arg(long)] pub protocol   : Protocol,
+    /** The tool.       */ #[arg(long)] pub tool       : ServerTool,
 }
 
 impl Args {

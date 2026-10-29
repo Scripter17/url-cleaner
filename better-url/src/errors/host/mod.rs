@@ -49,11 +49,11 @@ pub struct CantHaveHost;
 /// Returned when failing to set a host.
 #[derive(Debug, Error)]
 pub enum SetHostError {
-    /** [`InvalidHost`].    **/ #[error(transparent)] InvalidHost   (#[from] InvalidHost   ),
-    /** [`SetDomainError`]. **/ #[error(transparent)] SetDomainError(#[from] SetDomainError),
-    /** [`NoDomain`]        **/ #[error(transparent)] NoDomain      (#[from] NoDomain      ),
-    /** [`CantBeNone`].     **/ #[error(transparent)] CantBeNone    (#[from] CantBeNone    ),
-    /** [`CantBeEmpty`].    **/ #[error(transparent)] CantBeEmpty   (#[from] CantBeEmpty   ),
-    /** [`CantHaveHost`].   **/ #[error(transparent)] CantHaveHost  (#[from] CantHaveHost  ),
-    /** [`TooLong`].        **/ #[error(transparent)] TooLong       (#[from] TooLong       ),
+    /** [`InvalidHost`].    */ #[error(transparent)] InvalidHost   (#[from] InvalidHost   ),
+    /** [`SetDomainError`]. */ #[error(transparent)] SetDomainError(#[from] SetDomainError),
+    /** [`NoDomain`]        */ #[error(transparent)] NoDomain      (#[from] NoDomain      ),
+    /** [`CantBeNone`].     */ #[error(transparent)] CantBeNone    (#[from] CantBeNone    ),
+    /** [`CantBeEmpty`].    */ #[error(transparent)] CantBeEmpty   (#[from] CantBeEmpty   ),
+    /** [`CantHaveHost`].   */ #[error(transparent)] CantHaveHost  (#[from] CantHaveHost  ),
+    /** [`TooLong`].        */ #[error(transparent)] TooLong       (#[from] TooLong       ),
 }

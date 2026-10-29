@@ -9,7 +9,7 @@ pub mod parse;
 pub mod set;
 pub mod idna;
 pub mod psl;
-pub mod utils;
+pub mod monitor;
 pub mod util;
 
 /// Benchmarking tool for Better URL.
@@ -20,18 +20,18 @@ pub enum Args {
     #[command(subcommand)] Set  (set  ::Args),
     #[command(subcommand)] Idna (idna ::Args),
     Psl(psl::Args),
-    #[command(subcommand)] Utils(utils::Args),
+    Monitor(monitor::Args),
 }
 
 impl Args {
     /// Do the command.
     pub fn r#do(self) {
         match self {
-            Self::Parse(args) => args.r#do(),
-            Self::Set  (args) => args.r#do(),
-            Self::Idna (args) => args.r#do(),
-            Self::Psl  (args) => args.r#do(),
-            Self::Utils(args) => args.r#do(),
+            Self::Parse  (args) => args.r#do(),
+            Self::Set    (args) => args.r#do(),
+            Self::Idna   (args) => args.r#do(),
+            Self::Psl    (args) => args.r#do(),
+            Self::Monitor(args) => args.r#do(),
         }
     }
 }

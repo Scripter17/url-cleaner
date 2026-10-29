@@ -66,28 +66,15 @@ impl<'a> Params<'a> {
 
 impl Suitability for Params<'_> {
     fn assert_suitability(&self, cleaner: &Cleaner<'_>) {
-        for flag in self.flags.iter() {assert!(cleaner.docs.params.flags.contains_key(flag), "Undocumented flag {flag:?}");}
-
-        for (name, value) in self.vars.iter() {
-            match cleaner.docs.params.vars.get(name) {
-                Some(doc) => {
-                    if let Some(variants) = &doc.variants && !variants.contains_key(value) {
-                        panic!("Params Var {name:?} set to undocumented variant {value:?}.");
-                    }
-                },
-                None => panic!("Undocumented Params Var {name:?}.")
-            }
-        }
-
         for (name, doc) in cleaner.docs.params.vars.iter() {
-            if doc.required && !self.vars.contains_key(name) {
-                panic!("Params Var {name:?} required but unset.");
-            }
+            assert!(doc.documents(self.vars.get(name).map(|x| &**x)), "Params Var {name:?} required but unset.");
         }
 
-        for set          in self.sets         .keys() {assert!(cleaner.docs.params.sets         .contains_key(set         ), "Undocumented set {set:?}");}
-        for list         in self.lists        .keys() {assert!(cleaner.docs.params.lists        .contains_key(list        ), "Undocumented list {list:?}");}
-        for map          in self.maps         .keys() {assert!(cleaner.docs.params.maps         .contains_key(map         ), "Undocumented map {map:?}");}
-        for partitioning in self.partitionings.keys() {assert!(cleaner.docs.params.partitionings.contains_key(partitioning), "Undocumented partitioning {partitioning:?}");}
+        for flag         in self.flags        .iter() {assert!(cleaner.docs.params.flags        .contains_key(flag        ), "Undocumented flag {flag:?}"                       );}
+        for var          in self.vars         .keys() {assert!(cleaner.docs.params.vars         .contains_key(var         ), "Undocumented Params Var {var:?}."                 );}
+        for set          in self.sets         .keys() {assert!(cleaner.docs.params.sets         .contains_key(set         ), "Undocumented Params Set {set:?}"                  );}
+        for list         in self.lists        .keys() {assert!(cleaner.docs.params.lists        .contains_key(list        ), "Undocumented Params List {list:?}"                );}
+        for map          in self.maps         .keys() {assert!(cleaner.docs.params.maps         .contains_key(map         ), "Undocumented Params Map {map:?}"                  );}
+        for partitioning in self.partitionings.keys() {assert!(cleaner.docs.params.partitionings.contains_key(partitioning), "Undocumented Params Partitioning {partitioning:?}");}
     }
 }

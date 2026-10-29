@@ -5,10 +5,10 @@ use crate::prelude::*;
 /// The host of a [`SchemeType::File`] URL.
 #[derive(Debug, Clone)]
 pub enum FileHost<'a> {
-    /** [`DomainHost`]. **/ Domain(DomainHost<'a>),
-    /** [`Ipv4Host`].   **/ Ipv4  (Ipv4Host  <'a>),
-    /** [`Ipv6Host`].   **/ Ipv6  (Ipv6Host  <'a>),
-    /** [`EmptyHost`].  **/ Empty (EmptyHost <'a>),
+    /** [`DomainHost`]. */ Domain(DomainHost<'a>),
+    /** [`Ipv4Host`].   */ Ipv4  (Ipv4Host  <'a>),
+    /** [`Ipv6Host`].   */ Ipv6  (Ipv6Host  <'a>),
+    /** [`EmptyHost`].  */ Empty (EmptyHost <'a>),
 }
 
 impl<'a> FileHost<'a> {

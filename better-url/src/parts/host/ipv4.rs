@@ -14,26 +14,6 @@ pub struct Ipv4Host<'a> {
 }
 
 impl<'a> Ipv4Host<'a> {
-    /// Make a new [`Self`] from a percent decoded value.
-    /// # Errors
-    /// If [`Self::new_normalized`] returns an error, that error is returned.
-    pub fn new_percent_decoded<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
-        let (_, value) = uts46_map_normalize(value);
-
-        Self::new_normalized(value)
-    }
-
-    /// Make a new [`Self`] from a percent decoded and UTS46 normalized value.
-    /// # Errors
-    /// If [`parse_ipv4_host`] returns an error, that error is returned.
-    pub fn new_normalized<T: Into<Cow<'a, str>>>(value: T) -> Result<Self, InvalidIpv4Host> {
-        let (_, value, addr) = make_ipv4_host(value)?;
-
-        Ok(unsafe {
-            Self::from_parts(value, addr)
-        })
-    }
-
     /// Make a new [`Self`] with zero validity checks.
     /// # Safety
     /// `value` must be a valid IPv4 host literal and `details` must be its [`Ipv4HostDetails`].
@@ -80,23 +60,27 @@ impl<'a> Ipv4Host<'a> {
 
 
 
-impl<'a> TryFrom<Cow<'a, [u8]>> for Ipv4Host<'a> {
-    type Error = InvalidIpv4Host;
-
-    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
-        let (_, value) = try_percent_decode_bytes(value).map_err(|_| InvalidIpv4Host)?;
-
-        Self::new_percent_decoded(value)
-    }
-}
-
 impl<'a> TryFrom<Cow<'a, str>> for Ipv4Host<'a> {
     type Error = InvalidIpv4Host;
 
     fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
-        let (_, value) = try_percent_decode(value).map_err(|_| InvalidIpv4Host)?;
+        let (_, value, details) = make_ipv4_host(value)?;
 
-        Self::new_percent_decoded(value)
+        Ok(unsafe {
+            Self::from_parts(value, details)
+        })
+    }
+}
+
+impl<'a> TryFrom<Cow<'a, [u8]>> for Ipv4Host<'a> {
+    type Error = InvalidIpv4Host;
+
+    fn try_from(value: Cow<'a, [u8]>) -> Result<Self, Self::Error> {
+        let (_, value, details) = make_ipv4_host_bytes(value)?;
+
+        Ok(unsafe {
+            Self::from_parts(value, details)
+        })
     }
 }
 

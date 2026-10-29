@@ -12,18 +12,20 @@
 //!
 //! ## Parsing from bytes
 //!
-//! Please note that in addition to parsing [`BetterUrl`] and the various [`parts`] types from strings, you are also able to parse them from bytes.
+//! [`BetterUrl`] as well as the various [`parts`] types have from not just strings but also arbitrary byte sequences.
 //!
-//! When doing so, invalid UTF-8 will be ignored.
+//! For byte sequences that happen to be UTF-8, the behavior is identical, but for byte sequences that aren't UTF-8, *UTF-8 validity is not checked* unless and until needed.
 //!
-//! For most parts, this either has no effect (such as for [`Scheme`](parts::Scheme) and [`Ipv6Host`](parts::Ipv6Host)) or will percent encode the non-ASCII bytes as usual (such as with the many [`Query`](parts::Query) types).
-//!
-//! However, for [`DomainHost`](parts::DomainHost) and [`Ipv4Host`](parts::Ipv4Host) specifically, this has the weird effect that partially percent encoded UTF-8 multibyte sequences will be percent decoded into UTF-8 and then accepted.
+//! In the future I may add a feature flag to enforce UTF-8 validity in bytes constructors.
 //!
 //! ```
 //! use better_url::prelude::*;
 //!
-//! assert_eq!(BetterUrl::new(b"https://%C2\xA1.com").unwrap(), "https://xn--7a.com/");
+//! assert_eq!(Ipv4Host::new(b"127.0.0.%E2\x91%A0").unwrap(), "127.0.0.1");
+//!
+//! assert_eq!(SpecialQuery::new(b"\xff"), "%FF");
+//!
+//! assert_eq!(BetterUrl::new(b"https://example.com/\xff?\xff#\xff").unwrap(), "https://example.com/%FF?%FF#%FF");
 //! ```
 
 mod url;

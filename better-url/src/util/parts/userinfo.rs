@@ -21,12 +21,12 @@ pub fn make_userinfo<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>
 
 /// Make a [`Username`] from bytes.
 pub fn make_username_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode_bytes(value, USERINFO)
+    percent_encode_bytes(value, &USERINFO)
 }
 
 /// Make a [`Password`] from bytes.
 pub fn make_password_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode_bytes(value, USERINFO)
+    percent_encode_bytes(value, &USERINFO)
 }
 
 /// Make a [`Userinfo`] from bytes.

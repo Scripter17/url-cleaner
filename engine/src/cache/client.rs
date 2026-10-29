@@ -48,7 +48,7 @@ use crate::prelude::*;
 /// assert_eq!(client.read_sync("", "abc", config).unwrap(), None);
 /// assert!(a.elapsed() < duration);
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CacheClient {
     /// The [`sqlx::SqlitePool`].
     pub pool: sqlx::SqlitePool,
@@ -76,7 +76,7 @@ impl CacheClient {
 
     /// [`tokio::runtime::Handle::block_on`] + [`Self::new`].
     /// # Panics
-    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    /// If [`tokio::runtime::Handle::block_on`] panics, that panic is not caught.
     pub fn new_sync(target: CacheTarget, handle: tokio::runtime::Handle) -> Self {
         handle.block_on(Self::new(target))
     }
@@ -85,7 +85,7 @@ impl CacheClient {
     /// # Errors
     /// If [`Self::read`] returns an error, that error is returned.
     /// # Panics
-    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    /// If [`tokio::runtime::Handle::block_on`] panics, that panic is not caught.
     pub fn read_sync(&self, subject: &str, key: &str, config: CacheConfig) -> Result<Option<Option<String>>, ReadFromCacheError> {
         self.handle.block_on(self.read(subject, key, config))
     }
@@ -94,7 +94,7 @@ impl CacheClient {
     /// # Errors
     /// If [`Self::write`] returns an error, that error is retuerned.
     /// # Panics
-    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    /// If [`tokio::runtime::Handle::block_on`] panics, that panic is not caught.
     pub fn write_sync(&self, subject: &str, key: &str, value: Option<&str>, duration: Duration, config: CacheConfig) -> Result<(), WriteToCacheError> {
         self.handle.block_on(self.write(subject, key, value, duration, config))
     }

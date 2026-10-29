@@ -4,27 +4,35 @@ use crate::prelude::*;
 
 /// The test data.
 const WPT_SETTERS_TESTS: &str = include_str!("data/setters_tests.json");
+/// The test data.
+const ADA_EXTRA_SETTERS_TESTS: &str = include_str!("data/ada_extra_setters_tests.json");
 
 #[test]
 fn wpt_setters_tests() {
     serde_json::from_str::<Tests>(WPT_SETTERS_TESTS).expect("To parse the tests.").r#do()
 }
 
+
+#[test]
+fn ada_extra_setters_tests() {
+    serde_json::from_str::<Tests>(ADA_EXTRA_SETTERS_TESTS).expect("To parse the tests.").r#do()
+}
+
 /// The [`Test`]s.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Tests {
-    /** The comment.        **/ #[expect(dead_code, reason = "Allows the deny_unknown_fields to be useful.")] comment : Vec<String>,
-    /** The href tests.     **/ #[expect(dead_code, reason = "Allows the deny_unknown_fields to be useful.")] href    : Vec<Test>,
-    /** The protocol tests. **/ protocol: Vec<Test>,
-    /** The username tests. **/ username: Vec<Test>,
-    /** The password tests. **/ password: Vec<Test>,
-    /** The hostname tests. **/ hostname: Vec<Test>,
-    /** The host tests.     **/ host    : Vec<Test>,
-    /** The port tests.     **/ port    : Vec<Test>,
-    /** The pathname tests. **/ pathname: Vec<Test>,
-    /** The search tests.   **/ search  : Vec<Test>,
-    /** The hash tests.     **/ hash    : Vec<Test>,
+    /** The comment.        */ #[expect(dead_code, reason = "Allows the deny_unknown_fields to be useful.")] comment : Vec<String>,
+    /** The href tests.     */ #[expect(dead_code, reason = "Allows the deny_unknown_fields to be useful.")] href    : Vec<Test>,
+    /** The protocol tests. */ #[serde(default)] protocol: Vec<Test>,
+    /** The username tests. */ #[serde(default)] username: Vec<Test>,
+    /** The password tests. */ #[serde(default)] password: Vec<Test>,
+    /** The hostname tests. */ #[serde(default)] hostname: Vec<Test>,
+    /** The host tests.     */ #[serde(default)] host    : Vec<Test>,
+    /** The port tests.     */ #[serde(default)] port    : Vec<Test>,
+    /** The pathname tests. */ #[serde(default)] pathname: Vec<Test>,
+    /** The search tests.   */ #[serde(default)] search  : Vec<Test>,
+    /** The hash tests.     */ #[serde(default)] hash    : Vec<Test>,
 }
 
 /// A test.

@@ -27,8 +27,8 @@ pub struct AssertError(pub String);
 #[derive(Debug, Error)]
 #[error("Both a TryElse's try and else returned an error: {try_error:?} + {else_error:?}")]
 pub struct TryElseError<E> {
-    /** The try's error.  **/ pub try_error : E,
-    /** The else's error. **/ pub else_error: E,
+    /** The try's error.  */ pub try_error : E,
+    /** The else's error. */ pub else_error: E,
 }
 
 /// Returned when all components in a `FirstNotError` variant fail.
@@ -45,12 +45,12 @@ pub struct SubjectIsNone;
 
 
 
-/** Returned when a required [`UrlPart`] isn't found.      **/ #[derive(Debug, Error)] #[error("A required UrlPart wasn't found."     )] pub struct UrlPartNotFound     ;
-/** Returned when a required string isn't found.           **/ #[derive(Debug, Error)] #[error("A required string wasn't found."      )] pub struct StringNotFound      ;
-/** Returned when a required [`List`] isn't found.         **/ #[derive(Debug, Error)] #[error("A required List wasn't found."        )] pub struct ListNotFound        ;
-/** Returned when a required [`Set`] isn't found.          **/ #[derive(Debug, Error)] #[error("A required Set wasn't found."         )] pub struct SetNotFound         ;
-/** Returned when a required [`Map`] isn't found.          **/ #[derive(Debug, Error)] #[error("A required Map wasn't found."         )] pub struct MapNotFound         ;
-/** Returned when a required [`Partitioning`] isn't found. **/ #[derive(Debug, Error)] #[error("A required Partitioning wasn't found.")] pub struct PartitioningNotFound;
+/** Returned when a required [`UrlPart`] isn't found.      */ #[derive(Debug, Error)] #[error("A required UrlPart wasn't found."     )] pub struct UrlPartNotFound     ;
+/** Returned when a required string isn't found.           */ #[derive(Debug, Error)] #[error("A required string wasn't found."      )] pub struct StringNotFound      ;
+/** Returned when a required [`List`] isn't found.         */ #[derive(Debug, Error)] #[error("A required List wasn't found."        )] pub struct ListNotFound        ;
+/** Returned when a required [`Set`] isn't found.          */ #[derive(Debug, Error)] #[error("A required Set wasn't found."         )] pub struct SetNotFound         ;
+/** Returned when a required [`Map`] isn't found.          */ #[derive(Debug, Error)] #[error("A required Map wasn't found."         )] pub struct MapNotFound         ;
+/** Returned when a required [`Partitioning`] isn't found. */ #[derive(Debug, Error)] #[error("A required Partitioning wasn't found.")] pub struct PartitioningNotFound;
 
 
 

@@ -17,7 +17,7 @@ pub fn make_opaque_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, s
 ///
 /// For the full process, see [`make_opaque_path`].
 pub fn percent_encode_opaque_path<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode(value, OPAQUE_PATH)
+    percent_encode(value, &OPAQUE_PATH)
 }
 
 
@@ -48,7 +48,7 @@ pub fn make_opaque_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Co
 ///
 /// For the full process, see [`make_opaque_path_bytes`].
 pub fn percent_encode_opaque_path_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode_bytes(value, OPAQUE_PATH)
+    percent_encode_bytes(value, &OPAQUE_PATH)
 }
 
 

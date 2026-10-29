@@ -20,7 +20,7 @@ impl<'a> MaybeNonSpecialQuery<'a> {
 
     /// The `index`th [`NonSpecialQuerySegment`] named `name`.
     pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<NonSpecialQuerySegment<'_>> {
-        self.find_iter(name.as_ref()).neg_nth(index)
+        self.find_iter(name).neg_nth(index)
     }
 }
 

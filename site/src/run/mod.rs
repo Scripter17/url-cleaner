@@ -17,9 +17,9 @@ use axum::{
     response::{IntoResponse, Response},
     http::{StatusCode, request::Parts},
 };
+use rustls_pki_types::pem::PemObject;
 use futures_util::StreamExt;
 use bytes::Bytes;
-use axum_server::tls_rustls::RustlsConfig;
 use thiserror::Error;
 use async_stream::stream;
 
@@ -28,8 +28,8 @@ use url_cleaner_engine::prelude::*;
 mod clean;
 mod userscript;
 
-/** The verson.     **/ const VERSION   : &str = env!("CARGO_PKG_VERSION"   );
-/** The repository. **/ const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
+/** The verson.     */ const VERSION   : &str = env!("CARGO_PKG_VERSION"   );
+/** The repository. */ const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 
 /// The welcome message.
 const WELCOME: &str = const_str::format!(
@@ -124,34 +124,32 @@ pub struct State {
 /// [`Args::do`].
 #[derive(Debug, Error)]
 pub enum RunError {
-    /** [`LoadCleanerError`].        **/ #[error(transparent)] LoadCleanerError       (#[from] LoadCleanerError       ),
-    /** [`LoadParamsDiffError`].     **/ #[error(transparent)] LoadParamsDiffError    (#[from] LoadParamsDiffError    ),
-    /** [`LoadProfilesConfigError`]. **/ #[error(transparent)] LoadProfilesConfigError(#[from] LoadProfilesConfigError),
-    /** [`LoadJobContextError`].     **/ #[error(transparent)] LoadJobContextError    (#[from] LoadJobContextError    ),
-    /** [`LoadSecretsError`].        **/ #[error(transparent)] LoadSecretsError       (#[from] LoadSecretsError       ),
+    /** [`LoadCleanerError`].        */ #[error(transparent)] LoadCleanerError       (#[from] LoadCleanerError       ),
+    /** [`LoadParamsDiffError`].     */ #[error(transparent)] LoadParamsDiffError    (#[from] LoadParamsDiffError    ),
+    /** [`LoadProfilesConfigError`]. */ #[error(transparent)] LoadProfilesConfigError(#[from] LoadProfilesConfigError),
+    /** [`LoadJobContextError`].     */ #[error(transparent)] LoadJobContextError    (#[from] LoadJobContextError    ),
+    /** [`LoadSecretsError`].        */ #[error(transparent)] LoadSecretsError       (#[from] LoadSecretsError       ),
 
-    /** [`RustlsConfig::from_pem_file`]. **/ #[error(transparent)] LoadTlsError(std::io::Error),
-    /** [`axum_server::Server::serve`].  **/ #[error(transparent)] ServeError  (std::io::Error),
+    /** [`rustls_pki_types::pem::Error`]. */ #[error(transparent)] LoadTlsError(#[from] rustls_pki_types::pem::Error),
+    /** [`axum::serve()`].                */ #[error(transparent)] ServeError  (        std::io::Error              ),
 }
 
-/** The [`Cleaner`]. **/ static CLEANER: OnceLock<Cleaner<'static>> = OnceLock::new();
-/** The [`State`].   **/ static STATE  : OnceLock<State           > = OnceLock::new();
+/** The [`Cleaner`]. */ static CLEANER: OnceLock<Cleaner<'static>> = OnceLock::new();
+/** The [`State`].   */ static STATE  : OnceLock<State           > = OnceLock::new();
 
 /// Info about the instance.
 #[derive(Debug, Serialize)]
 struct Info {
-    /** The version.                       **/ version          : &'static str,
-    /** The link to the source code.       **/ source_code      : &'static str,
-    /** If `/clean` requires a password.   **/ requires_password: bool,
-    /** If the `http` feature is enabled.  **/ supports_http    : bool,
-    /** If the `cache` feature is enabled. **/ supports_cache   : bool,
+    /** The version.                       */ version          : &'static str,
+    /** The link to the source code.       */ source_code      : &'static str,
+    /** If `/clean` requires a password.   */ requires_password: bool,
+    /** If the `http` feature is enabled.  */ supports_http    : bool,
+    /** If the `cache` feature is enabled. */ supports_cache   : bool,
 }
 
 impl Args {
     /// Do the command.
     pub async fn r#do(self) -> Result<(), RunError> {
-        let addr = std::net::SocketAddr::new(self.ip, self.port);
-
         let (cleaner_string, cleaner) = cfg_select! {
             feature = "bundled-cleaner" => Cleaner::load_or_new_bundled(self.cleaner)?,
             _                           => {{let (x, y) = Cleaner::load(self.cleaner)?; (x.into(), y)}},
@@ -165,10 +163,10 @@ impl Args {
 
         let secrets = Secrets::load_or_default(self.secrets)?;
 
-        let threads = self.threads.unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism."));
-
         #[cfg(feature = "http" )] let http_client  = HttpClient ::new(          ).await;
         #[cfg(feature = "cache")] let cache_client = CacheClient::new(self.cache).await;
+
+        let addr = std::net::SocketAddr::new(self.ip, self.port);
 
         let state = STATE.get_or_init(|| State {
             info: Info {
@@ -178,7 +176,7 @@ impl Args {
                 supports_http    : cfg_select!{feature = "http"  => true, _ => false},
                 supports_cache   : cfg_select!{feature = "cache" => true, _ => false},
             },
-            threads,
+            threads: self.threads.unwrap_or_else(|| std::thread::available_parallelism().expect("To be able to get the available parallelism.")),
             profiled_cleaner,
             cleaner_string,
             profiles_string,
@@ -195,18 +193,56 @@ impl Args {
             .route("/profiles"  , get(async |state: &'static State| &*state.profiles_string))
             .route("/clean"     , any(clean::clean))
             .route("/userscript", get(userscript::userscript))
-            .with_state(state).into_make_service();
+            .with_state(state);
 
         println!("{WELCOME}");
 
-        match state.tls {
-            true  => println!("https://{addr}"),
-            false => println!("http://{addr}" ),
-        }
-
         match self.key.zip(self.cert) {
-            Some((key, cert)) => axum_server::bind_rustls(addr, RustlsConfig::from_pem_file(cert, key).await.map_err(RunError::LoadTlsError)?).serve(app).await.map_err(RunError::ServeError)?,
-            None              => axum_server::bind       (addr                                                                               ).serve(app).await.map_err(RunError::ServeError)?,
+            Some((key, cert)) => {
+                println!("https://{addr}");
+
+                struct TlsListener {
+                    listener: tokio::net::TcpListener,
+                    acceptor: tokio_rustls::server::TlsAcceptor,
+                }
+
+                impl axum::serve::Listener for TlsListener {
+                    type Io = tokio_rustls::server::TlsStream<tokio::net::TcpStream>;
+                    type Addr = std::net::SocketAddr;
+
+                    async fn accept(&mut self) -> (Self::Io, Self::Addr) {
+                        // This is a very odd API design, but it seems you're meant to infinitely loop until a connection succeeds?
+                        // The docs don't say anything but the implementation does.
+                        loop {
+                            let (stream, addr) = axum::serve::Listener::accept(&mut self.listener).await;
+
+                            if let Ok(Ok(stream)) = tokio::time::timeout(tokio::time::Duration::from_secs(5), self.acceptor.accept(stream)).await {
+                                return (stream, addr);
+                            }
+                        }
+                    }
+
+                    fn local_addr(&self) -> std::io::Result<Self::Addr> {
+                        axum::serve::Listener::local_addr(&self.listener)
+                    }
+                }
+
+                let listener = tokio::net::TcpListener::bind(addr).await.expect("The socket was already in use");
+
+                let certs = rustls_pki_types::CertificateDer::pem_file_iter(cert)?.collect::<Result<Vec<_>, _>>()?;
+                let key   = rustls_pki_types::PrivateKeyDer ::from_pem_file(key )?;
+
+                let acceptor = tokio_rustls::server::TlsAcceptor::from(Arc::new(rustls::server::ServerConfig::builder().with_no_client_auth().with_single_cert(certs, key).expect("???")));
+
+                axum::serve(TlsListener {listener, acceptor}, app).await.map_err(RunError::ServeError)?;
+            },
+            None => {
+                println!("http://{addr}");
+
+                let listener = tokio::net::TcpListener::bind(addr).await.expect("The socket was already in use");
+
+                axum::serve(listener, app).await.map_err(RunError::ServeError)?;
+            },
         }
 
         Ok(())

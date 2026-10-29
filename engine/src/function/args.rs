@@ -58,5 +58,21 @@ pub struct FunctionArgs {
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub string_matchers: FxHashMap<String, StringMatcher>
+    pub string_matchers: FxHashMap<String, StringMatcher>,
+}
+
+impl FunctionArgs {
+    /// If every field is empty.
+    pub fn is_empty(&self) -> bool {
+        self.flags                      .is_empty()
+            && self.vars                .is_empty()
+            && self.sets                .is_empty()
+            && self.lists               .is_empty()
+            && self.maps                .is_empty()
+            && self.conditions          .is_empty()
+            && self.actions             .is_empty()
+            && self.string_sources      .is_empty()
+            && self.string_modifications.is_empty()
+            && self.string_matchers     .is_empty()
+    }
 }

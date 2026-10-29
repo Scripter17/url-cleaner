@@ -8,8 +8,8 @@ mod set;
 /// Either [`Query`] or [`FragmentQuery`].
 #[derive(Debug, Clone)]
 pub enum QueryLike<'a> {
-    /** [`Query`].         **/ Query   (Query        <'a>),
-    /** [`FragmentQuery`]. **/ Fragment(FragmentQuery<'a>),
+    /** [`Query`].         */ Query   (Query        <'a>),
+    /** [`FragmentQuery`]. */ Fragment(FragmentQuery<'a>),
 }
 
 impl<'a> QueryLike<'a> {
@@ -39,10 +39,10 @@ impl<'a> QueryLike<'a> {
         }
     }
 
-    /** [`Query::new`].           **/ pub fn new_query            <T: Into<SpecialQuery   <'a>> + Into<NonSpecialQuery<'a>>>(value: T, r#type: QueryType) -> Self {Query          ::new(value, r#type).into()}
-    /** [`SpecialQuery::new`].    **/ pub fn new_special_query    <T: Into<SpecialQuery   <'a>>                            >(value: T                   ) -> Self {SpecialQuery   ::new(value        ).into()}
-    /** [`NonSpecialQuery::new`]. **/ pub fn new_non_special_query<T: Into<NonSpecialQuery<'a>>                            >(value: T                   ) -> Self {NonSpecialQuery::new(value        ).into()}
-    /** [`FragmentQuery::new`].   **/ pub fn new_fragment         <T: Into<FragmentQuery  <'a>>                            >(value: T                   ) -> Self {FragmentQuery  ::new(value        ).into()}
+    /** [`Query::new`].           */ pub fn new_query            <T: Into<SpecialQuery   <'a>> + Into<NonSpecialQuery<'a>>>(value: T, r#type: QueryType) -> Self {Query          ::new(value, r#type).into()}
+    /** [`SpecialQuery::new`].    */ pub fn new_special_query    <T: Into<SpecialQuery   <'a>>                            >(value: T                   ) -> Self {SpecialQuery   ::new(value        ).into()}
+    /** [`NonSpecialQuery::new`]. */ pub fn new_non_special_query<T: Into<NonSpecialQuery<'a>>                            >(value: T                   ) -> Self {NonSpecialQuery::new(value        ).into()}
+    /** [`FragmentQuery::new`].   */ pub fn new_fragment         <T: Into<FragmentQuery  <'a>>                            >(value: T                   ) -> Self {FragmentQuery  ::new(value        ).into()}
 
 
 

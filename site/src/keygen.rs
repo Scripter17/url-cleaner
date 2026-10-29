@@ -21,11 +21,11 @@ pub struct Args {
     #[arg(long)]
     pub domains: Vec<DomainHost<'static>>,
 
-    /** OVerwrite the existing CA key.    **/ #[arg(long)] pub overwrite_ca_key   : bool,
-    /** OVerwrite the existing CA cert.   **/ #[arg(long)] pub overwrite_ca_cert  : bool,
-    /** Overwrite the existing Site key.  **/ #[arg(long)] pub overwrite_site_key : bool,
-    /** Overwrite the existing Site csr.  **/ #[arg(long)] pub overwrite_site_csr : bool,
-    /** Overwrite the existing Site cert. **/ #[arg(long)] pub overwrite_site_cert: bool,
+    /** OVerwrite the existing CA key.    */ #[arg(long)] pub overwrite_ca_key   : bool,
+    /** OVerwrite the existing CA cert.   */ #[arg(long)] pub overwrite_ca_cert  : bool,
+    /** Overwrite the existing Site key.  */ #[arg(long)] pub overwrite_site_key : bool,
+    /** Overwrite the existing Site csr.  */ #[arg(long)] pub overwrite_site_csr : bool,
+    /** Overwrite the existing Site cert. */ #[arg(long)] pub overwrite_site_cert: bool,
 }
 
 /// [`Args::do`].

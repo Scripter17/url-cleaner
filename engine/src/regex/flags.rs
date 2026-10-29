@@ -79,23 +79,23 @@ impl RegexFlags {
         Ok(ret)
     }
 
-    /** Get [`regex::RegexBuilder::case_insensitive`].     **/ pub const fn case_insensitive    (self) -> bool {self.0 & 0b0000_0001 != 0}
-    /** Get [`regex::RegexBuilder::crlf`].                 **/ pub const fn crlf                (self) -> bool {self.0 & 0b0000_0010 != 0}
-    /** Get [`regex::RegexBuilder::dot_matches_new_line`]. **/ pub const fn dot_matches_new_line(self) -> bool {self.0 & 0b0000_0100 != 0}
-    /** Get [`regex::RegexBuilder::ignore_whitespace`].    **/ pub const fn ignore_whitespace   (self) -> bool {self.0 & 0b0000_1000 != 0}
-    /** Get [`regex::RegexBuilder::multi_line`].           **/ pub const fn multi_line          (self) -> bool {self.0 & 0b0001_0000 != 0}
-    /** Get [`regex::RegexBuilder::octal`].                **/ pub const fn octal               (self) -> bool {self.0 & 0b0010_0000 != 0}
-    /** Get [`regex::RegexBuilder::swap_greed`].           **/ pub const fn swap_greed          (self) -> bool {self.0 & 0b0100_0000 != 0}
-    /** Get [`regex::RegexBuilder::unicode`].              **/ pub const fn unicode             (self) -> bool {self.0 & 0b1000_0000 != 0}
+    /** Get [`regex::RegexBuilder::case_insensitive`].     */ pub const fn case_insensitive    (self) -> bool {self.0 & 0b0000_0001 != 0}
+    /** Get [`regex::RegexBuilder::crlf`].                 */ pub const fn crlf                (self) -> bool {self.0 & 0b0000_0010 != 0}
+    /** Get [`regex::RegexBuilder::dot_matches_new_line`]. */ pub const fn dot_matches_new_line(self) -> bool {self.0 & 0b0000_0100 != 0}
+    /** Get [`regex::RegexBuilder::ignore_whitespace`].    */ pub const fn ignore_whitespace   (self) -> bool {self.0 & 0b0000_1000 != 0}
+    /** Get [`regex::RegexBuilder::multi_line`].           */ pub const fn multi_line          (self) -> bool {self.0 & 0b0001_0000 != 0}
+    /** Get [`regex::RegexBuilder::octal`].                */ pub const fn octal               (self) -> bool {self.0 & 0b0010_0000 != 0}
+    /** Get [`regex::RegexBuilder::swap_greed`].           */ pub const fn swap_greed          (self) -> bool {self.0 & 0b0100_0000 != 0}
+    /** Get [`regex::RegexBuilder::unicode`].              */ pub const fn unicode             (self) -> bool {self.0 & 0b1000_0000 != 0}
 
-    /** Set [`regex::RegexBuilder::case_insensitive`].     **/ pub const fn set_case_insensitive    (&mut self, value: bool) {self.0 = (self.0 & 0b1111_1110) | (value as u8)     ;}
-    /** Set [`regex::RegexBuilder::crlf`].                 **/ pub const fn set_crlf                (&mut self, value: bool) {self.0 = (self.0 & 0b1111_1101) | (value as u8) << 1;}
-    /** Set [`regex::RegexBuilder::dot_matches_new_line`]. **/ pub const fn set_dot_matches_new_line(&mut self, value: bool) {self.0 = (self.0 & 0b1111_1011) | (value as u8) << 2;}
-    /** Set [`regex::RegexBuilder::ignore_whitespace`].    **/ pub const fn set_ignore_whitespace   (&mut self, value: bool) {self.0 = (self.0 & 0b1111_0111) | (value as u8) << 3;}
-    /** Set [`regex::RegexBuilder::multi_line`].           **/ pub const fn set_multi_line          (&mut self, value: bool) {self.0 = (self.0 & 0b1110_1111) | (value as u8) << 4;}
-    /** Set [`regex::RegexBuilder::octal`].                **/ pub const fn set_octal               (&mut self, value: bool) {self.0 = (self.0 & 0b1101_1111) | (value as u8) << 5;}
-    /** Set [`regex::RegexBuilder::swap_greed`].           **/ pub const fn set_swap_greed          (&mut self, value: bool) {self.0 = (self.0 & 0b1011_1111) | (value as u8) << 6;}
-    /** Set [`regex::RegexBuilder::unicode`].              **/ pub const fn set_unicode             (&mut self, value: bool) {self.0 = (self.0 & 0b0111_1111) | (value as u8) << 7;}
+    /** Set [`regex::RegexBuilder::case_insensitive`].     */ pub const fn set_case_insensitive    (&mut self, value: bool) {self.0 = (self.0 & 0b1111_1110) | (value as u8)     ;}
+    /** Set [`regex::RegexBuilder::crlf`].                 */ pub const fn set_crlf                (&mut self, value: bool) {self.0 = (self.0 & 0b1111_1101) | (value as u8) << 1;}
+    /** Set [`regex::RegexBuilder::dot_matches_new_line`]. */ pub const fn set_dot_matches_new_line(&mut self, value: bool) {self.0 = (self.0 & 0b1111_1011) | (value as u8) << 2;}
+    /** Set [`regex::RegexBuilder::ignore_whitespace`].    */ pub const fn set_ignore_whitespace   (&mut self, value: bool) {self.0 = (self.0 & 0b1111_0111) | (value as u8) << 3;}
+    /** Set [`regex::RegexBuilder::multi_line`].           */ pub const fn set_multi_line          (&mut self, value: bool) {self.0 = (self.0 & 0b1110_1111) | (value as u8) << 4;}
+    /** Set [`regex::RegexBuilder::octal`].                */ pub const fn set_octal               (&mut self, value: bool) {self.0 = (self.0 & 0b1101_1111) | (value as u8) << 5;}
+    /** Set [`regex::RegexBuilder::swap_greed`].           */ pub const fn set_swap_greed          (&mut self, value: bool) {self.0 = (self.0 & 0b1011_1111) | (value as u8) << 6;}
+    /** Set [`regex::RegexBuilder::unicode`].              */ pub const fn set_unicode             (&mut self, value: bool) {self.0 = (self.0 & 0b0111_1111) | (value as u8) << 7;}
 }
 
 impl FromStr for RegexFlags {

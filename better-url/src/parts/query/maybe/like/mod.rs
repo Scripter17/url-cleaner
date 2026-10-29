@@ -9,8 +9,8 @@ mod filter;
 /// Either [`MaybeQuery`] or [`MaybeFragmentQuery`].
 #[derive(Debug, Clone)]
 pub enum MaybeQueryLike<'a> {
-    /** [`MaybeQuery`].         **/ Query   (MaybeQuery        <'a>),
-    /** [`MaybeFragmentQuery`]. **/ Fragment(MaybeFragmentQuery<'a>),
+    /** [`MaybeQuery`].         */ Query   (MaybeQuery        <'a>),
+    /** [`MaybeFragmentQuery`]. */ Fragment(MaybeFragmentQuery<'a>),
 }
 
 impl<'a> MaybeQueryLike<'a> {
@@ -30,9 +30,9 @@ impl<'a> MaybeQueryLike<'a> {
         }
     }
 
-    /** [`MaybeSpecialQuery::new`].    **/ pub fn new_special_query    <T: Into<MaybeSpecialQuery   <'a>>>(value: T) -> Self {MaybeSpecialQuery   ::new(value).into()}
-    /** [`MaybeNonSpecialQuery::new`]. **/ pub fn new_non_special_query<T: Into<MaybeNonSpecialQuery<'a>>>(value: T) -> Self {MaybeNonSpecialQuery::new(value).into()}
-    /** [`MaybeFragmentQuery::new`].   **/ pub fn new_fragment         <T: Into<MaybeFragmentQuery  <'a>>>(value: T) -> Self {MaybeFragmentQuery  ::new(value).into()}
+    /** [`MaybeSpecialQuery::new`].    */ pub fn new_special_query    <T: Into<MaybeSpecialQuery   <'a>>>(value: T) -> Self {MaybeSpecialQuery   ::new(value).into()}
+    /** [`MaybeNonSpecialQuery::new`]. */ pub fn new_non_special_query<T: Into<MaybeNonSpecialQuery<'a>>>(value: T) -> Self {MaybeNonSpecialQuery::new(value).into()}
+    /** [`MaybeFragmentQuery::new`].   */ pub fn new_fragment         <T: Into<MaybeFragmentQuery  <'a>>>(value: T) -> Self {MaybeFragmentQuery  ::new(value).into()}
 
 
 

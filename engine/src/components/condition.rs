@@ -186,27 +186,27 @@ pub enum Condition {
 
     // Whole
 
-    /** [`BetterUrl::is_special`].          **/ UrlIsSpecial,
-    /** [`BetterUrl::is_special_not_file`]. **/ UrlIsSpecialNotFile,
-    /** [`BetterUrl::is_file`].             **/ UrlIsFile,
-    /** [`BetterUrl::is_non_special`].      **/ UrlIsNonSpecial,
+    /** [`BetterUrl::is_special`].          */ UrlIsSpecial,
+    /** [`BetterUrl::is_special_not_file`]. */ UrlIsSpecialNotFile,
+    /** [`BetterUrl::is_file`].             */ UrlIsFile,
+    /** [`BetterUrl::is_non_special`].      */ UrlIsNonSpecial,
 
     // Scheme
 
-    /** [`BetterUrl::scheme_str`] + [`PartialEq::eq`].      **/ SchemeIs(StringSource),
-    /** [`BetterUrl::scheme_str`] + [`Set::contains_some`]. **/ SchemeIsInSet(SetSource),
-    /** [`SchemeDetails::is_http`].                         **/ SchemeIsHttp,
-    /** [`SchemeDetails::is_https`].                        **/ SchemeIsHttps,
-    /** [`SchemeDetails::is_http_or_https`].                **/ SchemeIsHttpOrHttps,
+    /** [`BetterUrl::scheme_str`] + [`PartialEq::eq`].      */ SchemeIs(StringSource),
+    /** [`BetterUrl::scheme_str`] + [`Set::contains_some`]. */ SchemeIsInSet(SetSource),
+    /** [`SchemeDetails::is_http`].                         */ SchemeIsHttp,
+    /** [`SchemeDetails::is_https`].                        */ SchemeIsHttps,
+    /** [`SchemeDetails::is_http_or_https`].                */ SchemeIsHttpOrHttps,
 
     // Host is
 
-    /** [`BetterUrl::host_str`]          + [`PartialEq::eq`]. **/ HostIs        (StringSource),
-    /** [`BetterUrl::domain_normal_str`] + [`PartialEq::eq`]. **/ DomainNormalIs(StringSource),
-    /** [`BetterUrl::domain_origin_str`] + [`PartialEq::eq`]. **/ DomainOriginIs(StringSource),
-    /** [`BetterUrl::domain_prefix_str`] + [`PartialEq::eq`]. **/ DomainPrefixIs(StringSource),
-    /** [`BetterUrl::domain_middle_str`] + [`PartialEq::eq`]. **/ DomainMiddleIs(StringSource),
-    /** [`BetterUrl::domain_suffix_str`] + [`PartialEq::eq`]. **/ DomainSuffixIs(StringSource),
+    /** [`BetterUrl::host_str`]          + [`PartialEq::eq`]. */ HostIs        (StringSource),
+    /** [`BetterUrl::domain_normal_str`] + [`PartialEq::eq`]. */ DomainNormalIs(StringSource),
+    /** [`BetterUrl::domain_origin_str`] + [`PartialEq::eq`]. */ DomainOriginIs(StringSource),
+    /** [`BetterUrl::domain_prefix_str`] + [`PartialEq::eq`]. */ DomainPrefixIs(StringSource),
+    /** [`BetterUrl::domain_middle_str`] + [`PartialEq::eq`]. */ DomainMiddleIs(StringSource),
+    /** [`BetterUrl::domain_suffix_str`] + [`PartialEq::eq`]. */ DomainSuffixIs(StringSource),
 
 
 
@@ -241,12 +241,12 @@ pub enum Condition {
 
     // Host is in set
 
-    /** [`BetterUrl::host_str`]          + [`Set::contains`]. **/ HostIsInSet        (SetSource),
-    /** [`BetterUrl::domain_normal_str`] + [`Set::contains`]. **/ DomainNormalIsInSet(SetSource),
-    /** [`BetterUrl::domain_prefix_str`] + [`Set::contains`]. **/ DomainPrefixIsInSet(SetSource),
-    /** [`BetterUrl::domain_origin_str`] + [`Set::contains`]. **/ DomainOriginIsInSet(SetSource),
-    /** [`BetterUrl::domain_middle_str`] + [`Set::contains`]. **/ DomainMiddleIsInSet(SetSource),
-    /** [`BetterUrl::domain_suffix_str`] + [`Set::contains`]. **/ DomainSuffixIsInSet(SetSource),
+    /** [`BetterUrl::host_str`]          + [`Set::contains`]. */ HostIsInSet        (SetSource),
+    /** [`BetterUrl::domain_normal_str`] + [`Set::contains`]. */ DomainNormalIsInSet(SetSource),
+    /** [`BetterUrl::domain_prefix_str`] + [`Set::contains`]. */ DomainPrefixIsInSet(SetSource),
+    /** [`BetterUrl::domain_origin_str`] + [`Set::contains`]. */ DomainOriginIsInSet(SetSource),
+    /** [`BetterUrl::domain_middle_str`] + [`Set::contains`]. */ DomainMiddleIsInSet(SetSource),
+    /** [`BetterUrl::domain_suffix_str`] + [`Set::contains`]. */ DomainSuffixIsInSet(SetSource),
 
 
 
@@ -281,44 +281,44 @@ pub enum Condition {
 
     // Misc. host
 
-    /** [`BetterUrl::has_host`].       **/ UrlHasHost,
-    /** [`BetterUrl::host_is_domain`]. **/ HostIsDomain,
-    /** [`BetterUrl::host_is_ipv4`].   **/ HostIsIpv4,
-    /** [`BetterUrl::host_is_ipv6`].   **/ HostIsIpv6,
-    /** [`BetterUrl::host_is_opaque`]. **/ HostIsOpaque,
-    /** [`BetterUrl::host_is_empty`].  **/ HostIsEmpty,
+    /** [`BetterUrl::has_host`].       */ UrlHasHost,
+    /** [`BetterUrl::host_is_domain`]. */ HostIsDomain,
+    /** [`BetterUrl::host_is_ipv4`].   */ HostIsIpv4,
+    /** [`BetterUrl::host_is_ipv6`].   */ HostIsIpv6,
+    /** [`BetterUrl::host_is_opaque`]. */ HostIsOpaque,
+    /** [`BetterUrl::host_is_empty`].  */ HostIsEmpty,
 
-    /** [`BetterUrl::has_domain_prefix`]. **/ UrlHasDomainPrefix,
-    /** [`BetterUrl::has_domain_middle`]. **/ UrlHasDomainMiddle,
-    /** [`BetterUrl::has_domain_suffix`]. **/ UrlHasDomainSuffix,
-    /** [`BetterUrl::has_domain_origin`]. **/ UrlHasDomainOrigin,
-    /** [`BetterUrl::has_domain_labels`]. **/ UrlHasDomainLabels,
-    /** [`BetterUrl::has_domain_normal`]. **/ UrlHasDomainNormal,
+    /** [`BetterUrl::has_domain_prefix`]. */ UrlHasDomainPrefix,
+    /** [`BetterUrl::has_domain_middle`]. */ UrlHasDomainMiddle,
+    /** [`BetterUrl::has_domain_suffix`]. */ UrlHasDomainSuffix,
+    /** [`BetterUrl::has_domain_origin`]. */ UrlHasDomainOrigin,
+    /** [`BetterUrl::has_domain_labels`]. */ UrlHasDomainLabels,
+    /** [`BetterUrl::has_domain_normal`]. */ UrlHasDomainNormal,
 
-    /** [`Ipv4HostDetails::is_broadcast`].     **/ HostIsBroadcastIpv4,
-    /** [`Ipv4HostDetails::is_documentation`]. **/ HostIsDocumentationIpv4,
-    /** [`Ipv4HostDetails::is_link_local`].    **/ HostIsLinkLocalIpv4,
-    /** [`Ipv4HostDetails::is_loopback`].      **/ HostIsLoopbackIpv4,
-    /** [`Ipv4HostDetails::is_multicast`].     **/ HostIsMulticastIpv4,
-    /** [`Ipv4HostDetails::is_private`].       **/ HostIsPrivateIpv4,
-    /** [`Ipv4HostDetails::is_unspecified`].   **/ HostIsUnspecifiedIpv4,
+    /** [`Ipv4HostDetails::is_broadcast`].     */ HostIsBroadcastIpv4,
+    /** [`Ipv4HostDetails::is_documentation`]. */ HostIsDocumentationIpv4,
+    /** [`Ipv4HostDetails::is_link_local`].    */ HostIsLinkLocalIpv4,
+    /** [`Ipv4HostDetails::is_loopback`].      */ HostIsLoopbackIpv4,
+    /** [`Ipv4HostDetails::is_multicast`].     */ HostIsMulticastIpv4,
+    /** [`Ipv4HostDetails::is_private`].       */ HostIsPrivateIpv4,
+    /** [`Ipv4HostDetails::is_unspecified`].   */ HostIsUnspecifiedIpv4,
 
-    /** [`Ipv6HostDetails::is_loopback`].           **/ HostIsLoopbackIpv6,
-    /** [`Ipv6HostDetails::is_unicast_link_local`]. **/ HostIsUnicastLinkLocalIpv6,
-    /** [`Ipv6HostDetails::is_multicast`].          **/ HostIsMulticastIpv6,
-    /** [`Ipv6HostDetails::is_unique_local`].       **/ HostIsUniqueLocalIpv6,
-    /** [`Ipv6HostDetails::is_unspecified`].        **/ HostIsUnspecifiedIpv6,
+    /** [`Ipv6HostDetails::is_loopback`].           */ HostIsLoopbackIpv6,
+    /** [`Ipv6HostDetails::is_unicast_link_local`]. */ HostIsUnicastLinkLocalIpv6,
+    /** [`Ipv6HostDetails::is_multicast`].          */ HostIsMulticastIpv6,
+    /** [`Ipv6HostDetails::is_unique_local`].       */ HostIsUniqueLocalIpv6,
+    /** [`Ipv6HostDetails::is_unspecified`].        */ HostIsUnspecifiedIpv6,
 
     // Path
 
-    /** [`BetterUrl::path_is_segmented`]. **/ PathIsSegmented,
-    /** [`BetterUrl::path_is_opaque`].    **/ PathIsOpaque,
-    /** [`BetterUrl::has_path_segment`].  **/ PathHasSegment(isize),
+    /** [`BetterUrl::path_is_segmented`]. */ PathIsSegmented,
+    /** [`BetterUrl::path_is_opaque`].    */ PathIsOpaque,
+    /** [`BetterUrl::has_path_segment`].  */ PathHasSegment(isize),
 
-    /** If [`BetterUrl::path_str`] + [`PartialEq::eq`].      **/ PathIs        (StringSource),
-    /** If [`BetterUrl::path_str`] + [`Set::contains_some`]. **/ PathIsInSet   (SetSource),
-    /** If [`BetterUrl::path_str`] + [`str::starts_with`].   **/ PathStartsWith(StringSource),
-    /** If [`BetterUrl::path_str`] + [`str::ends_with`].     **/ PathEndsWith  (StringSource),
+    /** If [`BetterUrl::path_str`] + [`PartialEq::eq`].      */ PathIs        (StringSource),
+    /** If [`BetterUrl::path_str`] + [`Set::contains_some`]. */ PathIsInSet   (SetSource),
+    /** If [`BetterUrl::path_str`] + [`str::starts_with`].   */ PathStartsWith(StringSource),
+    /** If [`BetterUrl::path_str`] + [`str::ends_with`].     */ PathEndsWith  (StringSource),
     /// If [`BetterUrl::path_str`] + [`StringLocation::check`].
     PathContains {
         /// The value to check for.

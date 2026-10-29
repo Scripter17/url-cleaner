@@ -33,10 +33,12 @@ macro_rules! try_from_cow_bytes_or_str {
             impl<'a> TryFrom<&'a String       > for $t<'a     > {type Error = <Self as TryFrom<Cow<'a     , str >>>::Error;fn try_from(value: &'a String       ) -> Result<Self, Self::Error> {Cow::<str> ::Borrowed(value).try_into()}}
             impl<'a> TryFrom<&'a Cow<'_, str> > for $t<'a     > {type Error = <Self as TryFrom<Cow<'a     , str >>>::Error;fn try_from(value: &'a Cow<'_, str> ) -> Result<Self, Self::Error> {Cow::<str> ::Borrowed(value).try_into()}}
 
-            impl<'a> TryFrom<&'a [u8]         > for $t<'a     > {type Error = <Self as TryFrom<Cow<'a     , [u8]>>>::Error;fn try_from(value: &'a [u8]         ) -> Result<Self, Self::Error> {Cow::<[u8]>::Borrowed(value).try_into()}}
-            impl     TryFrom<    Vec<u8>      > for $t<'static> {type Error = <Self as TryFrom<Cow<'static, [u8]>>>::Error;fn try_from(value:     Vec<u8>      ) -> Result<Self, Self::Error> {Cow::<[u8]>::Owned   (value).try_into()}}
-            impl<'a> TryFrom<&'a Vec<u8>      > for $t<'a     > {type Error = <Self as TryFrom<Cow<'a     , [u8]>>>::Error;fn try_from(value: &'a Vec<u8>      ) -> Result<Self, Self::Error> {Cow::<[u8]>::Borrowed(value).try_into()}}
-            impl<'a> TryFrom<&'a Cow<'_, [u8]>> for $t<'a     > {type Error = <Self as TryFrom<Cow<'a     , [u8]>>>::Error;fn try_from(value: &'a Cow<'_, [u8]>) -> Result<Self, Self::Error> {Cow::<[u8]>::Borrowed(value).try_into()}}
+            impl<'a                > TryFrom<&'a [u8]            > for $t<'a     > {type Error = <Self as TryFrom<Cow<'a     , [u8]>>>::Error;fn try_from(value: &'a [u8]            ) -> Result<Self, Self::Error> {Cow::<[u8]>::Borrowed(   value).try_into()}}
+            impl<'a, const N: usize> TryFrom<&'a [u8; N]         > for $t<'a     > {type Error = <Self as TryFrom<Cow<'a     , [u8]>>>::Error;fn try_from(value: &'a [u8; N]         ) -> Result<Self, Self::Error> {Cow::<[u8]>::Borrowed(   value).try_into()}}
+            impl                     TryFrom<    Vec<u8>         > for $t<'static> {type Error = <Self as TryFrom<Cow<'static, [u8]>>>::Error;fn try_from(value:     Vec<u8>         ) -> Result<Self, Self::Error> {Cow::<[u8]>::Owned   (   value).try_into()}}
+            impl<'a                > TryFrom<&'a Vec<u8>         > for $t<'a     > {type Error = <Self as TryFrom<Cow<'a     , [u8]>>>::Error;fn try_from(value: &'a Vec<u8>         ) -> Result<Self, Self::Error> {Cow::<[u8]>::Borrowed(   value).try_into()}}
+            impl<'a                > TryFrom<&'a Cow<'_, [u8]>   > for $t<'a     > {type Error = <Self as TryFrom<Cow<'a     , [u8]>>>::Error;fn try_from(value: &'a Cow<'_, [u8]>   ) -> Result<Self, Self::Error> {Cow::<[u8]>::Borrowed(   value).try_into()}}
+            impl<'a, const N: usize> TryFrom<&'a Cow<'_, [u8; N]>> for $t<'a     > {type Error = <Self as TryFrom<Cow<'a     , [u8]>>>::Error;fn try_from(value: &'a Cow<'_, [u8; N]>) -> Result<Self, Self::Error> {Cow::<[u8]>::Borrowed(&**value).try_into()}}
         )*
     };
 }

@@ -6,8 +6,8 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum QueryLikeType {
-    /** [`QueryLike::Query`].    **/ Query(QueryType),
-    /** [`QueryLike::Fragment`]. **/ Fragment,
+    /** [`QueryLike::Query`].    */ Query(QueryType),
+    /** [`QueryLike::Fragment`]. */ Fragment,
 }
 
 impl From<QueryType> for QueryLikeType {
@@ -20,8 +20,8 @@ impl From<QueryType> for QueryLikeType {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum QueryType {
-    /** [`Query::Special`].    **/ Special   ,
-    /** [`Query::NonSpecial`]. **/ NonSpecial,
+    /** [`Query::Special`].    */ Special   ,
+    /** [`Query::NonSpecial`]. */ NonSpecial,
 }
 
 impl From<SchemeType> for QueryType {

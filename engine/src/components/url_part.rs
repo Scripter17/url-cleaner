@@ -8,32 +8,32 @@ use crate::prelude::*;
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub enum UrlPart {
-    /** [`BetterUrl::as_str`].       **/ Whole,
+    /** [`BetterUrl::as_str`].       */ Whole,
 
-    /** [`BetterUrl::scheme_str`].   **/ Scheme,
+    /** [`BetterUrl::scheme_str`].   */ Scheme,
 
-    /** [`BetterUrl::userinfo_str`]. **/ Userinfo,
-    /** [`BetterUrl::username_str`]. **/ Username,
-    /** [`BetterUrl::password_str`]. **/ Password,
-
-
-
-    /** [`BetterUrl::host_str`].     **/ Host,
-
-    /** [`BetterUrl::domain_prefix_str`]. **/ DomainPrefix,
-    /** [`BetterUrl::domain_middle_str`]. **/ DomainMiddle,
-    /** [`BetterUrl::domain_suffix_str`]. **/ DomainSuffix,
-    /** [`BetterUrl::domain_origin_str`]. **/ DomainOrigin,
-    /** [`BetterUrl::domain_labels_str`]. **/ DomainLabels,
-    /** [`BetterUrl::domain_normal_str`]. **/ DomainNormal,
+    /** [`BetterUrl::userinfo_str`]. */ Userinfo,
+    /** [`BetterUrl::username_str`]. */ Username,
+    /** [`BetterUrl::password_str`]. */ Password,
 
 
 
-    /** [`BetterUrl::domain_segment_str`].        **/ DomainSegment(isize),
-    /** [`BetterUrl::domain_prefix_segment_str`]. **/ DomainPrefixSegment(isize),
-    /** [`BetterUrl::domain_suffix_segment_str`]. **/ DomainSuffixSegment(isize),
-    /** [`BetterUrl::domain_origin_segment_str`]. **/ DomainOriginSegment(isize),
-    /** [`BetterUrl::domain_normal_segment_str`]. **/ DomainNormalSegment(isize),
+    /** [`BetterUrl::host_str`].     */ Host,
+
+    /** [`BetterUrl::domain_prefix_str`]. */ DomainPrefix,
+    /** [`BetterUrl::domain_middle_str`]. */ DomainMiddle,
+    /** [`BetterUrl::domain_suffix_str`]. */ DomainSuffix,
+    /** [`BetterUrl::domain_origin_str`]. */ DomainOrigin,
+    /** [`BetterUrl::domain_labels_str`]. */ DomainLabels,
+    /** [`BetterUrl::domain_normal_str`]. */ DomainNormal,
+
+
+
+    /** [`BetterUrl::domain_segment_str`].        */ DomainSegment(isize),
+    /** [`BetterUrl::domain_prefix_segment_str`]. */ DomainPrefixSegment(isize),
+    /** [`BetterUrl::domain_suffix_segment_str`]. */ DomainSuffixSegment(isize),
+    /** [`BetterUrl::domain_origin_segment_str`]. */ DomainOriginSegment(isize),
+    /** [`BetterUrl::domain_normal_segment_str`]. */ DomainNormalSegment(isize),
 
     /// [`BetterUrl::domain_range_str`].
     DomainSegmentRange {
@@ -93,13 +93,13 @@ pub enum UrlPart {
 
 
 
-    /** [`BetterUrl::port_str`]. **/ Port,
+    /** [`BetterUrl::port_str`]. */ Port,
 
 
 
-    /** [`BetterUrl::path_str`].                                     **/ Path,
-    /** [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`]. **/ PathSegment(isize),
-    /** [`BetterUrl::path_segment_str`].                             **/ RawPathSegment(isize),
+    /** [`BetterUrl::path_str`].                                     */ Path,
+    /** [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`]. */ PathSegment(isize),
+    /** [`BetterUrl::path_segment_str`].                             */ RawPathSegment(isize),
 
     /// [`BetterUrl::path_segment_range_str`].
     RawPathSegmentRange {
@@ -113,13 +113,13 @@ pub enum UrlPart {
         #[serde(default = "unbounded", skip_serializing_if = "is_unbounded")] end  : Bound<isize>,
     },
 
-    /** [`BetterUrl::query_str`].                                                                      **/ Query,
-    /** [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`]. **/ QueryParam(QueryParamSelector),
-    /** [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].   **/ RawQueryParam(QueryParamSelector),
+    /** [`BetterUrl::query_str`].                                                                      */ Query,
+    /** [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::lossy_decode`]. */ QueryParam(QueryParamSelector),
+    /** [`BetterUrl::query_param`] + [`QuerySegment::into_value`] + [`MaybeQueryValue::into_inner`].   */ RawQueryParam(QueryParamSelector),
 
-    /** [`BetterUrl::fragment_str`].                                                                                            **/ Fragment,
-    /** [`BetterUrl::fragment_query_param`] + [`FragmentQuerySegment::into_value`] + [`MaybeFragmentQueryValue::lossy_decode`]. **/ FragmentParam(QueryParamSelector),
-    /** [`BetterUrl::fragment_query_param`] + [`FragmentQuerySegment::into_value`] + [`MaybeFragmentQueryValue::into_inner`].   **/ RawFragmentParam(QueryParamSelector),
+    /** [`BetterUrl::fragment_str`].                                                                                            */ Fragment,
+    /** [`BetterUrl::fragment_query_param`] + [`FragmentQuerySegment::into_value`] + [`MaybeFragmentQueryValue::lossy_decode`]. */ FragmentParam(QueryParamSelector),
+    /** [`BetterUrl::fragment_query_param`] + [`FragmentQuerySegment::into_value`] + [`MaybeFragmentQueryValue::into_inner`].   */ RawFragmentParam(QueryParamSelector),
 }
 
 impl UrlPart {

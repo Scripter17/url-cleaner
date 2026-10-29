@@ -20,6 +20,6 @@ impl<'a> NonSpecialQuery<'a> {
 
     /// The `index`th [`NonSpecialQuerySegment`] whose [`NonSpecialQueryName::decode`] is `name`.
     pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<NonSpecialQuerySegment<'_>> {
-        self.find_iter(name.as_ref()).neg_nth(index)
+        self.find_iter(name).neg_nth(index)
     }
 }

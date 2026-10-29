@@ -8,8 +8,8 @@ mod set;
 /// Either [`SpecialQuery`] or [`NonSpecialQuery`].
 #[derive(Debug, Clone)]
 pub enum Query<'a> {
-    /** [`SpecialQuery`].    **/ Special   (SpecialQuery   <'a>),
-    /** [`NonSpecialQuery`]. **/ NonSpecial(NonSpecialQuery<'a>),
+    /** [`SpecialQuery`].    */ Special   (SpecialQuery   <'a>),
+    /** [`NonSpecialQuery`]. */ NonSpecial(NonSpecialQuery<'a>),
 }
 
 impl<'a> Query<'a> {
@@ -44,8 +44,8 @@ impl<'a> Query<'a> {
         }
     }
 
-    /** [`SpecialQuery::new`].    **/ pub fn new_special    <T: Into<SpecialQuery   <'a>>>(value: T) -> Self {SpecialQuery   ::new(value).into()}
-    /** [`NonSpecialQuery::new`]. **/ pub fn new_non_special<T: Into<NonSpecialQuery<'a>>>(value: T) -> Self {NonSpecialQuery::new(value).into()}
+    /** [`SpecialQuery::new`].    */ pub fn new_special    <T: Into<SpecialQuery   <'a>>>(value: T) -> Self {SpecialQuery   ::new(value).into()}
+    /** [`NonSpecialQuery::new`]. */ pub fn new_non_special<T: Into<NonSpecialQuery<'a>>>(value: T) -> Self {NonSpecialQuery::new(value).into()}
 
 
 
@@ -72,8 +72,8 @@ impl<'a> Query<'a> {
 
 
 
-    /** If it's [`Self::Special`].    **/ pub fn is_special    (&self) -> bool {matches!(self, Self::Special   (_))}
-    /** If it's [`Self::NonSpecial`]. **/ pub fn is_non_special(&self) -> bool {matches!(self, Self::NonSpecial(_))}
+    /** If it's [`Self::Special`].    */ pub fn is_special    (&self) -> bool {matches!(self, Self::Special   (_))}
+    /** If it's [`Self::NonSpecial`]. */ pub fn is_non_special(&self) -> bool {matches!(self, Self::NonSpecial(_))}
 
 
 

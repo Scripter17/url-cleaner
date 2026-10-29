@@ -42,7 +42,7 @@ pub struct Cleaner<'a> {
     ///
     /// Defaulted.
     #[serde(default, skip_serializing_if = "is_default")]
-    pub action: Cow<'a, Action>
+    pub action: Cow<'a, Action>,
 }
 
 /// The JSON text of the bundled cleaner.

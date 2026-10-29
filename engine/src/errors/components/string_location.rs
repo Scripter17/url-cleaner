@@ -5,8 +5,8 @@ use crate::prelude::*;
 /// The enum of errors [`StringLocation::check`] can return.
 #[derive(Debug, Error)]
 pub enum StringLocationError {
-    /** [`ExplicitError`]. **/ #[error(transparent)] ExplicitError(#[from] ExplicitError          ),
-    /** [`TryElseError`].  **/ #[error(transparent)] TryElseError (#[from] Box<TryElseError<Self>>),
+    /** [`ExplicitError`]. */ #[error(transparent)] ExplicitError(#[from] ExplicitError          ),
+    /** [`TryElseError`].  */ #[error(transparent)] TryElseError (#[from] Box<TryElseError<Self>>),
 
     /// Returned when a slice is either not on UTF-8 boundaries or out of bounds.
     #[error("The requested slice was either not on a UTF-8 boundaries or out of bounds.")]

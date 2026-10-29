@@ -5,9 +5,9 @@ use crate::prelude::*;
 /// A host for a [`SchemeType::SpecialNotFile`] URL.
 #[derive(Debug, Clone)]
 pub enum SpecialNotFileHost<'a> {
-    /** [`DomainHost`]. **/ Domain(DomainHost<'a>),
-    /** [`Ipv4Host`].   **/ Ipv4  (Ipv4Host  <'a>),
-    /** [`Ipv6Host`].   **/ Ipv6  (Ipv6Host  <'a>),
+    /** [`DomainHost`]. */ Domain(DomainHost<'a>),
+    /** [`Ipv4Host`].   */ Ipv4  (Ipv4Host  <'a>),
+    /** [`Ipv6Host`].   */ Ipv6  (Ipv6Host  <'a>),
 }
 
 impl<'a> SpecialNotFileHost<'a> {

@@ -5,8 +5,8 @@ use crate::prelude::*;
 /// Either [`MaybeSpecialQueryValue`] or [`MaybeNonSpecialQueryValue`].
 #[derive(Debug, Clone)]
 pub enum MaybeQueryValue<'a> {
-    /** [`MaybeSpecialQueryValue`].    **/ Special   (MaybeSpecialQueryValue   <'a>),
-    /** [`MaybeNonSpecialQueryValue`]. **/ NonSpecial(MaybeNonSpecialQueryValue<'a>),
+    /** [`MaybeSpecialQueryValue`].    */ Special   (MaybeSpecialQueryValue   <'a>),
+    /** [`MaybeNonSpecialQueryValue`]. */ NonSpecial(MaybeNonSpecialQueryValue<'a>),
 }
 
 impl<'a> MaybeQueryValue<'a> {
@@ -18,8 +18,8 @@ impl<'a> MaybeQueryValue<'a> {
         }
     }
 
-    /** [`MaybeSpecialQueryValue::new`].    **/ pub fn new_special    <T: Into<MaybeSpecialQueryValue   <'a>>>(value: T) -> Self {value.into().into()}
-    /** [`MaybeNonSpecialQueryValue::new`]. **/ pub fn new_non_special<T: Into<MaybeNonSpecialQueryValue<'a>>>(value: T) -> Self {value.into().into()}
+    /** [`MaybeSpecialQueryValue::new`].    */ pub fn new_special    <T: Into<MaybeSpecialQueryValue   <'a>>>(value: T) -> Self {value.into().into()}
+    /** [`MaybeNonSpecialQueryValue::new`]. */ pub fn new_non_special<T: Into<MaybeNonSpecialQueryValue<'a>>>(value: T) -> Self {value.into().into()}
 
 
 

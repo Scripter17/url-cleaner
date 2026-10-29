@@ -5,8 +5,8 @@ use crate::prelude::*;
 /// Either a [`SegmentedPath`] or an [`OpaquePath`].
 #[derive(Debug, Clone)]
 pub enum Path<'a> {
-    /** [`SegmentedPath`]. **/ Segmented(SegmentedPath<'a>),
-    /** [`OpaquePath`].    **/ Opaque   (OpaquePath   <'a>),
+    /** [`SegmentedPath`]. */ Segmented(SegmentedPath<'a>),
+    /** [`OpaquePath`].    */ Opaque   (OpaquePath   <'a>),
 }
 
 impl<'a> Path<'a> {
@@ -18,11 +18,11 @@ impl<'a> Path<'a> {
         }
     }
 
-    /** [`SegmentedPath::new`].      **/ pub fn new_segmented       <T: Into<FilePath<'a>> + Into<SpecialNotFilePath<'a>> + Into<NonSpecialPath<'a>>>(value: T, r#type: SegmentedPathType) -> Self {SegmentedPath::new(value, r#type).into()}
-    /** [`FilePath::new`].           **/ pub fn new_file            <T: Into<FilePath          <'a>>>(value: T) -> Self {FilePath          ::new(value).into()}
-    /** [`SpecialNotFilePath::new`]. **/ pub fn new_special_not_file<T: Into<SpecialNotFilePath<'a>>>(value: T) -> Self {SpecialNotFilePath::new(value).into()}
-    /** [`NonSpecialPath::new`].     **/ pub fn new_non_special     <T: Into<NonSpecialPath    <'a>>>(value: T) -> Self {NonSpecialPath    ::new(value).into()}
-    /** [`OpaquePath::new`].         **/ pub fn new_opaque          <T: Into<OpaquePath        <'a>>>(value: T) -> Self {OpaquePath        ::new(value).into()}
+    /** [`SegmentedPath::new`].      */ pub fn new_segmented       <T: Into<FilePath<'a>> + Into<SpecialNotFilePath<'a>> + Into<NonSpecialPath<'a>>>(value: T, r#type: SegmentedPathType) -> Self {SegmentedPath::new(value, r#type).into()}
+    /** [`FilePath::new`].           */ pub fn new_file            <T: Into<FilePath          <'a>>>(value: T) -> Self {FilePath          ::new(value).into()}
+    /** [`SpecialNotFilePath::new`]. */ pub fn new_special_not_file<T: Into<SpecialNotFilePath<'a>>>(value: T) -> Self {SpecialNotFilePath::new(value).into()}
+    /** [`NonSpecialPath::new`].     */ pub fn new_non_special     <T: Into<NonSpecialPath    <'a>>>(value: T) -> Self {NonSpecialPath    ::new(value).into()}
+    /** [`OpaquePath::new`].         */ pub fn new_opaque          <T: Into<OpaquePath        <'a>>>(value: T) -> Self {OpaquePath        ::new(value).into()}
 
 
 
@@ -82,11 +82,11 @@ impl<'a> Path<'a> {
 
 
 
-    /** If it's [`Self::Segmented`].               **/ pub fn is_segmnted        (&self) -> bool {matches!(self, Self::Segmented(_))}
-    /** If it's [`SegmentedPath::File`].           **/ pub fn is_file            (&self) -> bool {matches!(self, Self::Segmented(SegmentedPath::File          (_)))}
-    /** If it's [`SegmentedPath::SpecialNotFile`]. **/ pub fn is_special_not_file(&self) -> bool {matches!(self, Self::Segmented(SegmentedPath::SpecialNotFile(_)))}
-    /** If it's [`SegmentedPath::NonSpecial`].     **/ pub fn is_non_special     (&self) -> bool {matches!(self, Self::Segmented(SegmentedPath::NonSpecial    (_)))}
-    /** If it's [`Self::Opaque`].                  **/ pub fn is_opaque          (&self) -> bool {matches!(self, Self::Opaque  (_))}
+    /** If it's [`Self::Segmented`].               */ pub fn is_segmnted        (&self) -> bool {matches!(self, Self::Segmented(_))}
+    /** If it's [`SegmentedPath::File`].           */ pub fn is_file            (&self) -> bool {matches!(self, Self::Segmented(SegmentedPath::File          (_)))}
+    /** If it's [`SegmentedPath::SpecialNotFile`]. */ pub fn is_special_not_file(&self) -> bool {matches!(self, Self::Segmented(SegmentedPath::SpecialNotFile(_)))}
+    /** If it's [`SegmentedPath::NonSpecial`].     */ pub fn is_non_special     (&self) -> bool {matches!(self, Self::Segmented(SegmentedPath::NonSpecial    (_)))}
+    /** If it's [`Self::Opaque`].                  */ pub fn is_opaque          (&self) -> bool {matches!(self, Self::Opaque  (_))}
 
 
 
@@ -98,9 +98,9 @@ impl<'a> Path<'a> {
         }
     }
 
-    /** The [`FilePath`].           **/ pub fn file            (self) -> Option<FilePath          <'a>> {self.segmented()?.file            ()}
-    /** The [`SpecialNotFilePath`]. **/ pub fn special_not_file(self) -> Option<SpecialNotFilePath<'a>> {self.segmented()?.special_not_file()}
-    /** The [`NonSpecialPath`].     **/ pub fn non_special     (self) -> Option<NonSpecialPath    <'a>> {self.segmented()?.non_special     ()}
+    /** The [`FilePath`].           */ pub fn file            (self) -> Option<FilePath          <'a>> {self.segmented()?.file            ()}
+    /** The [`SpecialNotFilePath`]. */ pub fn special_not_file(self) -> Option<SpecialNotFilePath<'a>> {self.segmented()?.special_not_file()}
+    /** The [`NonSpecialPath`].     */ pub fn non_special     (self) -> Option<NonSpecialPath    <'a>> {self.segmented()?.non_special     ()}
 
     /// The [`OpaquePath`].
     pub fn opaque(self) -> Option<OpaquePath<'a>> {

@@ -20,6 +20,6 @@ impl<'a> MaybeSpecialQuery<'a> {
 
     /// The `index`th [`SpecialQuerySegment`] named `name`.
     pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<SpecialQuerySegment<'_>> {
-        self.find_iter(name.as_ref()).neg_nth(index)
+        self.find_iter(name).neg_nth(index)
     }
 }

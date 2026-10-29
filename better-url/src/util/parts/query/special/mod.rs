@@ -36,12 +36,12 @@ pub fn make_maybe_special_query_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: Option<
 
 /// Make a [`SpecialQuery`].
 pub fn make_special_query<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode(value, SPECIAL_QUERY)
+    percent_encode(value, &SPECIAL_QUERY)
 }
 
 /// Make a [`SpecialQuerySegment`].
 pub fn make_special_query_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>, Option<NonZero<usize>>) {
-    let (changed, value) = percent_encode(value, SPECIAL_QUERY_SEGMENT);
+    let (changed, value) = percent_encode(value, &SPECIAL_QUERY_SEGMENT);
 
     let vs = value.memchr(b'=').and_then(|x| NonZero::new(x + 1));
 
@@ -52,12 +52,12 @@ pub fn make_special_query_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool,
 
 /// Make a [`SpecialQuery`].
 pub fn make_special_query_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode_bytes(value, SPECIAL_QUERY)
+    percent_encode_bytes(value, &SPECIAL_QUERY)
 }
 
 /// Make a [`SpecialQuerySegment`].
 pub fn make_special_query_segment_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>, Option<NonZero<usize>>) {
-    let (changed, value) = percent_encode_bytes(value, SPECIAL_QUERY_SEGMENT);
+    let (changed, value) = percent_encode_bytes(value, &SPECIAL_QUERY_SEGMENT);
 
     let vs = value.memchr(b'=').and_then(|x| NonZero::new(x + 1));
 

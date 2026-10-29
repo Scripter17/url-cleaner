@@ -44,11 +44,11 @@ impl<'a> FilePathSegment<'a> {
 
 
 
-    /** [`path_segment_is_drive_letter`].                **/ pub fn is_drive_letter               (&self) -> bool {path_segment_is_drive_letter               (self.as_str())}
-    /** [`path_segment_is_normalized_drive_letter`].     **/ pub fn is_normalized_drive_letter    (&self) -> bool {path_segment_is_normalized_drive_letter    (self.as_str())}
-    /** [`path_segment_is_non_normalized_drive_letter`]. **/ pub fn is_non_normalized_drive_letter(&self) -> bool {path_segment_is_non_normalized_drive_letter(self.as_str())}
-    /** [`path_segment_is_single_dot`].                  **/ pub fn is_single_dot                 (&self) -> bool {path_segment_is_single_dot                 (self.as_str())}
-    /** [`path_segment_is_double_dot`].                  **/ pub fn is_double_dot                 (&self) -> bool {path_segment_is_double_dot                 (self.as_str())}
+    /** [`path_segment_is_drive_letter`].                */ pub fn is_drive_letter               (&self) -> bool {path_segment_is_drive_letter               (self.as_str())}
+    /** [`path_segment_is_normalized_drive_letter`].     */ pub fn is_normalized_drive_letter    (&self) -> bool {path_segment_is_normalized_drive_letter    (self.as_str())}
+    /** [`path_segment_is_non_normalized_drive_letter`]. */ pub fn is_non_normalized_drive_letter(&self) -> bool {path_segment_is_non_normalized_drive_letter(self.as_str())}
+    /** [`path_segment_is_single_dot`].                  */ pub fn is_single_dot                 (&self) -> bool {path_segment_is_single_dot                 (self.as_str())}
+    /** [`path_segment_is_double_dot`].                  */ pub fn is_double_dot                 (&self) -> bool {path_segment_is_double_dot                 (self.as_str())}
 
 
 

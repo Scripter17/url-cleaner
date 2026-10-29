@@ -33,9 +33,9 @@ use crate::util::BasicBenchThing;
 /// If a particular library's URL parser returns an error, its 3 columns will be present but empty.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /** Compare to all libraries.     **/ #[arg(long)] pub all  : bool,
-    /** Compare to Servo's URL crate. **/ #[arg(long)] pub servo: bool,
-    /** Compare to Ada's URL crate.   **/ #[arg(long)] pub ada  : bool,
+    /** Compare to all libraries.     */ #[arg(long)] pub all  : bool,
+    /** Compare to Servo's URL crate. */ #[arg(long)] pub servo: bool,
+    /** Compare to Ada's URL crate.   */ #[arg(long)] pub ada  : bool,
 
     /// The index to set.
     #[arg(long)]
@@ -44,7 +44,7 @@ pub struct Args {
     #[arg(long)]
     pub value: Option<String>,
 
-    /** The [`BasicBenchThing`]. **/ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
+    /** The [`BasicBenchThing`]. */ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
 }
 
 impl Args {
@@ -66,7 +66,7 @@ impl Args {
                 Ok(url) if let Some(r#type) = url.segmented_path_type() => {
                     let value = self.value.as_deref().map(|x| PathSegment::new(x, r#type));
 
-                    let burl = self.basic_bench_thing.bench_with_input(|mut url| url.set_path_segment(self.index, value.as_ref()), url.clone());
+                    let burl = self.basic_bench_thing.bench_with_input(|mut url| url.set_path_segment(self.index, value.as_ref()), url);
                     burl_total += burl;
 
                     print!("\t{burl:.2?}");
@@ -82,7 +82,7 @@ impl Args {
                                     if let Ok(true) = path.set(self.index, value.as_ref()) {
                                         url.set_path(path.into_owned().as_str());
                                     }
-                                }, url.clone());
+                                }, url);
                                 servo_total += servo;
 
                                 let factor       = servo      .as_secs_f64() / burl      .as_secs_f64();
@@ -105,7 +105,7 @@ impl Args {
                                     if let Ok(true) = path.set(self.index, value.as_ref()) {
                                         let _ = url.set_pathname(Some(path.into_owned().as_str()));
                                     }
-                                }, url.clone());
+                                }, url);
                                 ada_total += ada;
 
                                 let factor       = ada      .as_secs_f64() / burl      .as_secs_f64();

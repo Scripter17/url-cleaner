@@ -112,20 +112,20 @@ struct Args {
 /// The enum of errors [`main`] can return.
 #[derive(Debug, Error)]
 pub enum CliError {
-    /** [`LoadCleanerError`].        **/ #[error(transparent)] LoadCleanerError       (#[from] LoadCleanerError       ),
-    /** [`LoadParamsDiffError`].     **/ #[error(transparent)] LoadParamsDiffError    (#[from] LoadParamsDiffError    ),
-    /** [`LoadProfilesConfigError`]. **/ #[error(transparent)] LoadProfilesConfigError(#[from] LoadProfilesConfigError),
-    /** [`LoadJobContextError`].     **/ #[error(transparent)] LoadJobContextError    (#[from] LoadJobContextError    ),
-    /** [`LoadSecretsError`].        **/ #[error(transparent)] LoadSecretsError       (#[from] LoadSecretsError       ),
+    /** [`LoadCleanerError`].        */ #[error(transparent)] LoadCleanerError       (#[from] LoadCleanerError       ),
+    /** [`LoadParamsDiffError`].     */ #[error(transparent)] LoadParamsDiffError    (#[from] LoadParamsDiffError    ),
+    /** [`LoadProfilesConfigError`]. */ #[error(transparent)] LoadProfilesConfigError(#[from] LoadProfilesConfigError),
+    /** [`LoadJobContextError`].     */ #[error(transparent)] LoadJobContextError    (#[from] LoadJobContextError    ),
+    /** [`LoadSecretsError`].        */ #[error(transparent)] LoadSecretsError       (#[from] LoadSecretsError       ),
     /// Returned when the requested profile isn't found.
     #[error("The requested profile wasn't found.")]
     ProfileNotFound
 }
 
-/** The [`Job`].         **/ static JOB       : OnceLock<Job    > = OnceLock::new();
-/** The [`Secrets`].     **/ static SECRETS   : OnceLock<Secrets> = OnceLock::new();
-/** The [`CacheClient`]. **/ #[cfg(feature = "cache")] static CACHE_CLIENT: OnceLock<CacheClient> = OnceLock::new();
-/** The [`HttpClient`].  **/ #[cfg(feature = "http" )] static HTTP_CLIENT : OnceLock<HttpClient > = OnceLock::new();
+/** The [`Job`].         */ static JOB       : OnceLock<Job    > = OnceLock::new();
+/** The [`Secrets`].     */ static SECRETS   : OnceLock<Secrets> = OnceLock::new();
+/** The [`CacheClient`]. */ #[cfg(feature = "cache")] static CACHE_CLIENT: OnceLock<CacheClient> = OnceLock::new();
+/** The [`HttpClient`].  */ #[cfg(feature = "http" )] static HTTP_CLIENT : OnceLock<HttpClient > = OnceLock::new();
 
 #[tokio::main]
 async fn main() -> Result<(), CliError> {

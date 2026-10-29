@@ -4,9 +4,7 @@ use reqwest::header::{HeaderName, HeaderValue};
 
 use crate::prelude::*;
 
-/// Rules for making an HTTP request.
-///
-/// Currently only capable of making blocking requests.
+/// Rules for making a [`reqwest::Request`].
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize, Suitability)]
 #[serde(deny_unknown_fields)]
 pub struct HttpRequestSource {
@@ -53,10 +51,10 @@ impl Default for HttpRequestSource {
     }
 }
 
-/** Serde helper. **/ fn get_default_url   (                    ) -> StringSource {UrlPart::Whole.into()         }
-/** Serde helper. **/ fn get_default_method(                    ) -> StringSource {"GET".into()                  }
-/** Serde helper. **/ fn is_default_url    (value: &StringSource) -> bool         {value == &get_default_url()   }
-/** Serde helper. **/ fn is_default_method (value: &StringSource) -> bool         {value == &get_default_method()}
+/** Serde helper. */ fn get_default_url   (                    ) -> StringSource {UrlPart::Whole.into()         }
+/** Serde helper. */ fn get_default_method(                    ) -> StringSource {"GET".into()                  }
+/** Serde helper. */ fn is_default_url    (value: &StringSource) -> bool         {value == &get_default_url()   }
+/** Serde helper. */ fn is_default_method (value: &StringSource) -> bool         {value == &get_default_method()}
 
 impl HttpRequestSource {
     /// Get a [`reqwest::RequestBuilder`].

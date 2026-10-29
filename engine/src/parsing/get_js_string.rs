@@ -27,7 +27,7 @@ pub fn get_js_string<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<Cow<'a, str>
 
             let mut ret = Vec::<u8>::new();
 
-            while let Some(i) = rest.memchrn([b'\\', q]) {
+            while let Some(i) = memchr::memchr2(b'\\', q, rest) {
                 match rest[i] {
                     b'\\' => {
                         let before = unsafe {rest.get_unchecked(..i)};

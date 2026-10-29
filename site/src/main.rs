@@ -40,8 +40,8 @@ enum Args {
 /// [`main`]
 #[derive(Debug, Error)]
 enum SiteError {
-    /** [`run::RunError`],       **/ #[error(transparent)] RunError   (#[from] run   ::RunError   ),
-    /** [`keygen::KeygenError`], **/ #[error(transparent)] KeygenError(#[from] keygen::KeygenError),
+    /** [`run::RunError`],       */ #[error(transparent)] RunError   (#[from] run   ::RunError   ),
+    /** [`keygen::KeygenError`], */ #[error(transparent)] KeygenError(#[from] keygen::KeygenError),
 }
 
 #[tokio::main]

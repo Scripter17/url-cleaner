@@ -32,8 +32,8 @@ fn do_idna_tests(data: &str) {
             '}' => if let Ok(test) = serde_json::from_str::<Test>(&data[x.pop().unwrap() ..= i]) {
                 println!("{test:?}");
                 match make_domain_host(test.input) {
-                    Ok ((_, encoded)) => assert_eq!(encoded, test.output.unwrap()),
-                    Err(_           ) => assert!(test.output.is_none_or(|x| x.is_empty())),
+                    Ok ((_, encoded, _)) => assert_eq!(encoded, test.output.unwrap()),
+                    Err(_              ) => assert!(test.output.is_none_or(|x| x.is_empty())),
                 }
             },
             _ => {}

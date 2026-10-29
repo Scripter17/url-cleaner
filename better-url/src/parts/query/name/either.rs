@@ -5,8 +5,8 @@ use crate::prelude::*;
 /// Either [`SpecialQueryName`] or [`NonSpecialQueryName`].
 #[derive(Debug, Clone)]
 pub enum QueryName<'a> {
-    /** [`SpecialQueryName`].    **/ Special   (SpecialQueryName   <'a>),
-    /** [`NonSpecialQueryName`]. **/ NonSpecial(NonSpecialQueryName<'a>),
+    /** [`SpecialQueryName`].    */ Special   (SpecialQueryName   <'a>),
+    /** [`NonSpecialQueryName`]. */ NonSpecial(NonSpecialQueryName<'a>),
 }
 
 impl<'a> QueryName<'a> {
@@ -18,8 +18,8 @@ impl<'a> QueryName<'a> {
         }
     }
 
-    /** [`SpecialQueryName::new`].    **/ pub fn new_special    <T: Into<SpecialQueryName   <'a>>>(value: T) -> Self {value.into().into()}
-    /** [`NonSpecialQueryName::new`]. **/ pub fn new_non_special<T: Into<NonSpecialQueryName<'a>>>(value: T) -> Self {value.into().into()}
+    /** [`SpecialQueryName::new`].    */ pub fn new_special    <T: Into<SpecialQueryName   <'a>>>(value: T) -> Self {value.into().into()}
+    /** [`NonSpecialQueryName::new`]. */ pub fn new_non_special<T: Into<NonSpecialQueryName<'a>>>(value: T) -> Self {value.into().into()}
 
 
 

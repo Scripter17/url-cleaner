@@ -32,3 +32,14 @@ pub struct Functions {
     #[serde(default, skip_serializing_if = "is_default")]
     pub string_matchers: FxHashMap<String, StringMatcher>,
 }
+
+impl Functions {
+    /// If every field is empty.
+    pub fn is_empty(&self) -> bool {
+        self.conditions                 .is_empty()
+            && self.actions             .is_empty()
+            && self.string_sources      .is_empty()
+            && self.string_modifications.is_empty()
+            && self.string_matchers     .is_empty()
+    }
+}

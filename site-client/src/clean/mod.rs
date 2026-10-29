@@ -12,18 +12,18 @@ mod ws;
 /// /clean.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /** The instance.               **/ #[arg(default_value = "ws://127.0.0.1:9149/")] pub instance       : BetterUrl,
-    /** The password.               **/ #[arg(long, short = 'p'                     )] pub password       : Option<String>,
-    /** The profile.                **/ #[arg(long,                                 )] pub profile        : Option<String>,
-    /** The ParamsDiff.             **/ #[arg(long,                                 )] pub params_diff    : Option<String>,
-    /** The JobContext.             **/ #[arg(long,                                 )] pub context        : Option<String>,
-    /** Enable brief unchanged.     **/ #[arg(long, short = 'u'                     )] pub brief_unchanged: bool,
-    /** Enable brief error.         **/ #[arg(long, short = 'e'                     )] pub brief_error    : bool,
-    /** Hide the thread count.      **/ #[arg(long, short = 'T'                     )] pub hide_threads   : bool,
-    /** Disable the HTTP client.    **/ #[arg(long, short = 'H'                     )] pub no_http        : bool,
-    /** Disable reading from cache. **/ #[arg(long, short = 'R'                     )] pub no_read_cache  : bool,
-    /** Disable writing to cache.   **/ #[arg(long, short = 'W'                     )] pub no_write_cache : bool,
-    /** Hide cache reads.           **/ #[arg(long, short = 'C'                     )] pub hide_cache     : bool,
+    /** The instance.               */ #[arg(default_value = "ws://127.0.0.1:9149/")] pub instance       : BetterUrl,
+    /** The password.               */ #[arg(long, short = 'p'                     )] pub password       : Option<String>,
+    /** The profile.                */ #[arg(long,                                 )] pub profile        : Option<String>,
+    /** The ParamsDiff.             */ #[arg(long,                                 )] pub params_diff    : Option<String>,
+    /** The JobContext.             */ #[arg(long,                                 )] pub context        : Option<String>,
+    /** Enable brief unchanged.     */ #[arg(long, short = 'u'                     )] pub brief_unchanged: bool,
+    /** Enable brief error.         */ #[arg(long, short = 'e'                     )] pub brief_error    : bool,
+    /** Hide the thread count.      */ #[arg(long, short = 'T'                     )] pub hide_threads   : bool,
+    /** Disable the HTTP client.    */ #[arg(long, short = 'H'                     )] pub no_http        : bool,
+    /** Disable reading from cache. */ #[arg(long, short = 'R'                     )] pub no_read_cache  : bool,
+    /** Disable writing to cache.   */ #[arg(long, short = 'W'                     )] pub no_write_cache : bool,
+    /** Hide cache reads.           */ #[arg(long, short = 'C'                     )] pub hide_cache     : bool,
 }
 
 impl Args {

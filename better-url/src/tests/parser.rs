@@ -25,8 +25,8 @@ struct Tests(Vec<TestOrComment>);
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 enum TestOrComment {
-    /** [`Test`].    **/ Test   (Box<Test>),
-    /** [`Comment`]. **/ Comment(Comment  ),
+    /** [`Test`].    */ Test   (Box<Test>),
+    /** [`Comment`]. */ Comment(Comment  ),
 }
 
 /// A comment.
@@ -38,32 +38,32 @@ struct Comment(String);
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
 enum Test {
-    /** [`SuccessTest`]. **/ Success(Box<SuccessTest>),
-    /** [`FailureTest`]. **/ Failure(    FailureTest ),
+    /** [`SuccessTest`]. */ Success(Box<SuccessTest>),
+    /** [`FailureTest`]. */ Failure(    FailureTest ),
 }
 
 /// A test that succeeds.
 #[derive(Debug, Deserialize)]
 struct SuccessTest {
-    /** The input.    **/ input   : String,
-    /** The base.     **/ base    : Option<String>,
-    /** The href.     **/ href    : String,
-    /** The protocol. **/ protocol: String,
-    /** The username. **/ username: String,
-    /** The password. **/ password: String,
-    /** The hostname. **/ hostname: String,
-    /** The host.     **/ host    : String,
-    /** The port.     **/ port    : String,
-    /** The pathname. **/ pathname: String,
-    /** The search.   **/ search  : String,
-    /** The hash.     **/ hash    : String,
+    /** The input.    */ input   : String,
+    /** The base.     */ base    : Option<String>,
+    /** The href.     */ href    : String,
+    /** The protocol. */ protocol: String,
+    /** The username. */ username: String,
+    /** The password. */ password: String,
+    /** The hostname. */ hostname: String,
+    /** The host.     */ host    : String,
+    /** The port.     */ port    : String,
+    /** The pathname. */ pathname: String,
+    /** The search.   */ search  : String,
+    /** The hash.     */ hash    : String,
 }
 
 /// A test that returns failure.
 #[derive(Debug, Deserialize)]
 struct FailureTest {
-    /** The input. **/ input: String,
-    /** The base.  **/ base : Option<String>,
+    /** The input. */ input: String,
+    /** The base.  */ base : Option<String>,
 }
 
 impl Tests {

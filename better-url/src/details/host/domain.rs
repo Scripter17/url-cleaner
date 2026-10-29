@@ -1,8 +1,5 @@
 //! [`DomainHostDetails`].
 
-#[cfg(feature = "psl")]
-use psl::Psl;
-
 use crate::prelude::*;
 
 /// The details of a domain host.
@@ -59,20 +56,15 @@ impl DomainHostDetails {
     pub fn parse_unchecked(value: &str) -> Self {
         cfg_select! {
             feature = "psl" => {
-                let (segments, fq) = match value.as_bytes() {
-                    [value @ .., b'.'] => (value, true ),
-                     value             => (value, false),
-                };
-
-                let mut data2 = segments.len() - psl::List.find(SplitDots(Some(unsafe {str::from_utf8_unchecked(segments)})).rev().map(str::as_bytes)).len;
+                let mut data2 = get_domain_suffix(value).addr() - value.addr();
 
                 let mut data1 = match data2 {
-                    0  => 0,
-                    ss => unsafe {value.get_unchecked(..ss - 1)}.memrchr(b'.').map_or(0, |x| x + 1)
+                    0 => 0,
+                    _ => unsafe {value.get_unchecked(..data2 - 1)}.memrchr(b'.').map_or(0, |x| x + 1)
                 };
 
                 data1 |= ((unsafe {value.get_unchecked(..data1)} == "www.") as usize) << (usize::BITS - 1);
-                data2 |= (fq as usize) << (usize::BITS - 1);
+                data2 |= (value.ends_with('.') as usize) << (usize::BITS - 1);
 
                 Self {
                     data1,
@@ -88,23 +80,23 @@ impl DomainHostDetails {
         }
     }
 
-    /** If it has a prefix.                 **/ #[cfg(feature = "psl")] pub fn has_prefix(self) -> bool {self.data1 & (isize::MAX as usize) != 0}
-    /** If it has a middle.                 **/ #[cfg(feature = "psl")] pub fn has_middle(self) -> bool {self.data2 & (isize::MAX as usize) != 0}
+    /** If it has a prefix.                 */ #[cfg(feature = "psl")] pub fn has_prefix(self) -> bool {self.data1 & (isize::MAX as usize) != 0}
+    /** If it has a middle.                 */ #[cfg(feature = "psl")] pub fn has_middle(self) -> bool {self.data2 & (isize::MAX as usize) != 0}
 
-    /** The [`Range::start`] of the middle. **/ #[cfg(feature = "psl")] pub fn middle_start(self) -> Option<usize> {self.has_middle().then_some(self.data1 & (isize::MAX as usize))}
-    /** The [`Range::start`] of the suffix. **/ #[cfg(feature = "psl")] pub fn suffix_start(self) ->        usize  {                            self.data2 & (isize::MAX as usize) }
+    /** The [`Range::start`] of the middle. */ #[cfg(feature = "psl")] pub fn middle_start(self) -> Option<usize> {self.has_middle().then_some(self.data1 & (isize::MAX as usize))}
+    /** The [`Range::start`] of the suffix. */ #[cfg(feature = "psl")] pub fn suffix_start(self) ->        usize  {                            self.data2 & (isize::MAX as usize) }
 
-    /** The [`Range::end`] of the prefix.   **/ #[cfg(feature = "psl")] pub fn prefix_after(self) -> Option<usize> {(self.data1 & (isize::MAX as usize)).checked_sub(1)}
-    /** The [`Range::end`] of the middle.   **/ #[cfg(feature = "psl")] pub fn middle_after(self) -> Option<usize> {(self.data2 & (isize::MAX as usize)).checked_sub(1)}
+    /** The [`Range::end`] of the prefix.   */ #[cfg(feature = "psl")] pub fn prefix_after(self) -> Option<usize> {(self.data1 & (isize::MAX as usize)).checked_sub(1)}
+    /** The [`Range::end`] of the middle.   */ #[cfg(feature = "psl")] pub fn middle_after(self) -> Option<usize> {(self.data2 & (isize::MAX as usize)).checked_sub(1)}
 
-    /** If the prefix is `www`.             **/ #[cfg(feature = "psl")] pub fn prefix_is_www(self) -> bool {self.data1 > (isize::MAX as usize)}
-    /** If it's fully qualified.            **/                         pub fn is_fqdn      (self) -> bool {self.data2 > (isize::MAX as usize)}
+    /** If the prefix is `www`.             */ #[cfg(feature = "psl")] pub fn prefix_is_www(self) -> bool {self.data1 > (isize::MAX as usize)}
+    /** If it's fully qualified.            */                         pub fn is_fqdn      (self) -> bool {self.data2 > (isize::MAX as usize)}
 
-    /** Set the middle start.               **/ #[cfg(feature = "psl")] pub fn set_middle_start(&mut self, to: usize) {self.data1 = (self.data1 & (1 << (usize::BITS - 1))) | to;}
-    /** Set the suffix start.               **/ #[cfg(feature = "psl")] pub fn set_suffix_start(&mut self, to: usize) {self.data2 = (self.data2 & (1 << (usize::BITS - 1))) | to;}
+    /** Set the middle start.               */ #[cfg(feature = "psl")] pub fn set_middle_start(&mut self, to: usize) {self.data1 = (self.data1 & (1 << (usize::BITS - 1))) | to;}
+    /** Set the suffix start.               */ #[cfg(feature = "psl")] pub fn set_suffix_start(&mut self, to: usize) {self.data2 = (self.data2 & (1 << (usize::BITS - 1))) | to;}
 
-    /** Set if the prefix is `www`.         **/ #[cfg(feature = "psl")] pub fn set_prefix_is_www(&mut self, to: bool) {self.data1 = (self.data1 & (isize::MAX as usize)) | ((to as usize) << (usize::BITS - 1));}
-    /** Set if it's fully qualified.        **/                         pub fn set_is_fqdn      (&mut self, to: bool) {self.data2 = (self.data2 & (isize::MAX as usize)) | ((to as usize) << (usize::BITS - 1));}
+    /** Set if the prefix is `www`.         */ #[cfg(feature = "psl")] pub fn set_prefix_is_www(&mut self, to: bool) {self.data1 = (self.data1 & (isize::MAX as usize)) | ((to as usize) << (usize::BITS - 1));}
+    /** Set if it's fully qualified.        */                         pub fn set_is_fqdn      (&mut self, to: bool) {self.data2 = (self.data2 & (isize::MAX as usize)) | ((to as usize) << (usize::BITS - 1));}
 }
 
 

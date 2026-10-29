@@ -2,7 +2,7 @@
 
 use crate::prelude::*;
 
-/// A classification of each byte whose bits are, from lowest to highest, are:
+/// A classification of each byte whose bits, from lowest to highest, are:
 ///
 /// 1. If it's in [`PATH`].
 ///

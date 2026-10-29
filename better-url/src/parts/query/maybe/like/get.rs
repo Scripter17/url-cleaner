@@ -20,6 +20,6 @@ impl<'a> MaybeQueryLike<'a> {
 
     /// The `index`th [`QueryLikeSegment`] named `name`.
     pub fn find<T: AsRef<[u8]>>(&self, name: T, index: isize) -> Option<QueryLikeSegment<'_>> {
-        self.find_iter(name.as_ref()).neg_nth(index)
+        self.find_iter(name).neg_nth(index)
     }
 }

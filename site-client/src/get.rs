@@ -22,11 +22,11 @@ pub struct Args {
 /// What to get.
 #[derive(Debug, Clone, Copy, ValueEnum)]
 pub enum Thing {
-    /** `/`           **/ Index     ,
-    /** `/info`       **/ Info      ,
-    /** `/cleaner`    **/ Cleaner   ,
-    /** `/profiles`   **/ Profiles  ,
-    /** `/userscript` **/ Userscript,
+    /** `/`           */ Index     ,
+    /** `/info`       */ Info      ,
+    /** `/cleaner`    */ Cleaner   ,
+    /** `/profiles`   */ Profiles  ,
+    /** `/userscript` */ Userscript,
 }
 
 impl Args {

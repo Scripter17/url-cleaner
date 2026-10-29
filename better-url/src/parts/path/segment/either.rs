@@ -5,9 +5,9 @@ use crate::prelude::*;
 /// Either [`FilePathSegment`], [`SpecialNotFilePathSegment`], or [`NonSpecialPathSegment`].
 #[derive(Debug, Clone)]
 pub enum PathSegment<'a> {
-    /** [`FilePathSegment`].           **/ File          (FilePathSegment          <'a>),
-    /** [`SpecialNotFilePathSegment`]. **/ SpecialNotFile(SpecialNotFilePathSegment<'a>),
-    /** [`NonSpecialPathSegment`].     **/ NonSpecial    (NonSpecialPathSegment    <'a>),
+    /** [`FilePathSegment`].           */ File          (FilePathSegment          <'a>),
+    /** [`SpecialNotFilePathSegment`]. */ SpecialNotFile(SpecialNotFilePathSegment<'a>),
+    /** [`NonSpecialPathSegment`].     */ NonSpecial    (NonSpecialPathSegment    <'a>),
 }
 
 impl<'a> PathSegment<'a> {
@@ -20,9 +20,9 @@ impl<'a> PathSegment<'a> {
         }
     }
 
-    /** [`FilePathSegment::new`].           **/ pub fn new_file            <T: Into<FilePathSegment          <'a>>>(value: T) -> Self {FilePathSegment          ::new(value).into()}
-    /** [`SpecialNotFilePathSegment::new`]. **/ pub fn new_special_not_file<T: Into<SpecialNotFilePathSegment<'a>>>(value: T) -> Self {SpecialNotFilePathSegment::new(value).into()}
-    /** [`NonSpecialPathSegment::new`].     **/ pub fn new_non_special     <T: Into<NonSpecialPathSegment    <'a>>>(value: T) -> Self {NonSpecialPathSegment    ::new(value).into()}
+    /** [`FilePathSegment::new`].           */ pub fn new_file            <T: Into<FilePathSegment          <'a>>>(value: T) -> Self {FilePathSegment          ::new(value).into()}
+    /** [`SpecialNotFilePathSegment::new`]. */ pub fn new_special_not_file<T: Into<SpecialNotFilePathSegment<'a>>>(value: T) -> Self {SpecialNotFilePathSegment::new(value).into()}
+    /** [`NonSpecialPathSegment::new`].     */ pub fn new_non_special     <T: Into<NonSpecialPathSegment    <'a>>>(value: T) -> Self {NonSpecialPathSegment    ::new(value).into()}
 
 
 
@@ -107,11 +107,11 @@ impl<'a> PathSegment<'a> {
 
 
 
-    /** [`path_segment_is_drive_letter`].                **/ pub fn is_drive_letter               (&self) -> bool {path_segment_is_drive_letter               (self.as_str())}
-    /** [`path_segment_is_normalized_drive_letter`].     **/ pub fn is_normalized_drive_letter    (&self) -> bool {path_segment_is_normalized_drive_letter    (self.as_str())}
-    /** [`path_segment_is_non_normalized_drive_letter`]. **/ pub fn is_non_normalized_drive_letter(&self) -> bool {path_segment_is_non_normalized_drive_letter(self.as_str())}
-    /** [`path_segment_is_single_dot`].                  **/ pub fn is_single_dot                 (&self) -> bool {path_segment_is_single_dot                 (self.as_str())}
-    /** [`path_segment_is_double_dot`].                  **/ pub fn is_double_dot                 (&self) -> bool {path_segment_is_double_dot                 (self.as_str())}
+    /** [`path_segment_is_drive_letter`].                */ pub fn is_drive_letter               (&self) -> bool {path_segment_is_drive_letter               (self.as_str())}
+    /** [`path_segment_is_normalized_drive_letter`].     */ pub fn is_normalized_drive_letter    (&self) -> bool {path_segment_is_normalized_drive_letter    (self.as_str())}
+    /** [`path_segment_is_non_normalized_drive_letter`]. */ pub fn is_non_normalized_drive_letter(&self) -> bool {path_segment_is_non_normalized_drive_letter(self.as_str())}
+    /** [`path_segment_is_single_dot`].                  */ pub fn is_single_dot                 (&self) -> bool {path_segment_is_single_dot                 (self.as_str())}
+    /** [`path_segment_is_double_dot`].                  */ pub fn is_double_dot                 (&self) -> bool {path_segment_is_double_dot                 (self.as_str())}
 
 
 

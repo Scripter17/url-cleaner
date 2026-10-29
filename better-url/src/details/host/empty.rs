@@ -8,14 +8,15 @@ use crate::prelude::*;
 pub struct EmptyHostDetails;
 
 impl EmptyHostDetails {
-    /// Parse the empty host.
+    /// Parse the [`EmptyHost`] literal.
     /// # Errors
-    /// If the host isn't empty, returns the error [`InvalidEmptyHost`].
-    pub fn parse(s: &str) -> Result<Self, InvalidEmptyHost> {
-        match s {
-            "" => Ok(Self),
-            _  => Err(InvalidEmptyHost),
+    /// If `value` isn't empty, returns the error [`InvalidEmptyHost`].
+    pub fn parse(value: &str) -> Result<Self, InvalidEmptyHost> {
+        if !value.is_empty() {
+            Err(InvalidEmptyHost)?;
         }
+
+        Ok(Self)
     }
 }
 

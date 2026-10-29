@@ -14,8 +14,5 @@ curl 'https://raw.githubusercontent.com/ada-url/idna/refs/heads/main/tests/fixtu
 curl 'https://raw.githubusercontent.com/ada-url/idna/refs/heads/main/tests/fixtures/to_ascii_invalid.txt'          -so to_ascii_invalid.txt
 
 curl 'https://raw.githubusercontent.com/ada-url/ada/refs/heads/main/tests/wpt/ada_extra_urltestdata.json'          -so ada_extra_urltestdata.json
+curl 'https://raw.githubusercontent.com/ada-url/ada/refs/heads/main/tests/wpt/ada_extra_setters_tests.json'        -so ada_extra_setters_tests.json
 curl 'https://raw.githubusercontent.com/ada-url/ada/refs/heads/main/tests/wpt/utf8_punycode_alternating.txt'       -so utf8_punycode_alternating.txt
-
-# Currently doesn't include hrefs in expects and I can't be bothered to add it.
-# curl 'https://raw.githubusercontent.com/ada-url/ada/refs/heads/main/tests/wpt/ada_extra_setters_tests.json' -so ada_extra_setters_tests.json
-

@@ -8,8 +8,8 @@ use crate::prelude::*;
 
 // TODO: Turn into one regex.
 
-/** Regex to get the tag.   **/ static GET_TAG  : LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"<[a-zA-Z]+\s*((?:([a-zA-Z-]+)(?:\s*=\s*(?:"(.*?)"|'(.*?)'|(\S*)))?\s*)*)/?>"#).expect("???"));
-/** Regex to get the attrs. **/ static GET_ATTRS: LazyLock<Regex> = LazyLock::new(|| Regex::new(                 r#"([a-zA-Z-]+)(?:\s*=\s*(?:"(.*?)"|'(.*?)'|(\S*)))?\s*"#     ).expect("???"));
+/** Regex to get the tag.   */ static GET_TAG  : LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"<[a-zA-Z]+\s*((?:([a-zA-Z-]+)(?:\s*=\s*(?:"(.*?)"|'(.*?)'|(\S*)))?\s*)*)/?>"#).expect("???"));
+/** Regex to get the attrs. */ static GET_ATTRS: LazyLock<Regex> = LazyLock::new(|| Regex::new(                 r#"([a-zA-Z-]+)(?:\s*=\s*(?:"(.*?)"|'(.*?)'|(\S*)))?\s*"#     ).expect("???"));
 
 /// Get the value of the last attribute named `name`.
 /// # Errors

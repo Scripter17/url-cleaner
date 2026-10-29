@@ -5,9 +5,9 @@ use crate::prelude::*;
 /// Either [`FilePathSegments`], [`SpecialNotFilePathSegments`], or [`NonSpecialPathSegments`].
 #[derive(Debug, Clone)]
 pub enum PathSegments<'a> {
-    /** [`FilePathSegments`].           **/ File          (FilePathSegments          <'a>),
-    /** [`SpecialNotFilePathSegments`]. **/ SpecialNotFile(SpecialNotFilePathSegments<'a>),
-    /** [`NonSpecialPathSegments`].     **/ NonSpecial    (NonSpecialPathSegments    <'a>),
+    /** [`FilePathSegments`].           */ File          (FilePathSegments          <'a>),
+    /** [`SpecialNotFilePathSegments`]. */ SpecialNotFile(SpecialNotFilePathSegments<'a>),
+    /** [`NonSpecialPathSegments`].     */ NonSpecial    (NonSpecialPathSegments    <'a>),
 }
 
 impl<'a> PathSegments<'a> {
@@ -20,9 +20,9 @@ impl<'a> PathSegments<'a> {
         }
     }
 
-    /** [`FilePathSegments::new`].           **/ pub fn new_file            <T: Into<FilePathSegments          <'a>>>(value: T) -> Self {FilePathSegments          ::new(value).into()}
-    /** [`SpecialNotFilePathSegments::new`]. **/ pub fn new_special_not_file<T: Into<SpecialNotFilePathSegments<'a>>>(value: T) -> Self {SpecialNotFilePathSegments::new(value).into()}
-    /** [`NonSpecialPathSegments::new`].     **/ pub fn new_non_special     <T: Into<NonSpecialPathSegments    <'a>>>(value: T) -> Self {NonSpecialPathSegments    ::new(value).into()}
+    /** [`FilePathSegments::new`].           */ pub fn new_file            <T: Into<FilePathSegments          <'a>>>(value: T) -> Self {FilePathSegments          ::new(value).into()}
+    /** [`SpecialNotFilePathSegments::new`]. */ pub fn new_special_not_file<T: Into<SpecialNotFilePathSegments<'a>>>(value: T) -> Self {SpecialNotFilePathSegments::new(value).into()}
+    /** [`NonSpecialPathSegments::new`].     */ pub fn new_non_special     <T: Into<NonSpecialPathSegments    <'a>>>(value: T) -> Self {NonSpecialPathSegments    ::new(value).into()}
 
 
 

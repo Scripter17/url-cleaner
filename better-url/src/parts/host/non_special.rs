@@ -5,9 +5,9 @@ use crate::prelude::*;
 /// A host for a [`SchemeType::NonSpecial`] URL.
 #[derive(Debug, Clone)]
 pub enum NonSpecialHost<'a> {
-    /** [`Ipv6Host`].   **/ Ipv6  (Ipv6Host  <'a>),
-    /** [`OpaqueHost`]. **/ Opaque(OpaqueHost<'a>),
-    /** [`EmptyHost`].  **/ Empty (EmptyHost <'a>),
+    /** [`Ipv6Host`].   */ Ipv6  (Ipv6Host  <'a>),
+    /** [`OpaqueHost`]. */ Opaque(OpaqueHost<'a>),
+    /** [`EmptyHost`].  */ Empty (EmptyHost <'a>),
 }
 
 impl<'a> NonSpecialHost<'a> {

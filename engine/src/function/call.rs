@@ -18,7 +18,11 @@ pub struct FunctionCall {
 
 impl Serialize for FunctionCall {
     fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        <FunctionCall>::serialize(self, serializer)
+        if self.args.is_empty() {
+            self.name.serialize(serializer)
+        } else {
+            <FunctionCall>::serialize(self, serializer)
+        }
     }
 }
 
@@ -30,11 +34,15 @@ impl<'de> Deserialize<'de> for FunctionCall {
             type Value = FunctionCall;
 
             fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-                f.write_str("Expected a string or a map.")
+                f.write_str("a str, string, or map")
             }
 
             fn visit_str<E: serde::de::Error>(self, s: &str) -> Result<Self::Value, E> {
-                Self::Value::from_str(s).map_err(E::custom)
+                Ok(Self::Value::from(s))
+            }
+
+            fn visit_string<E: serde::de::Error>(self, value: String) -> Result<Self::Value, E> {
+                Ok(Self::Value::from(value))
             }
 
             fn visit_map<M: serde::de::MapAccess<'de>>(self, map: M) -> Result<Self::Value, M::Error> {
@@ -68,4 +76,3 @@ impl From<String> for FunctionCall {
         }
     }
 }
-

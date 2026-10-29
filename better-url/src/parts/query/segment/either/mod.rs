@@ -8,8 +8,8 @@ mod value;
 /// Either [`SpecialQuerySegment`] or [`NonSpecialQuerySegment`].
 #[derive(Debug, Clone)]
 pub enum QuerySegment<'a> {
-    /** [`SpecialQuerySegment`].    **/ Special   (SpecialQuerySegment   <'a>),
-    /** [`NonSpecialQuerySegment`]. **/ NonSpecial(NonSpecialQuerySegment<'a>),
+    /** [`SpecialQuerySegment`].    */ Special   (SpecialQuerySegment   <'a>),
+    /** [`NonSpecialQuerySegment`]. */ NonSpecial(NonSpecialQuerySegment<'a>),
 }
 
 impl<'a> QuerySegment<'a> {
@@ -39,8 +39,8 @@ impl<'a> QuerySegment<'a> {
         }
     }
 
-    /** [`SpecialQuerySegment::new`].    **/ pub fn new_special    <T: Into<SpecialQuerySegment   <'a>>>(value: T) -> Self {SpecialQuerySegment   ::new(value).into()}
-    /** [`NonSpecialQuerySegment::new`]. **/ pub fn new_non_special<T: Into<NonSpecialQuerySegment<'a>>>(value: T) -> Self {NonSpecialQuerySegment::new(value).into()}
+    /** [`SpecialQuerySegment::new`].    */ pub fn new_special    <T: Into<SpecialQuerySegment   <'a>>>(value: T) -> Self {SpecialQuerySegment   ::new(value).into()}
+    /** [`NonSpecialQuerySegment::new`]. */ pub fn new_non_special<T: Into<NonSpecialQuerySegment<'a>>>(value: T) -> Self {NonSpecialQuerySegment::new(value).into()}
 
 
 

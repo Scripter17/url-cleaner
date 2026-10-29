@@ -5,8 +5,8 @@ use crate::prelude::*;
 /// Either [`MaybeSpecialQueryValue`] or [`MaybeNonSpecialQueryValue`].
 #[derive(Debug, Clone)]
 pub enum MaybeQueryLikeValue<'a> {
-    /** [`MaybeQueryValue`].         **/ Query   (MaybeQueryValue        <'a>),
-    /** [`MaybeFragmentQueryValue`]. **/ Fragment(MaybeFragmentQueryValue<'a>),
+    /** [`MaybeQueryValue`].         */ Query   (MaybeQueryValue        <'a>),
+    /** [`MaybeFragmentQueryValue`]. */ Fragment(MaybeFragmentQueryValue<'a>),
 }
 
 impl<'a> MaybeQueryLikeValue<'a> {
@@ -23,9 +23,9 @@ impl<'a> MaybeQueryLikeValue<'a> {
         MaybeQueryValue::new(value, r#type).into()
     }
 
-    /** [`MaybeSpecialQueryValue::new`].    **/ pub fn new_special    <T: Into<MaybeSpecialQueryValue   <'a>>>(value: T) -> Self {value.into().into()}
-    /** [`MaybeNonSpecialQueryValue::new`]. **/ pub fn new_non_special<T: Into<MaybeNonSpecialQueryValue<'a>>>(value: T) -> Self {value.into().into()}
-    /** [`MaybeFragmentQueryValue::new`].   **/ pub fn new_fragment   <T: Into<MaybeFragmentQueryValue  <'a>>>(value: T) -> Self {value.into().into()}
+    /** [`MaybeSpecialQueryValue::new`].    */ pub fn new_special    <T: Into<MaybeSpecialQueryValue   <'a>>>(value: T) -> Self {value.into().into()}
+    /** [`MaybeNonSpecialQueryValue::new`]. */ pub fn new_non_special<T: Into<MaybeNonSpecialQueryValue<'a>>>(value: T) -> Self {value.into().into()}
+    /** [`MaybeFragmentQueryValue::new`].   */ pub fn new_fragment   <T: Into<MaybeFragmentQueryValue  <'a>>>(value: T) -> Self {value.into().into()}
 
 
 

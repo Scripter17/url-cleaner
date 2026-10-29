@@ -4,12 +4,12 @@ use crate::prelude::*;
 
 /// Encode a [`SpecialNotFilePathSegment`].
 pub fn make_special_not_file_path_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode(value, PATH_SEGMENT)
+    percent_encode(value, &PATH_SEGMENT)
 }
 
 /// Encode a [`SpecialNotFilePathSegment`] from bytes.
 pub fn make_special_not_file_path_segment_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    percent_encode_bytes(value, PATH_SEGMENT)
+    percent_encode_bytes(value, &PATH_SEGMENT)
 }
 
 

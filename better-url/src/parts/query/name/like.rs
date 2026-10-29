@@ -5,8 +5,8 @@ use crate::prelude::*;
 /// Either [`SpecialQueryName`] or [`NonSpecialQueryName`].
 #[derive(Debug, Clone)]
 pub enum QueryLikeName<'a> {
-    /** [`QueryName`].         **/ Query   (QueryName        <'a>),
-    /** [`FragmentQueryName`]. **/ Fragment(FragmentQueryName<'a>),
+    /** [`QueryName`].         */ Query   (QueryName        <'a>),
+    /** [`FragmentQueryName`]. */ Fragment(FragmentQueryName<'a>),
 }
 
 impl<'a> QueryLikeName<'a> {
@@ -23,9 +23,9 @@ impl<'a> QueryLikeName<'a> {
         QueryName::new(value, r#type).into()
     }
 
-    /** [`SpecialQueryName::new`].    **/ pub fn new_special    <T: Into<SpecialQueryName   <'a>>>(value: T) -> Self {value.into().into()}
-    /** [`NonSpecialQueryName::new`]. **/ pub fn new_non_special<T: Into<NonSpecialQueryName<'a>>>(value: T) -> Self {value.into().into()}
-    /** [`FragmentQueryName::new`].   **/ pub fn new_fragment   <T: Into<FragmentQueryName  <'a>>>(value: T) -> Self {value.into().into()}
+    /** [`SpecialQueryName::new`].    */ pub fn new_special    <T: Into<SpecialQueryName   <'a>>>(value: T) -> Self {value.into().into()}
+    /** [`NonSpecialQueryName::new`]. */ pub fn new_non_special<T: Into<NonSpecialQueryName<'a>>>(value: T) -> Self {value.into().into()}
+    /** [`FragmentQueryName::new`].   */ pub fn new_fragment   <T: Into<FragmentQueryName  <'a>>>(value: T) -> Self {value.into().into()}
 
 
 

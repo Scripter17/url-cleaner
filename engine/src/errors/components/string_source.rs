@@ -5,37 +5,37 @@ use crate::prelude::*;
 /// The enum of errors [`StringSource::get`] can return.
 #[derive(Debug, Error)]
 pub enum StringSourceError {
-    /** [`ExplicitError`].               **/                           #[error(transparent)] ExplicitError              (#[from] ExplicitError                ),
-    /** [`AssertError`].                 **/                           #[error(transparent)] AssertError                (#[from] AssertError                  ),
-    /** [`TryElseError`].                **/                           #[error(transparent)] TryElseError               (#[from] Box<TryElseError<Self>>      ),
-    /** [`FirstNotErrorErrors`].         **/                           #[error(transparent)] FirstNotErrorErrors        (#[from] FirstNotErrorErrors<Self>    ),
+    /** [`ExplicitError`].               */                           #[error(transparent)] ExplicitError              (#[from] ExplicitError                ),
+    /** [`AssertError`].                 */                           #[error(transparent)] AssertError                (#[from] AssertError                  ),
+    /** [`TryElseError`].                */                           #[error(transparent)] TryElseError               (#[from] Box<TryElseError<Self>>      ),
+    /** [`FirstNotErrorErrors`].         */                           #[error(transparent)] FirstNotErrorErrors        (#[from] FirstNotErrorErrors<Self>    ),
 
-    /** [`StringNotFound`].              **/                           #[error(transparent)] StringNotFound             (#[from] StringNotFound               ),
-    /** [`StringModificationError`].     **/                           #[error(transparent)] StringModificationError    (#[from] StringModificationError      ),
-    /** [`Box<StringMatcherError>`].     **/                           #[error(transparent)] StringMatcherError         (#[from] Box<StringMatcherError>      ),
-    /** [`PartitioningSourceError`].     **/                           #[error(transparent)] PartitioningSourceError    (#[from] Box<PartitioningSourceError> ),
-    /** [`RegexExpansionError`].         **/                           #[error(transparent)] RegexExpansionError        (#[from] Box<RegexExpansionError>     ),
+    /** [`StringNotFound`].              */                           #[error(transparent)] StringNotFound             (#[from] StringNotFound               ),
+    /** [`StringModificationError`].     */                           #[error(transparent)] StringModificationError    (#[from] StringModificationError      ),
+    /** [`Box<StringMatcherError>`].     */                           #[error(transparent)] StringMatcherError         (#[from] Box<StringMatcherError>      ),
+    /** [`PartitioningSourceError`].     */                           #[error(transparent)] PartitioningSourceError    (#[from] Box<PartitioningSourceError> ),
+    /** [`RegexExpansionError`].         */                           #[error(transparent)] RegexExpansionError        (#[from] Box<RegexExpansionError>     ),
 
-    /** [`PartitioningNotFound`]         **/                           #[error(transparent)] PartitioningNotFound       (#[from] Box<PartitioningNotFound>    ),
-    /** [`MapNotFound`]                  **/                           #[error(transparent)] MapNotFound                (#[from] Box<MapNotFound>             ),
-    /** [`FlagSourceError`].             **/                           #[error(transparent)] FlagSourceError            (#[from] Box<FlagSourceError>         ),
-    /** [`VarSourceError`].              **/                           #[error(transparent)] VarSourceError             (#[from] Box<VarSourceError>          ),
-    /** [`MapSourceError`].              **/                           #[error(transparent)] MapSourceError             (#[from] Box<MapSourceError>          ),
-    /** [`regex::Error`].                **/                           #[error(transparent)] RegexError                 (#[from] Box<regex::Error>            ),
+    /** [`PartitioningNotFound`]         */                           #[error(transparent)] PartitioningNotFound       (#[from] Box<PartitioningNotFound>    ),
+    /** [`MapNotFound`]                  */                           #[error(transparent)] MapNotFound                (#[from] Box<MapNotFound>             ),
+    /** [`FlagSourceError`].             */                           #[error(transparent)] FlagSourceError            (#[from] Box<FlagSourceError>         ),
+    /** [`VarSourceError`].              */                           #[error(transparent)] VarSourceError             (#[from] Box<VarSourceError>          ),
+    /** [`MapSourceError`].              */                           #[error(transparent)] MapSourceError             (#[from] Box<MapSourceError>          ),
+    /** [`regex::Error`].                */                           #[error(transparent)] RegexError                 (#[from] Box<regex::Error>            ),
 
-    /** [`NoHttpClient`].                **/ #[cfg(feature = "http" )] #[error(transparent)] NoHttpClient               (#[from] NoHttpClient                 ),
-    /** [`DoHttpRequestError`].          **/ #[cfg(feature = "http" )] #[error(transparent)] DoHttpRequestError         (#[from] Box<DoHttpRequestError>      ),
+    /** [`NoHttpClient`].                */ #[cfg(feature = "http" )] #[error(transparent)] NoHttpClient               (#[from] NoHttpClient                 ),
+    /** [`DoHttpRequestError`].          */ #[cfg(feature = "http" )] #[error(transparent)] DoHttpRequestError         (#[from] Box<DoHttpRequestError>      ),
 
-    /** [`ReadFromCacheError`].          **/ #[cfg(feature = "cache")] #[error(transparent)] ReadFromCacheError         (#[from] ReadFromCacheError           ),
-    /** [`WriteToCacheError`].           **/ #[cfg(feature = "cache")] #[error(transparent)] WriteToCacheError          (#[from] WriteToCacheError            ),
+    /** [`ReadFromCacheError`].          */ #[cfg(feature = "cache")] #[error(transparent)] ReadFromCacheError         (#[from] ReadFromCacheError           ),
+    /** [`WriteToCacheError`].           */ #[cfg(feature = "cache")] #[error(transparent)] WriteToCacheError          (#[from] WriteToCacheError            ),
 
-    /** [`FunctionNotFound`].            **/                           #[error(transparent)] FunctionNotFound           (#[from] FunctionNotFound             ),
-    /** [`NotInFunction`].               **/                           #[error(transparent)] NotInFunction              (#[from] NotInFunction                ),
-    /** [`FunctionArgFunctionNotFound`]. **/                           #[error(transparent)] FunctionArgFunctionNotFound(#[from] FunctionArgFunctionNotFound  ),
+    /** [`FunctionNotFound`].            */                           #[error(transparent)] FunctionNotFound           (#[from] FunctionNotFound             ),
+    /** [`NotInFunction`].               */                           #[error(transparent)] NotInFunction              (#[from] NotInFunction                ),
+    /** [`FunctionArgFunctionNotFound`]. */                           #[error(transparent)] FunctionArgFunctionNotFound(#[from] FunctionArgFunctionNotFound  ),
 
-    /** [`std::str::Utf8Error`]. **/ #[error(transparent)] Utf8Error(#[from] std::str::Utf8Error),
+    /** [`std::str::Utf8Error`]. */ #[error(transparent)] Utf8Error(#[from] std::str::Utf8Error),
 
-    /** [`ExternError`]. **/ #[error(transparent)] Extern(#[from] ExternError),
+    /** [`ExternError`]. */ #[error(transparent)] Extern(#[from] ExternError),
 }
 
 impl From<TryElseError<Self>> for StringSourceError {fn from(value: TryElseError<Self>) -> Self {Box::new(value).into()}}

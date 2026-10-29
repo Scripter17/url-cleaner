@@ -74,7 +74,7 @@ pub fn pop_query_bytes(value: &[u8]) -> (&[u8], Option<&[u8]>) {
 /// assert_eq!(pop_special_path_bytes(b"example.com"      ), (b"example.com".as_slice(), b"/"     .as_slice()));
 /// ```
 pub fn pop_special_path_bytes(value: &[u8]) -> (&[u8], &[u8]) {
-    match value.memchrn(*b"/\\") {
+    match memchr::memchr2(b'/', b'\\', value) {
         Some(i) => unsafe {(value.get_unchecked(..i), value.get_unchecked(i..))},
         None    =>         (value                   , b"/"                    ) ,
     }

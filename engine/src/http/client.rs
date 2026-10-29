@@ -8,8 +8,6 @@ use crate::prelude::*;
 
 /// A [`reqwest::Client`] with a default constructor suitable for URL Cleaner.
 ///
-/// PLEASE note that this uses [`tokio::runtime::Handle::block_on`] and thus can only be used in multithreaded runtimes.
-///
 /// The default constructor is as follows:
 ///
 /// 1. Header `User-Agent` set to `Firefox`.
@@ -28,7 +26,7 @@ pub struct HttpClient {
 impl HttpClient {
     /// [`tokio::runtime::Handle::block_on`] + [`Self::new`].
     /// # Panics
-    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    /// If [`tokio::runtime::Handle::block_on`] panics, that panic is not caught.
     pub fn new_sync(handle: tokio::runtime::Handle) -> Self {
         handle.block_on(Self::new())
     }
@@ -37,7 +35,7 @@ impl HttpClient {
     /// # Errors
     /// If [`Self::do`] returns an error, that error is returned.
     /// # Panics
-    /// If [`tokio::runtime::Handle::block_on`] panics (usually by being called in an async context or by pointing to a dropped runtime), that panic is not caught.
+    /// If [`tokio::runtime::Handle::block_on`] panics, that panic is not caught.
     pub fn do_sync<'j: 't, 't>(&'j self, request: &'j HttpRequestSource, response: &'j HttpResponseHandler, task_state: &'t TaskState<'j>, args: Option<&'j FunctionArgs>) -> Result<Option<Cow<'t, str>>, DoHttpRequestError> {
         self.handle.block_on(self.r#do(request, response, task_state, args))
     }
@@ -77,7 +75,7 @@ impl HttpClient {
             let ret = reqwest::Client::builder().default_headers([
     		    (HeaderName::from_static("user-agent"), HeaderValue::from_static("Firefox")),
     		    (HeaderName::from_static("sec-gpc"   ), HeaderValue::from_static("1"      )),
-    		    (HeaderName::from_static("dnt"       ), HeaderValue::from_static("1"      ))
+    		    (HeaderName::from_static("dnt"       ), HeaderValue::from_static("1"      )),
             ].into_iter().collect())
                 .redirect(reqwest::redirect::Policy::none()).referer(false)
                 .build()?;

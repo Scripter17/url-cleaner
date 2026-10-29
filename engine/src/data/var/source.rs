@@ -17,11 +17,11 @@ pub enum VarSource {
     /// The default.
     #[default]
     None,
-    /** [`Params::vars`].       **/ Params     (#[suitable(assert = var_source_params      )] StringSource),
-    /** [`TaskContext::vars`].  **/ TaskContext(#[suitable(assert = var_source_task_context)] StringSource),
-    /** [`JobContext::vars`].   **/ JobContext (#[suitable(assert = var_source_job_context )] StringSource),
-    /** [`FunctionArgs::vars`]. **/ FunctionArg(                                              StringSource),
-    /** [`Secrets::vars`].      **/ Secret     (#[suitable(assert = var_source_secret      )] StringSource),
+    /** [`Params::vars`].       */ Params     (#[suitable(assert = var_source_params      )] StringSource),
+    /** [`TaskContext::vars`].  */ TaskContext(#[suitable(assert = var_source_task_context)] StringSource),
+    /** [`JobContext::vars`].   */ JobContext (#[suitable(assert = var_source_job_context )] StringSource),
+    /** [`FunctionArgs::vars`]. */ FunctionArg(                                              StringSource),
+    /** [`Secrets::vars`].      */ Secret     (#[suitable(assert = var_source_secret      )] StringSource),
 }
 
 impl VarSource {

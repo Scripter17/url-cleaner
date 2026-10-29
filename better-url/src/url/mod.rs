@@ -50,8 +50,8 @@ mod fragment;
 /// ```
 #[derive(Debug, Clone)]
 pub struct BetterUrl {
-    /** The serialization.       **/ serialization: UrlString    ,
-    /** The [`DenseUrlDetails`]. **/ details      : DenseUrlDetails,
+    /** The serialization.       */ serialization: UrlString    ,
+    /** The [`DenseUrlDetails`]. */ details      : DenseUrlDetails,
 }
 
 impl BetterUrl {

@@ -7,16 +7,16 @@ pub use iter::*;
 
 /// Encode a [`SpecialNotFilePathSegments`].
 pub fn make_special_not_file_path_segments<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = percent_encode (value, PATH);
-    let (b, value) = forward_slashes(value      );
+    let (a, value) = percent_encode (value, &PATH);
+    let (b, value) = forward_slashes(value       );
 
     (a || b, value)
 }
 
 /// Encode a [`SpecialNotFilePathSegments`] from bytes.
 pub fn make_special_not_file_path_segments_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, str>) {
-    let (a, value) = percent_encode_bytes(value, PATH);
-    let (b, value) = forward_slashes     (value      );
+    let (a, value) = percent_encode_bytes(value, &PATH);
+    let (b, value) = forward_slashes     (value       );
 
     (a || b, value)
 }

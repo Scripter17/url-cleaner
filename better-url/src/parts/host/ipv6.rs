@@ -60,6 +60,18 @@ impl<'a> Ipv6Host<'a> {
 
 
 
+impl<'a> TryFrom<Cow<'a, str>> for Ipv6Host<'a> {
+    type Error = InvalidIpv6Host;
+
+    fn try_from(value: Cow<'a, str>) -> Result<Self, Self::Error> {
+        let (_, value, addr) = make_ipv6_host(value)?;
+
+        Ok(unsafe {
+            Self::from_parts(value, addr)
+        })
+   }
+}
+
 impl<'a> TryFrom<Cow<'a, [u8]>> for Ipv6Host<'a> {
     type Error = InvalidIpv6Host;
 
@@ -123,9 +135,13 @@ impl<'a> TryFrom<NonSpecialHost<'a>> for Ipv6Host<'a> {
 
 impl From<Ipv6Addr> for Ipv6Host<'static> {
     fn from(value: Ipv6Addr) -> Self {
+        let mut host = String::new();
+
+        write_ipv6_host(&value, &mut host).expect("???");
+
         Self {
-            host: format!("[{value}]").into(),
-            details: value.into()
+            host: host.into(),
+            details: value.into(),
         }
     }
 }

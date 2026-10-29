@@ -12,6 +12,6 @@ pub struct InvalidScheme;
 /// The errors that can happen when setting a scheme.
 #[derive(Debug, Error)]
 pub enum SetSchemeError {
-    /** [`InvalidScheme`]. **/ #[error(transparent)] InvalidScheme(#[from] InvalidScheme),
-    /** [`TooLong`].       **/ #[error(transparent)] TooLong      (#[from] TooLong      ),
+    /** [`InvalidScheme`]. */ #[error(transparent)] InvalidScheme(#[from] InvalidScheme),
+    /** [`TooLong`].       */ #[error(transparent)] TooLong      (#[from] TooLong      ),
 }

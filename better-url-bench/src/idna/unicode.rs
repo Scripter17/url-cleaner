@@ -7,22 +7,24 @@ use crate::util::BasicBenchThing;
 /// ToUnicode.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /** Compare to all parsers.       **/ #[arg(long)] pub all  : bool,
-    /** Compare to Servo's URL crate. **/ #[arg(long)] pub servo: bool,
-    /** Compare to Ada's URL crate.   **/ #[arg(long)] pub ada  : bool,
+    /** Compare to all parsers.       */ #[arg(long)] pub all  : bool,
+    /** Compare to Servo's URL crate. */ #[arg(long)] pub servo: bool,
+    /** Compare to Ada's URL crate.   */ #[arg(long)] pub ada  : bool,
 
-    /** The [`BasicBenchThing`]. **/ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
+    /** The [`BasicBenchThing`]. */ #[command(flatten)] pub basic_bench_thing: BasicBenchThing,
 }
 
 impl Args {
     /// Do the command.
-    pub fn r#do(self) {
+    pub fn r#do(mut self) {
         let mut burl_total  = std::time::Duration::default();
         let mut servo_total = std::time::Duration::default();
         let mut ada_total   = std::time::Duration::default();
 
-        let servo = self.servo || self.all;
-        let ada   = self.ada   || self.all;
+        if self.all {
+            self.servo = true;
+            self.ada   = true;
+        }
 
         for (i, line) in (1..).zip(std::io::stdin().lines().map(Result::unwrap)) {
             print!("{i}");
@@ -34,7 +36,7 @@ impl Args {
 
 
 
-            if servo {
+            if self.servo {
                 let servo = self.basic_bench_thing.bench_with_input(idna::domain_to_unicode, &line);
                 servo_total += servo;
 
@@ -46,7 +48,7 @@ impl Args {
 
 
 
-            if ada {
+            if self.ada {
                 let ada = self.basic_bench_thing.bench_with_input(ada_url::Idna::unicode, &line);
                 ada_total += ada;
 

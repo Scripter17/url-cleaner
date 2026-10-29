@@ -8,11 +8,11 @@ use crate::prelude::*;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum HostDetails {
-    /** [`DomainHostDetails`]. **/ Domain(DomainHostDetails),
-    /** [`Ipv4HostDetails`].   **/ Ipv4  (Ipv4HostDetails  ),
-    /** [`Ipv6HostDetails`].   **/ Ipv6  (Ipv6HostDetails  ),
-    /** [`OpaqueHostDetails`]. **/ Opaque(OpaqueHostDetails),
-    /** [`EmptyHostDetails`].  **/ Empty (EmptyHostDetails ),
+    /** [`DomainHostDetails`]. */ Domain(DomainHostDetails),
+    /** [`Ipv4HostDetails`].   */ Ipv4  (Ipv4HostDetails  ),
+    /** [`Ipv6HostDetails`].   */ Ipv6  (Ipv6HostDetails  ),
+    /** [`OpaqueHostDetails`]. */ Opaque(OpaqueHostDetails),
+    /** [`EmptyHostDetails`].  */ Empty (EmptyHostDetails ),
 }
 
 impl HostDetails {
@@ -31,17 +31,17 @@ impl HostDetails {
         })
     }
 
-    /** If it's [`Self::Domain`]. **/ pub fn is_domain(self) -> bool {matches!(self, Self::Domain(_))}
-    /** If it's [`Self::Ipv4`].   **/ pub fn is_ipv4  (self) -> bool {matches!(self, Self::Ipv4  (_))}
-    /** If it's [`Self::ipv6`].   **/ pub fn is_ipv6  (self) -> bool {matches!(self, Self::Ipv6  (_))}
-    /** If it's [`Self::Opaque`]. **/ pub fn is_opaque(self) -> bool {matches!(self, Self::Opaque(_))}
-    /** If it's [`Self::Empty`].  **/ pub fn is_empty (self) -> bool {matches!(self, Self::Empty (_))}
+    /** If it's [`Self::Domain`]. */ pub fn is_domain(self) -> bool {matches!(self, Self::Domain(_))}
+    /** If it's [`Self::Ipv4`].   */ pub fn is_ipv4  (self) -> bool {matches!(self, Self::Ipv4  (_))}
+    /** If it's [`Self::ipv6`].   */ pub fn is_ipv6  (self) -> bool {matches!(self, Self::Ipv6  (_))}
+    /** If it's [`Self::Opaque`]. */ pub fn is_opaque(self) -> bool {matches!(self, Self::Opaque(_))}
+    /** If it's [`Self::Empty`].  */ pub fn is_empty (self) -> bool {matches!(self, Self::Empty (_))}
 
-    /** The [`DomainHostDetails`]. **/ pub fn domain(self) -> Option<DomainHostDetails> {self.try_into().ok()}
-    /** The [`Ipv4HostDetails`].   **/ pub fn ipv4  (self) -> Option<Ipv4HostDetails  > {self.try_into().ok()}
-    /** The [`Ipv6HostDetails`].   **/ pub fn ipv6  (self) -> Option<Ipv6HostDetails  > {self.try_into().ok()}
-    /** The [`OpaqueHostDetails`]. **/ pub fn opaque(self) -> Option<OpaqueHostDetails> {self.try_into().ok()}
-    /** The [`EmptyHostDetails`].  **/ pub fn empty (self) -> Option<EmptyHostDetails > {self.try_into().ok()}
+    /** The [`DomainHostDetails`]. */ pub fn domain(self) -> Option<DomainHostDetails> {self.try_into().ok()}
+    /** The [`Ipv4HostDetails`].   */ pub fn ipv4  (self) -> Option<Ipv4HostDetails  > {self.try_into().ok()}
+    /** The [`Ipv6HostDetails`].   */ pub fn ipv6  (self) -> Option<Ipv6HostDetails  > {self.try_into().ok()}
+    /** The [`OpaqueHostDetails`]. */ pub fn opaque(self) -> Option<OpaqueHostDetails> {self.try_into().ok()}
+    /** The [`EmptyHostDetails`].  */ pub fn empty (self) -> Option<EmptyHostDetails > {self.try_into().ok()}
 
     /// Split into a [`HostType`] and [`HostData`].
     pub fn into_parts(self) -> (HostType, HostData) {

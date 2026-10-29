@@ -7,7 +7,7 @@ impl From<StringSourceError> for FlagSourceError {fn from(value: StringSourceErr
 /// [`FlagSource::get`].
 #[derive(Debug, Error)]
 pub enum FlagSourceError {
-    /** [`StringSourceError`]. **/ #[error(transparent)] StringSourceError(#[from] Box<StringSourceError>),
-    /** [`StringNotFound`].    **/ #[error(transparent)] StringNotFound   (#[from] StringNotFound        ),
-    /** [`NotInFunction`].     **/ #[error(transparent)] NotInFunction    (#[from] NotInFunction         ),
+    /** [`StringSourceError`]. */ #[error(transparent)] StringSourceError(#[from] Box<StringSourceError>),
+    /** [`StringNotFound`].    */ #[error(transparent)] StringNotFound   (#[from] StringNotFound        ),
+    /** [`NotInFunction`].     */ #[error(transparent)] NotInFunction    (#[from] NotInFunction         ),
 }

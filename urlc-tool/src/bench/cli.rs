@@ -5,11 +5,11 @@ use super::prelude::*;
 /// CLI.
 #[derive(Debug, Parser)]
 pub struct Args {
-    /** The name.       **/ #[arg(long)] pub name       : String,
-    /** The task.       **/ #[arg(long)] pub task       : String,
-    /** The num.        **/ #[arg(long)] pub num        : u64,
-    /** The ParamsDiff. **/ #[arg(long)] pub params_diff: Option<String>,
-    /** The tool.       **/ #[arg(long)] pub tool       : ClientTool,
+    /** The name.       */ #[arg(long)] pub name       : String,
+    /** The task.       */ #[arg(long)] pub task       : String,
+    /** The num.        */ #[arg(long)] pub num        : u64,
+    /** The ParamsDiff. */ #[arg(long)] pub params_diff: Option<String>,
+    /** The tool.       */ #[arg(long)] pub tool       : ClientTool,
 }
 
 impl Args {
