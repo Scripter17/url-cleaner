@@ -1,4 +1,10 @@
 //! URL Cleaner Site CLIent.
+//!
+//! Licensed under the Aferro GNU Public License version 3.0 or later.
+//!
+//! <https://www.gnu.org/licenses/agpl-3.0.html>
+//!
+//! <https://github.com/Scripter17/url-cleaner>
 
 #![expect(clippy::unwrap_used       , reason = "It's fiiiiine.")]
 #![expect(clippy::missing_panics_doc, reason = "It's fiiiiine.")]
@@ -17,6 +23,8 @@ pub mod clean;
 /// URL Cleaner Site CLIent.
 ///
 /// Licensed under the Aferro GNU Public License version 3.0 or later.
+///
+/// https://www.gnu.org/licenses/agpl-3.0.html
 ///
 /// https://github.com/Scripter17/url-cleaner
 #[derive(Debug, Parser)]

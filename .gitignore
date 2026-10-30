@@ -1,13 +1,10 @@
-target
+/target
 *.sqlite
-bacon.toml
-logs
+/bacon.toml
 /reddit-*
 /urlc-tool/out/
 /urlc-tool/tmp/
-/bench
-/keys
-profiles.json
-burl-bench*.txt
 /better-url-bench/out/
 /better-url-bench/tmp/
+/urlcs-tls-stuff
+/profiles.json

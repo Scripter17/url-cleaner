@@ -34,12 +34,12 @@ pub struct JobConfig {
     pub params_diff: ParamsDiff,
     /// If [`true`], unchanged lines are replaced with `=`.
     ///
-    /// Defaults to false.
+    /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub brief_unchanged: bool,
     /// If [`true`], error lines are replaced with `-`.
     ///
-    /// Defaults to false.
+    /// Defaults to [`false`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub brief_error: bool,
     /// If [`true`], hide the threads.
@@ -111,7 +111,7 @@ impl<S: Sync> FromRequestParts<S> for JobConfig {
     type Rejection = GetJobConfigError;
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        Ok(match (MaybeSpecialQuery::from(parts.uri.query()).find("config", 0), parts.headers.get("x-config")) {
+        Ok(match (MaybeSpecialQuery::from(parts.uri.query()).find("config", 0), parts.headers.get("x-job-config")) {
             (None        , None        ) => Default::default(),
             (None        , Some(config)) => serde_json::from_slice(config.as_bytes())?,
             (Some(config), None        ) => serde_json::from_str(&config.into_value().lossy_decode().ok_or(GetJobConfigError::EmptyConfigParam)?)?,

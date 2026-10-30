@@ -1,4 +1,10 @@
-//! A discord app for URL Cleaner
+//! URL Cleaner Discord - Explicit non-consent to URL spytext.
+//!
+//! Licensed under the Aferro GNU Public License version 3.0 or later.
+//!
+//! <https://www.gnu.org/licenses/agpl-3.0.html>
+//!
+//! <https://github.com/Scripter17/url-cleaner>
 
 use std::path::PathBuf;
 use std::borrow::Cow;
@@ -18,7 +24,7 @@ mod get_urls;
 
 /// The introduction to the /help message.
 const INFO: &str = concat!(r#"URL Cleaner Discord
-Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
+Licensed under the Affero General Public License V3 or later
 https://www.gnu.org/licenses/agpl-3.0.html
 "#, env!("CARGO_PKG_REPOSITORY"));
 
@@ -26,6 +32,8 @@ https://www.gnu.org/licenses/agpl-3.0.html
 /// URL Cleaner Discord - Explicit non-consent to URL spytext.
 ///
 /// Licensed under the Aferro GNU Public License version 3.0 or later.
+///
+/// https://www.gnu.org/licenses/agpl-3.0.html
 ///
 /// https://github.com/Scripter17/url-cleaner
 ///
@@ -155,9 +163,7 @@ async fn main() -> Result<(), DiscordError> {
         },
     };
 
-    let intents = GatewayIntents::non_privileged();
-
-    ClientBuilder::new(Token::from_env("URLCD_TOKEN")?, intents)
+    ClientBuilder::new(Token::from_env("URLCD_TOKEN")?, GatewayIntents::non_privileged())
         .event_handler(Arc::new(bot))
         .activity(serenity::gateway::ActivityData::custom(env!("CARGO_PKG_REPOSITORY")))
         .await?.start().await?;

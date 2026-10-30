@@ -1,6 +1,10 @@
-//! URL Cleaner SIte - Explicit non-consent to URL spytext.
+//! URL Cleaner Site - Explicit non-consent to URL spytext.
 //!
-//! See [url_cleaner_engine] to integrate URL Cleaner with your own projects.
+//! Licensed under the Aferro GNU Public License version 3.0 or later.
+//!
+//! <https://www.gnu.org/licenses/agpl-3.0.html>
+//!
+//! <https://github.com/Scripter17/url-cleaner>
 
 use clap::Parser;
 use thiserror::Error;
@@ -16,6 +20,8 @@ const USERSCRIPT: &str = include_str!("userscript.js");
 /// URL Cleaner Site - Explicit non-consent to URL spytext.
 ///
 /// Licensed under the Aferro GNU Public License version 3.0 or later.
+///
+/// https://www.gnu.org/licenses/agpl-3.0.html
 ///
 /// https://github.com/Scripter17/url-cleaner
 ///

@@ -12,6 +12,8 @@ The input `a\nb\r\nc` is said to contain the lines `a`, `b`, and `c`.
 
 Whether or not the empty string contains zero lines or one empty line is avoided by ignoring empty lines.
 
+Similarly, whether or not a trailing line separator counts as a trailing empty line is avoided by ignoring empty lines.
+
 ## Chunks
 
 A stream of chunks is a stream of each chunk's lines, as defined above.
@@ -19,6 +21,8 @@ A stream of chunks is a stream of each chunk's lines, as defined above.
 Chunks `a\nb` and `c\r\nd` are said to contain lines `a`, `b`, `c`, and `d`.
 
 Whether or not the empty chunk contains zero lines or one empty line is avoided by ignoring empty lines.
+
+Similarly, whether or not a trailing line separator counts as a trailing empty line is avoided by ignoring empty lines.
 
 ## Input
 

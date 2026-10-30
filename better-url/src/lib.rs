@@ -1,8 +1,10 @@
 //! A URL crate that's better than the one provided by Servo.
 //!
-//! Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
+//! Licensed under the Affero General Public License V3 or later
 //!
 //! <https://www.gnu.org/licenses/agpl-3.0.html>
+//!
+//! <https://github.com/Scripter17/url-cleaner>
 //!
 //! ## Performance
 //!

@@ -20,13 +20,13 @@ jobs:
     runs-on: ${{ matrix.oses.name }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Build
       run: cargo build -r --bin url-cleaner --bin url-cleaner-site --bin url-cleaner-site-client --bin url-cleaner-discord
 
     - name: Upload
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ runner.os }}
         if-no-files-found: error
@@ -35,5 +35,16 @@ jobs:
           target/release/url-cleaner-site${{ matrix.oses.extension }}
           target/release/url-cleaner-site-client${{ matrix.oses.extension }}
           target/release/url-cleaner-discord${{ matrix.oses.extension }}
+          LICENSE.txt
           engine/src/cleaner/bundled-cleaner.json
-          site/url-cleaner-site-userscript.js
+          site/src/userscript.js
+          *.md
+          Cargo.toml
+          Cargo.lock
+          macros/
+          better-url/
+          engine/
+          cli/
+          site/
+          site-client/
+          discord/

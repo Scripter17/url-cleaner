@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
 
     - name: Setup
       run: |
@@ -19,23 +19,30 @@ jobs:
         cargo build --bin url-cleaner-site --bin url-cleaner-site-client
         cp target/debug/url-cleaner-site urlcs
         cp target/debug/url-cleaner-site-client urlcsc
+        ./urlcs keygen
+        sudo cp urlcs-tls-stuff/urlcs-ca.crt /usr/local/share/ca-certificates/
+        sudo update-ca-certificates
 
     - name: 'Output'
       run: |
-        n="
-        "
-        ./urlcs run &
-        sleep 1
-        for scheme in http ws; do
+        for scheme in http ws https wss; do
+          case "$scheme" in
+            http)  ./urlcs run & ;;
+            ws)    ./urlcs run & ;;
+            https) ./urlcs run --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
+            wss)   ./urlcs run --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
+          esac
+
+          sleep 1;
+
           for num in 0 1 10 100 1000 10000; do
-            for s in "$n" "$n$n"; do
-              for h in -0 -1; do
-                diff <(seq -s "$s" -f "https://stdin/%0.0f" $num | head -c $h | ./urlcsc clean $scheme://localhost:9149) <(seq -f "https://stdin/%0.0f" $num)
-              done
+            for n in $'\n' $'\r\n' $'\n\n' $'\n\r\n' $'\r\n\n' $'\r\n\r\n'; do
+              diff <(seq -s "$n" -t "$n" -f "https://stdin/%0.0f" $num | ./urlcsc clean $scheme://localhost:9149) <(seq -f "https://stdin/%0.0f" $num)
             done
           done
+
+          kill %%
         done
-        kill %1
 
     - name: 'Profiles'
       run: |
@@ -55,10 +62,17 @@ jobs:
         PARAMS_DIFF1='{"unvars": ["client_type"]}'
         PARAMS_DIFF2='{"vars": {"client_type": "mobile"}}'
 
-        ./urlcs run --profiles <(echo "$PROFILES") &
-        sleep 1
 
-        for scheme in http ws; do
+        for scheme in http ws https wss; do
+          case "$scheme" in
+            http)  ./urlcs run --profiles <(echo "$PROFILES") & ;;
+            ws)    ./urlcs run --profiles <(echo "$PROFILES") & ;;
+            https) ./urlcs run --profiles <(echo "$PROFILES") --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
+            wss)   ./urlcs run --profiles <(echo "$PROFILES") --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
+          esac
+
+          sleep 1;
+
           diff -y <(
             echo 'https://m.youtube.com/shorts/abc' | ./urlcsc clean "$scheme://127.0.0.1:9149/clean"
             echo 'https://m.youtube.com/shorts/abc' | ./urlcsc clean "$scheme://127.0.0.1:9149/clean"                             --params-diff "$PARAMS_DIFF1"
@@ -81,22 +95,28 @@ jobs:
             echo   'https://m.youtube.com/watch?v=abc'
           )
 
-          ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149/clean" --profile "Unknown"
-        done
+          ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149/clean" --profile "Unknown" 2> /dev/null
 
-        kill %1
+          kill %%
+        done
 
     - name: 'Passwords'
       run: |
         SECRETS='{"passwords":["test"]}'
 
-        ./urlcs run --secrets <(echo "$SECRETS") &
-        sleep 1
+        for scheme in http ws https wss; do
+          case "$scheme" in
+            http)  ./urlcs run --secrets <(echo "$SECRETS") & ;;
+            ws)    ./urlcs run --secrets <(echo "$SECRETS") & ;;
+            https) ./urlcs run --secrets <(echo "$SECRETS") --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
+            wss)   ./urlcs run --secrets <(echo "$SECRETS") --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
+          esac
 
-        for scheme in http ws; do
-          ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149"
+          sleep 1;
+
+          ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149"                    2> /dev/null
             echo | ./urlcsc clean "$scheme://127.0.0.1:9149" --password test
-          ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149" --password invalid
-        done
+          ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149" --password invalid 2> /dev/null
 
-        kill $!
+          kill %%
+        done

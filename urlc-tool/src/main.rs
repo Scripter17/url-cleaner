@@ -1,4 +1,10 @@
-//! A tool to for developing URL Cleaner.
+//! An internal tool to for developing URL Cleaner.
+//!
+//! Licensed under the Aferro GNU Public License version 3.0 or later.
+//!
+//! <https://www.gnu.org/licenses/agpl-3.0.html>
+//!
+//! <https://github.com/Scripter17/url-cleaner>
 
 #![expect(clippy::unwrap_used       , reason = "Internal tool. I can fix it when it breads.")]
 #![expect(clippy::indexing_slicing  , reason = "Internal tool. I can fix it when it breads.")]
@@ -36,7 +42,14 @@ pub mod prelude {
 
 use prelude::*;
 
-/// Internal tool to develop URL Cleaner.
+#[expect(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
+/// An internal tool to for developing URL Cleaner.
+///
+/// Licensed under the Aferro GNU Public License version 3.0 or later.
+///
+/// https://www.gnu.org/licenses/agpl-3.0.html
+///
+/// https://github.com/Scripter17/url-cleaner
 #[expect(missing_docs, reason = "Makes clap inherit the docs.")]
 #[derive(Debug, Parser)]
 pub enum Args {

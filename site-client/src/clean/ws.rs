@@ -49,6 +49,7 @@ pub async fn r#do(instance: BetterUrl) {
     while let Some(msg) = stream.next().await {
         match msg {
             // It's fiiiiiiine.
+            // TODO: Is it?
             Err(tungstenite::error::Error::Io(e)) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
             msg => if let Message::Text(x) = msg.unwrap() {
                 println!("{x}");
@@ -57,5 +58,7 @@ pub async fn r#do(instance: BetterUrl) {
         }
     }
 
-    assert_eq!(tasks.await.unwrap(), results);
+    let tasks = tasks.await.unwrap();
+
+    assert_eq!(tasks, results, "Sent {tasks} tasks but only got {results} results");
 }

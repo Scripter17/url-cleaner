@@ -10,7 +10,7 @@ jobs:
   test_windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
     - uses: taiki-e/install-action@cargo-hack
     - name: Test
       run: cargo hack test --feature-powerset --clean-per-run
@@ -18,7 +18,7 @@ jobs:
   doc_windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
     - uses: taiki-e/install-action@cargo-hack
     - name: Doc
       run: cargo hack doc --feature-powerset --no-deps --clean-per-run --document-private-items
@@ -26,7 +26,7 @@ jobs:
   clippy_windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
     - uses: taiki-e/install-action@cargo-hack
     - name: Clippy
       run: cargo hack clippy --feature-powerset --clean-per-run -- -D warnings

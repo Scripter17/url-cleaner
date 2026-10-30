@@ -1,4 +1,10 @@
 //! Macros for URL Cleaner.
+//!
+//! Licensed under the Affero General Public License V3 or later
+//!
+//! <https://www.gnu.org/licenses/agpl-3.0.html>
+//!
+//! <https://github.com/Scripter17/url-cleaner>
 
 use proc_macro::TokenStream;
 

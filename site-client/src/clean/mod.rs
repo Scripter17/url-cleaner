@@ -48,7 +48,7 @@ impl Args {
         if self.no_write_cache  {config.insert("write_cache"    , false.into());}
         if self.hide_cache      {config.insert("hide_cache"     , true .into());}
 
-        instance.set_query_param("config", 0, Some(Some(&serde_json::to_string(&config).unwrap()))).unwrap();
+        instance.set_query_param("config", 0, Some(serde_json::to_string(&config).unwrap())).unwrap();
 
         match instance.scheme_str() {
             "http" | "https" => http::r#do(instance).await,

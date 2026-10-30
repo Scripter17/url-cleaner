@@ -43,7 +43,7 @@ impl Args {
         }).unwrap();
 
         let res = match instance.scheme_str() {
-            "http"  => Client::builder(TokioExecutor::new()).build::<_, String>(HttpConnector ::new()).get(instance.as_str().parse().unwrap()),
+            "http"  => Client::builder(TokioExecutor::new()).build::<_, String>(HttpConnector::new()).get(instance.as_str().parse().unwrap()),
             "https" => {
                 let connector = hyper_rustls::HttpsConnectorBuilder::new().with_native_roots().expect("No native root CA certificates found.").https_only().enable_all_versions().build();
 

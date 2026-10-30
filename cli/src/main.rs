@@ -1,6 +1,10 @@
 //! URL Cleaner CLI - Explicit non-consent to URL spytext.
 //!
-//! See [url_cleaner_engine] to integrate URL Cleaner with your own projects.
+//! Licensed under the Aferro GNU Public License version 3.0 or later.
+//!
+//! <https://www.gnu.org/licenses/agpl-3.0.html>
+//!
+//! <https://github.com/Scripter17/url-cleaner>
 
 use std::num::NonZero;
 use std::path::PathBuf;
@@ -20,6 +24,8 @@ use url_cleaner_engine::prelude::*;
 /// URL Cleaner CLI - Explicit non-consent to URL spytext.
 ///
 /// Licensed under the Aferro GNU Public License version 3.0 or later.
+///
+/// https://www.gnu.org/licenses/agpl-3.0.html
 ///
 /// https://github.com/Scripter17/url-cleaner
 ///

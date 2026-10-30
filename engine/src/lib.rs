@@ -1,4 +1,10 @@
 //! The engine of URL Cleaner.
+//!
+//! Licensed under the Affero General Public License V3 or later
+//!
+//! <https://www.gnu.org/licenses/agpl-3.0.html>
+//!
+//! <https://github.com/Scripter17/url-cleaner>
 
 pub mod data;
 pub mod job;
@@ -14,6 +20,8 @@ pub mod errors;
 #[cfg(feature = "cache")] pub mod cache;
 
 pub(crate) mod util;
+
+pub use better_url;
 
 /// A prelude module to make importing all the various types nicer.
 ///

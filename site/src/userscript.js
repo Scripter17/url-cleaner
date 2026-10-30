@@ -15,7 +15,7 @@ urlc_main();
 
 function urlc_main() {
 	console.log(`[URLC] URL Cleaner Site Userscript ${GM.info.script.version}
-Licensed under the Affero General Public License V3 or later (SPDX: AGPL-3.0-or-later)
+Licensed under the Affero General Public License V3 or later
 https://www.gnu.org/licenses/agpl-3.0.html
 ${GM.info.script.namespace}`);
 
@@ -66,8 +66,6 @@ ${GM.info.script.namespace}`);
        if (/(?:^|\.)furaffinity\.net\.?$/g.test(hostname)) {host_category = "furaffinity";}
 	else if (/(?:^|\.)x\.com\.?$/g          .test(hostname)) {host_category = "twitter"    ;}
 	else if (/(?:^|\.)duckduckgo\.com\.?$/g .test(hostname)) {host_category = "duckduckgo" ;}
-
-	let is_google_search_results = /^https?:\/\/(www\.)?google\.com\.?\/search\?/g.test(window.location.href);
 
 	urlc_make_socket();
 
@@ -158,10 +156,6 @@ ${GM.info.script.namespace}`);
 			return;
 		}
 
-		if (is_google_search_results && hrefattr.startsWith("/goto") && urlc_do_google_goto_shortcut(element, hrefattr)) {
-			return;
-		}
-
 		let href;
 
 		// Getting `element.href` is expensive, so if `hrefattr` is absolute, just use that.
@@ -238,51 +232,5 @@ ${GM.info.script.namespace}`);
 				}
 			}
 		}
-	}
-}
-
-// Google search result /goto?url=... stuff
-
-let google_gotos = {};
-
-function urlc_do_google_goto_shortcut(elem, hrefattr) {
-	if (!google_gotos[hrefattr.slice(10)]) {
-		urlc_update_google_gotos(elem, hrefattr);
-	}
-
-	if (x = google_gotos[hrefattr]) {
-		elem.href = x;
-		return true;
-	} else {
-		console.error("[URLC] Couldn't do shortcut; Sending as-is.", elem);
-		return false;
-	}
-}
-
-function urlc_update_google_gotos(elem, hrefattr) {
-	let comment_last  = /.+&quot;(.+?)&quot;/g;
-	let comment_first = /&quot;(.+?)&quot;/g;
-	let data_getter   = /var m=(\{.*?\});/g;
-  let req_getter    = /req\\u003d([^\\]+)/g;
-  let req_parser    = /(\/goto\?url=[a-zA-Z0-9_\-]+).*(https?:\/\/[^:]+)/gs;
-  let data_thing    = /("\/goto\?url[^"]+")\],\[("[^"]+")/g;
-
-	if ((x = elem.parentElement?.nextSibling) && x.nodeType == 8 && (y = comment_last.exec(x.textContent))) {
-		google_gotos[hrefattr] = y[1];
-	} else if ((x = elem.nextSibling) && x.nodeType == 8 && (y = comment_first.exec(x.textContent))) {
-		google_gotos[hrefattr] = y[1];
-	} else {
-	  let data = data_getter.exec(document.body.innerHTML)[1];
-
-	  while (req = req_getter.exec(data)) {
-	    if (req_data = req_parser.exec(atob(req[1].replaceAll("-", "+").replaceAll("_", "/")))) {
-	      req_parser.lastIndex = 0;
-	      google_gotos[req_data[1]] = req_data[2];
-	    }
-	  }
-
-	  while (x = data_thing.exec(data)) {
-	    google_gotos[JSON.parse(x[1])] = JSON.parse(x[2]);
-	  }
 	}
 }

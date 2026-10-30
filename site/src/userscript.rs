@@ -28,7 +28,7 @@ impl Args {
         };
 
         let (a, b) = crate::USERSCRIPT.split_once("localhost").expect("???");
-        let (b, c) = b.split_once("ws://localhost:9149").expect("???");
+        let (b, c) = b.split_once("ws://localhost:9149")      .expect("???");
 
         print!("{a}{host}{b}{protocol}://{host}:{port}{c}");
     }

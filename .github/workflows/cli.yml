@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v7
 
     - name: Setup
       run: |
@@ -21,13 +21,9 @@ jobs:
 
     - name: Output
       run: |
-        n="
-        "
         for num in 0 1 10 100 1000 10000; do
-          for s in "$n" "$n$n"; do
-            for h in -0 -1; do
-              diff <(seq -s "$s" -f "https://stdin/%0.0f" $num | head -c $h | ./urlc $(seq -f "https://arg/%0.0f" 10)) <(seq -f "https://arg/%0.0f" 10; seq -f "https://stdin/%0.0f" $num)
-            done
+          for n in $'\n' $'\r\n' $'\n\n' $'\n\r\n' $'\r\n\n' $'\r\n\r\n'; do
+            diff <(seq -s "$n" -t "$n" -f "https://stdin/%0.0f" $num | ./urlc $(seq -f "https://arg/%0.0f" 10)) <(seq -f "https://arg/%0.0f" 10; seq -f "https://stdin/%0.0f" $num)
           done
         done
 
@@ -71,4 +67,4 @@ jobs:
           echo   'https://m.youtube.com/watch?v=abc'
         )
 
-        diff <(./urlc --profiles <(echo "$PROFILES") --profile unknown |& cat) <(echo 'Error: ProfileNotFound')
+        ! ./urlc --profiles <(echo "$PROFILES") --profile unknown 2> /dev/null

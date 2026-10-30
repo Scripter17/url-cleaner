@@ -1,26 +1,27 @@
 # URL Cleaner
 
-[Better URL](better-url) | [Engine](engine) | [CLI](cli) | [Site and Site Userscript](site) | [Site CLIent](site-client) | [Discord](discord)
+[Better URL] | [Engine] | [CLI] | [Site] | [Site Userscript] | [Site CLIent] | [Discord]
 
 Explicit non-consent to URL spytext.
 
 ## Spytext?
 
-Spytext is text that enables spyware to work. For URLs, spytext usually takes the form of query parameters like `utm_source=twitter` on any website or `?t=...&si=...` on twitter.
+Spytext is text that enables spyware to work. For URLs, spytext usually takes the form of query parameters like `utm_source=...` on any website or `t=...` and `si=...` on twitter.
 
-The purpose of spytext in URLs is to allow websites to know who sent which URLs to who. If your friend clicks a tweet you sent them and neither of you removed the spytext,
-congratulations! Twitter now knows you're friends, and soon so will your government.
+If you send your friend a tweet, they open it, and neither of you cleaned the URL, then congratulations! Twitter now knows you're friends, and soon so will your government.
 
-If you are not already aware of why you should not let companies or your government know who you associate with, then I am so sorry but you are not ready for what's coming.
+You don't consent to this, but unfortunately the law counts not resisting as consent.
+
+With URL Cleaner, you can force websites to respect your consent just a little bit more.
 
 ## Frontends
 
 URL Cleaner currently has 3 official frontends:
 
-- [A CLI tool](cli)
-- [An HTTP/WebSocket server and userscript](site)
-  - There is also a [CLI client](site-client) for Site
-- [A discord app/bot](discord)
+- [CLI](cli), a command line tool.
+- [Site](site), an HTTP/WebSocket server.
+  - Mainly for use with [Site Userscript] and [Site CLIent], but has a convenient API for you to build your own tools around.
+- [Discord](discord), a discord app/bot.
 
 You can also make your own frontends by using the [`url_cleaner_engine`](engine) crate.
 
@@ -28,25 +29,37 @@ When doing so, please try to use the [standard format](format.md).
 
 ## Bundled Cleaner
 
-By default, URL Cleaner bundles a cleaner uncreatively called the Bundled Cleaner.
+See [bundled_cleaner.md](bundled_cleaner.md) for details.
 
-The Bundled Cleaner is meant for general purpose cleaning of URLs you're likely to click on/send to friends and has various flags to allow features you only sometimes want.
+## Performance
 
-For more information, see the [Bundled Cleaner's documentation](bundled_cleaner.md) and its [benchmarks](benchmarks.md).
+See [benchmarks.md](benchmarks.md) for details.
 
 ## Privacy
 
 URL Cleaner and co. will never contain any telemetry. If I ever add it, you are required to kill me on sight.
 
-However, the Bundled Cleaner will by default expand and cache known redirects by sending HTTP requests and writing a SQLite database to disk.
+However, there are two main concerns when using URL Cleaner:
 
-To use proxies, see [reqwest's documentation](https://docs.rs/reqwest/latest/reqwest/#proxies).
+- If the `http` feature is enabled, as is required to use the Bundled Cleaner, ***URL Cleaner can send arbitrary HTTP requests*** to expand redirect URLs.
 
-To disable network access, either use `--no-http` or, in the Bundled Cleaner, set the `no_network` flag.
+  - It is generally better to let URL Cleaner expand redirects than your browser, since URL Cleaner doesn't send or accept cookies and caches redirects for future use.
 
-To disable reading from the cache, use `--no-read-cache`.
+  - To use a proxy, set the `ALL_PROXY` environment variable to, for example `socks5://127.0.0.1:9150`.
 
-To disable writing to the cache, use `--no-write-cache`.
+  - To tell the Bundled Cleaner to not make HTTP requests, set the `no_network` Params var in a ParamsDiff/Profile.
+
+  - To force any Cleaner to not make HTTP requests, use your frontend's method to disable HTTP.
+
+    - For CLI, Site, Site CLIent, and Discord, this is done with the `--no-http` CLI flag.
+
+    - For clients to Site, this can also be done by setting `JobConfig::http` to `false`.
+
+- If the `cache` feature is enabled, as is required to use the Bundled Cleaner, URL Cleaner stores results of previously made HTTP requests in a SQLite file on disk.
+
+  - To store the cache in memory instead of on disk, wiping it when the program closes, set the cache target to `:memory:`.
+
+    - For CLI, Site, and Discord, this is done with the `--cache` CLI option.
 
 Please note that using URL Cleaner Site Userscript also comes with its own privacy concerns, detailed [here](site/userscript.md#privacy).
 
@@ -62,3 +75,11 @@ The people and projects I have stolen various parts of the Bundled Cleaner from.
 ## Funding
 
 If for some reason you want to give me money, my paypal is jameschristopherwise@gmail.com.
+
+[Better URL]: better-url
+[Engine]: engine
+[CLI]: cli
+[Site]: site
+[Site Userscript]: site
+[Site CLIent]: site-client
+[Discord]: discord
