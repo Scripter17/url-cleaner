@@ -54,13 +54,15 @@ For each line:
 
 - If it is empty, it is ignored.
 
-- If it starts with an ASCII letter, it is a success result containing its task's cleaned URL.
+- If it starts with a lowercase ASCII letter or `=`, it is a success result.
 
-  - If "brief unchanged" is enabled and it starts with `=`, it is a success result whose input was already clean.
+  - If it starts with a lowercase ASCII letter, it is its corresponding task's output.
 
-    - Please note that this only checks if the value ever changed during cleaning. Some inputs may give unchanged outputs that aren't caught by this.
+  - If it starts with `=`, it is a success result whose input was already clean.
 
-  - If "brief unchanged" is disabled, it will never start with `=`.
+    - If "brief unchanged" is disabled, it will never start with `=`.
+
+    - Please note that this is done by checking if any Action ever returns `true`, allowing for false negatives.
 
 - If it starts with `-`, it is an error result.
 

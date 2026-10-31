@@ -6,6 +6,8 @@ Licensed under the Affero General Public License V3 or later.
 
 https://www.gnu.org/licenses/agpl-3.0.html
 
+
+
 # Findings
 
 Please note that this is comparing against Servo's URL crate (`url`) at version 2.5.8 and Ada's URL crate (`ada-url`) at version 4.0.0.
@@ -38,11 +40,11 @@ Using Smythp's [reddit links dataset](https://github.com/smythp/reddit_links_dat
 
 ## Methodology
 
-- For each datapoint, URLs are repeatedly parsed in groups of 1000 until the 8 most recent groups of 1000 are all within 5% of each other.
+- For each datapoint, URLs are repeatedly parsed in groups of 1000 (a "subdatapoint") until the 8 most recent groups of 1000 are all within 5% of each other.
 
-  - The datapoint returned is the average of those 8 most recent groups of 1000.
+  - The datapoint returned is the average of those 8 most recent subdatapoints.
 
-  - This mostly (but doesn't completely) eliminates noise where background processes on my computer cause random hiccups.
+  - This mostly eliminates noise where background processes on my computer cause random hiccups.
 
   - Datapoints are calculated individually for each URL and for each parser.
 
@@ -56,28 +58,18 @@ Using Smythp's [reddit links dataset](https://github.com/smythp/reddit_links_dat
 
 - Servo and Ada refer to Servo's URL crate and Ada's URL crate with zero additions.
 
-- Servo+ and Ada+ refer to Servo's URL crate and Ada's URL crate "plus" Better URL's `DomainHostDetails::parse_unchecked`
+- Servo+ and Ada+ refer to Servo's URL crate and Ada's URL crate "plus" Better URL's `DomainHostDetails::parse_unchecked`.
 
-  - Specifically, after each parsing, the URL is checked for a domain host and, if it's found, `DomainHostDetails::parse_unchecked` is called.
-
-    - This should give a reasonably accurate simulation of the slowdown they would have if PSL support was added to them.
+  - This should give a reasonably accurate simulation of the slowdown they would have if PSL support was added to them.
 
 ## Rows
 
 - "Sum" refers to the sum of each parser's datapoints.
 
-  - It is dramatically smaller than the total time the benchmarks take to run (for me, 30 minutes and 2 hours 30 minutes respectively), but it is at least unaffected by the denoising in the [methodology](#methodology).
-
 - "Min" and "Max" refer to the minimum and maximum values of each parser's datapoints.
-
-  - They don't really mean anything but I was too lazy to do a full implementation of P1, P25, P50, P75, P90, and P99 rows.
-
-    - I probably should though...
 
 - "Mean" refers to the average amount of time for each parser's datapoints.
 
-  - Only as I write this do I realize it should probably be scaled down by a factor of 1000, since currently it's the average time each parser takes to parse 1000 URLs.
-
 - "Factor" refers to how much slower each parser is than Better URL by dividing their "Sum" rows.
 
-  - A number above 1 means Better URL is faster, and a number below 1 means Better URL is slower.
+  - A number above 1 means Better URL is faster and a number below 1 means Better URL is slower.

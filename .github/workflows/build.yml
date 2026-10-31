@@ -1,6 +1,6 @@
 name: Build
 
-on: [push]
+on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
@@ -12,29 +12,31 @@ jobs:
     strategy:
       matrix:
         oses: [
-            {name: ubuntu-latest , extension: ""},
-            {name: windows-latest, extension: ".exe"},
-            {name: macos-latest  , extension: ""}
+            {name: linux  , runner: ubuntu-latest , extension: ""    },
+            {name: windows, runner: windows-latest, extension: ".exe"},
+            {name: macos  , runner: macos-latest  , extension: ""    }
           ]
 
-    runs-on: ${{ matrix.oses.name }}
+    runs-on: ${{ matrix.oses.runner }}
 
     steps:
     - uses: actions/checkout@v7
 
     - name: Build
-      run: cargo build -r --bin url-cleaner --bin url-cleaner-site --bin url-cleaner-site-client --bin url-cleaner-discord
+      run: |
+        cargo build -r --bin url-cleaner --bin url-cleaner-site --bin url-cleaner-site-client --bin url-cleaner-discord
+        cp target/release/url-cleaner${{ matrix.oses.extension }}             ./
+        cp target/release/url-cleaner-site${{ matrix.oses.extension }}        ./
+        cp target/release/url-cleaner-site-client${{ matrix.oses.extension }} ./
+        cp target/release/url-cleaner-discord${{ matrix.oses.extension }}     ./
 
     - name: Upload
       uses: actions/upload-artifact@v7
       with:
-        name: ${{ runner.os }}
+        name: url-cleaner-${{ matrix.oses.name }}
         if-no-files-found: error
         path: |
-          target/release/url-cleaner${{ matrix.oses.extension }}
-          target/release/url-cleaner-site${{ matrix.oses.extension }}
-          target/release/url-cleaner-site-client${{ matrix.oses.extension }}
-          target/release/url-cleaner-discord${{ matrix.oses.extension }}
+          url-cleaner*
           LICENSE.txt
           engine/src/cleaner/bundled-cleaner.json
           site/src/userscript.js

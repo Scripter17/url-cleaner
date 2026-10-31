@@ -25,3 +25,7 @@ The app will then reply to the user with an ephemeral message only they can see 
 Additionally, the `clean_url` slash command can be used to clean URLs without sending them.
 
 The app will then reply to the user with an ephemeral message only they can see containing the cleaned URL.
+
+## Format
+
+The [standard format](../format.md) is intentionally disregarded due to not being able to send response messages by chunks and the output being meant for users rather than computers.
