@@ -26,7 +26,7 @@ use crate::prelude::*;
 ///
 /// The mask `0b0001_0101` being nonzero is equivalent to the byte not being valid for a [`DomainSegments`] literal.
 ///
-/// THe mask `0b0100_0000` being nonzero is equivalent to being not ASCII and/or not being able to start, continue, or end a [`BidiDetail::ForceLtr`] segment.
+/// The mask `0b0100_0000` being nonzero is equivalent to being not ASCII and/or not being able to start, continue, or end a [`BidiDetail::ForceLtr`] segment.
 pub const DOMAIN_BYTE_CLASS_DATA: [u8; 256] = get_domain_byte_class_data();
 
 /// Get [`DOMAIN_BYTE_CLASS_DATA`].

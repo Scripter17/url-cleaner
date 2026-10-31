@@ -47,13 +47,13 @@ On my machine, Firefox seems to ignore the local CA store. In this case:
 
 1. Get the `urlcs-ca.crt` file onto your iphone and open it such that you get a popup with "Profile Downloaded".
 
-2. Open settings. Either tap the "Profile Downloaded" button.
+2. Open settings then tap the "Profile Downloaded" button.
 
 3. Tap "URL Cleaner Site" under "Downloaded Profile".
 
 4. Tap "Install" in the top right, authenticate, tap "Install" in the top right, tap "Install" at the bottom, then tap "Done".
 
-5. Go back one level (just under "General"), scroll to the bottom, tap "About", scroll to the bottom, tap "Certificate Trust Settings", find "URL Cleaner Site Certificate Authority" under "Enable Full Trust For Root Certificate", then enable it.
+5. Go back one level (just under "General"), scroll to the top, tap "About", scroll to the bottom, tap "Certificate Trust Settings", find "URL Cleaner Site Certificate Authority" under "Enable Full Trust For Root Certificate", then enable it.
 
 
 
@@ -86,17 +86,17 @@ The solution is to make URL Cleaner Site use TLS. Sorry.
 
 ### Privacy
 
-In addition to the normal privacy concerns detailed [here](../README.md):
+In addition to the normal privacy concerns detailed [here](../README.md#privacy):
 
 - It's basically unavoidable that websites will be able to tell that you're using URL Cleaner Site Userscript and, most likely, which specific version and profile/ParamsDiff you're using.
 
 - URL Cleaner has two features that are usually disabled but are specifically enabled by Site Userscript.
 
-  - Thread hiding makes multithreaded jobs encountering multiple redirects/redirect at the same time wait until one is entirely finished before starting another.
+  - Thread hiding forces Jobs to not do multiple redirect chains at the same time.
 
     - This prevents websites from knowing how many worker threads your Site instance uses per job.
 
-  - Cache hiding makes reading from the cache take at least as long as it took to do the cached operation.
+  - Cache hiding makes reading from the cache take at about as long as the initial operation.
 
     - This prevents websites from knowing you've seen certain redirect URLs before.
 
@@ -109,10 +109,9 @@ In addition to the normal privacy concerns detailed [here](../README.md):
 A GET endpoint that returns the following information as JSON.
 
 ```Rust
-/// Info about the instance.
 struct Info {
-    /** The version.                       */ version          : &'static str,
-    /** The link to the source code.       */ source_code      : &'static str,
+    /** The version.                       */ version          : String,
+    /** The link to the source code.       */ source_code      : String,
     /** If `/clean` requires a password.   */ requires_password: bool,
     /** If the `http` feature is enabled.  */ supports_http    : bool,
     /** If the `cache` feature is enabled. */ supports_cache   : bool,
@@ -129,13 +128,13 @@ A GET endpoint that returns the loaded `ProfilesConfig`.
 
 ## `/userscript`
 
-A GET endpoint that returns a copy of URL Cleaner Site Userscript with instance info pre-filled using the request's `Host` header.
+A GET endpoint that returns a copy of URL Cleaner Site Userscript with instance info pre-filled.
 
 ## `/clean`
 
 Either an HTTP POST/PUT duplex or a WebSocket stream.
 
-The `JobConfig`, defined below, is sent as JSON in either the `config` query parameter XOR the `X-Job-Config` header.
+The `JobConfig`, defined below, is sent as JSON in either the `job_config` query parameter XOR the `X-Job-Config` header.
 
 ```Rust
 pub struct JobConfig {
@@ -188,7 +187,7 @@ pub struct JobConfig {
 
 ### WebSocket
 
-Follows the [standard format](../format.md)'s chunks mode with the following additional guarantees.
+Follows the [standard format](../format.md)'s chunks mode with the following additional guarantees:
 
 - Task messages can be either binary or text.
 
@@ -198,17 +197,13 @@ Follows the [standard format](../format.md)'s chunks mode with the following add
 
 - Result messages are never empty.
 
-- Providing a task line, waiting for its result line, then providing another task line will never deadlock.
-
 ### HTTP
 
-Follows the [standard format](../format.md)'s lines mode with the following additional guarantees.
+Follows the [standard format](../format.md)'s lines mode with the following additional guarantees:
 
 - Every result line is succeeded by a `\n`.
 
-- Every `\n` is precceded by a result line.
-
-- Providing a task line, waiting for its result line, then providing another task line will never deadlock.
+- Every `\n` is preceded by a result line.
 
 [Greasemonkey]: https://www.greasespot.net/
 [gm-f]: https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/

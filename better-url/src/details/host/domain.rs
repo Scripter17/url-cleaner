@@ -11,6 +11,7 @@ use crate::prelude::*;
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct DomainHostDetails {
     /// The first data usize.
     ///

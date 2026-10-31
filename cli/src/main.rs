@@ -1,6 +1,6 @@
 //! URL Cleaner CLI - Explicit non-consent to URL spytext.
 //!
-//! Licensed under the Aferro GNU Public License version 3.0 or later.
+//! Licensed under the Affero GNU Public License version 3.0 or later.
 //!
 //! <https://www.gnu.org/licenses/agpl-3.0.html>
 //!
@@ -23,7 +23,7 @@ use url_cleaner_engine::prelude::*;
 #[expect(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner CLI - Explicit non-consent to URL spytext.
 ///
-/// Licensed under the Aferro GNU Public License version 3.0 or later.
+/// Licensed under the Affero GNU Public License version 3.0 or later.
 ///
 /// https://www.gnu.org/licenses/agpl-3.0.html
 ///
@@ -214,7 +214,7 @@ async fn main() -> Result<(), CliError> {
 
                     for line in lines {
                         if !line.is_empty() {
-                            iss.get(isi.next().expect("???")).expect("???").send(bytes.slice_ref(line)).await.expect("The in receiever to still exist.");
+                            iss.get(isi.next().expect("???")).expect("???").send(bytes.slice_ref(line)).await.expect("The in receiver to still exist.");
                         }
                     }
                 }

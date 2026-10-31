@@ -5,6 +5,7 @@ use crate::prelude::*;
 /// Details for the [`EmptyHost`].
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct EmptyHostDetails;
 
 impl EmptyHostDetails {

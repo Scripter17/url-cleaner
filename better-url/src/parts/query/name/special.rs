@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// A name of a [`SpecialQuerySegment`].
 ///
-/// [`Self::new`] uses [`encode_query_part`] becasue using just the special query percent encode set would result in `+` and `%` not being percent encoded, which would make [`Self::decode`] not the inverse of [`Self::new`].
+/// [`Self::new`] uses [`encode_query_part`] because using just the special query percent encode set would result in `+` and `%` not being percent encoded, which would make [`Self::decode`] not the inverse of [`Self::new`].
 ///
 /// However, the only invariant is that this is a substring of a [`SpecialQuery`] that contains no `=` or `&` literals.
 #[derive(Debug, Clone)]

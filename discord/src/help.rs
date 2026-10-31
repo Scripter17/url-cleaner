@@ -14,7 +14,7 @@ impl Bot {
         if let CurrentApplicationInfo {bot_public: true, id, ..} = context.http.get_current_application_info().await.expect("???") {
             message.push_str(&format!("\n\
                 Install to your account: https://discord.com/oauth2/authorize?client_id={id}\
-                Insrall to a server: https://discord.com/oauth2/authorize?client_id={id}&scope=bot\
+                Install to a server: https://discord.com/oauth2/authorize?client_id={id}&scope=bot\
             "));
         }
 

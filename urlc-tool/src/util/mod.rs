@@ -21,7 +21,7 @@ pub fn format_int(x: u64) -> String {
     ret
 }
 
-/// Returns [`true`] if `x` is the deault value.
+/// Returns [`true`] if `x` is the default value.
 pub fn is_default<T: Default + PartialEq>(x: &T) -> bool {
     x == &T::default()
 }

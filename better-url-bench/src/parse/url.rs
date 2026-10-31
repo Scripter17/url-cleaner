@@ -23,7 +23,7 @@ use crate::util::BasicBenchThing;
 ///
 ///  5. (if --all and/or --servo) The current sum of column 3 divided by the current sum of column 2.
 ///
-///  6. (if --all and/or --servo-plus) url::Url::parse + DomainDetails::parse_unchecked.
+///  6. (if --all and/or --servo-plus) url::Url::parse + DomainHostDetails::parse_unchecked.
 ///
 ///  7. (if --all and/or --servo-plus) The current row's column 6 divided by the current row's column 2.
 ///
@@ -35,7 +35,7 @@ use crate::util::BasicBenchThing;
 ///
 /// 11. (if --all and/or --ada) The current sum of column 9 divided by the current sum of column 2.
 ///
-/// 12. (if --all and/or --ada-plus) ada_url::Url::parse + DomainDetails::parse_unchecked.
+/// 12. (if --all and/or --ada-plus) ada_url::Url::parse + DomainHostDetails::parse_unchecked.
 ///
 /// 13. (if --all and/or --ada-plus) The current row's column 12 divided by the current row's column 2.
 ///

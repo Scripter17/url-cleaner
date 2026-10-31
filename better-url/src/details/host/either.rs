@@ -7,6 +7,7 @@ use crate::prelude::*;
 /// Details for a [`Host`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub enum HostDetails {
     /** [`DomainHostDetails`]. */ Domain(DomainHostDetails),
     /** [`Ipv4HostDetails`].   */ Ipv4  (Ipv4HostDetails  ),

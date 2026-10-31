@@ -43,6 +43,7 @@ pub const BUNDLED_TEST_SUITE: &str = include_str!("bundled-test-suite.json");
 
 /// A tests file.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TestSuite {
     /// The [`TestJob`]s.
     pub jobs: Vec<TestJob>
@@ -50,6 +51,7 @@ pub struct TestSuite {
 
 /// A job.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TestJob {
     /// The name.
     pub name: String,
@@ -65,6 +67,7 @@ pub struct TestJob {
 
 /// A test.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Test {
     /// The task.
     pub task: Task,

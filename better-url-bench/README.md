@@ -14,11 +14,7 @@ Presumably future versions of those crates will have optimizations that make the
 
 ## Parsing URLs
 
-These benchmarks are done with Better URL's `psl` feature enabled, which adds a lookup into the Public Suffix List to every URL with a domain host.
-
-This prevents accidentally misleading users. If you use Better URL with the `psl` feature disabled the below benchmarks will be slightly more in my favor.
-
-That said:
+On the same laptop I do [URL Cleaner's benchmarks](../benchmarks.md) on, parsing each URL in each dataset 1000 times gives these results:
 
 Using Ada's [top100.txt](https://github.com/ada-url/url-various-datasets/blob/main/top100/top100.txt):
 
@@ -39,3 +35,49 @@ Using Smythp's [reddit links dataset](https://github.com/smythp/reddit_links_dat
 |Max     | 10.37ms| 50.15ms| 50.05ms| 19.60ms| 19.66ms|
 |Mean    |150.76µs|436.58µs|477.98µs|158.84µs|205.94µs|
 |Factor  |   1.000|   2.896|   3.170|   1.054|   1.366|
+
+## Methodology
+
+- For each datapoint, URLs are repeatedly parsed in groups of 1000 until the 8 most recent groups of 1000 are all within 5% of each other.
+
+  - The datapoint returned is the average of those 8 most recent groups of 1000.
+
+  - This mostly (but doesn't completely) eliminates noise where background processes on my computer cause random hiccups.
+
+  - Datapoints are calculated individually for each URL and for each parser.
+
+    - A more complete breakdown of timing info is generated to let me diagnose performance issues, but for practicality only summarized tables are shown above.
+
+## Columns
+
+- BURL refers to Better URL, specifically with the `psl` feature enabled.
+
+  - The `psl` feature makes ever URL with a domain host do a lookup into the [Public Suffix List](https://publicsuffix.org/) and allows for APIs like `BetterUrl::domain_origin`.
+
+- Servo and Ada refer to Servo's URL crate and Ada's URL crate with zero additions.
+
+- Servo+ and Ada+ refer to Servo's URL crate and Ada's URL crate "plus" Better URL's `DomainHostDetails::parse_unchecked`
+
+  - Specifically, after each parsing, the URL is checked for a domain host and, if it's found, `DomainHostDetails::parse_unchecked` is called.
+
+    - This should give a reasonably accurate simulation of the slowdown they would have if PSL support was added to them.
+
+## Rows
+
+- "Sum" refers to the sum of each parser's datapoints.
+
+  - It is dramatically smaller than the total time the benchmarks take to run (for me, 30 minutes and 2 hours 30 minutes respectively), but it is at least unaffected by the denoising in the [methodology](#methodology).
+
+- "Min" and "Max" refer to the minimum and maximum values of each parser's datapoints.
+
+  - They don't really mean anything but I was too lazy to do a full implementation of P1, P25, P50, P75, P90, and P99 rows.
+
+    - I probably should though...
+
+- "Mean" refers to the average amount of time for each parser's datapoints.
+
+  - Only as I write this do I realize it should probably be scaled down by a factor of 1000, since currently it's the average time each parser takes to parse 1000 URLs.
+
+- "Factor" refers to how much slower each parser is than Better URL by dividing their "Sum" rows.
+
+  - A number above 1 means Better URL is faster, and a number below 1 means Better URL is slower.

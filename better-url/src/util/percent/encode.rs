@@ -6,12 +6,12 @@ use crate::prelude::*;
 pub(crate) const NIBBLES: &[u8; 16] = b"0123456789ABCDEF";
 
 /// Percent encode a string.
-pub fn percent_encode<'a, T: Into<Cow<'a, str>>>(value: T, set: &AsciiSet) -> (bool, Cow<'a, str>) {
+pub fn percent_encode<'a, T: Into<Cow<'a, str>>>(value: T, set: &PercentEncodeSet) -> (bool, Cow<'a, str>) {
     percent_encode_bytes(cow_str_to_bytes(value), set)
 }
 
 /// Percent encode bytes.
-pub fn percent_encode_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T, set: &AsciiSet) -> (bool, Cow<'a, str>) {
+pub fn percent_encode_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T, set: &PercentEncodeSet) -> (bool, Cow<'a, str>) {
     let value = value.into();
 
     let mut to_encode = 0;
@@ -24,7 +24,7 @@ pub fn percent_encode_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T, set: &AsciiSet
         0 => (false, unsafe {cow_bytes_to_str_unchecked(value)}),
         to_encode => {
             #[cold]
-            fn outline<'a>(value: Cow<'a, [u8]>, set: &AsciiSet, to_encode: usize) -> String {
+            fn outline<'a>(value: Cow<'a, [u8]>, set: &PercentEncodeSet, to_encode: usize) -> String {
                 let mut ret = String::with_capacity(value.len() + to_encode * 2);
 
                 let mut w = 0;

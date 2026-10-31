@@ -9,12 +9,22 @@ Licensed under the Affero General Public License V3 or later.
 
 https://www.gnu.org/licenses/agpl-3.0.html
 
-## Performance
 
-See [`better-url-bench`](../better-url-bench) for performance details.
+
+# Performance
+
+See [`better-url-bench`](better-url-bench/README.md) for performance details.
 
 TL;DR: It's almost always way faster than Servo's URL crate and usually a respectable fraction the speed of Ada's URL crate.
 
-## Credits
 
-Several tests have been taken from [Ada](https://github.com/ada-url), catching many things the [WPT tests](https://github.com/web-platform-tests/wpt/tree/master/url/resources) don't.
+
+# Credits
+
+- [WPT tests](https://github.com/web-platform-tests/wpt/tree/master/url/resources) for basic conformance.
+
+- [Ada](https://github.com/ada-url) for both [design inspiration](https://arxiv.org/pdf/2311.10533) and [tests](https://github.com/ada-url/ada/tree/main/tests) for catching issues WPT didn't.
+
+- [Servo's URL crate](https://github.com/servo/rust-url) for some design inspiration and carrying URL Cleaner until I could write Better URL.
+
+- [whatwg/url#914](https://github.com/whatwg/url/pull/914) for singlehandedly saving me from *so* much misery.

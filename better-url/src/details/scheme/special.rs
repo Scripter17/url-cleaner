@@ -5,6 +5,7 @@ use crate::prelude::*;
 /// Either [`FileSchemeDetails`] or [`SpecialNotFileSchemeDetails`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub enum SpecialSchemeDetails {
     /** [`FileSchemeDetails`].           */ File          (FileSchemeDetails          ),
     /** [`SpecialNotFileSchemeDetails`]. */ SpecialNotFile(SpecialNotFileSchemeDetails),

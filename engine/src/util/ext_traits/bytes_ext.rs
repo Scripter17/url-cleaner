@@ -2,7 +2,7 @@
 
 /// An extension trait for [`[u8]`].
 pub(crate) trait BytesExt {
-    /// The index of the first occurence of `b`.
+    /// The index of the first occurrence of `b`.
     fn memchr(&self, b: u8) -> Option<usize>;
 }
 

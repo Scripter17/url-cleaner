@@ -4,6 +4,10 @@ For simplicity, CLI, Site, and Site CLIent use a single format for task and resu
 
 Where applicable, other frontends should try to mimic this format.
 
+## Behavior
+
+A frontend or client to a frontend will never require additional lines of inputs to be sent or that the input stream be closed before returning all corresponding result lines.
+
 ## Lines
 
 Both `\r\n` and `\n` are valid line separators.
@@ -36,7 +40,7 @@ For each line:
 
   - If it starts with `{` it parsed as a JSON encoded task.
 
-  - If it starts with `"` it parsed as a JSON encoded line.
+  - If it starts with `"` it parsed as a JSON encoded task.
 
 - Otherwise, it is invalid and the corresponding line of output is an error.
 
@@ -44,7 +48,7 @@ For each line:
 
 There are two flags, "brief unchanged" and "brief error", that affect the formatting of the output.
 
-When and how each flag is enabled is defined purely by the frontend, though it is suggested that frontends default both to disabled and provide ways for clients to enable either or both on a per-job basis.
+Frontends should default both to disable and give clients the option to enable either or both on a per-job basis.
 
 For each line:
 
@@ -52,21 +56,25 @@ For each line:
 
 - If it starts with an ASCII letter, it is a success result containing its task's cleaned URL.
 
-- If "brief unchanged" is enabled and it starts with `=`, it is a success result whose input was already clean.
+  - If "brief unchanged" is enabled and it starts with `=`, it is a success result whose input was already clean.
 
-- If "brief unchanged" is disabled, it will never start with `=`.
+    - Please note that this only checks if the value ever changed during cleaning. Some inputs may give unchanged outputs that aren't caught by this.
+
+  - If "brief unchanged" is disabled, it will never start with `=`.
 
 - If it starts with `-`, it is an error result.
 
-  - If "brief error" is enabeld, the rest of the line is empty.
+  - If "brief error" is enabled, the rest of the line is empty.
 
   - If "brief error" is disabled, the rest of the line is a non-empty string detailing the error.
 
+- Otherwise, it is invalid and clients are suggested to ignore it but may do whatever they want.
+
 Frontends should, but are not required to:
 
-- Explicitly state if and when any of the following additional guarantees are followed.
+- Explicitly state if and when any of the following or other additional guarantees are followed.
 
-- Never output an empty line followed by a non-empty line.
+- Never output an empty line unless it is the last line.
 
 - Never output an empty chunk.
 

@@ -40,7 +40,7 @@ ${GM.info.script.namespace}`);
 
 	let socket_url = new URL(config.instance);
 	socket_url.pathname = "/clean";
-	socket_url.searchParams.append("config", JSON.stringify(config.job_config));
+	socket_url.searchParams.append("job_config", JSON.stringify(config.job_config));
 
 	// The WebSocket.
 	let socket = null;

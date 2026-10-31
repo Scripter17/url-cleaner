@@ -1,6 +1,6 @@
 //! URL Cleaner Discord - Explicit non-consent to URL spytext.
 //!
-//! Licensed under the Aferro GNU Public License version 3.0 or later.
+//! Licensed under the Affero GNU Public License version 3.0 or later.
 //!
 //! <https://www.gnu.org/licenses/agpl-3.0.html>
 //!
@@ -31,7 +31,7 @@ https://www.gnu.org/licenses/agpl-3.0.html
 #[expect(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner Discord - Explicit non-consent to URL spytext.
 ///
-/// Licensed under the Aferro GNU Public License version 3.0 or later.
+/// Licensed under the Affero GNU Public License version 3.0 or later.
 ///
 /// https://www.gnu.org/licenses/agpl-3.0.html
 ///
@@ -180,7 +180,7 @@ impl EventHandler for Bot {
                 println!("Connected!");
                 println!();
                 println!("Install to your account: https://discord.com/oauth2/authorize?client_id={0}"          , data_about_bot.application.id);
-                println!("Insrall to a server    : https://discord.com/oauth2/authorize?client_id={0}&scope=bot", data_about_bot.application.id);
+                println!("Install to a server    : https://discord.com/oauth2/authorize?client_id={0}&scope=bot", data_about_bot.application.id);
 
                 let mut profile = CreateCommandOption::new(CommandOptionType::String, "profile", "The profile");
 

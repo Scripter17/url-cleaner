@@ -13,10 +13,10 @@ mod ws;
 #[derive(Debug, Parser)]
 pub struct Args {
     /** The instance.               */ #[arg(default_value = "ws://127.0.0.1:9149/")] pub instance       : BetterUrl,
-    /** The password.               */ #[arg(long, short = 'p'                     )] pub password       : Option<String>,
-    /** The profile.                */ #[arg(long,                                 )] pub profile        : Option<String>,
-    /** The ParamsDiff.             */ #[arg(long,                                 )] pub params_diff    : Option<String>,
-    /** The JobContext.             */ #[arg(long,                                 )] pub context        : Option<String>,
+    /** The password.               */ #[arg(long                                  )] pub password       : Option<String>,
+    /** The profile.                */ #[arg(long                                  )] pub profile        : Option<String>,
+    /** The ParamsDiff.             */ #[arg(long                                  )] pub params_diff    : Option<String>,
+    /** The JobContext.             */ #[arg(long                                  )] pub context        : Option<String>,
     /** Enable brief unchanged.     */ #[arg(long, short = 'u'                     )] pub brief_unchanged: bool,
     /** Enable brief error.         */ #[arg(long, short = 'e'                     )] pub brief_error    : bool,
     /** Hide the thread count.      */ #[arg(long, short = 'T'                     )] pub hide_threads   : bool,
@@ -48,12 +48,12 @@ impl Args {
         if self.no_write_cache  {config.insert("write_cache"    , false.into());}
         if self.hide_cache      {config.insert("hide_cache"     , true .into());}
 
-        instance.set_query_param("config", 0, Some(serde_json::to_string(&config).unwrap())).unwrap();
+        instance.set_query_param("job_config", 0, Some(serde_json::to_string(&config).unwrap())).unwrap();
 
         match instance.scheme_str() {
             "http" | "https" => http::r#do(instance).await,
             "ws"   | "wss"   => ws  ::r#do(instance).await,
-            x => panic!("Unknwon protocol {x}")
+            x => panic!("Unknown protocol {x}")
         }
     }
 }

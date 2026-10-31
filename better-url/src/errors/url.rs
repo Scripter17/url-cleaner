@@ -14,7 +14,7 @@ pub enum InvalidUrl {
     /** [`InvalidPort`].               */ #[error(transparent)] InvalidPort              (#[from] InvalidPort              ),
     /** [`TooLong`].                   */ #[error(transparent)] TooLong                  (#[from] TooLong                  ),
 
-    /// Returned when attempting to parse a URL with no schene.
+    /// Returned when attempting to parse a URL with no scheme.
     #[error("Attempted to parse a URL with no scheme.")]
     MissingScheme,
     /// Returned when attempting to parse a URL with an empty host and a userinfo and/or port.

@@ -18,7 +18,7 @@ mod regex     ; pub use regex     ::*;
 #[error("Explicit error: {0:?}")]
 pub struct ExplicitError(pub String);
 
-/// Retuerned when an assert fails.
+/// Returned when an assert fails.
 #[derive(Debug, Error)]
 #[error("Assert error: {0:?}")]
 pub struct AssertError(pub String);
@@ -33,7 +33,7 @@ pub struct TryElseError<E> {
 
 /// Returned when all components in a `FirstNotError` variant fail.
 #[derive(Debug, Error)]
-#[error("All components in a FirstNotError vairant failed: {0:?}")]
+#[error("All components in a FirstNotError variant failed: {0:?}")]
 pub struct FirstNotErrorErrors<E>(pub Vec<E>);
 
 

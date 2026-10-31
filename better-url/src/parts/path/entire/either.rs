@@ -82,7 +82,7 @@ impl<'a> Path<'a> {
 
 
 
-    /** If it's [`Self::Segmented`].               */ pub fn is_segmnted        (&self) -> bool {matches!(self, Self::Segmented(_))}
+    /** If it's [`Self::Segmented`].               */ pub fn is_segmented       (&self) -> bool {matches!(self, Self::Segmented(_))}
     /** If it's [`SegmentedPath::File`].           */ pub fn is_file            (&self) -> bool {matches!(self, Self::Segmented(SegmentedPath::File          (_)))}
     /** If it's [`SegmentedPath::SpecialNotFile`]. */ pub fn is_special_not_file(&self) -> bool {matches!(self, Self::Segmented(SegmentedPath::SpecialNotFile(_)))}
     /** If it's [`SegmentedPath::NonSpecial`].     */ pub fn is_non_special     (&self) -> bool {matches!(self, Self::Segmented(SegmentedPath::NonSpecial    (_)))}

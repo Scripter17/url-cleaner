@@ -43,7 +43,7 @@ pub enum MakeTaskError {
     /** [`std::str::Utf8Error`]. */  #[error(transparent)]  Utf8Error     (#[from] std::str::Utf8Error),
     /** [`serde_json::Error`].   */  #[error(transparent)]  SerdeJsonError(#[from] serde_json::Error  ),
 
-    /// Returned when a line that was meant to be ignored is't.
+    /// Returned when a line that was meant to be ignored isn't.
     #[error("A line that was meant to be ignored wasn't.")]
     IgnoreLineNotIgnored,
     /// Returned when a line is otherwise invalid.

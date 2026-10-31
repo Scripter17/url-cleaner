@@ -18,8 +18,6 @@ https://www.gnu.org/licenses/agpl-3.0.html
 
 Follows the [standard format](../format.md)'s lines mode with the following additional guarantees.
 
-- Each result line is succeeded by a `\n`.
+- Every result line is succeeded by a `\n`.
 
-- Each `\n` is precceded by a result line.
-
-- Providing a task line, waiting for its result line, then providing another task line will never deadlock.
+- Every `\n` is preceded by a result line.

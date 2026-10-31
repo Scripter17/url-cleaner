@@ -38,7 +38,7 @@ impl BetterUrl {
     ///
     /// If [`DomainHost::set_fqdn`] returns an error, that error is returned.
     ///
-    /// If [`Self::set_host`] reutrns an error, that error is returned.
+    /// If [`Self::set_host`] returns an error, that error is returned.
     pub fn set_fqdn(&mut self, value: bool) -> Result<bool, SetHostError> {
         if self.domain_details().ok_or(NoDomain)?.is_fqdn() != value {
             let mut domain = self.domain().ok_or(NoDomain)?;

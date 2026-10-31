@@ -5,7 +5,7 @@ use crate::prelude::*;
 /// Bytes to keep.
 const KEEPS: ByteSet = ByteSet::new().add_many(b"\t\n\r").invert();
 
-/// General canonifier for most part setters.
+/// General canonizer for most part setters.
 ///
 /// You should use dedicated canonizers where applicable.
 pub fn canonize_part_setter<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {
@@ -14,7 +14,7 @@ pub fn canonize_part_setter<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'
     (changed, unsafe {cow_bytes_to_str_unchecked(value)})
 }
 
-/// General canonifier for most part setters.
+/// General canonizer for most part setters.
 ///
 /// You should use dedicated canonizers where applicable.
 pub fn canonize_part_setter_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> (bool, Cow<'a, [u8]>) {

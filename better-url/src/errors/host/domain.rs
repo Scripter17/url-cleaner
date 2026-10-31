@@ -30,7 +30,7 @@ impl From<InvalidDomainSegments> for InvalidDomainHost     {fn from(_: InvalidDo
 
 /// Returned when attempting end a domain in a number.
 #[derive(Debug, Error)]
-#[error("Attemped to end a domain in a number.")]
+#[error("Attempted to end a domain in a number.")]
 pub struct CantEndInANumber;
 
 /// Returned when attempting to end a non-FQDN [`DomainHost`] in an empty segment.

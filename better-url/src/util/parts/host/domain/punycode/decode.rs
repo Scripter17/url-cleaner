@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// Decode Punycode.
 ///
-/// Please note that, per [Appendic C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
+/// Please note that, per [Appendix C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
 ///
 /// In practice this means nothing but someone's going to complain so I figured I'd explain myself early.
 /// # Errors
@@ -40,13 +40,13 @@ pub fn decode_punycode(value: &str) -> Result<String, InvalidPunycode> {
 
 /// Decode Punycode into an existing [`String`] and return a [`str`] to it.
 ///
-/// Please note that, per [Appendic C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
+/// Please note that, per [Appendix C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
 ///
 /// In practice this means nothing but someone's going to complain so I figured I'd explain myself early.
 /// # Errors
 /// If `value` is invalid Punycode, returns the error [`InvalidPunycode`].
 ///
-/// If an error is returend, `out` is left unmodified.
+/// If an error is returned, `out` is left unmodified.
 pub fn decode_punycode_into<'a>(value: &str, out: &'a mut String) -> Result<&'a str, InvalidPunycode> {
     let (base, input) = match value.memrchr(b'-') {
         Some(i) => (&value[..i], &value[i+1..]),

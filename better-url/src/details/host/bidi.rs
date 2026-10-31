@@ -9,6 +9,7 @@ use crate::prelude::*;
 /// Per [RFC 5893](https://www.rfc-editor.org/info/rfc5893):
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub enum BidiDetail {
     /// Left to right and satisfies the Bidi Rule.
     Ltr,

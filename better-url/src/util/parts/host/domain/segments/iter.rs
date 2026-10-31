@@ -19,12 +19,12 @@ impl<'a> DomainSegmentsIter<'a> {
         self.0
     }
 
-    /// The srange of the remainder as a [`str`].
+    /// The range of the remainder as a [`str`].
     pub fn range_str<B: RangeBounds<isize>>(&self, range: B) -> Option<&'a str> {
         self.0.range(range)
     }
 
-    /// The srange of the remainder as a [`DomainSegments`].
+    /// The strange of the remainder as a [`DomainSegments`].
     pub fn range<B: RangeBounds<isize>>(&self, range: B) -> Option<DomainSegments<'a>> {
         self.range_str(range).map(|x| unsafe {DomainSegments::new_unchecked(x)})
     }

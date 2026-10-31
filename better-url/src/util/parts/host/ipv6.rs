@@ -204,7 +204,7 @@ pub fn find_ipv6_elision(pieces: &[u16; 8]) -> (u8, u8) {
 
     // 01110110 -> 01100100 -> 01000000
     // - Start at 1
-    // - 2 iterations = legnth of 3
+    // - 2 iterations = length of 3
 
     // 01110111 -> 01100110 -> 01000100
     // - Start at 1 because it's the first island

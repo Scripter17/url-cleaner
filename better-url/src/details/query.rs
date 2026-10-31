@@ -5,6 +5,7 @@ use crate::prelude::*;
 /// The type of a [`QueryLike`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub enum QueryLikeType {
     /** [`QueryLike::Query`].    */ Query(QueryType),
     /** [`QueryLike::Fragment`]. */ Fragment,
@@ -19,6 +20,7 @@ impl From<QueryType> for QueryLikeType {
 /// The type of a [`Query`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub enum QueryType {
     /** [`Query::Special`].    */ Special   ,
     /** [`Query::NonSpecial`]. */ NonSpecial,

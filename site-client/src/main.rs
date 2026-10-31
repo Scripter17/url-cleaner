@@ -1,6 +1,6 @@
 //! URL Cleaner Site CLIent.
 //!
-//! Licensed under the Aferro GNU Public License version 3.0 or later.
+//! Licensed under the Affero GNU Public License version 3.0 or later.
 //!
 //! <https://www.gnu.org/licenses/agpl-3.0.html>
 //!
@@ -22,7 +22,7 @@ pub mod clean;
 #[expect(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner Site CLIent.
 ///
-/// Licensed under the Aferro GNU Public License version 3.0 or later.
+/// Licensed under the Affero GNU Public License version 3.0 or later.
 ///
 /// https://www.gnu.org/licenses/agpl-3.0.html
 ///

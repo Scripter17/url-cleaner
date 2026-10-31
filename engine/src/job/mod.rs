@@ -45,7 +45,7 @@ impl<'j> Job<'j> {
     ///
     /// IF [`Cleaner::apply`] returns an error, that error is returned.
     /// # Panics
-    /// If called inside a Tokio runtime, will panic upon attempting any HTTP requests ot cache reads/writes.
+    /// If called inside a Tokio runtime, will panic upon attempting any HTTP requests to cache reads/writes.
     pub fn r#do<T: TryInto<Task>>(&self, task: T) -> Result<(bool, BetterUrl), DoTaskError> where MakeTaskError: From<T::Error> {
         let Task {url, context} = task.try_into().map_err(MakeTaskError::from)?;
 

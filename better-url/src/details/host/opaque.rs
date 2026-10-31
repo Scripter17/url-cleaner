@@ -10,6 +10,7 @@ use crate::prelude::*;
 /// Therefore, at least for now, I have chosen to have the empty string return an error.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct OpaqueHostDetails;
 
 impl OpaqueHostDetails {

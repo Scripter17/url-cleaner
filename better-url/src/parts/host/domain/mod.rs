@@ -174,7 +174,7 @@ impl<'a> DomainHost<'a> {
     /// # Safety
     /// Requires that `value` be percent decoded and UTS46 map normalized and does not end in a number.
     /// # Errors
-    /// If [`uts46_domain_host_to_ascii`] returns an error, that erorr is returned.
+    /// If [`uts46_domain_host_to_ascii`] returns an error, that error is returned.
     ///
     /// If the UTS46 mapped and normalized value contains a byte in [`FORBIDDEN_DOMAIN_HOST_LITERAL`], returns the error [`InvalidDomainHost`].
     ///

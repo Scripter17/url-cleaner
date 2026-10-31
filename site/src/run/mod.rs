@@ -28,7 +28,7 @@ use url_cleaner_engine::prelude::*;
 mod clean;
 mod userscript;
 
-/** The verson.     */ const VERSION   : &str = env!("CARGO_PKG_VERSION"   );
+/** The version.    */ const VERSION   : &str = env!("CARGO_PKG_VERSION"   );
 /** The repository. */ const REPOSITORY: &str = env!("CARGO_PKG_REPOSITORY");
 
 /// The welcome message.

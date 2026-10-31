@@ -3,7 +3,7 @@
 use crate::prelude::*;
 
 /// [`QUERY_PART`] without space, allowing a cleaner "check each byte" loop.
-const THING: AsciiSet = QUERY_PART.remove(b' ');
+const THING: PercentEncodeSet = QUERY_PART.remove(b' ');
 
 /// [`application/x-www-form-urlencoded`](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) encoding.
 pub fn encode_query_part<'a, T: Into<Cow<'a, str>>>(value: T) -> (bool, Cow<'a, str>) {

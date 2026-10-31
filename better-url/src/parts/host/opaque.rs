@@ -2,7 +2,7 @@
 
 use crate::prelude::*;
 
-/// An opauqe host.
+/// An opaque host.
 ///
 /// Please note that while the [opaque host parser](https://url.spec.whatwg.org/#concept-opaque-host-parser) implicitly allows the empty string,
 /// the [opaque host type itself](https://url.spec.whatwg.org/#opaque-host) is specified to not be empty.

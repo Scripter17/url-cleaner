@@ -7,6 +7,7 @@ use crate::prelude::*;
 /// Please note that [`BetterUrl`]s actually use [`DenseUrlDetails`] in order to save 8 bytes of stack space, but this is safe and easier to work with.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct UrlDetails {
     /** The `:` marking the scheme.        */ pub scheme_mark   : u32,
     /** The `:` or `@` after the username. */ pub username_after: Option<NonZero<u32>>,

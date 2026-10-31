@@ -29,6 +29,7 @@ use crate::prelude::*;
 /// assert_eq!(x.get(&ts, None).unwrap().unwrap(), "https://www.cnn.com/2024/06/14/health/fatherhood-good-for-dads-wellness?utm_source=cnn_Five+Things+for+Sunday%2C+June+15%2C+2025&utm_medium=email&bt_ee=2neJ2KeOJeieCBQVphM%2FPMBjxKqXyG8iHecCU4ycF%2B%2FnXHBdE%2F%2BeaVtIkfRrrDJc&bt_ts=1749992514510");
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum RegexExpansion {
     /// [`StringSource::get`].
     ///

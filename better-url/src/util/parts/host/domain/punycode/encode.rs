@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 /// Punycode encode, in-place if possible.
 ///
-/// Please note that, per [Appendic C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
+/// Please note that, per [Appendix C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
 ///
 /// In practice this means nothing but someone's going to complain so I figured I'd explain myself early.
 /// # Examples
@@ -45,7 +45,7 @@ pub fn encode_punycode<'a, T: Into<Cow<'a, str>>>(value: T) -> Cow<'a, str> {
 
 /// Punycode encode into a [`String`].
 ///
-/// Please note that, per [Appendic C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
+/// Please note that, per [Appendix C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
 ///
 /// In practice this means nothing but someone's going to complain so I figured I'd explain myself early.
 pub fn encode_punycode_into<'a>(value: &str, out: &'a mut String) -> &'a str {
@@ -54,7 +54,7 @@ pub fn encode_punycode_into<'a>(value: &str, out: &'a mut String) -> &'a str {
 
 /// Punycode encode into a [`Vec`] of bytes.
 ///
-/// Please note that, per [Appendic C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
+/// Please note that, per [Appendix C of RFC 3492](https://datatracker.ietf.org/doc/html/rfc3492#appendix-C), this uses [`usize`]s instead of [`u32`]s.
 ///
 /// In practice this means nothing but someone's going to complain so I figured I'd explain myself early.
 pub fn encode_punycode_into_bytes<'a>(value: &str, out: &'a mut Vec<u8>) -> &'a str {

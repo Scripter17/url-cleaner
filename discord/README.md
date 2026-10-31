@@ -15,3 +15,13 @@ https://www.gnu.org/licenses/agpl-3.0.html
 # Usage
 
 Uses the `URLCD_TOKEN` environment variable to login.
+
+Creates one context menu command for the default profile and one additional context menu command for each named profile.
+
+Entire messages can be cleaned by right clicking/long pressing on them, clicking/tapping on "apps", then on the "Clean URLs" command corresponding to your desired profile.
+
+The app will then reply to the user with an ephemeral message only they can see containing every URL in the message and its embeds after cleaning.
+
+Additionally, the `clean_url` slash command can be used to clean URLs without sending them.
+
+The app will then reply to the user with an ephemeral message only they can see containing the cleaned URL.

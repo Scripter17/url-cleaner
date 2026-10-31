@@ -5,6 +5,7 @@ use crate::prelude::*;
 /// The type of a [`Path`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub enum PathType {
     /** [`Path::Segmented`]. */ Segmented(SegmentedPathType),
     /** [`Path::Opaque`].    */ Opaque                      ,
@@ -19,6 +20,7 @@ impl From<SegmentedPathType> for PathType {
 /// The type of a [`SegmentedPath`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub enum SegmentedPathType {
     /** [`SegmentedPath::File`].           */ File          ,
     /** [`SegmentedPath::SpecialNotFile`]. */ SpecialNotFile,

@@ -7,6 +7,7 @@ use crate::prelude::*;
 /// Details for an [`Ipv4Host`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct Ipv4HostDetails {
     /// The parsed [`Ipv4Addr`].
     pub parsed: Ipv4Addr,

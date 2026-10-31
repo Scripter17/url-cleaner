@@ -27,10 +27,8 @@ jobs:
       run: |
         for scheme in http ws https wss; do
           case "$scheme" in
-            http)  ./urlcs run & ;;
-            ws)    ./urlcs run & ;;
-            https) ./urlcs run --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
-            wss)   ./urlcs run --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
+            http  | ws)  ./urlcs run & ;;
+            https | wss) ./urlcs run --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
           esac
 
           sleep 1;
@@ -65,10 +63,8 @@ jobs:
 
         for scheme in http ws https wss; do
           case "$scheme" in
-            http)  ./urlcs run --profiles <(echo "$PROFILES") & ;;
-            ws)    ./urlcs run --profiles <(echo "$PROFILES") & ;;
-            https) ./urlcs run --profiles <(echo "$PROFILES") --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
-            wss)   ./urlcs run --profiles <(echo "$PROFILES") --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
+            http  | ws)  ./urlcs run --profiles <(echo "$PROFILES") & ;;
+            https | wss) ./urlcs run --profiles <(echo "$PROFILES") --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
           esac
 
           sleep 1;
@@ -106,10 +102,8 @@ jobs:
 
         for scheme in http ws https wss; do
           case "$scheme" in
-            http)  ./urlcs run --secrets <(echo "$SECRETS") & ;;
-            ws)    ./urlcs run --secrets <(echo "$SECRETS") & ;;
-            https) ./urlcs run --secrets <(echo "$SECRETS") --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
-            wss)   ./urlcs run --secrets <(echo "$SECRETS") --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
+            http  | ws)  ./urlcs run --secrets <(echo "$SECRETS") & ;;
+            https | wss) ./urlcs run --secrets <(echo "$SECRETS") --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
           esac
 
           sleep 1;
@@ -117,6 +111,53 @@ jobs:
           ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149"                    2> /dev/null
             echo | ./urlcsc clean "$scheme://127.0.0.1:9149" --password test
           ! echo | ./urlcsc clean "$scheme://127.0.0.1:9149" --password invalid 2> /dev/null
+
+          kill %%
+        done
+
+    - name: 'CLIent gets'
+      run: |
+        for scheme in http https; do
+          case "$scheme" in
+            http  | ws)  ./urlcs run & ;;
+            https | wss) ./urlcs run --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
+          esac
+
+          sleep 1;
+
+          for thing in index info cleaner profiles userscript; do
+            ./urlcsc get "$thing" "$scheme://127.0.0.1:9149"
+          done
+
+          kill %%
+        done
+
+    - name: 'CLIent clean options'
+      run: |
+        SECRETS='{"passwords":["test"]}'
+        PROFILES='
+        {
+          "base": {
+            "vars": {
+              "client_type": "desktop"
+            }
+          },
+          "named": {
+            "youtube unshort": {
+              "flags": ["youtube_unshort"]
+            }
+          }
+        }'
+
+        for scheme in http ws https wss; do
+          case "$scheme" in
+            http  | ws)  ./urlcs run --secrets <(echo "$SECRETS") --profiles <(echo "$PROFILES") & ;;
+            https | wss) ./urlcs run --secrets <(echo "$SECRETS") --profiles <(echo "$PROFILES") --key urlcs-tls-stuff/urlcs.key --cert urlcs-tls-stuff/urlcs.crt & ;;
+          esac
+
+          sleep 1;
+
+          echo | ./urlcsc clean "$scheme://127.0.0.1:9149" --password test --profile 'youtube unshort' --params-diff '{"flags":[]}' --context '{"flags":[]}' -ueTHRWC
 
           kill %%
         done

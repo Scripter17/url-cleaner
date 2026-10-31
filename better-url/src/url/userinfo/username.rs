@@ -26,7 +26,7 @@ impl BetterUrl {
         }
     }
 
-    /// The [`Range::end`] of ther username.
+    /// The [`Range::end`] of the username.
     pub(crate) fn username_after(&self) -> Option<usize> {
         Some(self.details.username_after?.get() as usize)
     }

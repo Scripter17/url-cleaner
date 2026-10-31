@@ -2,7 +2,7 @@
 
 use thiserror::Error;
 
-/// Returend when failing to find an insert.
+/// Returned when failing to find an insert.
 #[derive(Debug, Error)]
 #[error("Failed to find an insert.")]
 pub struct InsertNotFound;

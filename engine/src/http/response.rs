@@ -82,6 +82,7 @@ const fn is_default_limit(x: &usize) -> bool {*x == default_limit()}
 
 /// An HTTP body extractor.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct BodyExtractor {
     /// The prefix to look for.
     ///

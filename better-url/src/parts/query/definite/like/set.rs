@@ -5,7 +5,7 @@ use crate::prelude::*;
 impl<'a> QueryLike<'a> {
     /// Either [`Query::set`] or [`FragmentQuery::set`].
     /// # Errors
-    /// If [`Query::set`] returns an error, tha error is returned.
+    /// If [`Query::set`] returns an error, the error is returned.
     ///
     /// If [`FragmentQuery::set`] returns an error, that error is returned.
     pub fn set<'b, N: AsRef<[u8]>, T: Into<MaybeSpecialQueryValue<'b>> + Into<MaybeNonSpecialQueryValue<'b>> + Into<MaybeFragmentQueryValue<'b>>>(&mut self, name: N, index: isize, value: Option<T>) -> Result<bool, SetQueryError> {

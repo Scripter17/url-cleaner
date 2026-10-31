@@ -40,7 +40,7 @@ use crate::prelude::*;
 ///
 /// Critically:
 ///
-/// - Using [`Action::AcquireThreadLock`] mutliple times in a row is fine because internally a [`parking_lot::ReentrantMutex`] is used.
+/// - Using [`Action::AcquireThreadLock`] multiple times in a row is fine because internally a [`parking_lot::ReentrantMutex`] is used.
 ///
 /// - Using [`Action::AcquireThreadLock`] with a [`Job`] whose [`Job::thread_hider`] is [`None`] is effectively a no-op.
 ///
@@ -73,7 +73,7 @@ use crate::prelude::*;
 ///
 /// With this, doing two redirect chains at the same time would still have their individual HTTP requests/cache operations be done one at a time but could have them be interwoven, which leaks the worker thread count.
 ///
-/// Aditionally, [`Action::AcquireThreadLock`] should be used outside of any caching in order to make hiding cache reads not also leak the thread count.
+/// Additionally, [`Action::AcquireThreadLock`] should be used outside of any caching in order to make hiding cache reads not also leak the thread count.
 #[derive(Debug, Default)]
 pub struct ThreadHider(pub ReentrantMutex<()>);
 

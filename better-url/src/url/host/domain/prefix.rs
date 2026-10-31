@@ -71,7 +71,7 @@ impl BetterUrl {
     ///
     /// If [`DomainHost::set_prefix`] returns an error, that error is returned.
     ///
-    /// If [`Self::set_host`] reutrns an error, that error is returned.
+    /// If [`Self::set_host`] returns an error, that error is returned.
     pub fn set_domain_prefix<'b, T: TryInto<DomainSegments<'b>>>(&mut self, value: Option<T>) -> Result<bool, SetHostError> where SetDomainError: From<T::Error> {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
@@ -89,7 +89,7 @@ impl BetterUrl {
     ///
     /// If [`DomainHost::set_prefix_segment`] returns an error, that error is returned.
     ///
-    /// If [`Self::set_host`] reutrns an error, that error is returned.
+    /// If [`Self::set_host`] returns an error, that error is returned.
     pub fn set_domain_prefix_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: Option<T>) -> Result<bool, SetHostError> where SetDomainError: From<T::Error> {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
@@ -107,7 +107,7 @@ impl BetterUrl {
     ///
     /// If [`DomainHost::set_prefix_range`] returns an error, that error is returned.
     ///
-    /// If [`Self::set_host`] reutrns an error, that error is returned.
+    /// If [`Self::set_host`] returns an error, that error is returned.
     pub fn set_domain_prefix_range<'b, T: TryInto<DomainSegments<'b>>, B: RangeBounds<isize>>(&mut self, range: B, value: Option<T>) -> Result<bool, SetHostError> where SetDomainError: From<T::Error> {
         let mut domain = self.domain().ok_or(NoDomain)?;
 
@@ -125,7 +125,7 @@ impl BetterUrl {
     ///
     /// If [`DomainHost::insert_prefix_segment`] returns an error, that error is returned.
     ///
-    /// If [`Self::set_host`] reutrns an error, that error is returned.
+    /// If [`Self::set_host`] returns an error, that error is returned.
     pub fn insert_domain_prefix_segment<'b, T: TryInto<DomainSegment<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetHostError> where SetDomainError: From<T::Error> {
         let mut domain = self.domain().ok_or(NoDomain)?;
         domain.insert_prefix_segment(index, value)?;
@@ -140,7 +140,7 @@ impl BetterUrl {
     ///
     /// If [`DomainHost::insert_prefix_segments`] returns an error, that error is returned.
     ///
-    /// If [`Self::set_host`] reutrns an error, that error is returned.
+    /// If [`Self::set_host`] returns an error, that error is returned.
     pub fn insert_domain_prefix_segments<'b, T: TryInto<DomainSegments<'b>>>(&mut self, index: isize, value: T) -> Result<(), SetHostError> where SetDomainError: From<T::Error> {
         let mut domain = self.domain().ok_or(NoDomain)?;
         domain.insert_prefix_segments(index, value)?;

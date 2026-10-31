@@ -29,7 +29,7 @@
 					"unset": "Keep URLs as-is.",
 					"variants": {
 						"desktop": "Change mobile URLs to desktop URLs.",
-						"mobile" : "Change dekstop URLs to mobile URLs."
+						"mobile" : "Change desktop URLs to mobile URLs."
 					}
 				},
 

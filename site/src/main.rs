@@ -1,6 +1,6 @@
 //! URL Cleaner Site - Explicit non-consent to URL spytext.
 //!
-//! Licensed under the Aferro GNU Public License version 3.0 or later.
+//! Licensed under the Affero GNU Public License version 3.0 or later.
 //!
 //! <https://www.gnu.org/licenses/agpl-3.0.html>
 //!
@@ -19,7 +19,7 @@ const USERSCRIPT: &str = include_str!("userscript.js");
 #[expect(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// URL Cleaner Site - Explicit non-consent to URL spytext.
 ///
-/// Licensed under the Aferro GNU Public License version 3.0 or later.
+/// Licensed under the Affero GNU Public License version 3.0 or later.
 ///
 /// https://www.gnu.org/licenses/agpl-3.0.html
 ///
@@ -35,7 +35,7 @@ const USERSCRIPT: &str = include_str!("userscript.js");
 #[cfg_attr(not(feature = "http"           ), doc = "http"           )]
 #[cfg_attr(not(feature = "cache"          ), doc = "cache"          )]
 #[derive(Debug, Parser)]
-#[expect(clippy::missing_docs_in_private_items, reason = "Makes Clap propogate docs.")]
+#[expect(clippy::missing_docs_in_private_items, reason = "Makes Clap propagate docs.")]
 #[allow(clippy::large_enum_variant, reason = "It's fine.")]
 enum Args {
     Run       (run       ::Args),

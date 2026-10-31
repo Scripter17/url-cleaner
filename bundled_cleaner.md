@@ -28,7 +28,7 @@ https://www.gnu.org/licenses/agpl-3.0.html
   - Required: false.
   - Unset: Keep URLs as-is.
   - `desktop`: Change mobile URLs to desktop URLs.
-  - `mobile`: Change dekstop URLs to mobile URLs.
+  - `mobile`: Change desktop URLs to mobile URLs.
 - `bypass_vip_api_key`: The API key used for [bypass.vip](https://bypass.vip). Overrides the `bypass_vip_api_key` Secret Var.
   - Required: false.
 - `bluesky_mode`: Decides what host to replace Bluesky/Bluesky embed hosts with.

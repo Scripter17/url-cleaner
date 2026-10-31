@@ -5,6 +5,7 @@ use crate::prelude::*;
 /// The details of the file scheme.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct FileSchemeDetails;
 
 impl FileSchemeDetails {

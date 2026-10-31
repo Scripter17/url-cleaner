@@ -18,7 +18,7 @@ pub fn make_domain_segment<'a, T: Into<Cow<'a, str>>>(value: T) -> Result<(bool,
         Err(InvalidDomainSegment)?;
     }
 
-    // If the output contained no [`INVALID_DOMAIN_SEGMENT_INPUT`], no Unicode, and no ASCII numbers, then it's a valid [`DomainSegemnt`] literal.
+    // If the output contained no [`INVALID_DOMAIN_SEGMENT_INPUT`], no Unicode, and no ASCII numbers, then it's a valid [`DomainSegment`] literal.
     if class & 0b0000_1110 == 0b0000_0000 {
         return Ok((a || b, value));
     }
@@ -53,7 +53,7 @@ pub fn make_domain_segment_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T) -> Result
         Err(InvalidDomainSegment)?;
     }
 
-    // If the output contained no [`INVALID_DOMAIN_SEGMENT_INPUT`], no Unicode, and no ASCII numbers, then it's a valid [`DomainSegemnt`] literal.
+    // If the output contained no [`INVALID_DOMAIN_SEGMENT_INPUT`], no Unicode, and no ASCII numbers, then it's a valid [`DomainSegment`] literal.
     if class & 0b0000_1110 == 0b0000_0000 {
         return Ok((a || b, value));
     }

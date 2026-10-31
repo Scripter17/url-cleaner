@@ -294,9 +294,9 @@ pub enum Action {
 
     /// Set the URL to the value of the query param.
     /// # Errors
-    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`BetterUrl::query_param`] returns [`None`], returns the error [`QueryParamNotFound`].
     ///
-    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`QuerySegment::into_value`] returns [`None`], returns the error [`QueryParamNotFound`].
     GetUrlFromQueryParam(StringSource),
 
     // Fragment
@@ -406,6 +406,7 @@ pub enum Action {
 ///
 /// Defaults to [`Self::Remove`].
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub enum HandleParamsMode {
     /// Remove matching parameters.
     ///

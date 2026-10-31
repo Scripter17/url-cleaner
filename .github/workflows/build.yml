@@ -43,6 +43,9 @@ jobs:
           Cargo.lock
           macros/
           better-url/
+          better-url-bench/
+          !better-url-bench/data/top100.txt
+          !better-url-bench/data/reddit.txt
           engine/
           cli/
           site/

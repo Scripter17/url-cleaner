@@ -350,7 +350,7 @@ pub enum Condition {
     },
     /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`str::starts_with`].
     /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`PathSegmentNotFound`].
+    /// If [`BetterUrl::path_segment`] returns [`None`], returns the error [`PathSegmentNotFound`].
     PathSegmentStartsWith {
         /// The segment to check.
         index: isize,
@@ -359,7 +359,7 @@ pub enum Condition {
     },
     /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`str::ends_with`].
     /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`PathSegmentNotFound`].
+    /// If [`BetterUrl::path_segment`] returns [`None`], returns the error [`PathSegmentNotFound`].
     PathSegmentEndsWith {
         /// The segment to check.
         index: isize,
@@ -368,13 +368,13 @@ pub enum Condition {
     },
     /// [`BetterUrl::path_segment`] + [`PathSegment::lossy_decode`] + [`StringLocation::check`].
     /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`PathSegmentNotFound`].
+    /// If [`BetterUrl::path_segment`] returns [`None`], returns the error [`PathSegmentNotFound`].
     PathSegmentContains {
         /// The path segment to get.
         index: isize,
         /// The value to check for.
         substr: StringSource,
-        /// The location to cehck at.
+        /// The location to check at.
         ///
         /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
@@ -411,9 +411,9 @@ pub enum Condition {
     },
     /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] starts with the specified value.
     /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`BetterUrl::path_segment`] returns [`None`], returns the error [`QueryParamNotFound`].
     ///
-    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`QuerySegment::into_value`] returns [`None`], returns the error [`QueryParamNotFound`].
     QueryParamStartsWith {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
@@ -422,9 +422,9 @@ pub enum Condition {
     },
     /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] ends with the specified value.
     /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`BetterUrl::path_segment`] returns [`None`], returns the error [`QueryParamNotFound`].
     ///
-    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`QuerySegment::into_value`] returns [`None`], returns the error [`QueryParamNotFound`].
     QueryParamEndsWith {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,
@@ -433,15 +433,15 @@ pub enum Condition {
     },
     /// If the [`BetterUrl::path_segment`] + [`QuerySegment::into_value`] ([`Option::flatten`]ed) + [`MaybeQueryValue::lossy_decode`] contains the specified value.
     /// # Errors
-    /// If [`BetterUrl::path_segment`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`BetterUrl::path_segment`] returns [`None`], returns the error [`QueryParamNotFound`].
     ///
-    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`QuerySegment::into_value`] returns [`None`], returns the error [`QueryParamNotFound`].
     QueryParamContains {
-        /// The [`QueryParamSelectorget.
+        /// The [`QueryParamSelector`].
         param: QueryParamSelector,
         /// The value to check for.
         substr: StringSource,
-        /// The location to cehck at.
+        /// The location to check at.
         ///
         /// Defaulted.
         #[serde(default, skip_serializing_if = "is_default")]
@@ -449,9 +449,9 @@ pub enum Condition {
     },
     /// [`BetterUrl::query_param`] + [`QuerySegment::into_value`] ([`Option::flatten`]) + [`MaybeQueryValue::lossy_decode`] +ed [`StringMatcher::check`]
     /// # Errors
-    /// If [`BetterUrl::query_param`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`BetterUrl::query_param`] returns [`None`], returns the error [`QueryParamNotFound`].
     ///
-    /// If [`QuerySegment::into_value`] reutrns [`None`], returns the error [`QueryParamNotFound`].
+    /// If [`QuerySegment::into_value`] returns [`None`], returns the error [`QueryParamNotFound`].
     QueryParamMatches {
         /// The [`QueryParamSelector`].
         param: QueryParamSelector,

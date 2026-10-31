@@ -14,6 +14,7 @@ use crate::prelude::*;
 /// ```
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 #[cfg_attr(feature = "serde", serde(from = "UrlDetails", into = "UrlDetails"))]
 pub struct DenseUrlDetails {
     /** The `:` marking the scheme.        */ pub scheme_mark   : u32                 ,
@@ -34,6 +35,7 @@ pub struct DenseUrlDetails {
 /// Used in [`DenseUrlDetails`] to avoid 8 bytes of padding.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub enum HostType {
     /** [`HostDetails::Domain`]. */ Domain,
     /** [`HostDetails::Ipv4`].   */ Ipv4  ,

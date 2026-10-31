@@ -8,6 +8,7 @@ pub use source::*;
 
 /// A [`Vec`] of [`String`]s.
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Suitability)]
+#[serde(deny_unknown_fields)]
 pub struct List<T>(pub Vec<T>);
 
 impl<T> Deref for List<T> {

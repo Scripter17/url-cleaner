@@ -3,7 +3,7 @@
 use crate::prelude::*;
 
 /// Percent decode except for bytes in `set`.
-pub fn percent_decode_normalize<'a, T: Into<Cow<'a, str>>>(value: T, set: AsciiSet) -> (bool, Cow<'a, str>) {
+pub fn percent_decode_normalize<'a, T: Into<Cow<'a, str>>>(value: T, set: &PercentEncodeSet) -> (bool, Cow<'a, str>) {
     let mut value = value.into();
 
     if value.memchr(b'%').is_none() {
@@ -16,7 +16,7 @@ pub fn percent_decode_normalize<'a, T: Into<Cow<'a, str>>>(value: T, set: AsciiS
 }
 
 /// Percent decode except for bytes in `set`.
-pub fn percent_decode_normalize_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T, set: AsciiSet) -> (bool, Cow<'a, [u8]>) {
+pub fn percent_decode_normalize_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T, set: &PercentEncodeSet) -> (bool, Cow<'a, [u8]>) {
     let mut value = value.into();
 
     if value.memchr(b'%').is_none() {
@@ -29,7 +29,7 @@ pub fn percent_decode_normalize_bytes<'a, T: Into<Cow<'a, [u8]>>>(value: T, set:
 }
 
 /// Percent decode except for bytes in `set`.
-fn _percent_decode_normalize_bytes(value: &mut Vec<u8>, set: AsciiSet) {
+fn _percent_decode_normalize_bytes(value: &mut Vec<u8>, set: &PercentEncodeSet) {
     let mut r = 0;
     let mut w = 0;
 

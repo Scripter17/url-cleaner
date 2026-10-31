@@ -92,7 +92,7 @@ impl CacheClient {
 
     /// [`tokio::runtime::Handle::block_on`] + [`Self::write`].
     /// # Errors
-    /// If [`Self::write`] returns an error, that error is retuerned.
+    /// If [`Self::write`] returns an error, that error is returned.
     /// # Panics
     /// If [`tokio::runtime::Handle::block_on`] panics, that panic is not caught.
     pub fn write_sync(&self, subject: &str, key: &str, value: Option<&str>, duration: Duration, config: CacheConfig) -> Result<(), WriteToCacheError> {
@@ -121,7 +121,7 @@ impl CacheClient {
     ///
     /// If [`CacheConfig::hide`] is [`true`], a matching cache entry is found, and reading the cache took less time than that entry's `duration` column, sleeps for the remaining time.
     /// # Errors
-    /// If interacing with the database returns an error, returns the error [`sqlx::Error`].
+    /// If interacting with the database returns an error, returns the error [`sqlx::Error`].
     pub async fn read(&self, subject: &str, key: &str, config: CacheConfig) -> Result<Option<Option<String>>, ReadFromCacheError> {
         if !config.read {
             return Ok(None);
@@ -145,7 +145,7 @@ impl CacheClient {
     ///
     /// If [`CacheConfig::read`] is [`false`], always immediately returns `Ok(())`.
     /// # Errors
-    /// If interacing with the database returns an error, returns the error [`sqlx::Error`].
+    /// If interacting with the database returns an error, returns the error [`sqlx::Error`].
     pub async fn write(&self, subject: &str, key: &str, value: Option<&str>, duration: Duration, config: CacheConfig) -> Result<(), WriteToCacheError> {
         if !config.write {
             return Ok(());

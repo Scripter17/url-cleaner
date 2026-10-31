@@ -1,6 +1,6 @@
 //! Benchmarking tool for Better URL.
 //!
-//! Licensed under the Aferro GNU Public License version 3.0 or later.
+//! Licensed under the Affero GNU Public License version 3.0 or later.
 //!
 //! <https://www.gnu.org/licenses/agpl-3.0.html>
 //!
@@ -21,7 +21,7 @@ pub mod util;
 #[expect(rustdoc::bare_urls, reason = "It'd look bad in the console.")]
 /// Benchmarking tool for Better URL.
 ///
-/// Licensed under the Aferro GNU Public License version 3.0 or later.
+/// Licensed under the Affero GNU Public License version 3.0 or later.
 ///
 /// https://www.gnu.org/licenses/agpl-3.0.html
 ///

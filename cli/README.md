@@ -14,12 +14,12 @@ https://www.gnu.org/licenses/agpl-3.0.html
 
 # Usage
 
+URLs can be provided as unnmaed CLI arguments and/or as lines of STDIN.
+
 ## Format
 
 URL Cleaner CLI uses [the standard format](../format.md) with the following additional guarantees:
 
-- Each result line is succeeded by a `\n`.
+- Every result line is succeeded by a `\n`.
 
-- Each `\n` is precceded by a result line.
-
-- Providing a task line, waiting for its result line, then providing another task line will never deadlock.
+- Every `\n` is preceded by a result line.

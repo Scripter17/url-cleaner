@@ -17,11 +17,6 @@ pub struct JobConfig {
     /// Defaults to [`None`].
     #[serde(default, skip_serializing_if = "is_default")]
     pub password: Option<String>,
-    /// The [`JobContext`] to use.
-    ///
-    /// Defaulted.
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub context: JobContext,
     /// The profile to use.
     ///
     /// Defaults to [`None`].
@@ -32,6 +27,11 @@ pub struct JobConfig {
     /// Defaulted.
     #[serde(default, skip_serializing_if = "ParamsDiff::is_empty")]
     pub params_diff: ParamsDiff,
+    /// The [`JobContext`] to use.
+    ///
+    /// Defaulted.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub context: JobContext,
     /// If [`true`], unchanged lines are replaced with `=`.
     ///
     /// Defaults to [`false`].
@@ -111,7 +111,7 @@ impl<S: Sync> FromRequestParts<S> for JobConfig {
     type Rejection = GetJobConfigError;
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
-        Ok(match (MaybeSpecialQuery::from(parts.uri.query()).find("config", 0), parts.headers.get("x-job-config")) {
+        Ok(match (MaybeSpecialQuery::from(parts.uri.query()).find("job_config", 0), parts.headers.get("x-job-config")) {
             (None        , None        ) => Default::default(),
             (None        , Some(config)) => serde_json::from_slice(config.as_bytes())?,
             (Some(config), None        ) => serde_json::from_str(&config.into_value().lossy_decode().ok_or(GetJobConfigError::EmptyConfigParam)?)?,
