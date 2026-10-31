@@ -1,6 +1,6 @@
 [package]
 name         = "better-url"
-version      = "0.12.0-beta"
+version      = "0.12.0"
 edition      = "2024"
 description  = "A better URL crate."
 repository   = "https://github.com/Scripter17/url-cleaner"

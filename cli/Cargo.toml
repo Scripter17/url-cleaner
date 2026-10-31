@@ -1,6 +1,6 @@
 [package]
 name         = "url-cleaner"
-version      = "0.12.0-beta"
+version      = "0.12.0"
 edition      = "2024"
 description  = "URL Cleaner's official CLI frontend."
 repository   = "https://github.com/Scripter17/url-cleaner"
@@ -12,8 +12,8 @@ rust-version = "1.96.1"
 
 [dependencies]
 # URL Cleaner
-better-url         = { version = "0.12.0-beta", path = "../better-url", features = ["serde", "psl"] }
-url-cleaner-engine = { version = "0.12.0-beta", path = "../engine", default-features = false }
+better-url         = { version = "0.12.0", path = "../better-url", features = ["serde", "psl"] }
+url-cleaner-engine = { version = "0.12.0", path = "../engine", default-features = false }
 
 # Other.
 clap      = { version = "4.6.7" , features = ["derive", "unstable-v5"] }

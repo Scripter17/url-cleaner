@@ -4,7 +4,7 @@
 // @author       Scripter17@Github.com
 // @namespace    https://github.com/Scripter17/url-cleaner
 // @copyright    AGPL-3.0-or-later
-// @version      0.12.0-beta
+// @version      0.12.0
 // @match        http://*/*
 // @match        https://*/*
 // @grant        GM.xmlHttpRequest

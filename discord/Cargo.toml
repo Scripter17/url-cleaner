@@ -1,6 +1,6 @@
 [package]
 name         = "url-cleaner-discord"
-version      = "0.12.0-beta"
+version      = "0.12.0"
 edition      = "2024"
 description  = "URL Cleaner's official Discord frontend."
 repository   = "https://github.com/Scripter17/url-cleaner"
@@ -13,7 +13,7 @@ publish      = false
 
 [dependencies]
 # URL Cleaner
-url-cleaner-engine = { version = "0.12.0-beta", path = "../engine", default-features = false }
+url-cleaner-engine = { version = "0.12.0", path = "../engine", default-features = false }
 
 # Discord
 serenity  = { git = "https://github.com/serenity-rs/serenity", branch = "next" }

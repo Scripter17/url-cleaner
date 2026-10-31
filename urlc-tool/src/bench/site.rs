@@ -39,8 +39,8 @@ impl Args {
 
                 if protocol.is_tls() {
                     cmd.args([
-                        "--key", "keys/urlcs.key",
-                        "--cert", "keys/urlcs.crt",
+                        "--key", "urlcs-tls-stuff/urlcs.key",
+                        "--cert", "urlcs-tls-stuff/urlcs.crt",
                     ]);
                 }
 
